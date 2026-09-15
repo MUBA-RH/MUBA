@@ -6,6 +6,7 @@ from difflib import SequenceMatcher
 
 from openai import AsyncOpenAI
 from telegram import Update
+from telegram.helpers import mention_html
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 
@@ -679,6 +680,22 @@ def launch_reply(text: str) -> str:
 
 
 # ============================================================
+# GROUP USER MENTION
+# ============================================================
+
+def user_mention(message) -> str:
+    user = message.from_user
+
+    if not user:
+        return ""
+
+    return mention_html(
+        user.id,
+        user.full_name or "MUBA"
+    )
+
+
+# ============================================================
 # GROUP GREETING SYSTEM
 # ============================================================
 
@@ -861,16 +878,40 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # LAUNCH / LISTING
     # --------------------------------------------------------
     if is_launch_or_listing_question(text):
-        await update.message.reply_text(launch_reply(text))
+        reply = launch_reply(text)
+
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                reply = f"{mention} {reply}"
+
+            await update.message.reply_text(
+                reply,
+                parse_mode="HTML",
+            )
+        else:
+            await update.message.reply_text(reply)
+
         return
 
     # --------------------------------------------------------
     # NATURAL CASUAL MESSAGES
     # --------------------------------------------------------
     if is_casual_greeting(text):
-        await update.message.reply_text(
-            "Hey 🦅 We Live Here Now."
-        )
+        reply = "Hey 🦅 We Live Here Now."
+
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                reply = f"{mention} {reply}"
+
+            await update.message.reply_text(
+                reply,
+                parse_mode="HTML",
+            )
+        else:
+            await update.message.reply_text(reply)
+
         return
 
     # --------------------------------------------------------
@@ -900,7 +941,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         add_history(key, "user", text)
         add_history(key, "assistant", answer)
 
-        await update.message.reply_text(answer)
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                answer = f"{mention} {answer}"
+
+            await update.message.reply_text(
+                answer,
+                parse_mode="HTML",
+            )
+        else:
+            await update.message.reply_text(answer)
 
     except Exception as exc:
         print(f"MUBA AI error: {type(exc).__name__}: {exc}")
