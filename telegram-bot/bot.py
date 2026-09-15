@@ -1,15 +1,3 @@
-#!/usr/bin/env python3
-# MUBA Telegram Bot — tek dosya. GitHub\'a bu dosyayı bot.py olarak yapıştır.
-#
-# Kurulum:
-#   pip install python-telegram-bot==21.6 python-dotenv==1.0.1
-#   export TELEGRAM_BOT_TOKEN="BotFather_token"
-#   python bot.py
-#
-# Kaynak: https://muba-rh.github.io/MUBA/  |  https://x.com/MUBA_RH  |  https://t.me/MUBA_RH
-# Cevap dilleri: English, 中文, العربية, Türkçe, हिन्दी
-# Gruplarda her mesaja girmez. MUBA ilgili + mention + GM/GN.
-
 from __future__ import annotations
 
 import json
