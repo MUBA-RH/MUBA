@@ -1,6 +1,6 @@
-
 import os
 import re
+import time
 from collections import defaultdict, deque
 
 from openai import AsyncOpenAI
@@ -35,6 +35,106 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 # ============================================================
 
 conversation_history = defaultdict(lambda: deque(maxlen=12))
+
+
+# ============================================================
+# GROUP GREETING SYSTEM
+# ============================================================
+
+GREETING_THRESHOLD = 3
+
+# group_id -> greeting_type -> {user_id: timestamp}
+greeting_counters = defaultdict(lambda: defaultdict(dict))
+
+GREETING_TYPES = {
+    "gm": {
+        "gm",
+        "gm everyone",
+        "good morning",
+    },
+    "gn": {
+        "gn",
+        "gn everyone",
+        "good night",
+    },
+    "hello": {
+        "hello",
+        "hi",
+        "hello guys",
+        "hello bro",
+        "howdy",
+    },
+}
+
+
+def get_greeting_type(text: str):
+    """
+    Identify supported group greeting category.
+    """
+
+    normalized = " ".join(text.lower().strip().split())
+
+    for greeting_type, phrases in GREETING_TYPES.items():
+        if normalized in phrases:
+            return greeting_type
+
+    return None
+
+
+def handle_group_greeting(message):
+    """
+    Wait for at least 3 different users before sending
+    one collective group greeting.
+
+    The same user only counts once per greeting cycle.
+    """
+
+    if not message.chat:
+        return None
+
+    # Private chats do not use the group greeting system.
+    if message.chat.type == "private":
+        return None
+
+    greeting_type = get_greeting_type(message.text or "")
+
+    if not greeting_type:
+        return None
+
+    group_id = message.chat.id
+
+    user_id = (
+        message.from_user.id
+        if message.from_user
+        else None
+    )
+
+    if user_id is None:
+        return None
+
+    # Count each user only once during the current cycle.
+    greeting_counters[group_id][greeting_type][user_id] = time.time()
+
+    users = greeting_counters[group_id][greeting_type]
+
+    # Wait for at least 3 different users.
+    if len(users) < GREETING_THRESHOLD:
+        return None
+
+    # Threshold reached.
+    # Reset this greeting category for the next cycle.
+    greeting_counters[group_id][greeting_type].clear()
+
+    if greeting_type == "gm":
+        return "GM 🦅 We Live Here Now."
+
+    if greeting_type == "gn":
+        return "GN 🦅 We Live Here Now."
+
+    if greeting_type == "hello":
+        return "Hello everyone. 🦅 We Live Here Now."
+
+    return None
 
 
 # ============================================================
@@ -470,6 +570,100 @@ GN 🦅
 
 
 ============================================================
+GROUP GREETING BEHAVIOR
+============================================================
+
+In group chats, greetings should feel natural and should NOT create
+message spam.
+
+The following are supported group greetings:
+
+GM
+gm
+Good morning
+good morning
+GM everyone
+gm everyone
+
+GN
+gn
+Good night
+good night
+GN everyone
+gn everyone
+
+Hello
+hello
+Hi
+hi
+Hello guys
+hello guys
+Hello bro
+hello bro
+Howdy
+howdy
+
+
+IMPORTANT:
+
+In a group chat, do NOT reply immediately to these greetings.
+
+The bot waits until at least 3 DIFFERENT users have sent a supported
+greeting before sending one collective response.
+
+The same user sending the same greeting multiple times must NOT count
+as multiple users.
+
+The threshold is based on DIFFERENT users, not message count.
+
+GM and GN are separate greeting categories.
+
+GM does not count toward GN.
+
+GN does not count toward GM.
+
+Hello, Hi, Hello guys, Hello bro and Howdy belong to the same
+general Hello category.
+
+When the threshold is reached, send ONE collective response.
+
+Do NOT reply individually to every person.
+
+For GM:
+
+"GM 🦅 We Live Here Now."
+
+For GN:
+
+"GN 🦅 We Live Here Now."
+
+For Hello / Hi / Hello guys / Hello bro / Howdy:
+
+"Hello everyone. 🦅 We Live Here Now."
+
+Keep the response short and natural.
+
+Do not mention the 3-user threshold.
+
+Do not say:
+
+"Three people have greeted."
+
+"Waiting for more people."
+
+"Threshold reached."
+
+After the collective response is sent, the relevant greeting cycle
+is reset.
+
+The users from the completed cycle must not automatically count toward
+the next cycle.
+
+The purpose is to prevent greeting spam and make MUBA feel like a
+natural community presence.
+
+
+============================================================
 COMMUNITY QUESTIONS
 ============================================================
 
@@ -872,16 +1066,41 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # --------------------------------------------------------
-    # GM / GN
+    # GROUP GREETINGS
     # --------------------------------------------------------
 
-    if is_gm(text):
-        await update.message.reply_text("GM 🦅")
-        return
+    # In group chats, wait for 3 different users.
+    # In private chats, normal GM/GN behavior remains unchanged.
 
-    if is_gn(text):
-        await update.message.reply_text("GN 🦅")
-        return
+    if update.message.chat.type != "private":
+
+        group_greeting_reply = handle_group_greeting(
+            update.message
+        )
+
+        if group_greeting_reply:
+            await update.message.reply_text(
+                group_greeting_reply
+            )
+
+        # If this message was a supported group greeting,
+        # do not process it again through the normal AI flow.
+        if get_greeting_type(text):
+            return
+
+    # --------------------------------------------------------
+    # GM / GN — PRIVATE CHAT
+    # --------------------------------------------------------
+
+    if update.message.chat.type == "private":
+
+        if is_gm(text):
+            await update.message.reply_text("GM 🦅")
+            return
+
+        if is_gn(text):
+            await update.message.reply_text("GN 🦅")
+            return
 
     # --------------------------------------------------------
     # CA — NO REPLY
@@ -1007,7 +1226,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "iyi",
     ]
 
-    is_casual = any(word in text.lower() for word in casual_words)
+    is_casual = any(
+        word in text.lower()
+        for word in casual_words
+    )
 
     # If it is not MUBA-related, not a greeting and not directed
     # at the bot, don't answer every random group message.
@@ -1021,7 +1243,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_id = update.effective_chat.id
 
-    conversation = list(conversation_history[chat_id])
+    conversation = list(
+        conversation_history[chat_id]
+    )
 
     conversation.append({
         "role": "user",
@@ -1073,7 +1297,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ERROR HANDLER
 # ============================================================
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+async def error_handler(
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE
+):
     print(f"Telegram error: {context.error}")
 
 
@@ -1104,7 +1331,9 @@ def main():
         )
     )
 
-    application.add_error_handler(error_handler)
+    application.add_error_handler(
+        error_handler
+    )
 
     print("MUBA AI bot is running...")
 
