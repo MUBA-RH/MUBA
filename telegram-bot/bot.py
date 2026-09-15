@@ -1,6 +1,11 @@
 import os
 import re
 import time
+import json
+import sqlite3
+import asyncio
+from urllib.parse import quote
+from urllib.request import Request, urlopen
 from collections import defaultdict, deque
 from difflib import SequenceMatcher
 
@@ -19,6 +24,17 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# ============================================================
+# MUBA MEMORY / X CONFIGURATION
+# ============================================================
+# Keep all secrets in Render environment variables.
+# X_BEARER_TOKEN is optional: the existing Telegram bot still works
+# when it is not configured.
+X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN")
+X_USERNAME = os.environ.get("X_USERNAME", "MUBA_RH")
+MUBA_MEMORY_DB = os.environ.get("MUBA_MEMORY_DB", "muba_memory.db")
+X_SYNC_INTERVAL_SECONDS = int(os.environ.get("X_SYNC_INTERVAL_SECONDS", str(6 * 60 * 60)))
+
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is missing")
 
@@ -36,6 +52,260 @@ conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 # group_id -> greeting_type -> {user_id: timestamp}
 greeting_counters = defaultdict(lambda: defaultdict(dict))
 
+
+
+# ============================================================
+# MUBA MEMORY / X POST KNOWLEDGE BASE
+# ============================================================
+# This is retrieval memory, not model retraining.
+# Existing MUBA rules remain authoritative; X posts are supporting
+# historical context only.
+# ============================================================
+
+_memory_lock = asyncio.Lock()
+_last_x_sync = 0.0
+
+
+def init_muba_memory():
+    conn = sqlite3.connect(MUBA_MEMORY_DB)
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS x_posts (
+                id TEXT PRIMARY KEY,
+                created_at TEXT,
+                text TEXT NOT NULL,
+                url TEXT,
+                raw_json TEXT
+            )
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS memory_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT
+            )
+        """)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _x_api_get(url: str):
+    if not X_BEARER_TOKEN:
+        return None
+
+    req = Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {X_BEARER_TOKEN}",
+            "User-Agent": "MUBA-Telegram-AI-Bot/1.0",
+        },
+        method="GET",
+    )
+    with urlopen(req, timeout=20) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _sync_x_memory_sync():
+    """
+    Fetch public posts from the configured MUBA X account and store them.
+    The function intentionally stores the post text and metadata only.
+    """
+    if not X_BEARER_TOKEN:
+        return 0
+
+    username = X_USERNAME.lstrip("@").strip()
+    if not username:
+        return 0
+
+    user_url = (
+        "https://api.x.com/2/users/by/username/"
+        + quote(username, safe="")
+        + "?user.fields=id,username,name"
+    )
+    user_data = _x_api_get(user_url)
+    if not user_data or not user_data.get("data"):
+        return 0
+
+    user_id = user_data["data"]["id"]
+
+    posts_url = (
+        f"https://api.x.com/2/users/{quote(str(user_id), safe='')}/tweets"
+        "?max_results=100"
+        "&exclude=replies,retweets"
+        "&tweet.fields=created_at"
+    )
+    posts_data = _x_api_get(posts_url)
+    if not posts_data:
+        return 0
+
+    posts = posts_data.get("data", [])
+    conn = sqlite3.connect(MUBA_MEMORY_DB)
+    inserted = 0
+    try:
+        for post in posts:
+            post_id = str(post.get("id", "")).strip()
+            post_text = (post.get("text") or "").strip()
+            if not post_id or not post_text:
+                continue
+
+            url = f"https://x.com/{username}/status/{post_id}"
+
+            before = conn.total_changes
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO x_posts
+                (id, created_at, text, url, raw_json)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    post_id,
+                    post.get("created_at"),
+                    post_text,
+                    url,
+                    json.dumps(post, ensure_ascii=False),
+                ),
+            )
+            if conn.total_changes > before:
+                inserted += 1
+
+        conn.execute(
+            """
+            INSERT INTO memory_meta(key, value)
+            VALUES('last_x_sync', ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+            """,
+            (str(time.time()),),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return inserted
+
+
+async def sync_x_memory(force: bool = False):
+    """
+    Refresh MUBA's X memory when configured.
+    Uses a 6-hour default interval so every Telegram message does not
+    trigger a new X API request.
+    """
+    global _last_x_sync
+
+    if not X_BEARER_TOKEN:
+        return 0
+
+    now = time.time()
+    if not force and now - _last_x_sync < X_SYNC_INTERVAL_SECONDS:
+        return 0
+
+    async with _memory_lock:
+        now = time.time()
+        if not force and now - _last_x_sync < X_SYNC_INTERVAL_SECONDS:
+            return 0
+
+        try:
+            inserted = await asyncio.to_thread(_sync_x_memory_sync)
+            _last_x_sync = time.time()
+            print(f"MUBA X memory sync complete. New posts: {inserted}")
+            return inserted
+        except Exception as exc:
+            # X memory is an enhancement. A temporary X/API failure must
+            # never break the existing Telegram bot.
+            print(f"MUBA X memory sync skipped: {type(exc).__name__}: {exc}")
+            _last_x_sync = time.time()
+            return 0
+
+
+def _tokenize_memory_query(text: str):
+    words = re.findall(r"[A-Za-z0-9_$#@ğüşöçıİĞÜŞÖÇ]+", (text or "").lower())
+    stop = {
+        "what", "is", "the", "a", "an", "and", "or", "of", "to", "for",
+        "how", "why", "when", "where", "who", "can", "does", "do",
+        "ne", "nedir", "nasıl", "neden", "kim", "ne", "bir", "ve", "ile",
+        "mi", "mı", "mu", "mü", "da", "de",
+    }
+    return [w for w in words if len(w) >= 3 and w not in stop]
+
+
+def retrieve_muba_memory(query: str, limit: int = 5) -> str:
+    """
+    Lightweight local retrieval. No external vector database is required.
+    Canonical MUBA_PROMPT remains higher priority than retrieved posts.
+    """
+    init_muba_memory()
+
+    tokens = _tokenize_memory_query(query)
+    conn = sqlite3.connect(MUBA_MEMORY_DB)
+    try:
+        rows = conn.execute(
+            "SELECT id, created_at, text, url FROM x_posts "
+            "ORDER BY COALESCE(created_at, '') DESC LIMIT 250"
+        ).fetchall()
+    finally:
+        conn.close()
+
+    if not rows:
+        return ""
+
+    scored = []
+    q_lower = (query or "").lower()
+
+    for row in rows:
+        post_id, created_at, post_text, url = row
+        lower = post_text.lower()
+        score = sum(lower.count(token) for token in tokens)
+
+        # Exact phrase gets a useful bonus.
+        if q_lower and len(q_lower) >= 8 and q_lower in lower:
+            score += 8
+
+        if score > 0:
+            scored.append((score, created_at or "", post_id, post_text, url))
+
+    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+
+    selected = scored[:limit]
+    if not selected:
+        return ""
+
+    blocks = []
+    for _, created_at, post_id, post_text, url in selected:
+        date_text = created_at or "unknown date"
+        blocks.append(
+            f"- [{date_text}] {post_text}\n"
+            f"  Source: {url}\n"
+            f"  Post ID: {post_id}"
+        )
+
+    return (
+        "RELEVANT MUBA X MEMORY\n"
+        "----------------------\n"
+        "These are previous MUBA X posts retrieved as historical context.\n"
+        "They are NOT higher priority than the core MUBA rules.\n"
+        "Do not invent facts from them and do not treat old statements as "
+        "current facts unless the current prompt confirms them.\n\n"
+        + "\n".join(blocks)
+    )
+
+
+def build_ai_instructions_with_memory(text: str) -> str:
+    memory = retrieve_muba_memory(text)
+    if not memory:
+        return MUBA_PROMPT
+
+    return (
+        MUBA_PROMPT
+        + "\n\n"
+        + "MUBA MEMORY INTEGRATION\n"
+        + "-----------------------\n"
+        + "Use the retrieved X history only when it is relevant to the user's "
+          "message. Preserve MUBA's current identity, safety rules and "
+          "no-fabrication rules above all historical content.\n\n"
+        + memory
+    )
+
+
+init_muba_memory()
 
 # ============================================================
 # MUBA KNOWLEDGE / BEHAVIOR PROMPT
@@ -776,6 +1046,37 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+
+# ============================================================
+# OPTIONAL X MEMORY COMMAND
+# ============================================================
+
+MUBA_ADMIN_USER_ID = os.environ.get("MUBA_ADMIN_USER_ID")
+
+
+async def syncx(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_user or not update.message:
+        return
+
+    if not MUBA_ADMIN_USER_ID:
+        await update.message.reply_text("X memory sync is not configured.")
+        return
+
+    if str(update.effective_user.id) != str(MUBA_ADMIN_USER_ID):
+        return
+
+    if not X_BEARER_TOKEN:
+        await update.message.reply_text(
+            "X memory is not connected yet. Set X_BEARER_TOKEN on Render."
+        )
+        return
+
+    inserted = await sync_x_memory(force=True)
+    await update.message.reply_text(
+        f"MUBA X memory synced. New posts added: {inserted}"
+    )
+
+
 # ============================================================
 # RESPONSE HELPERS
 # ============================================================
@@ -926,9 +1227,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         input_messages = build_ai_input(key, text)
 
+        # Refresh X memory in the background path before generating a response.
+        # If X is unavailable, the existing bot continues normally.
+        await sync_x_memory()
+
         response = await client.responses.create(
             model="gpt-5.6-luna",
-            instructions=MUBA_PROMPT,
+            instructions=build_ai_instructions_with_memory(text),
             input=input_messages,
             max_output_tokens=220,
         )
@@ -986,6 +1291,9 @@ def main():
 
     application.add_handler(
         CommandHandler("status", status)
+    )
+    application.add_handler(
+        CommandHandler("syncx", syncx)
     )
 
     application.add_handler(
