@@ -55,6 +55,8 @@ _last_ai_request_time = 0.0
 
 conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 greeting_counters = defaultdict(lambda: defaultdict(dict))
+# Per-user greeting story memory: prevents repetitive greeting replies.
+greeting_story_history = defaultdict(lambda: deque(maxlen=12))
 
 
 async def sync_x_memory(force: bool = False):
@@ -66,6 +68,230 @@ def build_ai_instructions_with_memory(text: str) -> str:
     """Return the canonical MUBA prompt without external X memory."""
     return MUBA_PROMPT
 
+
+
+
+# ============================================================
+# MUBA DIRECT QUESTION BANK
+# ============================================================
+# These are realistic examples of questions that can be addressed directly
+# to MUBA. They are NOT user-to-user conversation examples.
+# 200 questions total: 40 per supported language.
+# This bank is primarily for testing, coverage review and future evaluation.
+MUBA_DIRECT_QUESTION_BANK = {
+    "tr": [
+        "MUBA tam olarak nedir?",
+        "MUBA kim?",
+        "MUBA neden ortaya çıktı?",
+        "MUBA nasıl başladı?",
+        "MUBA'nın hikayesi ne?",
+        "MUBA neden sadece bir meme değil?",
+        "MUBA'nın amacı ne?",
+        "MUBA ne inşa ediyor?",
+        "MUBA'nın asıl fikri ne?",
+        "MUBA'yı diğer meme projelerinden ayıran ne?",
+        "MUBA neden kendini bu kadar farklı anlatıyor?",
+        "MUBA neden karmaşık bir hikaye kullanmıyor?",
+        "MUBA neden büyük vaatlerde bulunmuyor?",
+        "MUBA'nın arkasındaki felsefe ne?",
+        "'I’m MUBA' ne anlama geliyor?",
+        "'We Live Here Now' ne demek?",
+        "'Same Meme. Different Universe.' ne demek?",
+        "MUBA'nın meme dünyasındaki yeri ne?",
+        "MUBA kendini nasıl tanımlıyor?",
+        "MUBA bir karakter mi, topluluk mu?",
+        "MUBA'nın karakter özellikleri neler?",
+        "MUBA'nın görünümü neden önemli?",
+        "MUBA'nın kendine ait bir karakter olduğunu nasıl anlatırsın?",
+        "MUBA başka bir karakterden mi esinlendi?",
+        "MUBA başka bir projenin karakteri mi?",
+        "MUBA'nın kendi kimliği ne?",
+        "MUBA'nın mizah anlayışı nasıl?",
+        "MUBA neden meme kültürünün içinde?",
+        "MUBA'nın topluluğu neyin parçası?",
+        "MUBA topluluğu neden önemli?",
+        "MUBA topluluğunda insanlar ne yapabilir?",
+        "MUBA'ya nasıl katkıda bulunabilirim?",
+        "MUBA için meme yapabilir miyim?",
+        "MUBA için içerik üretebilir miyim?",
+        "MUBA'nın kültürü nasıl oluşuyor?",
+        "MUBA'nın geleceği nasıl şekillenecek?",
+        "MUBA uzun vadede ne olmak istiyor?",
+        "MUBA'nın hedefi ne?",
+        "MUBA'nın hikayesi önceden yazıldı mı?",
+        "MUBA bundan sonra nereye gidiyor?",
+    ],
+    "en": [
+        "What exactly is MUBA?",
+        "Who is MUBA?",
+        "Why did MUBA appear?",
+        "How did MUBA start?",
+        "What's the story behind MUBA?",
+        "Why is MUBA more than just a meme?",
+        "What is MUBA's purpose?",
+        "What is MUBA building?",
+        "What's the main idea behind MUBA?",
+        "What makes MUBA different from other meme projects?",
+        "Why does MUBA describe itself differently?",
+        "Why doesn't MUBA use a complicated story?",
+        "Why doesn't MUBA make huge promises?",
+        "What's the philosophy behind MUBA?",
+        "What does 'I'm MUBA' mean?",
+        "What does 'We Live Here Now' mean?",
+        "What does 'Same Meme. Different Universe.' mean?",
+        "Where does MUBA fit in meme culture?",
+        "How does MUBA define itself?",
+        "Is MUBA a character or a community?",
+        "What is MUBA's personality like?",
+        "Why is MUBA's visual identity important?",
+        "How would you describe MUBA's identity?",
+        "Was MUBA inspired by another character?",
+        "Is MUBA another project's character?",
+        "What makes MUBA its own character?",
+        "What kind of humor does MUBA have?",
+        "Why does MUBA belong in meme culture?",
+        "What is the MUBA community part of?",
+        "Why is the community important to MUBA?",
+        "What can people do in the MUBA community?",
+        "How can I contribute to MUBA?",
+        "Can I make MUBA memes?",
+        "Can I create content for MUBA?",
+        "How is MUBA's culture developing?",
+        "How will MUBA's future take shape?",
+        "What does MUBA want to become long term?",
+        "What is MUBA's goal?",
+        "Is MUBA's story already written?",
+        "Where is MUBA going from here?",
+    ],
+    "zh": [
+        "MUBA 到底是什么？",
+        "MUBA 是谁？",
+        "MUBA 为什么会出现？",
+        "MUBA 是怎么开始的？",
+        "MUBA 背后的故事是什么？",
+        "为什么说 MUBA 不只是一个 meme？",
+        "MUBA 的目的是什么？",
+        "MUBA 正在建设什么？",
+        "MUBA 的核心想法是什么？",
+        "MUBA 和其他 meme 项目有什么不同？",
+        "为什么 MUBA 不用复杂的故事来定义自己？",
+        "为什么 MUBA 不做夸张的承诺？",
+        "MUBA 背后的理念是什么？",
+        "“I’m MUBA” 是什么意思？",
+        "“We Live Here Now” 是什么意思？",
+        "“Same Meme. Different Universe.” 是什么意思？",
+        "MUBA 在 meme 文化里是什么定位？",
+        "MUBA 如何定义自己？",
+        "MUBA 是一个角色还是一个社区？",
+        "MUBA 的性格是什么样的？",
+        "为什么 MUBA 的视觉形象这么重要？",
+        "MUBA 的角色身份有什么特点？",
+        "MUBA 是不是来自其他角色？",
+        "MUBA 是其他项目的角色吗？",
+        "是什么让 MUBA 成为独立的角色？",
+        "MUBA 的幽默感是什么样的？",
+        "为什么 MUBA 属于 meme 世界？",
+        "MUBA 社区在做什么？",
+        "为什么社区对 MUBA 很重要？",
+        "MUBA 社区里可以做什么？",
+        "我可以怎样参与 MUBA？",
+        "我可以制作 MUBA meme 吗？",
+        "我可以为 MUBA 创作内容吗？",
+        "MUBA 的文化是怎样形成的？",
+        "MUBA 的未来会怎样发展？",
+        "MUBA 长期想成为什么？",
+        "MUBA 的目标是什么？",
+        "MUBA 的故事是不是已经写好了？",
+        "MUBA 接下来会走向哪里？",
+    ],
+    "ar": [
+        "ما هو MUBA بالضبط؟",
+        "من هو MUBA؟",
+        "لماذا ظهر MUBA؟",
+        "كيف بدأ MUBA؟",
+        "ما قصة MUBA؟",
+        "لماذا MUBA أكثر من مجرد ميم؟",
+        "ما هدف MUBA؟",
+        "ماذا يبني MUBA؟",
+        "ما الفكرة الأساسية وراء MUBA؟",
+        "ما الذي يميز MUBA عن مشاريع الميم الأخرى؟",
+        "لماذا يعرّف MUBA نفسه بطريقة مختلفة؟",
+        "لماذا لا يستخدم MUBA قصة معقدة؟",
+        "لماذا لا يقدم MUBA وعوداً كبيرة؟",
+        "ما الفلسفة وراء MUBA؟",
+        "ماذا تعني عبارة I'm MUBA؟",
+        "ماذا تعني عبارة We Live Here Now؟",
+        "ماذا تعني عبارة Same Meme. Different Universe.؟",
+        "ما مكان MUBA في ثقافة الميم؟",
+        "كيف يعرّف MUBA نفسه؟",
+        "هل MUBA شخصية أم مجتمع؟",
+        "كيف هي شخصية MUBA؟",
+        "لماذا الهوية البصرية لـ MUBA مهمة؟",
+        "ما الذي يميز هوية شخصية MUBA؟",
+        "هل MUBA مستوحى من شخصية أخرى؟",
+        "هل MUBA شخصية تابعة لمشروع آخر؟",
+        "ما الذي يجعل MUBA شخصية مستقلة؟",
+        "ما نوع روح الدعابة لدى MUBA؟",
+        "لماذا ينتمي MUBA إلى عالم الميم؟",
+        "ماذا يفعل مجتمع MUBA؟",
+        "لماذا المجتمع مهم بالنسبة لـ MUBA؟",
+        "ماذا يمكن للناس أن يفعلوا داخل مجتمع MUBA؟",
+        "كيف يمكنني المشاركة في MUBA؟",
+        "هل يمكنني صنع ميمات لـ MUBA؟",
+        "هل يمكنني إنشاء محتوى لـ MUBA؟",
+        "كيف تتشكل ثقافة MUBA؟",
+        "كيف سيتطور مستقبل MUBA؟",
+        "ماذا يريد MUBA أن يصبح على المدى الطويل؟",
+        "ما هو هدف MUBA الأساسي؟",
+        "هل قصة MUBA مكتوبة مسبقاً؟",
+        "إلى أين يتجه MUBA من هنا؟",
+    ],
+    "hi": [
+        "MUBA आखिर है क्या?",
+        "MUBA कौन है?",
+        "MUBA क्यों सामने आया?",
+        "MUBA की शुरुआत कैसे हुई?",
+        "MUBA की कहानी क्या है?",
+        "MUBA सिर्फ एक meme से ज्यादा क्यों है?",
+        "MUBA का उद्देश्य क्या है?",
+        "MUBA क्या बना रहा है?",
+        "MUBA के पीछे मुख्य विचार क्या है?",
+        "MUBA दूसरे meme projects से अलग कैसे है?",
+        "MUBA खुद को अलग तरीके से क्यों पेश करता है?",
+        "MUBA कोई जटिल कहानी क्यों नहीं बनाता?",
+        "MUBA बड़े-बड़े वादे क्यों नहीं करता?",
+        "MUBA के पीछे की philosophy क्या है?",
+        "'I'm MUBA' का मतलब क्या है?",
+        "'We Live Here Now' का मतलब क्या है?",
+        "'Same Meme. Different Universe.' का मतलब क्या है?",
+        "meme culture में MUBA की जगह क्या है?",
+        "MUBA खुद को कैसे define करता है?",
+        "MUBA एक character है या community?",
+        "MUBA की personality कैसी है?",
+        "MUBA की visual identity क्यों महत्वपूर्ण है?",
+        "MUBA की character identity में क्या खास है?",
+        "क्या MUBA किसी दूसरे character से inspired है?",
+        "क्या MUBA किसी दूसरे project का character है?",
+        "MUBA को एक अलग character क्या बनाता है?",
+        "MUBA का humor कैसा है?",
+        "MUBA meme world का हिस्सा क्यों है?",
+        "MUBA community क्या कर रही है?",
+        "MUBA के लिए community इतनी जरूरी क्यों है?",
+        "MUBA community में लोग क्या कर सकते हैं?",
+        "मैं MUBA में कैसे participate कर सकता हूँ?",
+        "क्या मैं MUBA memes बना सकता हूँ?",
+        "क्या मैं MUBA के लिए content बना सकता हूँ?",
+        "MUBA की culture कैसे बन रही है?",
+        "MUBA का future कैसे develop होगा?",
+        "लंबे समय में MUBA क्या बनना चाहता है?",
+        "MUBA का goal क्या है?",
+        "क्या MUBA की कहानी पहले से लिखी हुई है?",
+        "MUBA यहाँ से आगे कहाँ जा रहा है?",
+    ],
+}
+
+assert sum(len(v) for v in MUBA_DIRECT_QUESTION_BANK.values()) == 200
+assert all(len(v) == 40 for v in MUBA_DIRECT_QUESTION_BANK.values())
 
 # ============================================================
 # MUBA KNOWLEDGE / BEHAVIOR PROMPT
@@ -683,6 +909,20 @@ FOLLOW-UPS / FRAGMENTS
 
 RESPONSE BEHAVIOR
 - Match the user's language exactly whenever reasonably possible.
+- For every direct greeting, reply immediately. Never silently wait for a greeting
+  threshold and never require other users to greet first.
+- If the greeting is GM / Good morning / Günaydın or its natural equivalent, begin
+  the reply with exactly "GM".
+- If the greeting is GN / Good night / İyi geceler or its natural equivalent, begin
+  the reply with exactly "GN".
+- After GM/GN, add a short, natural MUBA-related line that varies from user to
+  user and from greeting to greeting. Do not recycle the same sentence.
+- Remember what you already told this user. Do not repeat the same story, slogan,
+  explanation, or wording when a fresh natural continuation is possible.
+- Treat the conversation as one continuous exchange. Build on the user's previous
+  messages and your own previous answers instead of restarting from zero.
+- Improvise within MUBA's known facts: create fresh wording and small narrative
+  moments, but never invent factual project information.
 - Match the user's conversational level: slang gets casual language; a serious
   question gets a clear answer; a joke can get a playful answer.
 - A one-word message can receive a one-line answer.
@@ -707,6 +947,15 @@ GENERAL QUESTION RULE
 ----------------------
 Answer legitimate normal questions. Do NOT require the word "MUBA" to be
 present in the message.
+
+DIRECT-TO-MUBA COVERAGE
+-----------------------
+The bot should be able to answer natural questions directly about MUBA's identity,
+origin, character, purpose, community, meme culture, philosophy, future, official
+channels, Robinhood × Flap narrative and other facts explicitly supported by this
+prompt. The question may be short, informal, misspelled or phrased indirectly.
+Do not treat these questions as user-to-user conversation. Answer as MUBA's community
+voice, using only supported facts.
 
 The bot should naturally handle questions and conversation about:
 1. What is MUBA?
@@ -923,6 +1172,10 @@ Examples that MUST receive an answer:
 The same-language rule has priority: answer in the user's language.
 Do not switch to Turkish merely because the message contains the name MUBA.
 Do not switch to English merely because the message contains a crypto/project term.
+For Turkish, English, Chinese, Arabic and Hindi, preserve the language of the incoming
+MUBA question naturally; do not append an automatic translation unless the user asks.
+Treat a direct question addressed to MUBA as a request for MUBA's own answer, not as
+a prompt to discuss what other users think or to continue a conversation between users.
 
 TYPO / INCOMPLETE MESSAGE
 -------------------------
@@ -991,8 +1244,8 @@ GROUP GREETINGS
 ---------------
 The application code handles group greeting thresholds.
 
-Three DIFFERENT users must independently send a greeting before the bot
-replies to that greeting category.
+Every user who sends a greeting should receive a direct reply.
+There is no group-wide greeting threshold and no requirement for other users to greet first.
 
 GM category:
 - GM
@@ -1107,21 +1360,24 @@ def fuzzy_phrase_match(text: str, phrases, threshold=0.82) -> bool:
 
 GREETING_TYPES = {
     "gm": {
-        "gm",
-        "gm everyone",
-        "good morning",
+        "gm", "gm everyone", "good morning", "morning", "goodmorning",
+        "günaydın", "gunaydin", "günaydın millet", "gunaydin millet",
+        "صباح الخير", "صباح النور",
+        "早上好", "早安",
+        "सुप्रभात",
     },
     "gn": {
-        "gn",
-        "gn everyone",
-        "good night",
+        "gn", "gn everyone", "good night", "goodnight",
+        "iyi geceler", "iyi geceler millet",
+        "تصبح على خير", "ليلة سعيدة",
+        "晚安",
+        "शुभ रात्रि", "शुभ रात्री",
     },
     "hello": {
-        "hello",
-        "hi",
-        "hello guys",
-        "hello bro",
-        "howdy",
+        "hello", "hi", "hello guys", "hello bro", "howdy",
+        "hey", "yo", "sup", "selam", "selamlar", "merhaba",
+        "你好", "嗨", "مرحبا", "أهلا", "هاي",
+        "नमस्ते", "हैलो",
     },
 }
 
@@ -1566,6 +1822,163 @@ def user_mention(message) -> str:
 
 
 # ============================================================
+# NATURAL GREETING STORY SYSTEM
+# ============================================================
+
+# Every greeting gets a direct, short MUBA-style response.
+# GM/GN are preserved literally, while the small story line follows
+# the user's detected language. Recent lines are excluded per user.
+GREETING_STORIES = {
+    "tr": {
+        "gm": [
+            "GM 🪶 MUBA güne yine timeline'da başladı. Bugün hikâyeye yeni bir satır ekliyoruz.",
+            "GM 🪶 MUBA burada. Dün bir meme, bugün başka bir hikâye; bakalım bugün ne çıkacak.",
+            "GM 🪶 Gün başladı, MUBA yine yerinde. WE LIVE HERE NOW.",
+            "GM 🪶 MUBA'nın sabah planı basit: burada kal, topluluğu dinle, hikâyeyi yaşa.",
+            "GM 🪶 Yeni gün, yeni bir MUBA anı. Hikâye yazılmıyor; bugün de yaşanıyor.",
+            "GM 🪶 MUBA uyandı. Önce topluluk, sonra kaos. Klasik MUBA sabahı.",
+        ],
+        "gn": [
+            "GN 🪶 MUBA bugün de timeline'da biraz iz bıraktı. Hikâye yarın devam eder.",
+            "GN 🪶 Günlük MUBA kaosu şimdilik tamam. WE LIVE HERE NOW.",
+            "GN 🪶 MUBA gece moduna geçti; karakter burada, hikâye devam ediyor.",
+            "GN 🪶 Bugün bir şeyler yaşandı, yarın yenileri gelir. MUBA burada kalıyor.",
+            "GN 🪶 MUBA'nın bugünkü bölümü kapandı. Hikâye bitmedi, sadece gece oldu.",
+            "GN 🪶 MUBA uyumaya gidiyor gibi yapıyor. 😴🪶 Hikâye hâlâ burada.",
+        ],
+        "hello": [
+            "MUBA burada. 🪶 Kapı açık; hikâye de zaten kendi kendine ilerliyor.",
+            "Selam. 👀 MUBA yine timeline'da. Bakalım bugün hangi absürt anı yaşayacağız.",
+            "MUBA geldi. 🪶 Büyük plan yok; biraz meme, biraz kaos, biraz topluluk.",
+            "Selam. 🪶 MUBA'nın evi açık. WE LIVE HERE NOW.",
+            "MUBA burada. 😂 Hikâye hazır değil; zaten birlikte yaşanıyor.",
+        ],
+    },
+    "en": {
+        "gm": [
+            "GM 🪶 MUBA starts the day right where it belongs: in the meme world. Another page gets lived today.",
+            "GM 🪶 MUBA is awake. New day, same character, new chaos.",
+            "GM 🪶 Morning from MUBA. No grand script today — just another day to live the story.",
+            "GM 🪶 MUBA is here. Community first, memes second, chaos somewhere in between.",
+            "GM 🪶 New day, new MUBA moment. The story isn't written; it's lived.",
+            "GM 🪶 MUBA woke up and chose timeline chaos. As usual.",
+        ],
+        "gn": [
+            "GN 🪶 MUBA's day is done, but the story isn't. We Live Here Now.",
+            "GN 🪶 Another MUBA day goes into the timeline. Tomorrow gets its own chapter.",
+            "GN 🪶 MUBA is entering night mode. Same character, story still moving.",
+            "GN 🪶 Today's chaos is parked for now. MUBA is still here.",
+            "GN 🪶 One more day lived, not written. See you on the next MUBA chapter.",
+            "GN 🪶 MUBA is pretending to sleep. 😴🪶 The story stays here.",
+        ],
+        "hello": [
+            "MUBA is here. 🪶 The door is open; the story keeps moving.",
+            "Hey. 👀 MUBA just showed up on the timeline again. Let's see what happens.",
+            "MUBA has arrived. 🪶 No grand plan — just memes, chaos and community.",
+            "Hello. 🪶 MUBA's home is open. We Live Here Now.",
+            "MUBA is here. 😂 The story isn't prepared in advance; it gets lived.",
+        ],
+    },
+    "zh": {
+        "gm": [
+            "GM 🪶 MUBA 又在表情包世界里醒来了。今天继续让故事发生。",
+            "GM 🪶 MUBA 醒了。新的一天，同一个角色，新的混乱。",
+            "GM 🪶 早上好。MUBA 没有写好的剧本，今天也只是继续生活这个故事。",
+            "GM 🪶 MUBA 在这里。社区、表情包，还有一点熟悉的混乱。",
+            "GM 🪶 新的一天，新的 MUBA 时刻。故事不是写出来的，是一起经历的。",
+            "GM 🪶 MUBA 醒来就开始了时间线混乱。很 MUBA。",
+        ],
+        "gn": [
+            "GN 🪶 MUBA 今天的故事暂时收尾，但故事还没有结束。",
+            "GN 🪶 又一个 MUBA 日常留在了时间线上。明天继续。",
+            "GN 🪶 MUBA 进入夜间模式了。同一个角色，故事还在继续。",
+            "GN 🪶 今天的混乱先暂停。MUBA 还在这里。",
+            "GN 🪶 又一起经历了一天，而不是写下一天。明天见。",
+            "GN 🪶 MUBA 假装睡觉了。😴🪶 故事还在这里。",
+        ],
+        "hello": [
+            "MUBA 在这里。🪶 门一直开着，故事继续向前。",
+            "你好。👀 MUBA 又出现在时间线上了。看看今天会发生什么。",
+            "MUBA 来了。🪶 没有宏大计划，只有表情包、混乱和社区。",
+            "你好。🪶 MUBA 的家一直在这里。We Live Here Now.",
+            "MUBA 在这里。😂 故事不是提前写好的，而是一起经历的。",
+        ],
+    },
+    "ar": {
+        "gm": [
+            "GM 🪶 استيقظ MUBA من جديد داخل عالم الميمات. واليوم تستمر الحكاية.",
+            "GM 🪶 MUBA مستيقظ. يوم جديد، الشخصية نفسها، وفوضى جديدة.",
+            "GM 🪶 صباح الخير من MUBA. لا يوجد سيناريو مكتوب مسبقًا؛ نعيش القصة فقط.",
+            "GM 🪶 MUBA هنا. المجتمع أولًا، الميمات ثانيًا، والفوضى في المنتصف.",
+            "GM 🪶 يوم جديد، لحظة جديدة لـ MUBA. القصة لا تُكتب، بل تُعاش.",
+            "GM 🪶 استيقظ MUBA واختار فوضى التايملاين. كالعادة.",
+        ],
+        "gn": [
+            "GN 🪶 انتهى يوم MUBA، لكن القصة لم تنتهِ. We Live Here Now.",
+            "GN 🪶 يوم آخر من MUBA بقي على التايملاين. غدًا فصل جديد.",
+            "GN 🪶 دخل MUBA وضع الليل. الشخصية نفسها، والقصة مستمرة.",
+            "GN 🪶 فوضى اليوم توقفت مؤقتًا. MUBA ما زال هنا.",
+            "GN 🪶 عشنا يومًا آخر، ولم نكتبه. نلتقي في فصل MUBA القادم.",
+            "GN 🪶 MUBA يتظاهر بأنه نائم. 😴🪶 القصة ما زالت هنا.",
+        ],
+        "hello": [
+            "MUBA هنا. 🪶 الباب مفتوح والقصة مستمرة.",
+            "مرحبًا. 👀 MUBA ظهر على التايملاين من جديد. لنرَ ماذا سيحدث.",
+            "MUBA وصل. 🪶 لا خطة ضخمة؛ فقط ميمات وفوضى ومجتمع.",
+            "مرحبًا. 🪶 بيت MUBA مفتوح. We Live Here Now.",
+            "MUBA هنا. 😂 القصة لا تُجهّز مسبقًا؛ نحن نعيشها.",
+        ],
+    },
+    "hi": {
+        "gm": [
+            "GM 🪶 MUBA फिर meme world में जाग गया। आज कहानी को फिर जीते हैं।",
+            "GM 🪶 MUBA जाग चुका है। नया दिन, वही character, नया chaos.",
+            "GM 🪶 सुप्रभात। MUBA की कोई पहले से लिखी script नहीं है — आज भी कहानी जीनी है।",
+            "GM 🪶 MUBA यहाँ है। पहले community, फिर memes, और बीच में थोड़ा chaos.",
+            "GM 🪶 नया दिन, नया MUBA moment। कहानी लिखी नहीं जाती, जी जाती है।",
+            "GM 🪶 MUBA जागा और timeline chaos चुन लिया। बिल्कुल MUBA जैसा।",
+        ],
+        "gn": [
+            "GN 🪶 MUBA का आज का chapter खत्म, लेकिन कहानी नहीं। We Live Here Now.",
+            "GN 🪶 एक और MUBA दिन timeline पर रह गया। कल नया chapter होगा।",
+            "GN 🪶 MUBA night mode में जा रहा है। वही character, कहानी जारी।",
+            "GN 🪶 आज का chaos अभी pause है। MUBA अभी भी यहीं है।",
+            "GN 🪶 एक और दिन जिया, लिखा नहीं। अगले MUBA chapter में मिलते हैं।",
+            "GN 🪶 MUBA सोने का नाटक कर रहा है। 😴🪶 कहानी यहीं है।",
+        ],
+        "hello": [
+            "MUBA यहाँ है। 🪶 दरवाज़ा खुला है, कहानी आगे बढ़ रही है।",
+            "नमस्ते। 👀 MUBA फिर timeline पर आ गया। देखते हैं आज क्या होता है।",
+            "MUBA आ गया। 🪶 कोई बड़ा plan नहीं — बस memes, chaos और community.",
+            "नमस्ते। 🪶 MUBA का घर खुला है। We Live Here Now.",
+            "MUBA यहाँ है। 😂 कहानी पहले से तैयार नहीं होती; उसे जिया जाता है।",
+        ],
+    },
+}
+
+
+def greeting_story_reply(text: str, user_key: str) -> str | None:
+    """Return a varied greeting response while avoiding recent repetition."""
+    greeting_type = get_greeting_type(text)
+    if not greeting_type:
+        return None
+
+    lang = detect_language(text)
+    pool = GREETING_STORIES.get(lang, GREETING_STORIES["en"]).get(
+        greeting_type, GREETING_STORIES.get(lang, GREETING_STORIES["en"])["hello"]
+    )
+    recent = set(greeting_story_history[user_key])
+
+    available = [item for item in pool if item not in recent]
+    if not available:
+        available = pool
+
+    reply = random.choice(available)
+    greeting_story_history[user_key].append(reply)
+    return reply
+
+
+# ============================================================
 # GROUP GREETING SYSTEM
 # ============================================================
 
@@ -1591,37 +2004,13 @@ def handle_group_greeting(message) -> str | None:
         return None
 
     text = message.text or ""
-    greeting_type = get_greeting_type(text)
-
-    if not greeting_type:
+    if not get_greeting_type(text):
         return None
 
-    group_id = message.chat.id
-    user_id = message.from_user.id if message.from_user else None
+    user_id = message.from_user.id if message.from_user else "unknown"
+    user_key = f"group:{message.chat.id}:user:{user_id}"
+    return greeting_story_reply(text, user_key)
 
-    if user_id is None:
-        return None
-
-    cleanup_greeting_users(group_id, greeting_type)
-
-    greeting_users = greeting_counters[group_id][greeting_type]
-    greeting_users[user_id] = time.time()
-
-    if len(greeting_users) < GREETING_THRESHOLD:
-        return None
-
-    greeting_users.clear()
-
-    if greeting_type == "gm":
-        return "GM 🦅 We Live Here Now."
-
-    if greeting_type == "gn":
-        return "GN 🦅 We Live Here Now."
-
-    if greeting_type == "hello":
-        return "Hello everyone. 🦅 We Live Here Now."
-
-    return None
 
 
 # ============================================================
@@ -1774,16 +2163,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
     # --------------------------------------------------------
-    # PRIVATE GM / GN
+    # DIRECT GREETINGS — EVERY USER GETS A VARIED MUBA STORY
     # --------------------------------------------------------
-    if update.message.chat.type == "private":
-        if is_gm(text):
-            await update.message.reply_text("GM 🦅")
-            return
+    greeting_key = history_key(update)
+    greeting_reply = greeting_story_reply(text, greeting_key)
 
-        if is_gn(text):
-            await update.message.reply_text("GN 🦅")
-            return
+    if greeting_reply:
+        add_history(greeting_key, "user", text)
+        add_history(greeting_key, "assistant", greeting_reply)
+
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                greeting_reply = f"{mention} {greeting_reply}"
+            await update.message.reply_text(greeting_reply, parse_mode="HTML")
+        else:
+            await update.message.reply_text(greeting_reply)
+        return
 
     # --------------------------------------------------------
     # SPECIAL TOPICS
@@ -1933,6 +2329,9 @@ def main():
 
     application.add_handler(
         CommandHandler("status", status)
+    )
+    application.add_handler(
+        CommandHandler("ca", ca)
     )
     application.add_handler(
         CommandHandler("syncx", syncx)
