@@ -6,6 +6,7 @@ from bot import (
     TELEGRAM_BOT_TOKEN,
     start,
     status,
+    syncx,
     handle_message,
     error_handler,
 )
@@ -18,8 +19,17 @@ def main():
         .build()
     )
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("status", status))
+    application.add_handler(
+        CommandHandler("start", start)
+    )
+
+    application.add_handler(
+        CommandHandler("status", status)
+    )
+
+    application.add_handler(
+        CommandHandler("syncx", syncx)
+    )
 
     application.add_handler(
         MessageHandler(
