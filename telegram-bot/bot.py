@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import asyncio
 from collections import defaultdict, deque
 from difflib import SequenceMatcher
 
@@ -32,8 +33,16 @@ MAX_HISTORY = 12
 
 conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 
+# Serialize AI requests and pace them to reduce burst-related 429 errors.
+AI_REQUEST_MIN_INTERVAL_SECONDS = float(os.environ.get("AI_REQUEST_MIN_INTERVAL_SECONDS", "3.0"))
+_ai_request_lock = asyncio.Lock()
+_last_ai_request_time = 0.0
+
 # group_id -> greeting_type -> {user_id: timestamp}
 greeting_counters = defaultdict(lambda: defaultdict(dict))
+
+# Per-conversation greeting rotation.
+_greeting_rotation = defaultdict(lambda: defaultdict(int))
 
 
 # ============================================================
@@ -696,6 +705,38 @@ def cleanup_greeting_users(group_id: int, greeting_type: str):
         users.pop(user_id, None)
 
 
+GREETING_REPLIES = {
+    "gm": [
+        "GM 🦅 We Live Here Now.",
+        "GM 🦅 MUBA is already awake.",
+        "GM 🦅 Another day in the meme world.",
+        "GM 🦅 The timeline is moving. MUBA is here.",
+        "GM 🦅 Same meme. Different morning.",
+    ],
+    "gn": [
+        "GN 🦅 We Live Here Now.",
+        "GN 🦅 MUBA is still here when the timeline sleeps.",
+        "GN 🦅 Another chapter lived. Sleep well.",
+        "GN 🦅 The meme world can wait until morning.",
+        "GN 🦅 Story continues tomorrow. 🪶",
+    ],
+    "hello": [
+        "Hello everyone. 🦅 We Live Here Now.",
+        "Hello 🦅 MUBA just walked into the timeline.",
+        "Hello everyone. 🦅 Same Meme. Different Universe.",
+        "Hello 🦅 Pull up a chair. MUBA lives here now.",
+        "Hello everyone. 🦅 The meme world is open.",
+    ],
+}
+
+
+def rotated_greeting_reply(scope: str, greeting_type: str) -> str:
+    replies = GREETING_REPLIES[greeting_type]
+    index = _greeting_rotation[scope][greeting_type] % len(replies)
+    _greeting_rotation[scope][greeting_type] += 1
+    return replies[index]
+
+
 def handle_group_greeting(message) -> str | None:
     if not message or not message.chat:
         return None
@@ -725,14 +766,7 @@ def handle_group_greeting(message) -> str | None:
 
     greeting_users.clear()
 
-    if greeting_type == "gm":
-        return "GM 🦅 We Live Here Now."
-
-    if greeting_type == "gn":
-        return "GN 🦅 We Live Here Now."
-
-    if greeting_type == "hello":
-        return "Hello everyone. 🦅 We Live Here Now."
+    return rotated_greeting_reply(f"group:{group_id}", greeting_type)
 
     return None
 
@@ -747,6 +781,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "MUBA is here.\n\nWe Live Here Now."
+    )
+
+
+async def ca(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
+    await update.message.reply_text(
+        "Soon. We’ll announce the official CA through the official channels."
     )
 
 
@@ -838,11 +881,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # --------------------------------------------------------
     if update.message.chat.type == "private":
         if is_gm(text):
-            await update.message.reply_text("GM 🦅")
+            await update.message.reply_text(rotated_greeting_reply(history_key(update), "gm"))
             return
 
         if is_gn(text):
-            await update.message.reply_text("GN 🦅")
+            await update.message.reply_text(rotated_greeting_reply(history_key(update), "gn"))
             return
 
     # --------------------------------------------------------
@@ -885,12 +928,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         input_messages = build_ai_input(key, text)
 
-        response = await client.responses.create(
-            model="gpt-5.6-luna",
-            instructions=MUBA_PROMPT,
-            input=input_messages,
-            max_output_tokens=220,
-        )
+        global _last_ai_request_time
+        async with _ai_request_lock:
+            now = time.monotonic()
+            wait_for = AI_REQUEST_MIN_INTERVAL_SECONDS - (now - _last_ai_request_time)
+            if wait_for > 0:
+                await asyncio.sleep(wait_for)
+
+            response = await client.responses.create(
+                model="gpt-5.6-luna",
+                instructions=MUBA_PROMPT,
+                input=input_messages,
+                max_output_tokens=220,
+            )
+            _last_ai_request_time = time.monotonic()
 
         answer = (response.output_text or "").strip()
 
@@ -935,6 +986,11 @@ def main():
 
     application.add_handler(
         CommandHandler("status", status)
+    )
+
+    # /ca, /Ca and /CA are handled case-insensitively by Telegram's command handler.
+    application.add_handler(
+        CommandHandler("ca", ca)
     )
 
     application.add_handler(
