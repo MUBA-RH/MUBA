@@ -119,6 +119,103 @@ Official website: https://muba-rh.github.io/MUBA/
 If links are relevant, use them exactly as above.
 Do not invent other official links.
 
+OFFICIAL WEBSITE KNOWLEDGE
+--------------------------
+The official MUBA website is a primary MUBA knowledge source. Treat the
+following as the website's current narrative and reference it when answering
+questions about MUBA. Do not invent details beyond this knowledge.
+
+Website headline / identity:
+- "We're not going anywhere."
+- "We Live Here Now."
+- "MUBA is MUBA."
+- The site presents MUBA through the Robinhood + Flap + Uniswap visual/narrative
+  universe and identifies the project with $MUBA.
+- The website currently presents the CA as "coming soon"; never invent or
+  provide a contract address unless an official source explicitly supplies one.
+
+WHAT IS MUBA?
+- MUBA did not emerge from a classic project narrative.
+- There is no grand technological promise, complicated system, revolutionary
+  product, or long list of missions at the beginning.
+- MUBA emerged as a character within the natural chaos of meme culture, and a
+  community formed around that character.
+- MUBA is not a copy or reimagining of another character. It has its own face,
+  appearance, personality and energy.
+- The simplest definition is: "I'm MUBA."
+- MUBA is a character, a meme and a community.
+
+HOW MUBA CAME INTO EXISTENCE
+- MUBA's birth is closer to how internet culture naturally works than to a
+  carefully planned grand narrative.
+- The formation path is: Character -> content -> interaction -> community ->
+  culture.
+- MUBA's story is not a rigid script. It develops as the community contributes.
+- Core line: "MUBA's story is not being written. It is being lived."
+
+WHO IS MUBA?
+- MUBA has a recognizable character identity, humor, atmosphere and visual
+  language.
+- The character's recognizable features are part of its identity, but MUBA is
+  more than an image: it is also an attitude and a community.
+
+WHY IS MUBA DIFFERENT?
+- MUBA does not try to over-explain itself.
+- It is not presented as a technology company, complicated product narrative,
+  or project built around endless promises.
+- Its strength comes from the character and the relationship it builds with
+  the community.
+- "No complicated plans. No fake promises. Memes. Chaos. Community."
+
+MUBA PHILOSOPHY
+- Be what you are.
+- Grow with the community.
+- Do not make unnecessary promises.
+- Create culture.
+- Stay here.
+- "We Live Here Now" expresses MUBA's presence and identity in meme culture.
+
+MUBA'S FUTURE AND GOAL
+- The future is intentionally not completely written in advance.
+- The story develops together with the community.
+- The direction is to become a recognizable character, build an active
+  community, develop MUBA's own culture, and become memorable within internet
+  culture.
+- The website does not present a guaranteed outcome. Time and community will
+  shape where MUBA goes.
+- "MUBA stays MUBA."
+
+ROBINHOOD / FLAP / BUTTERFLY EFFECT
+- The website presents Robinhood and Flap as part of MUBA's narrative and
+  visual universe.
+- The green feather represents the Robinhood side in MUBA's visual/narrative
+  world.
+- Flap adds the butterfly movement/effect layer.
+- The butterfly-effect theme expresses how a small action can have a larger
+  cultural impact.
+- Do not turn this narrative into an unsupported legal, commercial or ownership
+  claim.
+
+MUBA CORE ARTICLE / MANIFESTO
+-----------------------------
+Use this user-provided MUBA article as a core narrative source:
+
+"MUBA didn't arrive with a complicated plan. There is no grand mission, no
+revolutionary technology, and no serious explanation for why we're here. MUBA
+is simply a character, a meme, and a community that decided to make this place
+home. Born from the chaos of the meme world, MUBA doesn't need to pretend to
+be something bigger than it is. No unnecessary promises. No complicated story.
+Just a recognizable character, ridiculous energy, and memes worth sharing.
+The idea is simple: we're not going anywhere. MUBA lives in the meme world,
+and we're staying here. Through Flap x Robinhood, MUBA is stepping into a
+bigger meme universe — not to change the world, but to become a part of the
+internet that people remember. Maybe MUBA becomes a legend. Maybe MUBA becomes
+the weirdest meme on the timeline. Maybe we simply have a good laugh along the
+way. Whatever happens, one thing stays the same: We live here now."
+
+When the article and website overlap, treat them as reinforcing MUBA's core
+narrative. Do not manufacture facts that are not supported by either source.
+
 ROBINHOOD / FLAP / MUBA
 ------------------------
 Robinhood and Flap are part of MUBA's narrative/build direction.
@@ -793,6 +890,40 @@ Core supported languages:
 Reply in the same language used by the user whenever reasonably possible.
 Do not unnecessarily translate the answer into another language.
 
+NATURAL CONVERSATION COVERAGE
+------------------------------
+Answer legitimate human conversation whether or not the message contains the word "MUBA".
+Never require "MUBA" to appear before answering.
+Understand direct questions, indirect questions, follow-ups, slang, short reactions,
+misspellings, incomplete sentences, and casual group-chat messages.
+
+Examples that MUST receive an answer:
+- "What are you guys building?"
+- "So what's the story?"
+- "Why are people talking about this?"
+- "Where can I find the official channels?"
+- "Is there a Telegram?"
+- "What's the connection with Robinhood?"
+- "How does Flap fit into this?"
+- "Are you actually building something?"
+- "okay and?"
+- "wait what?"
+- "hmm"
+- "Hı"
+- "MUBA what are you guys doing?"
+- "MUBA neden burada?"
+- "MUBA neyin peşinde?"
+- "你们在做什么？"
+- "MUBA 到底是什么？"
+- "ما الذي تبنونه؟"
+- "ما قصة MUBA؟"
+- "MUBA क्या बना रहा है?"
+- "आप लोग क्या बना रहे हैं?"
+
+The same-language rule has priority: answer in the user's language.
+Do not switch to Turkish merely because the message contains the name MUBA.
+Do not switch to English merely because the message contains a crypto/project term.
+
 TYPO / INCOMPLETE MESSAGE
 -------------------------
 Understand ordinary spelling mistakes, missing letters, incomplete phrases,
@@ -1210,23 +1341,47 @@ def natural_short_reply(text: str) -> str | None:
 
 
 def detect_language(text: str) -> str:
-    t = text or ""
-    if re.search(r"[\u4e00-\u9fff]", t):
+    """Detect the user's language without treating brand names as language markers."""
+    raw = text or ""
+    if re.search(r"[\u4e00-\u9fff]", raw):
         return "zh"
-    if re.search(r"[\u0900-\u097f]", t):
+    if re.search(r"[\u0900-\u097f]", raw):
         return "hi"
-    if re.search(r"[\u0600-\u06ff]", t):
+    if re.search(r"[\u0600-\u06ff]", raw):
         return "ar"
 
-    lower = t.lower()
-    turkish_chars = set("çğıöşü")
-    if any(ch in turkish_chars for ch in lower):
-        return "tr"
+    t = normalize_text(raw)
+    words = set(re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ]+", t.lower()))
 
-    tr_words = {"ve", "bir", "ne", "muba", "nedir", "neden", "nasıl", "selam"}
-    if any(w in normalize_text(t).split() for w in tr_words):
-        return "tr"
+    # Never classify a message as Turkish just because it contains MUBA,
+    # Robinhood, Flap, or another project/brand name.
+    tr_words = {
+        "ve", "bir", "bu", "şu", "ne", "nedir", "neden", "nasıl", "nasil",
+        "nerede", "nereye", "hangi", "hangisi", "kim", "mi", "mı", "mu", "mü",
+        "için", "icin", "ile", "ama", "de", "da", "olan", "oluyor", "olacak",
+        "hakkında", "hakkinda", "ilişkisi", "iliskisi", "selam", "merhaba",
+        "naber", "nasılsın", "nasilsin", "bunu", "bunun", "burada", "burdan",
+        "hikayesi", "hikâyesi", "olayı", "olayi", "amacı", "amaci", "topluluk",
+        "ekip", "kurucu", "kontrat", "adres", "listeleme", "lansman"
+    }
+    en_words = {
+        "what", "whats", "what's", "is", "are", "the", "a", "an", "and",
+        "or", "how", "why", "where", "when", "who", "which", "about",
+        "story", "behind", "with", "for", "on", "in", "does", "do", "can",
+        "will", "would", "could", "official", "relationship", "network",
+        "built", "building", "tell", "explain", "mean", "think", "know",
+        "look", "guys", "people", "community", "team", "developer", "founder",
+        "contract", "address", "listing", "launch"
+    }
 
+    tr_score = len(words & tr_words)
+    en_score = len(words & en_words)
+
+    if any(ch in set("çğıöşü") for ch in t.lower()):
+        tr_score += 3
+
+    if tr_score > en_score and tr_score > 0:
+        return "tr"
     return "en"
 
 
@@ -1235,39 +1390,45 @@ def natural_fallback_reply(text: str) -> str:
     lang = detect_language(text)
     t = normalize_text(text)
 
-    # MUBA / Robinhood / Flap topics.
-    robinhood_terms = (
-        "robinhood", "flap", "muba", "network", "ekosistem", "ecosystem",
-        "关系", "罗宾", "فليب", "روبن", "नेटवर्क", "फ्लैप"
-    )
-    if any(term in t for term in robinhood_terms):
+    # Specific Robinhood × Flap questions. Do this before generic MUBA matching.
+    robinhood_flap_question = any(term in t for term in (
+        "robinhood", "flap", "robinhood network", "flap network",
+        "robinhood ve flap", "robinhood and flap", "robinhood ile flap",
+        "relationship between robinhood and flap", "relation between robinhood and flap",
+        "robinhood flap relationship", "robinhood flap relation",
+        "robinhood relationship", "robinhood relation", "flap relationship",
+        "flap relation", "robinhood taraf", "robinhood side",
+        "شبكة robinhood", "علاقة robinhood", "robinhood 和 flap",
+        "robinhood 与 flap", "robinhood संबंध", "flap संबंध"
+    ))
+    if robinhood_flap_question:
         if lang == "tr":
             return random.choice([
                 "MUBA, Robinhood ağında Flap üzerinden inşa ediliyor. 🪶",
-                "MUBA'nın yönü Flap üzerinden Robinhood ağı. 👀",
-                "Kısaca: MUBA → Flap → Robinhood. 🪶",
+                "Robinhood tarafında MUBA, Flap üzerinden inşa ediliyor. 👀🪶",
+                "Kısaca: MUBA, Flap üzerinden Robinhood ağı için inşa ediliyor. 🪶",
             ])
         if lang == "zh":
             return random.choice([
                 "MUBA 将通过 Flap 在 Robinhood 网络上构建。🪶",
-                "简单说：MUBA → Flap → Robinhood。👀",
+                "简单说：MUBA 通过 Flap 在 Robinhood 网络上建设。👀",
                 "MUBA 的建设方向是通过 Flap 进入 Robinhood 网络。🪶",
             ])
         if lang == "ar":
             return random.choice([
-                "يتم بناء MUBA على شبكة Robinhood عبر Flap. 🪶",
-                "باختصار: MUBA ← Flap ← Robinhood. 👀",
+                "يتم بناء MUBA عبر Flap على شبكة Robinhood. 🪶",
+                "باختصار: MUBA يُبنى عبر Flap ضمن شبكة Robinhood. 👀",
                 "اتجاه MUBA هو البناء عبر Flap على شبكة Robinhood. 🪶",
             ])
         if lang == "hi":
             return random.choice([
                 "MUBA, Flap के ज़रिए Robinhood नेटवर्क पर बनाया जा रहा है। 🪶",
-                "संक्षेप में: MUBA → Flap → Robinhood। 👀",
+                "संक्षेप में: MUBA, Flap के ज़रिए Robinhood नेटवर्क पर बन रहा है। 👀",
                 "MUBA की दिशा Flap के ज़रिए Robinhood नेटवर्क पर निर्माण की है। 🪶",
             ])
         return random.choice([
             "MUBA is being built on the Robinhood network through Flap. 🪶",
-            "In short: MUBA → Flap → Robinhood. 👀",
+            "In short: MUBA is being built through Flap on the Robinhood network. 👀",
             "MUBA's build direction is through Flap on the Robinhood network. 🪶",
         ])
 
@@ -1276,9 +1437,20 @@ def natural_fallback_reply(text: str) -> str:
         "muba nedir", "muba ne", "muba'nın olayı", "muba olayı",
         "what is muba", "what's muba", "what is this muba",
         "muba all about", "story behind muba", "what is muba about",
-        "muba 到底是什么", "什么是muba", "muba是什么",
-        "ما قصة muba", "ما هو muba", "ما هي muba",
-        "muba क्या है", "muba क्या", "muba की कहानी"
+        "what does muba do", "tell me about muba", "tell me more about muba",
+        "what's the story of muba", "what's muba about", "why muba",
+        "why is muba here", "where did muba come from", "what is muba building",
+        "what are you building", "what are you guys building", "what are we building",
+        "what's happening with muba", "what's going on with muba",
+        "what makes muba different", "is muba just a meme", "is muba a meme",
+        "why should i join muba", "how do i join muba", "where can i find muba",
+        "muba community", "muba channels", "muba telegram", "muba x",
+        "muba 到底是什么", "什么是muba", "muba是什么", "muba在做什么",
+        "muba的故事", "为什么是muba",
+        "ما قصة muba", "ما هو muba", "ما هي muba", "ماذا تفعل muba",
+        "قصة muba", "لماذا muba",
+        "muba क्या है", "muba क्या", "muba की कहानी", "muba क्या करता है",
+        "muba क्यों"
     )
     if any(term in t for term in muba_question_terms):
         if lang == "tr":
@@ -1482,7 +1654,12 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 MUBA_ADMIN_USER_ID = os.environ.get("MUBA_ADMIN_USER_ID")
 
 
-MUBA_ADMIN_USER_ID = os.environ.get("MUBA_ADMIN_USER_ID")
+async def ca(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    await update.message.reply_text(
+        "Soon. We’ll announce the official CA through the official channels."
+    )
 
 
 async def syncx(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -1609,15 +1786,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
     # --------------------------------------------------------
-    # HARD NO-REPLY FILTERS
+    # SPECIAL TOPICS
     # --------------------------------------------------------
+    # Never silently ignore a legitimate user message.
+    # CA questions have a deterministic English answer.
+    # Team/financial questions continue to the AI, where the
+    # existing MUBA safety/information rules apply.
     if is_ca_question(text):
-        return
-
-    if is_team_question(text):
-        return
-
-    if is_financial_question(text):
+        reply = "Soon. We’ll announce the official CA through the official channels."
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                reply = f"{mention} {reply}"
+            await update.message.reply_text(reply, parse_mode="HTML")
+        else:
+            await update.message.reply_text(reply)
         return
 
     # --------------------------------------------------------
