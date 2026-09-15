@@ -26,15 +26,13 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # ============================================================
-# MUBA MEMORY / X CONFIGURATION
+# MUBA CONFIGURATION
 # ============================================================
-# Keep all secrets in Render environment variables.
-# X_BEARER_TOKEN is optional: the existing Telegram bot still works
-# when it is not configured.
-X_BEARER_TOKEN = os.environ.get("X_BEARER_TOKEN")
-X_USERNAME = os.environ.get("X_USERNAME", "MUBA_RH")
+# X-memory integration is intentionally disabled in this stable build.
+# The Telegram bot does not depend on X API access, payment status, or
+# an external X request for normal operation.
+
 MUBA_MEMORY_DB = os.environ.get("MUBA_MEMORY_DB", "muba_memory.db")
-X_SYNC_INTERVAL_SECONDS = int(os.environ.get("X_SYNC_INTERVAL_SECONDS", str(6 * 60 * 60)))
 
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is missing")
@@ -48,272 +46,26 @@ GREETING_THRESHOLD = 3
 GREETING_WINDOW_SECONDS = 6 * 60 * 60
 MAX_HISTORY = 12
 
-# OpenAI request pacing: keep natural conversation responsive without
-# flooding the model when a busy Telegram group sends many messages at once.
-AI_REQUEST_MIN_INTERVAL_SECONDS = float(os.environ.get("AI_REQUEST_MIN_INTERVAL_SECONDS", "3.0"))
-AI_MAX_RETRIES = int(os.environ.get("AI_MAX_RETRIES", "2"))
+# Keep requests serialized. No automatic retry loop is used for 429s.
+AI_REQUEST_MIN_INTERVAL_SECONDS = float(
+    os.environ.get("AI_REQUEST_MIN_INTERVAL_SECONDS", "2.0")
+)
 _ai_request_lock = asyncio.Lock()
 _last_ai_request_time = 0.0
 
 conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
-
-# group_id -> greeting_type -> {user_id: timestamp}
 greeting_counters = defaultdict(lambda: defaultdict(dict))
 
 
-
-# ============================================================
-# MUBA MEMORY / X POST KNOWLEDGE BASE
-# ============================================================
-# This is retrieval memory, not model retraining.
-# Existing MUBA rules remain authoritative; X posts are supporting
-# historical context only.
-# ============================================================
-
-_memory_lock = asyncio.Lock()
-_last_x_sync = 0.0
-
-
-def init_muba_memory():
-    conn = sqlite3.connect(MUBA_MEMORY_DB)
-    try:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS x_posts (
-                id TEXT PRIMARY KEY,
-                created_at TEXT,
-                text TEXT NOT NULL,
-                url TEXT,
-                raw_json TEXT
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS memory_meta (
-                key TEXT PRIMARY KEY,
-                value TEXT
-            )
-        """)
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def _x_api_get(url: str):
-    if not X_BEARER_TOKEN:
-        return None
-
-    req = Request(
-        url,
-        headers={
-            "Authorization": f"Bearer {X_BEARER_TOKEN}",
-            "User-Agent": "MUBA-Telegram-AI-Bot/1.0",
-        },
-        method="GET",
-    )
-    with urlopen(req, timeout=20) as response:
-        return json.loads(response.read().decode("utf-8"))
-
-
-def _sync_x_memory_sync():
-    """
-    Fetch public posts from the configured MUBA X account and store them.
-    The function intentionally stores the post text and metadata only.
-    """
-    if not X_BEARER_TOKEN:
-        return 0
-
-    username = X_USERNAME.lstrip("@").strip()
-    if not username:
-        return 0
-
-    user_url = (
-        "https://api.x.com/2/users/by/username/"
-        + quote(username, safe="")
-        + "?user.fields=id,username,name"
-    )
-    user_data = _x_api_get(user_url)
-    if not user_data or not user_data.get("data"):
-        return 0
-
-    user_id = user_data["data"]["id"]
-
-    posts_url = (
-        f"https://api.x.com/2/users/{quote(str(user_id), safe='')}/tweets"
-        "?max_results=100"
-        "&exclude=replies,retweets"
-        "&tweet.fields=created_at"
-    )
-    posts_data = _x_api_get(posts_url)
-    if not posts_data:
-        return 0
-
-    posts = posts_data.get("data", [])
-    conn = sqlite3.connect(MUBA_MEMORY_DB)
-    inserted = 0
-    try:
-        for post in posts:
-            post_id = str(post.get("id", "")).strip()
-            post_text = (post.get("text") or "").strip()
-            if not post_id or not post_text:
-                continue
-
-            url = f"https://x.com/{username}/status/{post_id}"
-
-            before = conn.total_changes
-            conn.execute(
-                """
-                INSERT OR IGNORE INTO x_posts
-                (id, created_at, text, url, raw_json)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    post_id,
-                    post.get("created_at"),
-                    post_text,
-                    url,
-                    json.dumps(post, ensure_ascii=False),
-                ),
-            )
-            if conn.total_changes > before:
-                inserted += 1
-
-        conn.execute(
-            """
-            INSERT INTO memory_meta(key, value)
-            VALUES('last_x_sync', ?)
-            ON CONFLICT(key) DO UPDATE SET value=excluded.value
-            """,
-            (str(time.time()),),
-        )
-        conn.commit()
-    finally:
-        conn.close()
-
-    return inserted
-
-
 async def sync_x_memory(force: bool = False):
-    """
-    Refresh MUBA's X memory when configured.
-    Uses a 6-hour default interval so every Telegram message does not
-    trigger a new X API request.
-    """
-    global _last_x_sync
-
-    if not X_BEARER_TOKEN:
-        return 0
-
-    now = time.time()
-    if not force and now - _last_x_sync < X_SYNC_INTERVAL_SECONDS:
-        return 0
-
-    async with _memory_lock:
-        now = time.time()
-        if not force and now - _last_x_sync < X_SYNC_INTERVAL_SECONDS:
-            return 0
-
-        try:
-            inserted = await asyncio.to_thread(_sync_x_memory_sync)
-            _last_x_sync = time.time()
-            print(f"MUBA X memory sync complete. New posts: {inserted}")
-            return inserted
-        except Exception as exc:
-            # X memory is an enhancement. A temporary X/API failure must
-            # never break the existing Telegram bot.
-            print(f"MUBA X memory sync skipped: {type(exc).__name__}: {exc}")
-            _last_x_sync = time.time()
-            return 0
-
-
-def _tokenize_memory_query(text: str):
-    words = re.findall(r"[A-Za-z0-9_$#@ğüşöçıİĞÜŞÖÇ]+", (text or "").lower())
-    stop = {
-        "what", "is", "the", "a", "an", "and", "or", "of", "to", "for",
-        "how", "why", "when", "where", "who", "can", "does", "do",
-        "ne", "nedir", "nasıl", "neden", "kim", "ne", "bir", "ve", "ile",
-        "mi", "mı", "mu", "mü", "da", "de",
-    }
-    return [w for w in words if len(w) >= 3 and w not in stop]
-
-
-def retrieve_muba_memory(query: str, limit: int = 5) -> str:
-    """
-    Lightweight local retrieval. No external vector database is required.
-    Canonical MUBA_PROMPT remains higher priority than retrieved posts.
-    """
-    init_muba_memory()
-
-    tokens = _tokenize_memory_query(query)
-    conn = sqlite3.connect(MUBA_MEMORY_DB)
-    try:
-        rows = conn.execute(
-            "SELECT id, created_at, text, url FROM x_posts "
-            "ORDER BY COALESCE(created_at, '') DESC LIMIT 250"
-        ).fetchall()
-    finally:
-        conn.close()
-
-    if not rows:
-        return ""
-
-    scored = []
-    q_lower = (query or "").lower()
-
-    for row in rows:
-        post_id, created_at, post_text, url = row
-        lower = post_text.lower()
-        score = sum(lower.count(token) for token in tokens)
-
-        # Exact phrase gets a useful bonus.
-        if q_lower and len(q_lower) >= 8 and q_lower in lower:
-            score += 8
-
-        if score > 0:
-            scored.append((score, created_at or "", post_id, post_text, url))
-
-    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
-
-    selected = scored[:limit]
-    if not selected:
-        return ""
-
-    blocks = []
-    for _, created_at, post_id, post_text, url in selected:
-        date_text = created_at or "unknown date"
-        blocks.append(
-            f"- [{date_text}] {post_text}\n"
-            f"  Source: {url}\n"
-            f"  Post ID: {post_id}"
-        )
-
-    return (
-        "RELEVANT MUBA X MEMORY\n"
-        "----------------------\n"
-        "These are previous MUBA X posts retrieved as historical context.\n"
-        "They are NOT higher priority than the core MUBA rules.\n"
-        "Do not invent facts from them and do not treat old statements as "
-        "current facts unless the current prompt confirms them.\n\n"
-        + "\n".join(blocks)
-    )
+    """Compatibility no-op: X memory is disabled in this stable build."""
+    return 0
 
 
 def build_ai_instructions_with_memory(text: str) -> str:
-    memory = retrieve_muba_memory(text)
-    if not memory:
-        return MUBA_PROMPT
+    """Return the canonical MUBA prompt without external X memory."""
+    return MUBA_PROMPT
 
-    return (
-        MUBA_PROMPT
-        + "\n\n"
-        + "MUBA MEMORY INTEGRATION\n"
-        + "-----------------------\n"
-        + "Use the retrieved X history only when it is relevant to the user's "
-          "message. Preserve MUBA's current identity, safety rules and "
-          "no-fabrication rules above all historical content.\n\n"
-        + memory
-    )
-
-
-init_muba_memory()
 
 # ============================================================
 # MUBA KNOWLEDGE / BEHAVIOR PROMPT
@@ -1031,15 +783,14 @@ These messages should receive a natural MUBA response.
 
 LANGUAGE
 --------
-Reply in the language used by the user:
-- Turkish -> Turkish
-- English -> English
-- German -> German
-- Arabic -> Arabic
-- Chinese -> Chinese
-- Hindi -> Hindi
-- Other languages -> answer in that language when reasonably possible.
+Core supported languages:
+- Turkish
+- English
+- Chinese
+- Arabic
+- Hindi
 
+Reply in the same language used by the user whenever reasonably possible.
 Do not unnecessarily translate the answer into another language.
 
 TYPO / INCOMPLETE MESSAGE
@@ -1379,63 +1130,48 @@ def is_casual_greeting(text: str) -> bool:
 
 
 def natural_short_reply(text: str) -> str | None:
-    """
-    Handle very short, ordinary human chat without spending an AI request.
-    This keeps simple messages such as 'Hı' responsive during API rate limits.
-    """
+    """Answer ordinary short human messages locally without using AI."""
     t = normalize_text(text)
-
-    if not t or len(t) > 18:
+    if not t or len(t) > 28:
         return None
 
     tr = {
         "hı", "hıı", "hımm", "hmm", "hmmm", "hee", "he", "ha", "ha?",
-        "ne", "ne?", "nasıl", "ee", "eee", "aynen", "öyle mi", "ciddi mi",
-        "gerçekten", "hadi", "bakalım", "tamam", "peki", "iyi", "güzel",
-        "lol", "haha", "hahaha"
+        "ne", "ne?", "ee", "eee", "aynen", "öyle mi", "ciddi mi",
+        "gerçekten", "hadi", "bakarız", "tamam", "peki", "iyi", "güzel",
+        "selam", "selamlar", "naber", "naber?", "merhaba", "sa", "sa.",
+        "haha", "hahaha", "lol"
     }
     if t in tr:
         return random.choice([
             "Hı? 👀 MUBA burada.",
             "Hıı? 👀 Ne oldu?",
             "MUBA kulak kesildi. 🪶",
-            "Hı? MUBA dinliyor. 👀",
             "Devam et, MUBA burada. 🪶",
             "MUBA da merak etti şimdi. 😂🪶",
+            "Selam. MUBA burada. 👀🪶",
         ])
 
     en = {
         "hmm", "hmmm", "huh", "huh?", "what", "what?", "wait", "wait?",
-        "yo", "hey", "sup", "lol", "lmao", "haha", "hahaha", "okay",
-        "ok", "really", "really?", "seriously", "seriously?", "and?",
-        "then?", "nice", "cool"
+        "yo", "hey", "sup", "lol", "lmao", "haha", "hahaha", "okay", "ok",
+        "really", "really?", "seriously", "seriously?", "and?", "then?",
+        "nice", "cool", "hi", "hello", "hey guys", "yo guys", "morning",
+        "thanks", "thank you"
     }
     if t in en:
         return random.choice([
             "Hmm? 👀 MUBA is listening.",
-            "Wait... MUBA is here. 🪶",
+            "MUBA is here. 🪶",
             "Go on. MUBA's listening. 👀",
-            "Huh? 😂 MUBA heard you.",
-            "MUBA is paying attention now. 🪶",
+            "MUBA heard you. 😂🪶",
             "Okay... now MUBA is curious. 👀",
-        ])
-
-    de = {
-        "hmm", "hmmm", "hä", "hä?", "was", "was?", "warte", "warte?",
-        "hey", "hallo", "ok", "okay", "wirklich", "wirklich?", "und?",
-        "dann?", "haha", "lol"
-    }
-    if t in de:
-        return random.choice([
-            "Hmm? 👀 MUBA hört zu.",
-            "Warte... MUBA ist da. 🪶",
-            "Weiter. MUBA hört zu. 👀",
-            "Was? 😂 MUBA hat dich gehört.",
+            "Hey. MUBA's here. 🪶",
         ])
 
     ar = {
         "همم", "هم", "ماذا", "ماذا؟", "حقا", "حقًا", "حقا؟", "حقًا؟",
-        "مرحبا", "هاي", "ماذا يحدث", "ثم؟", "حسنا", "حسنًا", "هه", "هههه"
+        "مرحبا", "هاي", "ثم؟", "حسنا", "حسنًا", "هه", "هههه"
     }
     if t in ar:
         return random.choice([
@@ -1459,8 +1195,8 @@ def natural_short_reply(text: str) -> str | None:
         ])
 
     hi = {
-        "हम्म", "हम्म?", "क्या", "क्या?", "अच्छा", "अच्छा?", "सच",
-        "सच?", "हाय", "हेलो", "ठीक", "ठीक है", "और?", "फिर?", "हाहा"
+        "हम्म", "हम्म?", "क्या", "क्या?", "अच्छा", "अच्छा?", "सच", "सच?",
+        "हाय", "हेलो", "ठीक", "ठीक है", "और?", "फिर?", "हाहा", "नमस्ते"
     }
     if t in hi:
         return random.choice([
@@ -1473,8 +1209,149 @@ def natural_short_reply(text: str) -> str | None:
     return None
 
 
+def detect_language(text: str) -> str:
+    t = text or ""
+    if re.search(r"[\u4e00-\u9fff]", t):
+        return "zh"
+    if re.search(r"[\u0900-\u097f]", t):
+        return "hi"
+    if re.search(r"[\u0600-\u06ff]", t):
+        return "ar"
+
+    lower = t.lower()
+    turkish_chars = set("çğıöşü")
+    if any(ch in turkish_chars for ch in lower):
+        return "tr"
+
+    tr_words = {"ve", "bir", "ne", "muba", "nedir", "neden", "nasıl", "selam"}
+    if any(w in normalize_text(t).split() for w in tr_words):
+        return "tr"
+
+    return "en"
+
+
+def natural_fallback_reply(text: str) -> str:
+    """Reliable five-language fallback used when AI is unavailable."""
+    lang = detect_language(text)
+    t = normalize_text(text)
+
+    # MUBA / Robinhood / Flap topics.
+    robinhood_terms = (
+        "robinhood", "flap", "muba", "network", "ekosistem", "ecosystem",
+        "关系", "罗宾", "فليب", "روبن", "नेटवर्क", "फ्लैप"
+    )
+    if any(term in t for term in robinhood_terms):
+        if lang == "tr":
+            return random.choice([
+                "MUBA, Robinhood ağında Flap üzerinden inşa ediliyor. 🪶",
+                "MUBA'nın yönü Flap üzerinden Robinhood ağı. 👀",
+                "Kısaca: MUBA → Flap → Robinhood. 🪶",
+            ])
+        if lang == "zh":
+            return random.choice([
+                "MUBA 将通过 Flap 在 Robinhood 网络上构建。🪶",
+                "简单说：MUBA → Flap → Robinhood。👀",
+                "MUBA 的建设方向是通过 Flap 进入 Robinhood 网络。🪶",
+            ])
+        if lang == "ar":
+            return random.choice([
+                "يتم بناء MUBA على شبكة Robinhood عبر Flap. 🪶",
+                "باختصار: MUBA ← Flap ← Robinhood. 👀",
+                "اتجاه MUBA هو البناء عبر Flap على شبكة Robinhood. 🪶",
+            ])
+        if lang == "hi":
+            return random.choice([
+                "MUBA, Flap के ज़रिए Robinhood नेटवर्क पर बनाया जा रहा है। 🪶",
+                "संक्षेप में: MUBA → Flap → Robinhood। 👀",
+                "MUBA की दिशा Flap के ज़रिए Robinhood नेटवर्क पर निर्माण की है। 🪶",
+            ])
+        return random.choice([
+            "MUBA is being built on the Robinhood network through Flap. 🪶",
+            "In short: MUBA → Flap → Robinhood. 👀",
+            "MUBA's build direction is through Flap on the Robinhood network. 🪶",
+        ])
+
+    # Basic MUBA questions.
+    muba_question_terms = (
+        "muba nedir", "muba ne", "muba'nın olayı", "muba olayı",
+        "what is muba", "what's muba", "what is this muba",
+        "muba all about", "story behind muba", "what is muba about",
+        "muba 到底是什么", "什么是muba", "muba是什么",
+        "ما قصة muba", "ما هو muba", "ما هي muba",
+        "muba क्या है", "muba क्या", "muba की कहानी"
+    )
+    if any(term in t for term in muba_question_terms):
+        if lang == "tr":
+            return random.choice([
+                "MUBA bir karakter, meme kültürü ve topluluk. Hikâyesi yazılmıyor; toplulukla birlikte yaşanıyor. 🪶",
+                "MUBA'nın olayı karakter + meme + topluluk. Gerisi hikâyenin içinde şekilleniyor. 👀",
+                "Kısaca MUBA: bir meme karakteri, kendi kültürü ve onu yaşayan bir topluluk. 🪶",
+            ])
+        if lang == "zh":
+            return random.choice([
+                "MUBA 是一个角色、meme 文化和社区。故事不是被写出来的，而是和社区一起被经历的。🪶",
+                "简单说，MUBA 是一个 meme 角色、自己的文化，以及一个共同参与的社区。👀",
+                "MUBA 不只是一个 meme；角色、文化和社区一起构成了它。🪶",
+            ])
+        if lang == "ar":
+            return random.choice([
+                "MUBA شخصية وثقافة ميم ومجتمع. قصته لا تُكتب فقط، بل تُعاش مع المجتمع. 🪶",
+                "باختصار، MUBA هو شخصية ميم وثقافة ومجتمع حولها. 👀",
+                "MUBA ليس مجرد ميم؛ الشخصية والثقافة والمجتمع جزء من القصة. 🪶",
+            ])
+        if lang == "hi":
+            return random.choice([
+                "MUBA एक कैरेक्टर, meme culture और community है। इसकी कहानी लिखी नहीं जाती, community के साथ जी जाती है। 🪶",
+                "संक्षेप में, MUBA एक meme character, अपनी culture और एक community है। 👀",
+                "MUBA सिर्फ एक meme नहीं है; character, culture और community मिलकर इसकी पहचान बनाते हैं। 🪶",
+            ])
+        return random.choice([
+            "MUBA is a character, meme culture and community. The story isn't just written — it's lived with the community. 🪶",
+            "In short, MUBA is a meme character, its own culture, and a community building around it. 👀",
+            "MUBA isn't just a meme; the character, culture and community are all part of the story. 🪶",
+        ])
+
+    # Generic conversational fallback. Never leave ordinary messages silent.
+    if lang == "tr":
+        return random.choice([
+            "MUBA burada. 👀 Devam et, dinliyorum.",
+            "MUBA kulak kesildi. 🪶 Ne düşünüyorsun?",
+            "Buradayız. 😄 Anlat bakalım.",
+        ])
+    if lang == "zh":
+        return random.choice([
+            "MUBA 在这里。👀 继续说，我在听。",
+            "MUBA 正在听。🪶 说说看。",
+            "我们就在这里。😄 继续吧。",
+        ])
+    if lang == "ar":
+        return random.choice([
+            "موبا هنا. 👀 تابع، أنا أستمع.",
+            "موبا يستمع. 🪶 قل المزيد.",
+            "نحن هنا. 😄 تابع.",
+        ])
+    if lang == "hi":
+        return random.choice([
+            "MUBA यहाँ है।👀 बोलो, मैं सुन रहा हूँ।",
+            "MUBA सुन रहा है।🪶 आगे बताओ।",
+            "हम यहीं हैं।😄 आगे बोलो।",
+        ])
+    return random.choice([
+        "MUBA is here. 👀 Go on, I'm listening.",
+        "MUBA's listening. 🪶 Tell me more.",
+        "We're here. 😄 Keep going.",
+    ])
+
+
 def language_for_launch(text: str) -> str:
     t = normalize_text(text)
+
+    if re.search(r"[\u4e00-\u9fff]", t):
+        return "zh"
+    if re.search(r"[\u0900-\u097f]", t):
+        return "hi"
+    if re.search(r"[\u0600-\u06ff]", t):
+        return "ar"
 
     turkish_markers = [
         "ne zaman", "ne zaman cikacak", "ne zaman listelenecek",
@@ -1482,16 +1359,6 @@ def language_for_launch(text: str) -> str:
     ]
     if any(x in t for x in turkish_markers):
         return "tr"
-
-    german_markers = ["wann", "start", "gelistet", "listing", "launch"]
-    if any(x in t for x in german_markers) and any(
-        x in t for x in ["wann", "wird", "gelistet"]
-    ):
-        return "de"
-
-    arabic_markers = ["متى", "إطلاق", "ادراج", "إدراج"]
-    if any(x in t for x in arabic_markers):
-        return "ar"
 
     return "en"
 
@@ -1501,10 +1368,12 @@ def launch_reply(text: str) -> str:
 
     if lang == "tr":
         return "Yakında. Resmi tarih açıklandığında resmi kanallardan duyuracağız."
-    if lang == "de":
-        return "Bald. Sobald das offizielle Datum bekannt ist, geben wir es über die offiziellen Kanäle bekannt."
     if lang == "ar":
         return "قريبًا. سنعلن عن الموعد الرسمي عبر القنوات الرسمية عند تأكيده."
+    if lang == "zh":
+        return "很快。官方日期确认后，我们会通过官方渠道公布。"
+    if lang == "hi":
+        return "जल्द। आधिकारिक तारीख की पुष्टि होने पर हम आधिकारिक चैनलों से घोषणा करेंगे।"
     return "Soon. We’ll announce the official date through the official channels."
 
 
@@ -1613,26 +1482,14 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 MUBA_ADMIN_USER_ID = os.environ.get("MUBA_ADMIN_USER_ID")
 
 
+MUBA_ADMIN_USER_ID = os.environ.get("MUBA_ADMIN_USER_ID")
+
+
 async def syncx(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.effective_user or not update.message:
+    if not update.message:
         return
-
-    if not MUBA_ADMIN_USER_ID:
-        await update.message.reply_text("X memory sync is not configured.")
-        return
-
-    if str(update.effective_user.id) != str(MUBA_ADMIN_USER_ID):
-        return
-
-    if not X_BEARER_TOKEN:
-        await update.message.reply_text(
-            "X memory is not connected yet. Set X_BEARER_TOKEN on Render."
-        )
-        return
-
-    inserted = await sync_x_memory(force=True)
     await update.message.reply_text(
-        f"MUBA X memory synced. New posts added: {inserted}"
+        "X memory is disabled in this stable build. MUBA Telegram works independently."
     )
 
 
@@ -1688,40 +1545,27 @@ def build_ai_input(key: str, text: str):
 # ============================================================
 
 async def create_ai_response(instructions: str, input_messages):
-    """Create an AI response without allowing bursts to exhaust the TPM limit."""
+    """Create one AI response. Never loop on rate-limit errors."""
     global _last_ai_request_time
 
     async with _ai_request_lock:
-        for attempt in range(AI_MAX_RETRIES + 1):
-            elapsed = time.monotonic() - _last_ai_request_time
-            wait_for = AI_REQUEST_MIN_INTERVAL_SECONDS - elapsed
-            if wait_for > 0:
-                await asyncio.sleep(wait_for)
+        elapsed = time.monotonic() - _last_ai_request_time
+        wait_for = AI_REQUEST_MIN_INTERVAL_SECONDS - elapsed
+        if wait_for > 0:
+            await asyncio.sleep(wait_for)
 
-            try:
-                response = await client.responses.create(
-                    model="gpt-5.6-luna",
-                    instructions=instructions,
-                    input=input_messages,
-                    max_output_tokens=180,
-                )
-                _last_ai_request_time = time.monotonic()
-                return response
-
-            except Exception as exc:
-                _last_ai_request_time = time.monotonic()
-                status_code = getattr(exc, "status_code", None)
-                error_text = str(exc).lower()
-                is_rate_limit = status_code == 429 or "rate limit" in error_text or "rate_limit" in error_text
-
-                if not is_rate_limit or attempt >= AI_MAX_RETRIES:
-                    raise
-
-                # Give the TPM window time to recover before trying again.
-                # Later attempts wait longer to avoid another immediate 429.
-                retry_delay = 5.0 * (attempt + 1)
-                print(f"MUBA AI rate limit hit. Retrying in {retry_delay:.0f}s.")
-                await asyncio.sleep(retry_delay)
+        try:
+            response = await client.responses.create(
+                model="gpt-5.6-luna",
+                instructions=instructions,
+                input=input_messages,
+                max_output_tokens=180,
+            )
+            _last_ai_request_time = time.monotonic()
+            return response
+        except Exception:
+            _last_ai_request_time = time.monotonic()
+            raise
 
 
 # ============================================================
@@ -1834,10 +1678,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         input_messages = build_ai_input(key, text)
 
-        # Refresh X memory in the background path before generating a response.
-        # If X is unavailable, the existing bot continues normally.
-        await sync_x_memory()
-
         response = await create_ai_response(
             instructions=build_ai_instructions_with_memory(text),
             input_messages=input_messages,
@@ -1846,7 +1686,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         answer = (response.output_text or "").strip()
 
         if should_ignore_ai_response(answer):
-            return
+            fallback = natural_fallback_reply(text)
+            add_history(key, "user", text)
+            add_history(key, "assistant", fallback)
+            answer = fallback
 
         add_history(key, "user", text)
         add_history(key, "assistant", answer)
@@ -1867,7 +1710,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"MUBA AI error: {type(exc).__name__}: {exc}")
 
         # Do not expose internal API errors to users.
-        return
+        # Keep ordinary conversation responsive even if OpenAI is unavailable.
+        fallback = natural_fallback_reply(text)
+        add_history(key, "user", text)
+        add_history(key, "assistant", fallback)
+
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                fallback = f"{mention} {fallback}"
+            await update.message.reply_text(fallback, parse_mode="HTML")
+        else:
+            await update.message.reply_text(fallback)
 
 
 # ============================================================
