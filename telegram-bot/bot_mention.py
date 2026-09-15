@@ -7,6 +7,29 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, ContextTypes, filters
 from openai import OpenAI
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
+
+PORT = int(os.getenv("PORT", "10000"))
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"MUBA is live.\\n")
+
+    def log_message(self, format, *args):
+        return
+
+def start_health_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    server.serve_forever()
+
+def run_health_server():
+    Thread(target=start_health_server, daemon=True).start()
+
+
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
@@ -1125,6 +1148,8 @@ MUBA RESPONSE:
 
 
 def main():
+    run_health_server()
+
     application = (
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
