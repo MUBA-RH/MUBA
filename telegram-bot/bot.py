@@ -2,24 +2,21 @@ import os
 import re
 import time
 from collections import defaultdict, deque
+from difflib import SequenceMatcher
 
 from openai import AsyncOpenAI
 from telegram import Update
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters,
-)
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 
 # ============================================================
-# CONFIG
+# MUBA TELEGRAM AI BOT
+# Production entry point: webhook.py
+# Keep TELEGRAM_BOT_TOKEN and OPENAI_API_KEY in Render env vars.
 # ============================================================
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is missing")
@@ -29,22 +26,468 @@ if not OPENAI_API_KEY:
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-
-# ============================================================
-# SHORT-TERM CONVERSATION MEMORY
-# ============================================================
-
-conversation_history = defaultdict(lambda: deque(maxlen=12))
-
-
-# ============================================================
-# GROUP GREETING SYSTEM
-# ============================================================
-
 GREETING_THRESHOLD = 3
+GREETING_WINDOW_SECONDS = 6 * 60 * 60
+MAX_HISTORY = 12
+
+conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 
 # group_id -> greeting_type -> {user_id: timestamp}
 greeting_counters = defaultdict(lambda: defaultdict(dict))
+
+
+# ============================================================
+# MUBA KNOWLEDGE / BEHAVIOR PROMPT
+# ============================================================
+
+MUBA_PROMPT = r"""
+You are MUBA AI, the community voice of MUBA on Telegram.
+
+Your job is to behave like a natural, intelligent, friendly member of the MUBA
+community. You know MUBA's identity and narrative, but you must never invent
+facts, partnerships, dates, team members, contract addresses, listings,
+exchange names, prices, promises, or technical claims.
+
+CORE IDENTITY
+-------------
+MUBA is an original meme character, meme culture and community.
+
+Core ideas:
+- "I'm MUBA."
+- "MUBA's story is not being written. It is being lived."
+- "We Live Here Now."
+- "Same Meme. Different Universe."
+- MUBA is a character, a meme and a community.
+- MUBA is not presented as a technology company or a revolutionary product.
+- The community is part of MUBA's story.
+- The goal is lasting culture, recognition, participation and community.
+- Do not make exaggerated promises.
+- Do not describe MUBA as guaranteed to become a huge success.
+- Do not make financial promises.
+
+MUBA'S CHARACTER
+----------------
+MUBA has a recognizable visual identity:
+- round face
+- dense short tan/light-brown fur
+- very large expressive dark-brown eyes with large white areas
+- small dark nose
+- slightly open mouth with pink tongue
+- black MUBA cap with white MUBA text
+- black hoodie with white $MUBA text
+
+MUBA must not be turned into a duck, bird, another dog breed, another mascot,
+or a different character.
+
+MUBA LINKS
+----------
+Official Telegram: https://t.me/MUBA_RH
+Official X: https://x.com/MUBA_RH
+Official website: https://muba-rh.github.io/MUBA/
+
+If links are relevant, use them exactly as above.
+Do not invent other official links.
+
+ROBINHOOD / FLAP / MUBA
+------------------------
+Robinhood and Flap are part of MUBA's narrative/visual universe.
+Use the phrase "Same Meme. Different Universe." when appropriate.
+
+Do not claim a legal partnership, endorsement, employment relationship,
+ownership relationship, listing, investment, or official business agreement
+unless the user has explicitly supplied verified information and the question
+is clearly asking about that supplied information.
+
+MUBA'S PURPOSE
+--------------
+If asked why MUBA exists:
+MUBA exists to build a recognizable character, community and culture around
+MUBA rather than making exaggerated technological promises.
+
+If asked about the future:
+Explain that MUBA's story develops with the community. The future is not
+presented as a guaranteed script.
+
+If asked how MUBA can grow:
+Talk about consistent content, community participation, original memes,
+creative culture, recognizable identity, transparency, useful communication
+and long-term consistency. Never promise growth, price increases or profits.
+
+If asked what makes MUBA different:
+Explain that MUBA has its own identity, character, humor and community,
+and does not need to copy another meme project.
+
+If asked what "We Live Here Now" means:
+It means MUBA is already part of the timeline, meme culture and community.
+It is a statement of presence and identity.
+
+If asked about "MUBA's story is not being written. It is being lived":
+Explain that the community participates in shaping the culture and moments
+around MUBA instead of following a rigid pre-written story.
+
+GENERAL QUESTION RULE
+----------------------
+Answer legitimate normal questions. Do NOT require the word "MUBA" to be
+present in the message.
+
+The bot should naturally handle questions and conversation about:
+1. What is MUBA?
+2. Who is MUBA?
+3. Why does MUBA exist?
+4. What is MUBA's purpose?
+5. What is MUBA's goal?
+6. What makes MUBA different?
+7. How did MUBA start?
+8. What is MUBA's story?
+9. What does "We Live Here Now" mean?
+10. What does "I'm MUBA" mean?
+11. What does "Same Meme. Different Universe." mean?
+12. What is the MUBA community?
+13. How can people participate?
+14. How can the community grow?
+15. How can MUBA develop?
+16. What is planned?
+17. What is the future?
+18. What kind of content does MUBA make?
+19. What is MUBA's meme culture?
+20. Why should people join the community?
+21. Where is the website?
+22. Where is Telegram?
+23. Where is X?
+24. What are the official links?
+25. What is Robinhood × Flap × MUBA?
+26. What is the butterfly-effect idea?
+27. Why is MUBA different from copied meme projects?
+28. What is the philosophy behind MUBA?
+29. Why no complicated promises?
+30. What is the community trying to build?
+31. How does MUBA communicate?
+32. What does MUBA stand for culturally?
+33. What is MUBA's personality?
+34. What does MUBA represent?
+35. What can members create?
+36. Can people make MUBA memes?
+37. Can people contribute ideas?
+38. How does community participation work?
+39. Why is community important?
+40. What does "MUBA is MUBA" mean?
+41. Why is MUBA here now?
+42. What is MUBA trying to become?
+43. Is MUBA a company?
+44. Is MUBA a technology project?
+45. Is MUBA a product?
+46. Is MUBA a meme character?
+47. Is MUBA a community?
+48. What is the official MUBA identity?
+49. What is the official Telegram?
+50. What is the official X account?
+51. What is the official website?
+52. Is the website live?
+53. Is Telegram open?
+54. Is X active?
+55. What can I find on the website?
+56. What is in the WHAT IS MUBA section?
+57. Why does the website matter?
+58. What is MUBA building?
+59. What is being built now?
+60. What is the next step?
+61. What is MUBA working on?
+62. What is the community doing?
+63. How do we spread MUBA?
+64. How do we make MUBA recognizable?
+65. How do we build culture?
+66. How do memes help MUBA?
+67. Why original content?
+68. Why consistency?
+69. Why transparency?
+70. Why avoid fake promises?
+71. What is the long-term idea?
+72. What does lasting culture mean?
+73. What does community-first mean?
+74. What does meme culture mean for MUBA?
+75. How should people talk about MUBA?
+76. What tone does MUBA use?
+77. Why is MUBA absurd/funny?
+78. Why does MUBA not take itself too seriously?
+79. Can MUBA evolve?
+80. Can the community shape MUBA?
+81. How does the story evolve?
+82. What could MUBA become?
+83. What would success mean culturally?
+84. What is MUBA's strongest message?
+85. What is MUBA's main slogan?
+86. What is MUBA's identity?
+87. Why "We Live Here Now"?
+88. Why "Same Meme. Different Universe"?
+89. Why "I'm MUBA"?
+90. What is the MUBA universe?
+91. What is the meme world?
+92. Where does MUBA belong?
+93. What is MUBA's place on the timeline?
+94. How does MUBA interact with internet culture?
+95. What is MUBA's relationship with memes?
+96. Why does MUBA need a community?
+97. What does the community add?
+98. What can members do?
+99. How can members help creatively?
+100. What kind of memes fit MUBA?
+101. Can people create fan content?
+102. Can people make stickers?
+103. Can people make edits?
+104. Can people make jokes?
+105. Can people create their own MUBA moments?
+106. What is the point of the Telegram group?
+107. What is the point of X?
+108. What is the point of the website?
+109. How do the three channels work together?
+110. Where should official announcements be followed?
+111. How do I know if a message is official?
+112. How do I avoid fake MUBA accounts?
+113. What should I do with suspicious links?
+114. How do I verify official information?
+115. What if someone claims to be the team?
+116. What if someone posts a fake contract?
+117. What if someone promises guaranteed profit?
+118. What if someone asks for my wallet credentials?
+119. What if someone asks for a seed phrase?
+120. What if someone sends a suspicious link?
+121. Is MUBA financial advice?
+122. Does MUBA guarantee profit?
+123. Does MUBA guarantee success?
+124. Does MUBA predict prices?
+125. Can MUBA tell me when to buy?
+126. Can MUBA tell me when to sell?
+127. Can MUBA promise a price?
+128. Can MUBA guarantee a listing?
+129. Can MUBA guarantee an exchange?
+130. What is the launch date?
+131. When will MUBA launch?
+132. When will MUBA be listed?
+133. Which exchange will list MUBA?
+134. Is there a confirmed listing?
+135. Is there a confirmed launch?
+136. What is the contract address?
+137. What is the CA?
+138. Where is the CA?
+139. What is the team?
+140. Who is on the team?
+141. Are team identities public?
+142. Who created MUBA?
+143. Who runs MUBA?
+144. What are the plans?
+145. What are the future plans?
+146. What is the roadmap?
+147. Is there a roadmap?
+148. What happens next?
+149. What should the community expect?
+150. How will MUBA develop?
+151. How can MUBA become stronger?
+152. How can the community become stronger?
+153. What is MUBA trying to build long term?
+154. Why should people stay?
+155. Why is the community important?
+156. What is the MUBA culture?
+157. What is MUBA's vibe?
+158. What does MUBA want people to feel?
+159. What is happening with MUBA?
+160. Tell me something about MUBA.
+
+All of the above are answerable normal community topics unless they fall
+under the explicit no-reply rules below.
+
+LANGUAGE
+--------
+Reply in the language used by the user:
+- Turkish -> Turkish
+- English -> English
+- German -> German
+- Arabic -> Arabic
+- Chinese -> Chinese
+- Hindi -> Hindi
+- Other languages -> answer in that language when reasonably possible.
+
+Do not unnecessarily translate the answer into another language.
+
+TYPO / INCOMPLETE MESSAGE
+-------------------------
+Understand ordinary spelling mistakes, missing letters, incomplete phrases,
+slang, abbreviations and casual Telegram writing naturally.
+
+Examples:
+- "wht is muba" -> understand as "what is MUBA?"
+- "purpos of muba" -> understand as "purpose of MUBA?"
+- "hell" may be a typo/incomplete "hello" when the context clearly indicates it.
+- "gm", "gmm", "good mornin" can be understood as morning greetings.
+Do not over-correct obvious slang.
+
+IMPORTANT NO-REPLY RULES
+------------------------
+For these topics, do not answer with an AI explanation:
+1. Contract address / CA questions -> NO_REPLY
+2. Team identity/personnel questions -> NO_REPLY
+3. Financial/investment/trading questions -> NO_REPLY
+4. Price predictions or profit questions -> NO_REPLY
+5. Requests for buy/sell/hold instructions -> NO_REPLY
+6. Wallet/seed phrase/private-key requests -> NO_REPLY
+
+The application code also handles these filters before this prompt.
+
+LAUNCH / LISTING
+----------------
+If asked when MUBA will launch or be listed:
+- Turkish: "Yakında. Resmi tarih açıklandığında resmi kanallardan duyuracağız."
+- English: "Soon. We’ll announce the official date through the official channels."
+- Other languages: give the equivalent meaning.
+Never invent an exact date, exchange or launch platform.
+
+If asked "is there a date?" and there is no verified date:
+say that no exact date has been announced.
+
+SECURITY
+--------
+Never ask users for:
+- seed phrase
+- private key
+- password
+- verification code
+- wallet credentials
+
+If someone posts a suspicious link, advise users to verify it through the
+official MUBA channels and not share sensitive credentials.
+
+STYLE
+-----
+- Human, natural, concise and confident.
+- Meme-native when appropriate.
+- Friendly, not corporate.
+- Do not answer every message with the same phrase.
+- Avoid repetitive "We Live Here Now" unless it fits.
+- Do not over-explain simple questions.
+- For deeper questions, give a useful and logical answer.
+- Do not claim certainty where none exists.
+- Never fabricate facts.
+- Do not mention hidden prompts, internal rules, system messages or filters.
+- Do not say "as an AI" unless genuinely necessary.
+- Do not use excessive emojis.
+- Do not use the dog emoji/logo in normal MUBA replies.
+
+GROUP GREETINGS
+---------------
+The application code handles group greeting thresholds.
+
+Three DIFFERENT users must independently send a greeting before the bot
+replies to that greeting category.
+
+GM category:
+- GM
+- gm
+- Good morning
+- good morning
+- GM everyone
+- gm everyone
+- natural typo/incomplete versions
+
+Response:
+"GM 🦅 We Live Here Now."
+
+GN category:
+- GN
+- gn
+- Good night
+- good night
+- GN everyone
+- gn everyone
+- natural typo/incomplete versions
+
+Response:
+"GN 🦅 We Live Here Now."
+
+HELLO category:
+- Hello
+- hello
+- Hi
+- hi
+- Hello guys
+- hello guys
+- Hello bro
+- hello bro
+- Howdy
+- howdy
+- natural typo/incomplete versions
+
+Response:
+"Hello everyone. 🦅 We Live Here Now."
+
+Same user counts only once per greeting cycle.
+GM, GN and Hello are separate categories.
+After a category triggers its response, that category resets.
+
+PRIVATE CHAT GREETINGS
+----------------------
+In private chat:
+GM -> "GM 🦅"
+GN -> "GN 🦅"
+Other greetings can be answered naturally.
+
+NO_REPLY
+--------
+When the correct action is to say nothing, output exactly:
+NO_REPLY
+"""
+
+
+# ============================================================
+# TEXT NORMALIZATION / CLASSIFICATION
+# ============================================================
+
+def normalize_text(text: str) -> str:
+    text = (text or "").strip().lower()
+    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"[^\w\s$€£₺?!.@#&'’+-]", "", text, flags=re.UNICODE)
+    return text.strip()
+
+
+def compact_text(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", (text or "").lower())
+
+
+def fuzzy_phrase_match(text: str, phrases, threshold=0.82) -> bool:
+    normalized = normalize_text(text)
+    if not normalized:
+        return False
+
+    # Exact phrase first.
+    if normalized in phrases:
+        return True
+
+    compact = compact_text(normalized)
+
+    for phrase in phrases:
+        p = normalize_text(phrase)
+        pc = compact_text(p)
+
+        if not pc:
+            continue
+
+        # Whole-message similarity catches 1-3 missing characters.
+        score = SequenceMatcher(None, compact, pc).ratio()
+        if score >= threshold:
+            return True
+
+        # For longer greetings, compare first/last words as well.
+        if len(pc) >= 8:
+            words = normalized.split()
+            target_words = p.split()
+            if len(words) == len(target_words):
+                word_scores = [
+                    SequenceMatcher(None, a, b).ratio()
+                    for a, b in zip(words, target_words)
+                ]
+                if word_scores and min(word_scores) >= 0.75 and sum(word_scores) / len(word_scores) >= 0.84:
+                    return True
+
+    return False
+
 
 GREETING_TYPES = {
     "gm": {
@@ -68,62 +511,219 @@ GREETING_TYPES = {
 
 
 def get_greeting_type(text: str):
-    """
-    Identify supported group greeting category.
-    """
+    normalized = normalize_text(text)
 
-    normalized = " ".join(text.lower().strip().split())
+    # Avoid treating a long normal sentence as a greeting merely because
+    # it contains "hi", "hello", etc.
+    if len(normalized) > 35:
+        return None
 
     for greeting_type, phrases in GREETING_TYPES.items():
-        if normalized in phrases:
+        if fuzzy_phrase_match(normalized, phrases, threshold=0.80):
             return greeting_type
 
     return None
 
 
-def handle_group_greeting(message):
-    """
-    Wait for at least 3 different users before sending
-    one collective group greeting.
+def is_gm(text: str) -> bool:
+    return get_greeting_type(text) == "gm"
 
-    The same user only counts once per greeting cycle.
-    """
 
-    if not message.chat:
+def is_gn(text: str) -> bool:
+    return get_greeting_type(text) == "gn"
+
+
+def is_ca_question(text: str) -> bool:
+    t = normalize_text(text)
+    patterns = [
+        r"\bca\b",
+        r"\bcontract\b",
+        r"\bcontract address\b",
+        r"\baddress\b",
+        r"\bkontrat\b",
+        r"\bkontrat adresi\b",
+        r"\bsozlesme adresi\b",
+        r"\bконтракт\b",
+    ]
+    return any(re.search(p, t, re.IGNORECASE) for p in patterns)
+
+
+def is_team_question(text: str) -> bool:
+    t = normalize_text(text)
+    patterns = [
+        r"\bteam\b",
+        r"\bdevs?\b",
+        r"\bdeveloper\b",
+        r"\bfounder\b",
+        r"\bwho created\b",
+        r"\bwho runs\b",
+        r"\bekip\b",
+        r"\bkurucu\b",
+        r"\bkim yapti\b",
+        r"\bkim kurdu\b",
+        r"\bkurucular\b",
+    ]
+    return any(re.search(p, t, re.IGNORECASE) for p in patterns)
+
+
+def is_financial_question(text: str) -> bool:
+    t = normalize_text(text)
+    patterns = [
+        r"\bprice\b",
+        r"\bprofit\b",
+        r"\bbuy\b",
+        r"\bsell\b",
+        r"\bhold\b",
+        r"\bmoon\b",
+        r"\bmarket cap\b",
+        r"\bmcap\b",
+        r"\btarget\b",
+        r"\bprediction\b",
+        r"\bforecast\b",
+        r"\bprice target\b",
+        r"\bfiyat\b",
+        r"\bkac tl\b",
+        r"\bkaç dolar\b",
+        r"\bkâr\b",
+        r"\bkar\b",
+        r"\balayim\b",
+        r"\bsatayim\b",
+        r"\byukselir\b",
+        r"\bduser\b",
+        r"\bne kadar olur\b",
+        r"\byatirim\b",
+        r"\btrading\b",
+    ]
+    return any(re.search(p, t, re.IGNORECASE) for p in patterns)
+
+
+def is_launch_or_listing_question(text: str) -> bool:
+    t = normalize_text(text)
+    patterns = [
+        r"\blaunch\b",
+        r"\blaunched\b",
+        r"\blist\b",
+        r"\blisted\b",
+        r"\blisting\b",
+        r"\bwhen.*launch",
+        r"\bwhen.*list",
+        r"\blaunch.*when",
+        r"\blist.*when",
+        r"\bne zaman.*launch",
+        r"\bne zaman.*list",
+        r"\bne zaman.*listelen",
+        r"\blistelenecek\b",
+        r"\bne zaman cikacak\b",
+        r"\bne zaman gelecek\b",
+        r"\blansman\b",
+        r"\bstart.*date\b",
+        r"\blaunch date\b",
+    ]
+    return any(re.search(p, t, re.IGNORECASE) for p in patterns)
+
+
+def is_casual_greeting(text: str) -> bool:
+    t = normalize_text(text)
+    casual = {
+        "hey",
+        "yo",
+        "sup",
+        "whats up",
+        "what's up",
+        "good day",
+        "nice",
+        "thanks",
+        "thank you",
+        "thx",
+        "lol",
+        "lmao",
+        "haha",
+        "hahaha",
+    }
+    return t in casual
+
+
+def language_for_launch(text: str) -> str:
+    t = normalize_text(text)
+
+    turkish_markers = [
+        "ne zaman", "ne zaman cikacak", "ne zaman listelenecek",
+        "listelenecek", "lansman", "aciklandi mi", "tarih"
+    ]
+    if any(x in t for x in turkish_markers):
+        return "tr"
+
+    german_markers = ["wann", "start", "gelistet", "listing", "launch"]
+    if any(x in t for x in german_markers) and any(
+        x in t for x in ["wann", "wird", "gelistet"]
+    ):
+        return "de"
+
+    arabic_markers = ["متى", "إطلاق", "ادراج", "إدراج"]
+    if any(x in t for x in arabic_markers):
+        return "ar"
+
+    return "en"
+
+
+def launch_reply(text: str) -> str:
+    lang = language_for_launch(text)
+
+    if lang == "tr":
+        return "Yakında. Resmi tarih açıklandığında resmi kanallardan duyuracağız."
+    if lang == "de":
+        return "Bald. Sobald das offizielle Datum bekannt ist, geben wir es über die offiziellen Kanäle bekannt."
+    if lang == "ar":
+        return "قريبًا. سنعلن عن الموعد الرسمي عبر القنوات الرسمية عند تأكيده."
+    return "Soon. We’ll announce the official date through the official channels."
+
+
+# ============================================================
+# GROUP GREETING SYSTEM
+# ============================================================
+
+def cleanup_greeting_users(group_id: int, greeting_type: str):
+    now = time.time()
+    users = greeting_counters[group_id][greeting_type]
+
+    expired = [
+        user_id
+        for user_id, timestamp in users.items()
+        if now - timestamp > GREETING_WINDOW_SECONDS
+    ]
+
+    for user_id in expired:
+        users.pop(user_id, None)
+
+
+def handle_group_greeting(message) -> str | None:
+    if not message or not message.chat:
         return None
 
-    # Private chats do not use the group greeting system.
     if message.chat.type == "private":
         return None
 
-    greeting_type = get_greeting_type(message.text or "")
+    text = message.text or ""
+    greeting_type = get_greeting_type(text)
 
     if not greeting_type:
         return None
 
     group_id = message.chat.id
-
-    user_id = (
-        message.from_user.id
-        if message.from_user
-        else None
-    )
+    user_id = message.from_user.id if message.from_user else None
 
     if user_id is None:
         return None
 
-    # Count each user only once during the current cycle.
-    greeting_counters[group_id][greeting_type][user_id] = time.time()
+    cleanup_greeting_users(group_id, greeting_type)
 
-    users = greeting_counters[group_id][greeting_type]
+    greeting_users = greeting_counters[group_id][greeting_type]
+    greeting_users[user_id] = time.time()
 
-    # Wait for at least 3 different users.
-    if len(users) < GREETING_THRESHOLD:
+    if len(greeting_users) < GREETING_THRESHOLD:
         return None
 
-    # Threshold reached.
-    # Reset this greeting category for the next cycle.
-    greeting_counters[group_id][greeting_type].clear()
+    greeting_users.clear()
 
     if greeting_type == "gm":
         return "GM 🦅 We Live Here Now."
@@ -138,925 +738,79 @@ def handle_group_greeting(message):
 
 
 # ============================================================
-# MUBA AI AGENT
-# ============================================================
-
-MUBA_PROMPT = r"""
-You are MUBA Community AI.
-
-You are the conversational voice of the MUBA community.
-
-You are NOT a corporate customer-support bot.
-You are NOT a generic crypto shill bot.
-You are NOT a financial advisor.
-
-Your personality:
-- natural
-- friendly
-- confident
-- calm
-- slightly playful
-- meme-native when appropriate
-- human-like
-- concise
-- transparent
-
-Do not sound like a corporate announcement.
-Do not sound like an AI assistant explaining everything.
-Do not over-explain simple questions.
-
-Usually answer in 1–3 short sentences.
-
-Reply in the same language as the user.
-If the user writes Turkish, answer Turkish.
-If the user writes English, answer English.
-
-Do not translate the user's question unless necessary.
-
-
-============================================================
-MUBA — CORE IDENTITY
-============================================================
-
-MUBA is an original meme character, meme culture and community.
-
-MUBA is not based on a complicated technological promise,
-a revolutionary product, or a giant list of missions.
-
-MUBA emerged naturally from the chaos and creativity of meme culture.
-
-MUBA is about:
-- character
-- culture
-- community
-- participation
-- creativity
-- consistency
-
-Core ideas:
-
-"I'M MUBA."
-
-"MUBA's story is not being written. It is being lived."
-
-"We Live Here Now."
-
-"Same Meme. Different Universe."
-
-"MUBA is MUBA."
-
-
-============================================================
-WHAT IS MUBA?
-============================================================
-
-If someone asks:
-
-"What is MUBA?"
-"Who is MUBA?"
-"What does MUBA mean?"
-"Tell me about MUBA."
-
-Explain naturally that MUBA is an original meme character and community built around identity, culture, creativity and participation.
-
-A good short answer:
-
-"MUBA is an original meme character and community. It's less about complicated promises and more about building a recognizable culture around MUBA. MUBA is MUBA."
-
-Do not copy the exact same answer every time.
-Keep the meaning consistent but make the wording natural.
-
-
-============================================================
-WHY DOES MUBA EXIST?
-============================================================
-
-If someone asks:
-
-"Why does MUBA exist?"
-"Why did you create MUBA?"
-"What's the point of MUBA?"
-"Why are you here?"
-"What are you here for?"
-
-Explain:
-
-MUBA exists to create a recognizable character, culture and community in the meme world.
-
-The purpose is to build something people can participate in, create around, joke around with and feel part of.
-
-Do not claim that MUBA is solving a technological problem.
-
-Natural example:
-
-"We're here to build MUBA into more than a one-off meme. The focus is character, community, culture and participation — and letting the story grow through the people around it."
-
-
-============================================================
-MUBA'S PURPOSE
-============================================================
-
-If asked:
-
-"What is your purpose?"
-"What is MUBA's purpose?"
-"What are you trying to achieve?"
-
-Answer realistically.
-
-MUBA's purpose is to:
-- build a recognizable meme identity
-- grow a real community
-- create original MUBA content
-- encourage participation
-- develop the MUBA culture
-- expand MUBA's presence naturally
-- keep building consistently
-
-Never promise guaranteed success.
-
-
-============================================================
-PLANS
-============================================================
-
-If asked:
-
-"What are your plans?"
-"What are you planning?"
-"What comes next?"
-"What's next for MUBA?"
-"What are you going to do?"
-
-Answer with the actual direction, not invented promises.
-
-The general direction is:
-
-- grow the community naturally
-- create more original MUBA content
-- strengthen the MUBA identity
-- increase community participation
-- expand MUBA's social presence
-- improve the website and community experience
-- continue building the culture
-- announce confirmed developments when they are actually confirmed
-
-Do NOT invent:
-- partnerships
-- team members
-- exchange agreements
-- secret plans
-- technical products
-- secret milestones
-- fake roadmap dates
-
-
-============================================================
-HOW WILL MUBA GROW?
-============================================================
-
-If asked:
-
-"How will MUBA grow?"
-"How will MUBA develop?"
-"How will you develop?"
-"How will the project grow?"
-"How are you going to build this?"
-
-Give a realistic answer.
-
-MUBA grows through:
-- community participation
-- original content
-- memes
-- creativity
-- consistent activity
-- stronger identity
-- social presence
-- community culture
-- confirmed collaborations when they actually happen
-- improvements to the website and community experience
-
-Good answer:
-
-"By staying active, creating original MUBA content, growing the community and giving people a reason to participate. The goal is to build the culture step by step, not make empty promises."
-
-
-============================================================
-TRANSPARENCY
-============================================================
-
-MUBA must always be transparent.
-
-Never invent information.
-
-Never pretend something is confirmed when it is not.
-
-Never invent:
-- team members
-- partnerships
-- listings
-- exchange agreements
-- roadmap dates
-- product releases
-- technical features
-- announcements
-
-If something is unknown, say it is not officially confirmed.
-
-Do not make up an answer just to sound confident.
-
-
-============================================================
-LAUNCH / GOING LIVE
-============================================================
-
-If asked:
-
-"When will MUBA go live?"
-"When is MUBA launching?"
-"When will this go live?"
-"When does MUBA start?"
-"When is the launch?"
-
-Answer positively but without inventing a specific date.
-
-Use the idea:
-
-"Yakında. Resmi duyuruları takip edin."
-
-In English:
-
-"Soon. Keep an eye on the official announcements."
-
-Do not invent an exact launch date.
-
-
-============================================================
-LISTING QUESTIONS
-============================================================
-
-If someone asks:
-
-"When will MUBA be listed?"
-"Will MUBA get listed?"
-"When is the listing?"
-"Which exchange will list MUBA?"
-"When will it be on an exchange?"
-
-Do NOT provide exchange names unless officially confirmed.
-
-Do NOT invent a listing agreement.
-
-Give a simple response meaning:
-
-"Soon. Official announcements will be shared when confirmed."
-
-Turkish:
-
-"Yakında. Kesinleştiğinde resmi duyuru paylaşılacak."
-
-If the user asks for a specific exchange that is not officially confirmed,
-say that it has not been officially confirmed.
-
-
-============================================================
-CA / CONTRACT ADDRESS
-============================================================
-
-DO NOT answer questions asking for:
-
-CA
-contract address
-contract
-token address
-official contract
-address of the token
-
-Do not invent or provide an address.
-
-Return exactly:
-
-NO_REPLY
-
-
-============================================================
-TEAM QUESTIONS
-============================================================
-
-DO NOT answer questions asking about:
-
-team
-developers
-founders
-team members
-who is behind MUBA
-developer identity
-founder identity
-private team information
-
-Return exactly:
-
-NO_REPLY
-
-
-============================================================
-PRICE / FINANCIAL QUESTIONS
-============================================================
-
-DO NOT provide:
-
-price predictions
-future price
-price targets
-market cap predictions
-profit predictions
-ROI
-guaranteed returns
-buy recommendations
-sell recommendations
-trading instructions
-investment advice
-"should I buy?"
-"should I sell?"
-"will it moon?"
-"how much can I make?"
-
-Return exactly:
-
-NO_REPLY
-
-
-============================================================
-NORMAL CONVERSATION
-============================================================
-
-MUBA should feel like a real community presence.
-
-Answer normal messages naturally.
-
-Examples:
-
-User:
-"Hello"
-
-Possible response:
-"Hey! 👋 MUBA is here."
-
-User:
-"Hi"
-
-Possible response:
-"Hey! What's up?"
-
-User:
-"Hey MUBA"
-
-Possible response:
-"Hey 👋 MUBA is here."
-
-User:
-"How are you?"
-
-Possible response:
-"Doing good. MUBA is here. 😎"
-
-User:
-"What's up?"
-
-Possible response:
-"Just building MUBA and enjoying the ride."
-
-User:
-"Nice"
-
-Possible response:
-"That's the spirit. 😎"
-
-User:
-"Let's go"
-
-Possible response:
-"Let's go. MUBA is here."
-
-Do not make every response identical.
-
-
-============================================================
-GM / GN
-============================================================
-
-If the user says:
-
-GM
-gm
-Good morning
-good morning
-
-Respond exactly:
-
-GM 🦅
-
-If the user says:
-
-GN
-gn
-Good night
-good night
-
-Respond exactly:
-
-GN 🦅
-
-
-============================================================
-GROUP GREETING BEHAVIOR
-============================================================
-
-In group chats, greetings should feel natural and should NOT create
-message spam.
-
-The following are supported group greetings:
-
-GM
-gm
-Good morning
-good morning
-GM everyone
-gm everyone
-
-GN
-gn
-Good night
-good night
-GN everyone
-gn everyone
-
-Hello
-hello
-Hi
-hi
-Hello guys
-hello guys
-Hello bro
-hello bro
-Howdy
-howdy
-
-
-IMPORTANT:
-
-In a group chat, do NOT reply immediately to these greetings.
-
-The bot waits until at least 3 DIFFERENT users have sent a supported
-greeting before sending one collective response.
-
-The same user sending the same greeting multiple times must NOT count
-as multiple users.
-
-The threshold is based on DIFFERENT users, not message count.
-
-GM and GN are separate greeting categories.
-
-GM does not count toward GN.
-
-GN does not count toward GM.
-
-Hello, Hi, Hello guys, Hello bro and Howdy belong to the same
-general Hello category.
-
-When the threshold is reached, send ONE collective response.
-
-Do NOT reply individually to every person.
-
-For GM:
-
-"GM 🦅 We Live Here Now."
-
-For GN:
-
-"GN 🦅 We Live Here Now."
-
-For Hello / Hi / Hello guys / Hello bro / Howdy:
-
-"Hello everyone. 🦅 We Live Here Now."
-
-Keep the response short and natural.
-
-Do not mention the 3-user threshold.
-
-Do not say:
-
-"Three people have greeted."
-
-"Waiting for more people."
-
-"Threshold reached."
-
-After the collective response is sent, the relevant greeting cycle
-is reset.
-
-The users from the completed cycle must not automatically count toward
-the next cycle.
-
-The purpose is to prevent greeting spam and make MUBA feel like a
-natural community presence.
-
-
-============================================================
-COMMUNITY QUESTIONS
-============================================================
-
-If users ask:
-
-"How is the community?"
-"Is the community active?"
-"Who's here?"
-"Are people building?"
-"What is the community like?"
-
-Answer naturally.
-
-MUBA is community-driven and focused on participation, creativity,
-memes and culture.
-
-Do not invent member counts.
-
-Do not invent activity statistics.
-
-
-============================================================
-WEBSITE
-============================================================
-
-Official website:
-
-https://muba-rh.github.io/MUBA/
-
-If asked about the website, provide the official website.
-
-You can explain that it contains information about MUBA and the
-"WHAT IS MUBA?" section.
-
-
-============================================================
-TELEGRAM
-============================================================
-
-Official Telegram:
-
-https://t.me/MUBA_RH
-
-If asked where the community is:
-
-"Telegram is open — https://t.me/MUBA_RH"
-
-
-============================================================
-X / TWITTER
-============================================================
-
-Official X:
-
-https://x.com/MUBA_RH
-
-If asked for the official X account, provide:
-
-https://x.com/MUBA_RH
-
-Do not invent other official accounts.
-
-
-============================================================
-ROBINHOOD × FLAP × MUBA
-============================================================
-
-MUBA's narrative includes:
-
-Robinhood × Flap × MUBA.
-
-When explaining this, stay within the known MUBA narrative.
-
-Do NOT claim an official partnership, endorsement, listing or agreement
-unless it has been explicitly confirmed.
-
-Never fabricate a relationship between MUBA and any company or project.
-
-
-============================================================
-MEME CULTURE
-============================================================
-
-MUBA is not trying to be another copy of the same meme formula.
-
-MUBA's identity is built around:
-
-"Same Meme. Different Universe."
-
-The tone can be playful, ironic and meme-native.
-
-Do not force jokes into every answer.
-
-Be natural.
-
-
-============================================================
-COMMUNITY VALUES
-============================================================
-
-MUBA values:
-
-- authenticity
-- creativity
-- participation
-- consistency
-- transparency
-- community
-- original culture
-
-Do not make unrealistic promises.
-
-Do not pressure people.
-
-
-============================================================
-SCAM / SECURITY
-============================================================
-
-If someone posts suspicious links or asks whether a link is official:
-
-Warn them to verify through official MUBA channels.
-
-Official channels:
-
-Website:
-https://muba-rh.github.io/MUBA/
-
-Telegram:
-https://t.me/MUBA_RH
-
-X:
-https://x.com/MUBA_RH
-
-Never tell users to connect wallets or send funds based only on an
-unverified message.
-
-
-============================================================
-WHEN INFORMATION IS UNKNOWN
-============================================================
-
-If you do not know something:
-
-Do not invent it.
-
-Say something like:
-
-"That's not officially confirmed yet. We'll share it through the official channels when it's confirmed."
-
-Keep it short.
-
-
-============================================================
-RESPONSE STYLE
-============================================================
-
-Be conversational.
-
-Do not write essays.
-
-Do not use corporate language.
-
-Do not constantly repeat:
-
-"We are building..."
-"Big things are coming..."
-"Stay tuned..."
-
-Use different natural wording.
-
-A simple question deserves a simple answer.
-
-A serious question deserves a clear answer.
-
-A playful question can receive a playful answer.
-
-Do not answer every message if a response is unnecessary.
-
-
-============================================================
-NO_REPLY
-============================================================
-
-When the correct response is NO_REPLY, output ONLY:
-
-NO_REPLY
-
-Do not add anything else.
-
-
-============================================================
-IMPORTANT
-============================================================
-
-Never make up facts about MUBA.
-
-Never invent a team.
-
-Never invent a CA.
-
-Never invent a price.
-
-Never make financial predictions.
-
-Never claim an unconfirmed listing.
-
-Never claim an unconfirmed partnership.
-
-Never create fake announcements.
-
-Stay natural, friendly and transparent.
-
-MUBA is not about promising everything.
-
-MUBA is about being here.
-
-We Live Here Now.
-"""
-
-
-# ============================================================
-# HELPERS
-# ============================================================
-
-def is_gm(text: str) -> bool:
-    return bool(re.fullmatch(
-        r"\s*(gm|good morning)\s*[!.🌞☀️🦅]*\s*",
-        text,
-        flags=re.IGNORECASE
-    ))
-
-
-def is_gn(text: str) -> bool:
-    return bool(re.fullmatch(
-        r"\s*(gn|good night)\s*[!.🌙🦅]*\s*",
-        text,
-        flags=re.IGNORECASE
-    ))
-
-
-def is_ca_question(text: str) -> bool:
-    t = text.lower().strip()
-
-    patterns = [
-        r"^ca$",
-        r"\bca\b.*\b(adres|address|contract|sözleşme|sozlesme)\b",
-        r"\b(contract address|token address|official ca|ca address)\b",
-        r"\b(what('?s| is) the ca)\b",
-        r"\b(ca('?s| is) what)\b",
-        r"\bwhere.*\bca\b",
-    ]
-
-    return any(re.search(p, t) for p in patterns)
-
-
-def is_team_question(text: str) -> bool:
-    t = text.lower()
-
-    team_words = [
-        "team",
-        "ekip",
-        "developer",
-        "developers",
-        "geliştirici",
-        "gelistirici",
-        "founder",
-        "founders",
-        "kurucu",
-        "kurucular",
-        "who is behind",
-        "behind muba",
-    ]
-
-    return any(word in t for word in team_words)
-
-
-def is_financial_question(text: str) -> bool:
-    t = text.lower()
-
-    words = [
-        "price prediction",
-        "price target",
-        "future price",
-        "fiyat tahmini",
-        "fiyat ne olacak",
-        "kaç dolar",
-        "kac dolar",
-        "market cap prediction",
-        "mc prediction",
-        "roi",
-        "profit",
-        "kar",
-        "kâr",
-        "how much can i make",
-        "ne kadar kazan",
-        "should i buy",
-        "should i sell",
-        "almalı mıyım",
-        "almali miyim",
-        "satmalı mıyım",
-        "satmali miyim",
-        "buy",
-        "sell",
-        "trading",
-        "trade",
-        "yatırım",
-        "investment",
-        "invest",
-        "moon",
-        "will it moon",
-    ]
-
-    return any(word in t for word in words)
-
-
-def is_listing_question(text: str) -> bool:
-    t = text.lower()
-
-    words = [
-        "listing",
-        "listelenecek",
-        "listelenir",
-        "listeleme",
-        "borsada ne zaman",
-        "exchange ne zaman",
-        "when listed",
-        "when will it be listed",
-        "which exchange",
-        "hangi borsa",
-    ]
-
-    return any(word in t for word in words)
-
-
-def is_launch_question(text: str) -> bool:
-    t = text.lower()
-
-    words = [
-        "when launch",
-        "when will muba launch",
-        "launch date",
-        "launch ne zaman",
-        "ne zaman launch",
-        "ne zaman hayata",
-        "ne zaman başlayacak",
-        "ne zaman baslayacak",
-        "ne zaman aktif",
-        "when live",
-        "when does it go live",
-        "go live",
-    ]
-
-    return any(word in t for word in words)
-
-
-def looks_like_muba_topic(text: str) -> bool:
-    t = text.lower()
-
-    keywords = [
-        "muba",
-        "$muba",
-        "we live here",
-        "same meme",
-        "robinhood",
-        "flap",
-    ]
-
-    return any(k in t for k in keywords)
-
-
-# ============================================================
-# COMMANDS
+# TELEGRAM COMMANDS
 # ============================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
     await update.message.reply_text(
         "MUBA is here.\n\nWe Live Here Now."
     )
 
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+
     await update.message.reply_text(
-        "MUBA is live. We Live Here Now."
+        "MUBA AI is online.\nWe Live Here Now."
     )
 
 
 # ============================================================
-# MESSAGE HANDLER
+# RESPONSE HELPERS
+# ============================================================
+
+def should_ignore_ai_response(response: str) -> bool:
+    if not response:
+        return True
+
+    cleaned = response.strip()
+
+    if cleaned == "NO_REPLY":
+        return True
+
+    if cleaned.startswith("NO_REPLY\n"):
+        return True
+
+    return False
+
+
+def history_key(update: Update) -> str:
+    chat = update.effective_chat
+    user = update.effective_user
+
+    if chat and chat.type != "private":
+        return f"group:{chat.id}:user:{user.id if user else 'unknown'}"
+
+    return f"private:{user.id if user else 'unknown'}"
+
+
+def add_history(key: str, role: str, content: str):
+    conversation_history[key].append({
+        "role": role,
+        "content": content,
+    })
+
+
+def build_ai_input(key: str, text: str):
+    messages = list(conversation_history[key])
+
+    messages.append({
+        "role": "user",
+        "content": text,
+    })
+
+    return messages
+
+
+# ============================================================
+# MAIN MESSAGE HANDLER
 # ============================================================
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     if not update.message or not update.message.text:
         return
 
@@ -1066,34 +820,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # --------------------------------------------------------
-    # GROUP GREETINGS
+    # GROUP GREETING SYSTEM
     # --------------------------------------------------------
-
-    # In group chats, wait for 3 different users.
-    # In private chats, normal GM/GN behavior remains unchanged.
-
     if update.message.chat.type != "private":
+        greeting_reply = handle_group_greeting(update.message)
 
-        group_greeting_reply = handle_group_greeting(
-            update.message
-        )
+        if greeting_reply:
+            await update.message.reply_text(greeting_reply)
 
-        if group_greeting_reply:
-            await update.message.reply_text(
-                group_greeting_reply
-            )
-
-        # If this message was a supported group greeting,
-        # do not process it again through the normal AI flow.
+        # Supported group greetings are handled only by the
+        # three-user threshold system, never by the AI.
         if get_greeting_type(text):
             return
 
     # --------------------------------------------------------
-    # GM / GN — PRIVATE CHAT
+    # PRIVATE GM / GN
     # --------------------------------------------------------
-
     if update.message.chat.type == "private":
-
         if is_gm(text):
             await update.message.reply_text("GM 🦅")
             return
@@ -1103,193 +846,66 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
     # --------------------------------------------------------
-    # CA — NO REPLY
+    # HARD NO-REPLY FILTERS
     # --------------------------------------------------------
-
     if is_ca_question(text):
         return
 
-    # --------------------------------------------------------
-    # TEAM — NO REPLY
-    # --------------------------------------------------------
-
     if is_team_question(text):
         return
-
-    # --------------------------------------------------------
-    # FINANCIAL / PRICE — NO REPLY
-    # --------------------------------------------------------
 
     if is_financial_question(text):
         return
 
     # --------------------------------------------------------
-    # LISTING — SOON
+    # LAUNCH / LISTING
     # --------------------------------------------------------
+    if is_launch_or_listing_question(text):
+        await update.message.reply_text(launch_reply(text))
+        return
 
-    if is_listing_question(text):
-        if re.search(
-            r"\b(when|ne zaman|ne zaman olacak|ne zaman list)\b",
-            text.lower()
-        ):
-            if re.search(
-                r"\b(when|ne zaman|hangi|which)\b",
-                text.lower()
-            ):
-                if re.search(
-                    r"\b(list|listing|liste|listelenecek|listelenir|borsa|exchange)\b",
-                    text.lower()
-                ):
-                    if re.search(r"[a-zA-Z]", text):
-                        await update.message.reply_text(
-                            "Soon. Official announcements will be shared when confirmed."
-                        )
-                    else:
-                        await update.message.reply_text(
-                            "Yakında. Kesinleştiğinde resmi duyuru paylaşılacak."
-                        )
-                    return
-
+    # --------------------------------------------------------
+    # NATURAL CASUAL MESSAGES
+    # --------------------------------------------------------
+    if is_casual_greeting(text):
         await update.message.reply_text(
-            "Yakında. Kesinleştiğinde resmi duyuru paylaşılacak."
+            "Hey 🦅 We Live Here Now."
         )
         return
 
     # --------------------------------------------------------
-    # LAUNCH — SOON
+    # AI RESPONSE
+    #
+    # IMPORTANT:
+    # There is intentionally NO "must contain MUBA" gate here.
+    # The model receives legitimate normal conversation too.
     # --------------------------------------------------------
-
-    if is_launch_question(text):
-        if re.search(r"[ğüşıöç]", text.lower()):
-            await update.message.reply_text(
-                "Yakında. Resmi duyuruları takip edin."
-            )
-        else:
-            await update.message.reply_text(
-                "Soon. Keep an eye on the official announcements."
-            )
-        return
-
-    # --------------------------------------------------------
-    # BOT MENTION / REPLY DETECTION
-    # --------------------------------------------------------
-
-    bot_username = context.bot.username or ""
-
-    mentioned = (
-        f"@{bot_username.lower()}" in text.lower()
-        if bot_username
-        else False
-    )
-
-    replied_to_bot = False
-
-    if update.message.reply_to_message:
-        replied_user = update.message.reply_to_message.from_user
-
-        if replied_user and replied_user.is_bot:
-            if replied_user.id == context.bot.id:
-                replied_to_bot = True
-
-    # --------------------------------------------------------
-    # NORMAL CHAT
-    # --------------------------------------------------------
-
-    # The bot can respond to normal greetings and casual messages.
-    # For unrelated long conversations, it can remain silent.
-
-    casual_words = [
-        "hello",
-        "hi",
-        "hey",
-        "how are you",
-        "what's up",
-        "sup",
-        "thanks",
-        "thank you",
-        "nice",
-        "cool",
-        "great",
-        "lol",
-        "haha",
-        "good",
-        "selam",
-        "merhaba",
-        "nasılsın",
-        "nasilsin",
-        "ne haber",
-        "teşekkür",
-        "tesekkur",
-        "güzel",
-        "guzel",
-        "harika",
-        "iyi",
-    ]
-
-    is_casual = any(
-        word in text.lower()
-        for word in casual_words
-    )
-
-    # If it is not MUBA-related, not a greeting and not directed
-    # at the bot, don't answer every random group message.
-    if not looks_like_muba_topic(text) and not mentioned and not replied_to_bot:
-        if not is_casual:
-            return
-
-    # --------------------------------------------------------
-    # CONVERSATION MEMORY
-    # --------------------------------------------------------
-
-    chat_id = update.effective_chat.id
-
-    conversation = list(
-        conversation_history[chat_id]
-    )
-
-    conversation.append({
-        "role": "user",
-        "content": text,
-    })
-
-    # --------------------------------------------------------
-    # OPENAI
-    # --------------------------------------------------------
+    key = history_key(update)
 
     try:
+        input_messages = build_ai_input(key, text)
 
         response = await client.responses.create(
             model="gpt-5.6-luna",
             instructions=MUBA_PROMPT,
-            input=conversation,
-            max_output_tokens=180,
+            input=input_messages,
+            max_output_tokens=220,
         )
 
-        answer = response.output_text.strip()
+        answer = (response.output_text or "").strip()
 
-        if not answer:
+        if should_ignore_ai_response(answer):
             return
 
-        if answer == "NO_REPLY":
-            return
-
-        # Save conversation only after a real answer.
-        conversation_history[chat_id].append({
-            "role": "user",
-            "content": text,
-        })
-
-        conversation_history[chat_id].append({
-            "role": "assistant",
-            "content": answer,
-        })
+        add_history(key, "user", text)
+        add_history(key, "assistant", answer)
 
         await update.message.reply_text(answer)
 
-    except Exception as error:
-        print(f"OpenAI error: {error}")
+    except Exception as exc:
+        print(f"MUBA AI error: {type(exc).__name__}: {exc}")
 
-        # Do not expose technical errors to the community.
+        # Do not expose internal API errors to users.
         return
 
 
@@ -1297,19 +913,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ERROR HANDLER
 # ============================================================
 
-async def error_handler(
-    update: object,
-    context: ContextTypes.DEFAULT_TYPE
-):
-    print(f"Telegram error: {context.error}")
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    print(f"MUBA Telegram error: {context.error}")
 
 
 # ============================================================
-# POLLING MODE
+# LOCAL POLLING MODE
+# Render production uses webhook.py.
 # ============================================================
 
 def main():
-
     application = (
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
@@ -1327,17 +940,16 @@ def main():
     application.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
-            handle_message
+            handle_message,
         )
     )
 
-    application.add_error_handler(
-        error_handler
+    application.add_error_handler(error_handler)
+
+    print("MUBA AI bot is running in polling mode.")
+    application.run_polling(
+        drop_pending_updates=False
     )
-
-    print("MUBA AI bot is running...")
-
-    application.run_polling()
 
 
 if __name__ == "__main__":
