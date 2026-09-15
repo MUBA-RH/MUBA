@@ -203,6 +203,7 @@ MUBA_DIRECT_QUESTION_BANK = {
         "MUBA 的目标是什么？",
         "MUBA 的故事是不是已经写好了？",
         "MUBA 接下来会走向哪里？",
+        "MUBA 的故事为什么要和社区一起发展？",
     ],
     "ar": [
         "ما هو MUBA بالضبط؟",
