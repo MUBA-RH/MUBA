@@ -2,6 +2,7 @@ import os
 import re
 import time
 import json
+import random
 import sqlite3
 import asyncio
 from urllib.parse import quote
@@ -46,6 +47,13 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 GREETING_THRESHOLD = 3
 GREETING_WINDOW_SECONDS = 6 * 60 * 60
 MAX_HISTORY = 12
+
+# OpenAI request pacing: keep natural conversation responsive without
+# flooding the model when a busy Telegram group sends many messages at once.
+AI_REQUEST_MIN_INTERVAL_SECONDS = float(os.environ.get("AI_REQUEST_MIN_INTERVAL_SECONDS", "3.0"))
+AI_MAX_RETRIES = int(os.environ.get("AI_MAX_RETRIES", "2"))
+_ai_request_lock = asyncio.Lock()
+_last_ai_request_time = 0.0
 
 conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 
@@ -1369,6 +1377,102 @@ def is_casual_greeting(text: str) -> bool:
     return t in casual
 
 
+
+def natural_short_reply(text: str) -> str | None:
+    """
+    Handle very short, ordinary human chat without spending an AI request.
+    This keeps simple messages such as 'Hı' responsive during API rate limits.
+    """
+    t = normalize_text(text)
+
+    if not t or len(t) > 18:
+        return None
+
+    tr = {
+        "hı", "hıı", "hımm", "hmm", "hmmm", "hee", "he", "ha", "ha?",
+        "ne", "ne?", "nasıl", "ee", "eee", "aynen", "öyle mi", "ciddi mi",
+        "gerçekten", "hadi", "bakalım", "tamam", "peki", "iyi", "güzel",
+        "lol", "haha", "hahaha"
+    }
+    if t in tr:
+        return random.choice([
+            "Hı? 👀 MUBA burada.",
+            "Hıı? 👀 Ne oldu?",
+            "MUBA kulak kesildi. 🪶",
+            "Hı? MUBA dinliyor. 👀",
+            "Devam et, MUBA burada. 🪶",
+            "MUBA da merak etti şimdi. 😂🪶",
+        ])
+
+    en = {
+        "hmm", "hmmm", "huh", "huh?", "what", "what?", "wait", "wait?",
+        "yo", "hey", "sup", "lol", "lmao", "haha", "hahaha", "okay",
+        "ok", "really", "really?", "seriously", "seriously?", "and?",
+        "then?", "nice", "cool"
+    }
+    if t in en:
+        return random.choice([
+            "Hmm? 👀 MUBA is listening.",
+            "Wait... MUBA is here. 🪶",
+            "Go on. MUBA's listening. 👀",
+            "Huh? 😂 MUBA heard you.",
+            "MUBA is paying attention now. 🪶",
+            "Okay... now MUBA is curious. 👀",
+        ])
+
+    de = {
+        "hmm", "hmmm", "hä", "hä?", "was", "was?", "warte", "warte?",
+        "hey", "hallo", "ok", "okay", "wirklich", "wirklich?", "und?",
+        "dann?", "haha", "lol"
+    }
+    if t in de:
+        return random.choice([
+            "Hmm? 👀 MUBA hört zu.",
+            "Warte... MUBA ist da. 🪶",
+            "Weiter. MUBA hört zu. 👀",
+            "Was? 😂 MUBA hat dich gehört.",
+        ])
+
+    ar = {
+        "همم", "هم", "ماذا", "ماذا؟", "حقا", "حقًا", "حقا؟", "حقًا؟",
+        "مرحبا", "هاي", "ماذا يحدث", "ثم؟", "حسنا", "حسنًا", "هه", "هههه"
+    }
+    if t in ar:
+        return random.choice([
+            "همم؟ 👀 موبا هنا.",
+            "موبا يستمع. 🪶",
+            "ماذا؟ 😂 موبا معك.",
+            "تابع، موبا يستمع. 👀",
+        ])
+
+    zh = {
+        "嗯", "嗯？", "啊", "啊？", "哦", "哦？", "什么", "什么？",
+        "真的", "真的吗", "真的吗？", "哈哈", "哈哈哈", "嘿", "你好",
+        "然后呢", "然后？", "好吧", "好的"
+    }
+    if t in zh:
+        return random.choice([
+            "嗯？👀 MUBA 在这里。",
+            "MUBA 在听。🪶",
+            "继续说，MUBA 在听。👀",
+            "什么？😂 MUBA 听到了。",
+        ])
+
+    hi = {
+        "हम्म", "हम्म?", "क्या", "क्या?", "अच्छा", "अच्छा?", "सच",
+        "सच?", "हाय", "हेलो", "ठीक", "ठीक है", "और?", "फिर?", "हाहा"
+    }
+    if t in hi:
+        return random.choice([
+            "हम्म? 👀 MUBA यहाँ है।",
+            "MUBA सुन रहा है। 🪶",
+            "बोलो, MUBA सुन रहा है। 👀",
+            "क्या हुआ? 😂 MUBA यहाँ है।",
+        ])
+
+    return None
+
+
 def language_for_launch(text: str) -> str:
     t = normalize_text(text)
 
@@ -1580,6 +1684,47 @@ def build_ai_input(key: str, text: str):
 
 
 # ============================================================
+# AI REQUEST PACING / RETRY
+# ============================================================
+
+async def create_ai_response(instructions: str, input_messages):
+    """Create an AI response without allowing bursts to exhaust the TPM limit."""
+    global _last_ai_request_time
+
+    async with _ai_request_lock:
+        for attempt in range(AI_MAX_RETRIES + 1):
+            elapsed = time.monotonic() - _last_ai_request_time
+            wait_for = AI_REQUEST_MIN_INTERVAL_SECONDS - elapsed
+            if wait_for > 0:
+                await asyncio.sleep(wait_for)
+
+            try:
+                response = await client.responses.create(
+                    model="gpt-5.6-luna",
+                    instructions=instructions,
+                    input=input_messages,
+                    max_output_tokens=180,
+                )
+                _last_ai_request_time = time.monotonic()
+                return response
+
+            except Exception as exc:
+                _last_ai_request_time = time.monotonic()
+                status_code = getattr(exc, "status_code", None)
+                error_text = str(exc).lower()
+                is_rate_limit = status_code == 429 or "rate limit" in error_text or "rate_limit" in error_text
+
+                if not is_rate_limit or attempt >= AI_MAX_RETRIES:
+                    raise
+
+                # Give the TPM window time to recover before trying again.
+                # Later attempts wait longer to avoid another immediate 429.
+                retry_delay = 5.0 * (attempt + 1)
+                print(f"MUBA AI rate limit hit. Retrying in {retry_delay:.0f}s.")
+                await asyncio.sleep(retry_delay)
+
+
+# ============================================================
 # MAIN MESSAGE HANDLER
 # ============================================================
 
@@ -1658,6 +1803,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # naturally, use conversation context and vary its wording.
 
     # --------------------------------------------------------
+    # VERY SHORT NATURAL HUMAN MESSAGES
+    # --------------------------------------------------------
+    # Answer ultra-short everyday messages locally so they remain
+    # responsive even when the OpenAI API is rate-limited.
+    short_reply = natural_short_reply(text)
+    if short_reply:
+        key = history_key(update)
+        add_history(key, "user", text)
+        add_history(key, "assistant", short_reply)
+
+        if update.message.chat.type != "private":
+            mention = user_mention(update.message)
+            if mention:
+                short_reply = f"{mention} {short_reply}"
+            await update.message.reply_text(short_reply, parse_mode="HTML")
+        else:
+            await update.message.reply_text(short_reply)
+        return
+
+    # --------------------------------------------------------
     # AI RESPONSE
     #
     # IMPORTANT:
@@ -1673,11 +1838,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # If X is unavailable, the existing bot continues normally.
         await sync_x_memory()
 
-        response = await client.responses.create(
-            model="gpt-5.6-luna",
+        response = await create_ai_response(
             instructions=build_ai_instructions_with_memory(text),
-            input=input_messages,
-            max_output_tokens=220,
+            input_messages=input_messages,
         )
 
         answer = (response.output_text or "").strip()
