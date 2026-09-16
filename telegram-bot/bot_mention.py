@@ -1,14 +1,14 @@
 """
 MUBA Telegram Bot
-Offline local-brain version.
+Webhook-based local-brain version.
 No external AI service or API key is required.
 """
 
+import hashlib
 import logging
 import os
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
 
+from aiohttp import web
 from telegram import Update
 from telegram.constants import ChatType
 from telegram.ext import (
@@ -34,32 +34,21 @@ TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not TOKEN:
     raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured.")
 
+PORT = int(os.getenv("PORT", "10000"))
 
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
-        self.end_headers()
-        self.wfile.write(b"MUBA is alive.")
+EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
 
-    def log_message(self, format, *args):
-        return
+if not EXTERNAL_URL:
+    raise RuntimeError("RENDER_EXTERNAL_URL is not available.")
 
+WEBHOOK_SECRET = os.getenv("MUBA_WEBHOOK_SECRET")
 
-def start_health_server():
-    port = int(os.getenv("PORT", "10000"))
-    server = HTTPServer(("0.0.0.0", port), HealthHandler)
-    logger.info("Health server listening on port %s", port)
-    server.serve_forever()
+if not WEBHOOK_SECRET:
+    WEBHOOK_SECRET = hashlib.sha256(
+        TOKEN.encode("utf-8")
+    ).hexdigest()
 
-
-def start_health_thread():
-    thread = threading.Thread(
-        target=start_health_server,
-        name="health-server",
-        daemon=True,
-    )
-    thread.start()
+WEBHOOK_PATH = f"/telegram/{WEBHOOK_SECRET}"
 
 
 def get_user_name(update: Update) -> str:
@@ -85,7 +74,6 @@ def should_answer(update: Update) -> bool:
     if not text:
         return False
 
-    # Messages containing MUBA are always considered relevant.
     if contains_muba(text):
         return True
 
@@ -94,20 +82,18 @@ def should_answer(update: Update) -> bool:
     if chat and chat.type == ChatType.PRIVATE:
         return True
 
-    # Answer messages that directly reply to the bot.
     if message.reply_to_message:
         replied_user = message.reply_to_message.from_user
 
         if replied_user and replied_user.is_bot:
             return True
 
-    # Answer direct mentions containing MUBA.
     entities = message.entities or []
 
     for entity in entities:
         if entity.type == "mention":
             mention = text[
-                entity.offset: entity.offset + entity.length
+                entity.offset:entity.offset + entity.length
             ].lower()
 
             if "muba" in mention:
@@ -120,6 +106,9 @@ async def start_command(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ):
+    if not update.effective_message:
+        return
+
     await update.effective_message.reply_text(
         "MUBA is here.\n\nWe Live Here Now. 🪶"
     )
@@ -158,7 +147,6 @@ async def handle_message(
 
     user_name = get_user_name(update)
 
-    # Mention the person who started the MUBA topic.
     if (
         user_name
         and update.effective_chat
@@ -188,17 +176,57 @@ async def error_handler(
     )
 
 
-def main():
-    start_health_thread()
+async def health_handler(request: web.Request):
+    return web.Response(
+        text="MUBA is alive.",
+        content_type="text/plain",
+    )
 
+
+async def webhook_handler(
+    request: web.Request,
+):
+    application = request.app["telegram_application"]
+
+    try:
+        data = await request.json()
+
+        update = Update.de_json(
+            data=data,
+            bot=application.bot,
+        )
+
+        await application.update_queue.put(update)
+
+        return web.Response(
+            text="OK",
+            status=200,
+        )
+
+    except Exception:
+        logger.exception(
+            "Failed to process webhook update."
+        )
+
+        return web.Response(
+            text="Bad Request",
+            status=400,
+        )
+
+
+async def start_webhook_server():
     application = (
         Application.builder()
         .token(TOKEN)
+        .updater(None)
         .build()
     )
 
     application.add_handler(
-        CommandHandler("start", start_command)
+        CommandHandler(
+            "start",
+            start_command,
+        )
     )
 
     application.add_handler(
@@ -208,19 +236,100 @@ def main():
         )
     )
 
-    application.add_error_handler(error_handler)
+    application.add_error_handler(
+        error_handler
+    )
+
+    webhook_url = (
+        f"{EXTERNAL_URL}{WEBHOOK_PATH}"
+    )
 
     logger.info(
-        "MUBA local-brain bot is starting."
+        "Initializing MUBA webhook application."
+    )
+
+    await application.initialize()
+    await application.start()
+
+    await application.bot.set_webhook(
+        url=webhook_url,
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+    )
+
+    logger.info(
+        "MUBA webhook configured successfully."
     )
 
     logger.info(
         "External AI services are disabled."
     )
 
-    application.run_polling(
-        drop_pending_updates=True,
-        allowed_updates=Update.ALL_TYPES,
+    app = web.Application()
+
+    app["telegram_application"] = application
+
+    app.router.add_get(
+        "/",
+        health_handler,
+    )
+
+    app.router.add_get(
+        "/health",
+        health_handler,
+    )
+
+    app.router.add_post(
+        WEBHOOK_PATH,
+        webhook_handler,
+    )
+
+    runner = web.AppRunner(app)
+
+    await runner.setup()
+
+    site = web.TCPSite(
+        runner,
+        host="0.0.0.0",
+        port=PORT,
+    )
+
+    await site.start()
+
+    logger.info(
+        "MUBA webhook server listening on port %s",
+        PORT,
+    )
+
+    logger.info(
+        "MUBA is live."
+    )
+
+    try:
+        await asyncio_forever()
+
+    finally:
+        logger.info(
+            "Stopping MUBA application."
+        )
+
+        await runner.cleanup()
+
+        await application.stop()
+        await application.shutdown()
+
+
+async def asyncio_forever():
+    import asyncio
+
+    await asyncio.Event().wait()
+
+
+def main():
+    import asyncio
+
+    asyncio.run(
+        start_webhook_server()
     )
 
 
