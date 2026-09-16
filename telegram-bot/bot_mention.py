@@ -19,7 +19,12 @@ from telegram.ext import (
     filters,
 )
 
-from muba_brain import build_reply, contains_muba, detect_language
+from muba_brain import (
+    build_reply,
+    contains_muba,
+    detect_language,
+    detect_social_intent,
+)
 
 
 logging.basicConfig(
@@ -82,6 +87,13 @@ def should_answer(update: Update) -> bool:
     if chat and chat.type == ChatType.PRIVATE:
         return True
 
+    # Plain group greetings must reach the local brain even
+    # when MUBA is not mentioned.
+    social_intent = detect_social_intent(text)
+
+    if social_intent in {"greeting", "gm", "gn"}:
+        return True
+
     if message.reply_to_message:
         replied_user = message.reply_to_message.from_user
 
@@ -134,12 +146,16 @@ async def handle_message(
         else 0
     )
 
+    user = update.effective_user
+    user_id = user.id if user else None
+
     language = detect_language(text)
 
     response = build_reply(
         text,
         chat_id=chat_id,
         language=language,
+        user_id=user_id,
     )
 
     if not response:
