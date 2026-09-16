@@ -9,6 +9,9 @@ from telegram import Update
 from telegram.helpers import mention_html
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
+
 
 # ============================================================
 # MUBA TELEGRAM AI BOT
@@ -27,9 +30,29 @@ if not OPENAI_API_KEY:
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
+# Render Web Service health server.
+PORT = int(os.environ.get("PORT", "10000"))
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"MUBA is alive.\\n")
+
+    def log_message(self, format, *args):
+        return
+
+def start_health_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    server.serve_forever()
+
+def run_health_server():
+    Thread(target=start_health_server, daemon=True).start()
+
 GREETING_THRESHOLD = 3
 GREETING_WINDOW_SECONDS = 6 * 60 * 60
-MAX_HISTORY = 12
+MAX_HISTORY = 4
 
 conversation_history = defaultdict(lambda: deque(maxlen=MAX_HISTORY))
 
@@ -930,7 +953,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             model="gpt-5.6-luna",
             instructions=MUBA_PROMPT,
             input=input_messages,
-            max_output_tokens=220,
+            max_output_tokens=120,
         )
 
         answer = (response.output_text or "").strip()
@@ -997,7 +1020,8 @@ def main():
 
     application.add_error_handler(error_handler)
 
-    print("MUBA AI bot is running in polling mode.")
+    run_health_server()
+    print(f"MUBA AI bot is running in polling mode on port {PORT}.")
     application.run_polling(
         drop_pending_updates=False
     )
