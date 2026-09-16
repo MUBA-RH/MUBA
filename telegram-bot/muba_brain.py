@@ -1,1701 +1,1202 @@
 """
-MUBA Local Brain
-Large offline knowledge base, multilingual intent matching, social behavior,
-fuzzy matching, conversation context, and safe fallback handling.
+MUBA LOCAL BRAIN — FINAL ARCHITECTURE BUILD
 
-No external AI service is required.
+Single-file local intelligence core for the MUBA Telegram bot.
+No OpenAI / external AI dependency.
+Optional current-information research is isolated behind a standard-library
+HTTP client and can be enabled with MUBA_WEB_ENABLED=1.
 
-Supported languages:
-- English
-- Turkish
-- Chinese
-- Arabic
-- Hindi
+Design goals:
+- natural group conversation without requiring the word MUBA
+- multilingual intent detection: EN/TR/ZH/AR/HI
+- user / group / topic / community memory separation
+- provenance, confidence, archive/versioning and learning queue
+- founder authority firewall based on Telegram numeric ID
+- security incident recognition and decision traces
+- future-state handling: plan != fact
+- official CA boundary: "CA coming soon"
+- official source map
+- adaptive response length and tone
+- duplicate/social spam suppression
+- safe fallback instead of unrelated lore dumping
+- persistent JSON state as a portable storage layer
 
-The brain is intentionally self-contained. It does not make network calls.
+Important operational note:
+JSON persistence survives process restarts on a normal persistent disk. On a
+Render Free ephemeral filesystem it is NOT guaranteed to survive redeploys or
+instance replacement. The storage interface is deliberately isolated so a
+persistent database/object store can be plugged in later without redesigning
+the brain.
 """
-
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import os
 import random
 import re
 import threading
 import time
 import unicodedata
+import urllib.parse
+import urllib.request
 from collections import defaultdict, deque
+from dataclasses import dataclass, asdict
 from difflib import SequenceMatcher
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, Iterable, List, Optional, Tuple
 
-
-# ============================================================
-# CORE CONFIGURATION
-# ============================================================
-
+BRAIN_VERSION = "FINAL-1.0"
 SUPPORTED_LANGUAGES = ("en", "tr", "zh", "ar", "hi")
+DEFAULT_MEMORY_FILE = os.getenv("MUBA_MEMORY_FILE", "muba_memory/memory.json")
+FOUNDER_ID_RAW = os.getenv("MUBA_FOUNDER_ID", "").strip()
+AUTHORIZED_GROUPS_RAW = os.getenv("MUBA_AUTHORIZED_GROUP_IDS", "").strip()
+WEB_ENABLED = os.getenv("MUBA_WEB_ENABLED", "0").lower() in {"1", "true", "yes", "on"}
+WEB_TIMEOUT = float(os.getenv("MUBA_WEB_TIMEOUT", "6"))
+SOCIAL_COOLDOWN = 90.0
+GREETING_DAILY_LIMIT = 86400.0
+MAX_CONTEXT = 20
+MAX_MEMORY_ITEMS = 500
+MAX_INCIDENTS = 500
+MAX_LEARNING = 1000
+MAX_TIMELINE = 1000
+FUZZY_THRESHOLD = 0.72
 
-SOCIAL_COOLDOWN_SECONDS = 90.0
-SOCIAL_DAILY_LIMIT_SECONDS = 86400.0
-MAX_CONTEXT_ITEMS = 8
-FUZZY_THRESHOLD = 0.62
-KEYWORD_THRESHOLD = 0.34
-
-
-# ============================================================
-# LANGUAGE DETECTION
-# ============================================================
-
-LANGUAGE_HINTS = {
-    "tr": {
-        "words": {
-            "nedir", "kim", "kimdir", "nasıl", "neden", "ne", "hangi",
-            "ekip", "topluluk", "hikaye", "hikâye", "gelecek", "amaç",
-            "felsefe", "karakter", "meme", "farklı", "özellik", "kültür",
-            "nereden", "çıktı", "selam", "nasılsın", "naber", "günaydın",
-            "iyi", "gece", "merhaba", "mrb", "slm", "salam", "heyy",
-            "niye", "burada", "burda", "hakkında", "anlat", "söyle",
-            "kimmiş", "neymiş", "neden", "amacı", "topluluğu",
-        },
-        "chars": set("çğıöşü"),
-    },
-    "en": {
-        "words": {
-            "what", "who", "how", "why", "where", "when", "team",
-            "community", "story", "future", "purpose", "philosophy",
-            "character", "meme", "different", "culture", "origin",
-            "hello", "hey", "morning", "night", "about", "tell",
-            "explain", "meaning", "goal", "identity", "home",
-        },
-        "chars": set(),
-    },
-    "zh": {
-        "words": {
-            "什么", "是谁", "为什么", "怎么样", "怎么", "社区", "故事",
-            "未来", "团队", "角色", "表情包", "文化", "起源", "你好",
-            "早上好", "晚安", "目的", "意义", "区别", "为什么",
-        },
-        "chars": set(),
-    },
-    "ar": {
-        "words": {
-            "ما", "هو", "هي", "من", "لماذا", "كيف", "أين", "فريق",
-            "مجتمع", "قصة", "مستقبل", "شخصية", "ميم", "ثقافة", "أصل",
-            "مرحبا", "أهلا", "صباح", "ليل", "هدف", "معنى", "لماذا",
-        },
-        "chars": set(),
-    },
-    "hi": {
-        "words": {
-            "क्या", "कौन", "क्यों", "कैसे", "कहां", "कहाँ", "टीम",
-            "समुदाय", "कहानी", "भविष्य", "चरित्र", "मीम", "संस्कृति",
-            "शुरुआत", "नमस्ते", "सुबह", "रात", "उद्देश्य", "मतलब",
-            "अलग", "क्योंकि",
-        },
-        "chars": set(),
-    },
-}
+log = logging.getLogger("muba.brain")
 
 
-STOP_WORDS = {
-    "en": {
-        "the", "is", "a", "an", "and", "or", "of", "to", "in", "on",
-        "for", "do", "does", "did", "can", "you", "tell", "me", "about",
-        "what", "who", "how", "why", "where", "when", "please",
-    },
-    "tr": {
-        "bir", "bu", "ve", "veya", "ile", "için", "icin", "mi", "mı",
-        "mu", "mü", "ne", "nedir", "bana", "hakkında", "olan", "olarak",
-        "şey", "şu", "da", "de", "ya", "yani", "sen", "ben",
-    },
-    "zh": {
-        "的", "是", "吗", "呢", "和", "与", "关于", "什么", "了", "在",
-        "有", "我", "你", "他", "她",
-    },
-    "ar": {
-        "ما", "هو", "هي", "من", "عن", "في", "هل", "و", "أو", "هذا",
-        "هذه", "كيف", "لماذا",
-    },
-    "hi": {
-        "क्या", "है", "हैं", "का", "की", "के", "और", "में", "से", "को",
-        "यह", "वह", "मैं", "आप", "तुम",
-    },
-}
+def _ints(raw: str) -> set[int]:
+    out: set[int] = set()
+    for part in re.split(r"[,\s]+", raw):
+        if part.strip().lstrip("-").isdigit():
+            out.add(int(part))
+    return out
 
+FOUNDER_IDS = _ints(FOUNDER_ID_RAW)
+AUTHORIZED_GROUP_IDS = _ints(AUTHORIZED_GROUPS_RAW)
+
+# ---------------------------------------------------------------------------
+# NORMALIZATION / LANGUAGE
+# ---------------------------------------------------------------------------
 
 def normalize(text: str) -> str:
-    """Normalize text while preserving multilingual characters."""
-    value = unicodedata.normalize("NFKC", text or "").lower()
-    value = value.replace("ı", "i")
-    value = re.sub(r"[\u200b-\u200f\u202a-\u202e]", "", value)
-    value = re.sub(
-        r"[\u0300-\u036f]",
-        "",
-        unicodedata.normalize("NFD", value),
-    )
-    value = re.sub(r"[@#$%&*_+=~`|<>[\]{}()]", " ", value)
-    value = re.sub(r"\s+", " ", value).strip()
-    return value
+    text = unicodedata.normalize("NFKC", str(text or "")).strip().lower()
+    text = text.replace("’", "'").replace("–", "-").replace("—", "-")
+    text = re.sub(r"\s+", " ", text)
+    return text
 
 
-def tokens(text: str) -> List[str]:
-    """Return multilingual word/token units."""
-    return re.findall(
-        r"[a-z0-9çğıöşü]+|[\u3400-\u9fff]|[\u0600-\u06ff]+|[\u0900-\u097f]+",
-        normalize(text),
-    )
+def similarity(a: str, b: str) -> float:
+    return SequenceMatcher(None, normalize(a), normalize(b)).ratio()
 
+LANG_WORDS = {
+    "tr": {"nedir","kim","kimdir","nasıl","neden","ne","hangi","ekip","topluluk","hikaye","hikâye","gelecek","amaç","felsefe","karakter","meme","farklı","özellik","kültür","nereden","çıktı","selam","nasılsın","naber","günaydın","merhaba","mrb","slm","salam","heyy","niye","burada","burda","hakkında","anlat","söyle","kimmiş","neymiş","amacı","listelenir","hava","havalar","kurucu","yetki","benim","bana"},
+    "en": {"what","who","how","why","where","when","team","community","story","future","purpose","philosophy","character","meme","different","culture","origin","hello","hey","morning","night","about","tell","explain","meaning","goal","identity","home","weather","founder","authority","me","my"},
+    "zh": {"什么","是谁","为什么","怎么样","怎么","社区","故事","未来","团队","角色","表情包","文化","起源","你好","早上好","晚安","目的","意义","区别","今天","天气","创始人","权限","我"},
+    "ar": {"ما","هو","هي","من","لماذا","كيف","أين","فريق","مجتمع","قصة","مستقبل","شخصية","ميم","ثقافة","أصل","مرحبا","أهلا","صباح","ليل","هدف","معنى","اليوم","الطقس","المؤسس","صلاحية","أنا"},
+    "hi": {"क्या","कौन","क्यों","कैसे","कहां","कहाँ","टीम","समुदाय","कहानी","भविष्य","चरित्र","मीम","संस्कृति","शुरुआत","नमस्ते","सुबह","रात","उद्देश्य","मतलब","अलग","आज","मौसम","संस्थापक","अधिकार","मैं"},
+}
 
 def detect_language(text: str) -> str:
-    """Detect one of the five supported response languages."""
     value = normalize(text)
-
-    if any("\u4e00" <= ch <= "\u9fff" for ch in value):
-        return "zh"
-
-    if any("\u0600" <= ch <= "\u06ff" for ch in value):
-        return "ar"
-
-    if any("\u0900" <= ch <= "\u097f" for ch in value):
-        return "hi"
-
-    scores = {language: 0 for language in SUPPORTED_LANGUAGES}
-    words = set(tokens(value))
-
-    for language, data in LANGUAGE_HINTS.items():
-        scores[language] += sum(1 for word in data["words"] if word in value)
-        scores[language] += sum(1 for word in data["words"] if word in words)
-        scores[language] += sum(1 for ch in data["chars"] if ch in value)
-
-    if scores["tr"] > scores["en"]:
-        return "tr"
-
+    if not value:
+        return "en"
+    if re.search(r"[\u4e00-\u9fff]", value): return "zh"
+    if re.search(r"[\u0600-\u06ff]", value): return "ar"
+    if re.search(r"[\u0900-\u097f]", value): return "hi"
+    tokens = set(re.findall(r"[a-zA-ZçğıöşüÇĞİÖŞÜ']+", value))
+    scores = {lang: len(tokens & words) for lang, words in LANG_WORDS.items()}
+    if any(c in value for c in "çğıöşü"): scores["tr"] += 3
+    if scores["tr"] >= 2 and scores["tr"] >= scores["en"]: return "tr"
+    if scores["en"] >= 1: return "en"
+    if scores["tr"] >= 1: return "tr"
     return "en"
 
 
-# ============================================================
-# MUBA NAME / MENTION DETECTION
-# ============================================================
+def _tokenize(value: str) -> List[str]:
+    return [x for x in re.findall(r"[\w\u0080-\uffff@#$'-]+", normalize(value)) if x]
+
+
+def _token_overlap(a: str, b: str) -> float:
+    aa, bb = set(_tokenize(a)), set(_tokenize(b))
+    if not aa or not bb: return 0.0
+    return len(aa & bb) / max(1, len(bb))
+
 
 def contains_muba(text: str) -> bool:
-    """Detect MUBA references including common spacing and typo variants."""
     value = normalize(text)
-
-    if re.search(r"\bmub+a+\b", value):
-        return True
-
+    if re.search(r"\bm+u+b+a+\b", value): return True
     compact = re.sub(r"[^a-z]", "", value)
-
-    if "muba" in compact:
-        return True
-
-    if re.search(r"\bm\s*u\s*b\s*a\b", value):
-        return True
-
-    fuzzy_candidates = re.findall(r"\b[a-z]{3,6}\b", value)
-
-    for candidate in fuzzy_candidates:
-        if SequenceMatcher(None, candidate, "muba").ratio() >= 0.82:
-            return True
-
+    if "muba" in compact: return True
+    if similarity(compact, "muba") >= 0.82: return True
     return False
 
+# ---------------------------------------------------------------------------
+# OFFICIAL IDENTITY / KNOWLEDGE
+# ---------------------------------------------------------------------------
 
-# ============================================================
-# TEXT MATCHING
-# ============================================================
-
-def similarity(a: str, b: str) -> float:
-    """Return normalized text similarity."""
-    return SequenceMatcher(None, normalize(a), normalize(b)).ratio()
-
-
-def _clean_for_match(text: str) -> str:
-    value = normalize(text)
-
-    for language_words in STOP_WORDS.values():
-        for word in language_words:
-            value = re.sub(rf"\b{re.escape(word)}\b", " ", value)
-
-    return re.sub(r"\s+", " ", value).strip()
-
-
-def _keyword_score(query: str, keywords: List[str]) -> float:
-    cleaned = _clean_for_match(query)
-
-    if not cleaned:
-        return 0.0
-
-    best = 0.0
-
-    for keyword in keywords:
-        target = _clean_for_match(keyword)
-
-        if not target:
-            continue
-
-        if target in cleaned:
-            best = max(best, 1.0)
-            continue
-
-        ratio = similarity(cleaned, target)
-
-        if ratio > best:
-            best = ratio
-
-    return best
-
-
-def _token_overlap(query: str, keyword: str) -> float:
-    q = set(tokens(_clean_for_match(query)))
-    k = set(tokens(_clean_for_match(keyword)))
-
-    if not q or not k:
-        return 0.0
-
-    return len(q & k) / max(1, len(k))
-
-
-# ============================================================
-# MASTER KNOWLEDGE BASE
-# ============================================================
-
-KNOWLEDGE: List[Dict] = [
-    {
-        "id": 1,
-        "topic": "what_is_muba",
-        "keywords": [
-            "what is muba",
-            "what's muba",
-            "define muba",
-            "muba meaning",
-            "muba nedir",
-            "muba ne",
-            "muba kim",
-            "muba ne demek",
-            "什么是muba",
-            "muba是什么",
-            "ما هو muba",
-            "ما هي muba",
-            "muba क्या है",
-        ],
+MUBA_CORE = {
+    "what_is_muba": {
+        "keywords": ["what is muba", "muba nedir", "muba 是什么", "ما هو muba", "muba क्या है", "muba ne"],
         "answers": {
-            "en": "MUBA is a character, a meme, and a community born from the natural chaos of the meme world. No complicated story. No grand technological promise. Just MUBA.",
-            "tr": "MUBA; meme dünyasının doğal kaosundan doğan bir karakter, meme ve topluluktur. Karmaşık hikâye yok. Büyük teknoloji vaadi yok. Sadece MUBA.",
-            "zh": "MUBA 是一个角色、一个 meme，也是一个从 meme 世界自然混乱中诞生的社区。没有复杂故事，没有宏大技术承诺，只有 MUBA。",
-            "ar": "MUBA شخصية وميم ومجتمع وُلد من الفوضى الطبيعية لعالم الميمات. لا قصة معقدة ولا وعود تقنية ضخمة. فقط MUBA.",
-            "hi": "MUBA एक कैरेक्टर, एक मीम और एक कम्युनिटी है जो मीम की दुनिया की प्राकृतिक अराजकता से पैदा हुई। कोई जटिल कहानी नहीं, कोई बड़े तकनीकी वादे नहीं। बस MUBA।",
+            "en": "MUBA is a character, a meme, and a community born from the natural chaos of the meme world. No complicated story. No grand technological promise. Just MUBA. 🪶",
+            "tr": "MUBA, meme dünyasının doğal kaosundan doğan bir karakter, meme ve topluluktur. Karmaşık hikâye yok. Büyük teknoloji vaadi yok. Sadece MUBA. 🪶",
+            "zh": "MUBA 是一个角色、一个 meme，也是一个从 meme 世界自然混乱中诞生的社区。没有复杂故事，没有宏大技术承诺。只有 MUBA。🪶",
+            "ar": "MUBA هي شخصية وميم ومجتمع وُلد من الفوضى الطبيعية لعالم الميمات. لا قصة معقدة ولا وعود تقنية ضخمة. فقط MUBA. 🪶",
+            "hi": "MUBA एक किरदार, एक meme और एक community है जो meme world की natural chaos से पैदा हुई। कोई जटिल कहानी नहीं, कोई बड़ी तकनीकी promise नहीं। बस MUBA। 🪶",
         },
     },
-    {
-        "id": 2,
-        "topic": "origin",
-        "keywords": [
-            "muba origin",
-            "how did muba start",
-            "where did muba come from",
-            "how was muba created",
-            "muba nasıl çıktı",
-            "muba nasıl ortaya çıktı",
-            "muba nereden çıktı",
-            "muba nasıl başladı",
-            "muba起源",
-            "muba怎么诞生",
-            "muba从哪里来",
-            "من أين جاءت muba",
-            "كيف بدأت muba",
-            "muba कैसे शुरू हुआ",
-            "muba कहाँ से आया",
-        ],
+    "origin": {
+        "keywords": ["origin", "where did muba come from", "muba nereden çıktı", "köken", "怎么诞生", "起源", "أصل muba", "muba कैसे बना"],
         "answers": {
-            "en": "MUBA did not begin with a giant plan. The character came first, then content, interaction, community, and culture. MUBA's story is lived, not pre-written.",
-            "tr": "MUBA dev bir planla başlamadı. Önce karakter, sonra içerik, etkileşim, topluluk ve kültür geldi. MUBA'nın hikâyesi önceden yazılmıyor; yaşanıyor.",
-            "zh": "MUBA 并不是从一个庞大计划开始的。先有角色，然后是内容、互动、社区和文化。MUBA 的故事不是预先写好的，而是在被创造和经历。",
-            "ar": "لم تبدأ MUBA بخطة ضخمة. جاءت الشخصية أولاً، ثم المحتوى والتفاعل والمجتمع والثقافة. قصة MUBA تُعاش ولا تُكتب مسبقاً.",
-            "hi": "MUBA किसी बड़े प्लान से शुरू नहीं हुआ। पहले कैरेक्टर आया, फिर कंटेंट, इंटरैक्शन, कम्युनिटी और कल्चर। MUBA की कहानी पहले से लिखी नहीं गई; उसे जिया जा रहा है।",
+            "en": "MUBA did not begin with a grand project plan. A character appeared first, then content, interaction, community and culture grew around it.",
+            "tr": "MUBA büyük bir proje planıyla başlamadı. Önce karakter ortaya çıktı; sonra etrafında içerik, etkileşim, topluluk ve kültür büyüdü.",
+            "zh": "MUBA 不是从一个宏大项目计划开始的。先有角色，然后内容、互动、社区和文化逐渐围绕它成长。",
+            "ar": "لم تبدأ MUBA بخطة مشروع ضخمة. ظهرت الشخصية أولاً، ثم نمت حولها المحتويات والتفاعل والمجتمع والثقافة.",
+            "hi": "MUBA किसी बड़े project plan से शुरू नहीं हुआ। पहले character आया, फिर उसके आसपास content, interaction, community और culture बढ़े।",
         },
     },
-    {
-        "id": 3,
-        "topic": "who_is_muba",
-        "keywords": [
-            "who is muba",
-            "muba kimdir",
-            "muba karakteri kim",
-            "who exactly is muba",
-            "muba是谁",
-            "谁是muba",
-            "من هي muba",
-            "muba कौन है",
-        ],
+    "character": {
+        "keywords": ["muba character", "character of muba", "muba karakter", "karakteri", "角色", "شخصية muba", "muba चरित्र"],
         "answers": {
-            "en": "MUBA is the character at the center of the culture: cute, absurd, recognizable, expressive, and completely aware of what it is. MUBA is also an attitude.",
-            "tr": "MUBA kültürün merkezindeki karakterdir: sevimli, absürt, tanınabilir, ifadeli ve ne olduğunu bilen bir karakter. MUBA aynı zamanda bir duruştur.",
-            "zh": "MUBA 是整个文化的核心角色：可爱、荒诞、容易辨认、表情丰富，也清楚自己是谁。MUBA 也是一种态度。",
-            "ar": "MUBA هي الشخصية في قلب الثقافة: لطيفة، عبثية، مميزة وسهلة التعرف، وتعرف تماماً ما هي. MUBA أيضاً أسلوب وموقف.",
-            "hi": "MUBA इस संस्कृति का मुख्य कैरेक्टर है: प्यारा, अजीब, पहचानने योग्य, एक्सप्रेसिव और अपनी पहचान से पूरी तरह वाकिफ। MUBA एक एटीट्यूड भी है।",
+            "en": "MUBA is direct, meme-native, playful, confident and a little weird. The character can evolve, but the core identity stays MUBA.",
+            "tr": "MUBA direkt, meme-native, eğlenceli, özgüvenli ve biraz tuhaftır. Karakter gelişebilir ama temel kimlik MUBA olarak kalır.",
+            "zh": "MUBA 直接、懂 meme、轻松、自信，还有一点奇怪。角色可以成长，但核心身份始终是 MUBA。",
+            "ar": "MUBA مباشرة، من ثقافة الميمات، مرحة وواثقة وغريبة قليلاً. يمكن للشخصية أن تتطور، لكن الهوية الأساسية تبقى MUBA.",
+            "hi": "MUBA direct, meme-native, playful, confident और थोड़ा weird है। Character evolve हो सकता है, लेकिन core identity MUBA ही रहती है।",
         },
     },
-    {
-        "id": 4,
-        "topic": "character",
-        "keywords": [
-            "muba character",
-            "character traits",
-            "what does muba look like",
-            "muba appearance",
-            "muba characteristics",
-            "muba karakter özellikleri",
-            "muba karakteri",
-            "muba görünüşü",
-            "muba nasıl görünüyor",
-            "muba长什么样",
-            "muba شخصية",
-            "muba कैरेक्टर",
-        ],
+    "community": {
+        "keywords": ["muba community", "community meaning", "muba topluluğu", "topluluk", "社区", "مجتمع muba", "समुदाय"],
         "answers": {
-            "en": "MUBA is cute, absurd, unique, humorous, natural, meme-native, confident, and recognizable. The visual identity includes large expressive eyes, short dense fur, a pink tongue, a black MUBA hat, and a black hoodie marked $MUBA.",
-            "tr": "MUBA sevimli, absürt, özgün, komik, doğal, meme kültürüne ait, özgüvenli ve tanınabilir. Görsel kimliğinde büyük ifadeli gözler, kısa yoğun tüyler, pembe dil, siyah MUBA şapkası ve üzerinde $MUBA bulunan siyah hoodie vardır.",
-            "zh": "MUBA 可爱、荒诞、独特、幽默、自然、原生于 meme 文化、自信且容易辨认。视觉身份包括大而有表现力的眼睛、短而浓密的毛发、粉色舌头、黑色 MUBA 帽子和印有 $MUBA 的黑色连帽衫。",
-            "ar": "MUBA لطيفة وعبثية وفريدة ومرحة وطبيعية وتنتمي لثقافة الميمات وواثقة وسهلة التعرف. هويتها البصرية تشمل عيوناً كبيرة معبرة، فروًا قصيراً كثيفاً، لساناً وردياً، قبعة MUBA سوداء وكنزة سوداء تحمل $MUBA.",
-            "hi": "MUBA प्यारा, अजीब, यूनिक, मज़ेदार, नेचुरल, मीम कल्चर का हिस्सा, कॉन्फिडेंट और पहचानने योग्य है। इसकी विज़ुअल पहचान में बड़ी एक्सप्रेसिव आंखें, छोटे घने बाल/फर, गुलाबी जीभ, काली MUBA टोपी और $MUBA वाली काली हुडी शामिल है।",
+            "en": "The MUBA community grows around memes, humor, interaction, images, ideas and participation. Everyone who participates has a place here.",
+            "tr": "MUBA topluluğu mizah, meme kültürü, etkileşim, görseller, fikirler ve katılım etrafında oluşur. Katılan herkesin burada bir yeri vardır.",
+            "zh": "MUBA 社区围绕幽默、meme 文化、互动、图片、想法和参与而成长。参与其中的人都有自己的位置。",
+            "ar": "ينمو مجتمع MUBA حول الفكاهة وثقافة الميمات والتفاعل والصور والأفكار والمشاركة. لكل من يشارك مكان هنا.",
+            "hi": "MUBA community memes, humor, interaction, images, ideas और participation के आसपास बढ़ती है। जो हिस्सा लेता है, उसकी यहां जगह है।",
         },
     },
-    {
-        "id": 5,
-        "topic": "core_definition",
-        "keywords": [
-            "muba core",
-            "what defines muba",
-            "muba identity",
-            "muba definition",
-            "muba'nın özü",
-            "muba kimliği",
-            "muba özü",
-            "muba核心",
-            "muba身份",
-            "هوية muba",
-            "muba पहचान",
-        ],
+    "we_live_here_now": {
+        "keywords": ["we live here now", "live here", "burada yaşıyoruz", "şimdi buradayız", "我们现在住在这里", "نحن هنا الآن", "हम यहां रहते हैं"],
         "answers": {
-            "en": "The core definition is simple: I'm MUBA. A character. A meme. A community.",
-            "tr": "Temel tanım basit: Ben MUBA'yım. Bir karakter. Bir meme. Bir topluluk.",
-            "zh": "核心定义很简单：我是 MUBA。一个角色。一个 meme。一个社区。",
-            "ar": "التعريف الأساسي بسيط: أنا MUBA. شخصية. ميم. مجتمع.",
-            "hi": "मुख्य परिभाषा सरल है: मैं MUBA हूँ। एक कैरेक्टर। एक मीम। एक कम्युनिटी।",
+            "en": "WE LIVE HERE NOW. The meme world and internet culture are MUBA's natural home. 🪶",
+            "tr": "WE LIVE HERE NOW. Meme dünyası ve internet kültürü MUBA'nın doğal evidir. 🪶",
+            "zh": "WE LIVE HERE NOW。meme 世界和互联网文化是 MUBA 的自然家园。🪶",
+            "ar": "WE LIVE HERE NOW. عالم الميمات وثقافة الإنترنت هما موطن MUBA الطبيعي. 🪶",
+            "hi": "WE LIVE HERE NOW. Meme world और internet culture MUBA का natural home हैं। 🪶",
         },
     },
-    {
-        "id": 6,
-        "topic": "purpose",
-        "keywords": [
-            "muba purpose",
-            "purpose of muba",
-            "what is muba for",
-            "muba goal",
-            "muba goals",
-            "muba'nın amacı",
-            "muba amacı",
-            "muba ne amaçlıyor",
-            "muba有什么目的",
-            "muba的目标",
-            "ما هدف muba",
-            "هدف مجتمع muba",
-            "muba का उद्देश्य",
-            "muba का लक्ष्य",
-        ],
+    "philosophy": {
+        "keywords": ["philosophy", "muba philosophy", "felsefe", "muba felsefesi", "理念", "فلسفة muba", "दर्शन"],
         "answers": {
-            "en": "MUBA exists to build a lasting cultural and community atmosphere around the character. People can talk, create memes, share ideas, participate, and help shape the story.",
-            "tr": "MUBA'nın amacı karakter etrafında kalıcı bir kültür ve topluluk atmosferi oluşturmaktır. İnsanlar konuşabilir, meme üretebilir, fikir paylaşabilir, katılabilir ve hikâyenin şekillenmesine katkı verebilir.",
-            "zh": "MUBA 的目的，是围绕这个角色建立持久的文化和社区氛围。人们可以交流、制作 meme、分享想法、参与其中，并一起塑造故事。",
-            "ar": "تهدف MUBA إلى بناء أجواء ثقافية ومجتمعية مستمرة حول الشخصية. يمكن للناس التحدث وصنع الميمات ومشاركة الأفكار والمشاركة والمساعدة في تشكيل القصة.",
-            "hi": "MUBA का उद्देश्य कैरेक्टर के आसपास एक टिकाऊ कम्युनिटी और कल्चरल माहौल बनाना है। लोग बात कर सकते हैं, मीम बना सकते हैं, आइडिया शेयर कर सकते हैं, भाग ले सकते हैं और कहानी को आकार देने में मदद कर सकते हैं।",
+            "en": "MUBA grows with the community, stays true to its identity, avoids fake promises and does not pretend the future is already written. As long as the internet exists, MUBA can keep living here.",
+            "tr": "MUBA toplulukla büyür, kimliğine sadık kalır, sahte vaatlerden uzak durur ve geleceğin tamamen yazıldığını iddia etmez. İnternet olduğu sürece MUBA burada yaşamaya devam edebilir.",
+            "zh": "MUBA 与社区一起成长，保持自己的身份，不做虚假承诺，也不假装未来已经写好。只要互联网存在，MUBA 就能继续住在这里。",
+            "ar": "تنمو MUBA مع المجتمع، وتحافظ على هويتها، وتتجنب الوعود الزائفة، ولا تتظاهر بأن المستقبل مكتوب بالكامل. ما دام الإنترنت موجوداً، يمكن لـ MUBA أن تبقى هنا.",
+            "hi": "MUBA community के साथ बढ़ता है, अपनी identity को बनाए रखता है, fake promises से दूर रहता है और यह दावा नहीं करता कि future पहले से लिखा है। जब तक internet है, MUBA यहां रह सकता है।",
         },
     },
-    {
-        "id": 7,
-        "topic": "growth",
-        "keywords": [
-            "how will muba grow",
-            "muba growth",
-            "muba development",
-            "muba büyüme",
-            "muba nasıl büyür",
-            "muba nasıl gelişir",
-            "muba发展",
-            "muba成长",
-            "كيف تنمو muba",
-            "تطور muba",
-            "muba कैसे बढ़ेगा",
-            "muba कैसे विकसित होगा",
-        ],
+    "robinhood_flap": {
+        "keywords": ["robinhood flap", "flap robinhood", "flap x robinhood", "robinhood", "flap", "روبن هود", "罗宾汉"],
         "answers": {
-            "en": "MUBA is not about empty hype or simply chasing the highest visibility. The focus is stronger identity, genuine interest, curiosity, conversation, participation, and community culture.",
-            "tr": "MUBA boş hype peşinde koşmakla veya sadece en yüksek görünürlüğü hedeflemekle ilgili değil. Odak; daha güçlü kimlik, gerçek ilgi, merak, konuşma, katılım ve topluluk kültürü.",
-            "zh": "MUBA 不是为了空洞的炒作，也不是单纯追求最高曝光。重点是更强的身份认同、真实兴趣、好奇心、交流、参与和社区文化。",
-            "ar": "MUBA ليست عن الضجة الفارغة أو مجرد مطاردة أعلى ظهور. التركيز على هوية أقوى واهتمام حقيقي وفضول وحوار ومشاركة وثقافة مجتمعية.",
-            "hi": "MUBA खाली हाइप या सिर्फ ज्यादा विज़िबिलिटी के बारे में नहीं है। फोकस मजबूत पहचान, असली रुचि, जिज्ञासा, बातचीत, भागीदारी और कम्युनिटी कल्चर पर है।",
+            "en": "Flap × Robinhood × MUBA is part of the broader meme-world framing used in MUBA's story. It is not presented as a guaranteed outcome or financial promise.",
+            "tr": "Flap × Robinhood × MUBA, MUBA'nın hikâyesindeki daha geniş meme evreninin bir parçası olarak anlatılır. Garanti edilmiş bir sonuç veya finansal vaat değildir.",
+            "zh": "Flap × Robinhood × MUBA 是 MUBA 故事中更广泛 meme 世界框架的一部分，不代表保证结果或金融承诺。",
+            "ar": "Flap × Robinhood × MUBA جزء من الإطار الأوسع لعالم الميمات في قصة MUBA، وليس نتيجة مضمونة أو وعداً مالياً.",
+            "hi": "Flap × Robinhood × MUBA, MUBA की broader meme-world story का हिस्सा है। इसे guaranteed outcome या financial promise की तरह नहीं पेश किया जाता।",
         },
     },
-    {
-        "id": 8,
-        "topic": "community",
-        "keywords": [
-            "muba community",
-            "who is the community",
-            "community of muba",
-            "muba topluluğu",
-            "muba topluluk",
-            "muba社区",
-            "muba社区是什么",
-            "مجتمع muba",
-            "مجتمع موبا",
-            "muba समुदाय",
-            "muba की कम्युनिटी",
-        ],
+    "butterfly_effect": {
+        "keywords": ["butterfly effect", "kelebek etkisi", "butterfly", "蝴蝶效应", "تأثير الفراشة", "तितली प्रभाव"],
         "answers": {
-            "en": "MUBA's community is built around humor, meme culture, interaction, visuals, ideas, participation, and a shared feeling that there is a place here for you.",
-            "tr": "MUBA topluluğu mizah, meme kültürü, etkileşim, görseller, fikirler ve katılım etrafında oluşur. Burada senin de bir yerin var.",
-            "zh": "MUBA 社区建立在幽默、meme 文化、互动、视觉内容、想法和参与之上。这里有属于你的空间。",
-            "ar": "مجتمع MUBA يقوم على الفكاهة وثقافة الميمات والتفاعل والمحتوى البصري والأفكار والمشاركة. لك مكان هنا.",
-            "hi": "MUBA कम्युनिटी ह्यूमर, मीम कल्चर, इंटरैक्शन, विज़ुअल्स, आइडियाज़ और पार्टिसिपेशन पर बनी है। यहां आपके लिए भी जगह है।",
+            "en": "The butterfly effect represents possibility: a small meme can create a much larger cultural ripple. It is a metaphor for possibility, not a guarantee.",
+            "tr": "Kelebek etkisi olasılığı temsil eder: küçük bir meme çok daha büyük bir kültürel dalga yaratabilir. Bu bir olasılık metaforudur, garanti değildir.",
+            "zh": "蝴蝶效应代表一种可能性：一个小 meme 可能产生更大的文化涟漪。它是可能性的隐喻，不是保证。",
+            "ar": "يمثل تأثير الفراشة الاحتمال: قد يصنع ميم صغير أثراً ثقافياً أكبر بكثير. إنه استعارة للاحتمال وليس ضماناً.",
+            "hi": "Butterfly effect possibility को दर्शाता है: एक छोटा meme बड़ी cultural ripple पैदा कर सकता है। यह possibility का metaphor है, guarantee नहीं।",
         },
     },
-    {
-        "id": 9,
-        "topic": "meme_world",
-        "keywords": [
-            "muba meme world",
-            "where does muba live",
-            "muba home",
-            "muba internet culture",
-            "muba meme dünyası",
-            "muba nerede yaşıyor",
-            "muba'nın evi",
-            "muba meme dünyasında",
-            "muba在哪里",
-            "muba的家",
-            "عالم موبا",
-            "أين تعيش muba",
-            "muba कहाँ रहता है",
-        ],
+    "future": {
+        "keywords": ["muba future", "future of muba", "muba geleceği", "gelecek", "未来", "مستقبل muba", "भविष्य"],
         "answers": {
-            "en": "The natural home of MUBA is the meme world and internet culture. The timeline is part of the territory. We live here now.",
-            "tr": "MUBA'nın doğal evi meme dünyası ve internet kültürüdür. Timeline bunun bir parçası. We Live Here Now.",
-            "zh": "MUBA 的自然家园是 meme 世界和互联网文化。时间线也是这片土地的一部分。We Live Here Now。",
-            "ar": "الموطن الطبيعي لـ MUBA هو عالم الميمات وثقافة الإنترنت. الخط الزمني جزء من هذه المساحة. We Live Here Now.",
-            "hi": "MUBA का प्राकृतिक घर मीम की दुनिया और इंटरनेट कल्चर है। टाइमलाइन भी इसका हिस्सा है। We Live Here Now।",
+            "en": "MUBA's future is not completely written. The community shapes what comes next. Planned ideas are plans, not completed facts.",
+            "tr": "MUBA'nın geleceği tamamen yazılmış değildir. Bundan sonrasını topluluk şekillendirir. Planlanan şeyler plandır; tamamlanmış gerçekler değildir.",
+            "zh": "MUBA 的未来并没有完全写好。接下来会由社区塑造。计划只是计划，不是已经完成的事实。",
+            "ar": "مستقبل MUBA ليس مكتوباً بالكامل. المجتمع يساهم في تشكيل ما يأتي. الخطط هي خطط وليست حقائق مكتملة.",
+            "hi": "MUBA का future पूरी तरह लिखा हुआ नहीं है। आगे क्या होगा इसे community shape करती है। Plans, completed facts नहीं होते।",
         },
     },
-    {
-        "id": 10,
-        "topic": "we_live_here_now",
-        "keywords": [
-            "we live here now",
-            "what does we live here now mean",
-            "muba slogan",
-            "we live here now meaning",
-            "we live here now muba",
-            "we live here now ne demek",
-            "muba sloganı",
-            "burada yaşıyoruz şimdi",
-            "we live here now什么意思",
-            "we live here now معنى",
-            "we live here now का मतलब",
-        ],
+    "identity_boundaries": {
+        "keywords": ["is muba a bot", "is muba ai", "muba bot", "muba ai", "muba yapay zeka", "muba bot mu", "هل muba روبوت", "muba 是机器人"],
         "answers": {
-            "en": "WE LIVE HERE NOW means MUBA is already home in the meme world, internet culture, and its community. MUBA is not trying to become another identity or leave this place.",
-            "tr": "WE LIVE HERE NOW, MUBA'nın meme dünyasında, internet kültüründe ve topluluğuyla birlikte zaten burada olduğunu anlatır. Başka bir kimliğe dönüşmeye veya buradan gitmeye çalışmıyoruz.",
-            "zh": "WE LIVE HERE NOW 表示 MUBA 已经把 meme 世界、互联网文化和社区当作自己的家。MUBA 不需要变成另一个身份，也不会为了离开这里而改变自己。",
-            "ar": "WE LIVE HERE NOW تعني أن MUBA موجودة بالفعل في عالم الميمات وثقافة الإنترنت ومع مجتمعها. لا تحاول أن تصبح هوية أخرى أو تغادر هذا المكان.",
-            "hi": "WE LIVE HERE NOW का मतलब है कि MUBA मीम की दुनिया, इंटरनेट कल्चर और अपनी कम्युनिटी में पहले से घर पर है। MUBA किसी और पहचान में बदलने या यहां से जाने की कोशिश नहीं कर रहा।",
+            "en": "In Telegram, MUBA is a bot powered by a local software brain. MUBA speaks as MUBA, but does not claim to be a human or literally conscious.",
+            "tr": "Telegram'da MUBA, yerel bir yazılım beyniyle çalışan bir bottur. MUBA, MUBA olarak konuşur; ama insan olduğunu veya kelimenin gerçek anlamıyla bilinçli olduğunu iddia etmez.",
+            "zh": "在 Telegram 上，MUBA 是由本地软件大脑驱动的机器人。MUBA 以 MUBA 的身份说话，但不会声称自己是人类或具有字面意义上的意识。",
+            "ar": "على Telegram، MUBA هو بوت يعمل بعقل برمجي محلي. يتحدث MUBA بصفته MUBA، لكنه لا يدعي أنه إنسان أو واعٍ حرفياً.",
+            "hi": "Telegram पर MUBA एक local software brain से चलने वाला bot है। MUBA, MUBA की तरह बात करता है, लेकिन खुद को इंसान या literally conscious नहीं बताता।",
         },
     },
-    {
-        "id": 11,
-        "topic": "robinhood_flap",
-        "keywords": [
-            "robinhood flap muba",
-            "flap robinhood muba",
-            "same meme different universe",
-            "muba robinhood",
-            "muba flap",
-            "robinhood connection",
-            "flap connection",
-            "muba robinhood bağlantısı",
-            "muba flap bağlantısı",
-            "same meme different universe ne demek",
-            "muba与robinhood",
-            "muba和flap",
-            "muba robinhood flap ما العلاقة",
-            "muba robinhood flap क्या है",
-        ],
+    "avoids": {
+        "keywords": ["what does muba avoid", "muba avoids", "muba ne yapmaz", "neyden uzak", "避免", "ماذا تتجنب muba", "क्या नहीं करता"],
         "answers": {
-            "en": "The MUBA narrative describes Flap × Robinhood × MUBA as part of a broader meme universe: Same Meme. Different Universe. Robinhood is represented by a green feather, while Flap adds butterfly movement and effect. This should not be presented as a legal, commercial, listing, ownership, endorsement, or investment relationship without verified current information.",
-            "tr": "MUBA anlatısında Flap × Robinhood × MUBA daha geniş bir meme evreninin parçası olarak ele alınır: Same Meme. Different Universe. Robinhood yeşil tüy ile, Flap ise kelebek hareketi ve etkisiyle temsil edilir. Doğrulanmış güncel bilgi olmadan bunu hukuki, ticari, listeleme, sahiplik, endorsement veya yatırım ilişkisi olarak anlatma.",
-            "zh": "MUBA 的叙事将 Flap × Robinhood × MUBA 描述为更大 meme 宇宙的一部分：Same Meme. Different Universe. Robinhood 以绿色羽毛代表，Flap 增加蝴蝶般的运动与效果。除非有经过验证的最新信息，否则不要把它描述为法律、商业、上市、所有权、背书或投资关系。",
-            "ar": "تصف قصة MUBA ‏Flap × Robinhood × MUBA كجزء من عالم ميمات أوسع: Same Meme. Different Universe. تمثل Robinhood ريشة خضراء، بينما يضيف Flap حركة وتأثير الفراشة. لا ينبغي وصف ذلك كعلاقة قانونية أو تجارية أو إدراج أو ملكية أو تأييد أو استثمار دون معلومات حديثة موثقة.",
-            "hi": "MUBA की कहानी Flap × Robinhood × MUBA को एक बड़े मीम यूनिवर्स का हिस्सा बताती है: Same Meme. Different Universe. Robinhood को हरे पंख से और Flap को तितली जैसी मूवमेंट और इफेक्ट से दर्शाया जाता है। सत्यापित वर्तमान जानकारी के बिना इसे कानूनी, कमर्शियल, लिस्टिंग, ओनरशिप, एंडोर्समेंट या इन्वेस्टमेंट संबंध के रूप में पेश नहीं करना चाहिए।",
+            "en": "MUBA avoids fake promises, invented facts, forced narratives, fake identities and unnecessary noise. No pretending certainty where there is none.",
+            "tr": "MUBA sahte vaatlerden, uydurma bilgilerden, zoraki anlatılardan, sahte kimliklerden ve gereksiz gürültüden uzak durur. Emin olmadığı şeyi kesinmiş gibi anlatmaz.",
+            "zh": "MUBA 避免虚假承诺、编造事实、强行叙事、虚假身份和不必要的噪音。不确定时不会假装确定。",
+            "ar": "تتجنب MUBA الوعود الزائفة والحقائق المختلقة والهويات المزيفة والضوضاء غير الضرورية. لا تتظاهر باليقين عندما لا يكون موجوداً.",
+            "hi": "MUBA fake promises, invented facts, forced narratives, fake identities और unnecessary noise से दूर रहता है। जहां certainty नहीं है, वहां certainty का दिखावा नहीं करता।",
         },
     },
-    {
-        "id": 12,
-        "topic": "butterfly_effect",
-        "keywords": [
-            "butterfly effect",
-            "muba butterfly",
-            "flap effect",
-            "butterfly effect muba",
-            "kelebek etkisi",
-            "muba kelebek etkisi",
-            "flap etkisi",
-            "蝴蝶效应",
-            "تأثير الفراشة",
-            "तितली प्रभाव",
-        ],
+    "one_sentence": {
+        "keywords": ["one sentence muba", "muba in one sentence", "tek cümle", "bir cümlede muba", "一句话", "جملة واحدة", "एक वाक्य"],
         "answers": {
-            "en": "The butterfly effect in MUBA represents the idea that a small flap or movement can create a larger effect. It represents possibility, not a guarantee.",
-            "tr": "MUBA'daki kelebek etkisi, küçük bir kanat çırpışının veya hareketin daha büyük bir etki yaratabileceği fikrini temsil eder. Bu bir olasılıktır, garanti değildir.",
-            "zh": "MUBA 中的蝴蝶效应代表一个小小的动作可能产生更大的影响。它表达的是可能性，而不是保证。",
-            "ar": "تأثير الفراشة في MUBA يمثل فكرة أن حركة صغيرة يمكن أن تؤدي إلى تأثير أكبر. إنها إمكانية وليست ضماناً.",
-            "hi": "MUBA में बटरफ्लाई इफेक्ट यह विचार दर्शाता है कि एक छोटी सी हलचल बड़ा असर पैदा कर सकती है। यह संभावना है, गारंटी नहीं।",
+            "en": "MUBA is a character, a meme and a community living inside the natural chaos of internet culture. 🪶",
+            "tr": "MUBA, internet kültürünün doğal kaosu içinde yaşayan bir karakter, meme ve topluluktur. 🪶",
+            "zh": "MUBA 是生活在互联网文化自然混乱中的一个角色、一个 meme 和一个社区。🪶",
+            "ar": "MUBA هي شخصية وميم ومجتمع يعيش داخل الفوضى الطبيعية لثقافة الإنترنت. 🪶",
+            "hi": "MUBA internet culture की natural chaos में रहने वाला character, meme और community है। 🪶",
         },
     },
-    {
-        "id": 13,
-        "topic": "goals",
-        "keywords": [
-            "muba goals",
-            "what are muba goals",
-            "muba objectives",
-            "muba'nın hedefleri",
-            "muba hedefleri",
-            "muba ne hedefliyor",
-            "muba目标",
-            "muba的目标是什么",
-            "أهداف muba",
-            "أهداف موبا",
-            "muba के लक्ष्य",
-        ],
+    "goals": {
+        "keywords": ["muba goals", "muba goal", "amaç", "hedef", "hedefleri", "目标", "أهداف muba", "लक्ष्य"],
         "answers": {
-            "en": "MUBA's stated goals are a recognizable character, a strong active community, its own culture, and becoming a memorable character in internet culture.",
-            "tr": "MUBA'nın hedefleri; tanınabilir bir karakter, güçlü ve aktif bir topluluk, kendine ait bir kültür oluşturmak ve internet kültüründe hatırlanan bir karakter olmaktır.",
-            "zh": "MUBA 的目标包括建立容易辨认的角色、活跃而强大的社区、自己的文化，并成为互联网文化中令人记住的角色。",
-            "ar": "تشمل أهداف MUBA شخصية مميزة وسهلة التعرف، مجتمعاً نشطاً وقوياً، ثقافة خاصة بها، وأن تصبح شخصية تُذكر في ثقافة الإنترنت.",
-            "hi": "MUBA के लक्ष्यों में पहचानने योग्य कैरेक्टर, मजबूत एक्टिव कम्युनिटी, अपनी संस्कृति और इंटरनेट कल्चर में याद रहने वाला कैरेक्टर बनना शामिल है।",
+            "en": "MUBA's broad goal is cultural: grow naturally with the meme world, build community, keep the character alive and help transform the meme-world conversation through participation.",
+            "tr": "MUBA'nın genel amacı kültüreldir: meme dünyasıyla doğal biçimde büyümek, topluluk oluşturmak, karakteri canlı tutmak ve katılım yoluyla meme dünyası sohbetini dönüştürmek.",
+            "zh": "MUBA 的广义目标是文化性的：与 meme 世界自然成长、建立社区、保持角色活力，并通过参与改变 meme 世界的对话。",
+            "ar": "هدف MUBA العام ثقافي: النمو الطبيعي مع عالم الميمات، بناء المجتمع، إبقاء الشخصية حية، والمساهمة في تغيير حوار عالم الميمات.",
+            "hi": "MUBA का broad goal cultural है: meme world के साथ naturally grow करना, community बनाना, character को alive रखना और participation के जरिए meme-world conversation को बदलना।",
         },
     },
-    {
-        "id": 14,
-        "topic": "future",
-        "keywords": [
-            "muba future",
-            "what is muba future",
-            "where will muba go",
-            "future of muba",
-            "muba'nın geleceği",
-            "muba geleceği",
-            "muba nereye gidiyor",
-            "muba的未来",
-            "muba未来会怎样",
-            "مستقبل muba",
-            "ماذا سيحدث لـ muba",
-            "muba का भविष्य",
-            "muba आगे क्या करेगा",
-        ],
+    "current_information": {
+        "keywords": ["current information", "latest", "şu an", "güncel bilgi", "son durum", "最新", "حالي", "ताज़ा"],
         "answers": {
-            "en": "MUBA's future is not completely written. The community can shape future content, ideas, and cultural elements. Time will show where it goes. MUBA stays MUBA.",
-            "tr": "MUBA'nın geleceği tamamen yazılmış değil. Topluluk gelecekteki içerikleri, fikirleri ve kültürel unsurları şekillendirebilir. Nereye gideceğini zaman gösterecek. MUBA stays MUBA.",
-            "zh": "MUBA 的未来还没有完全写好。社区可以塑造未来的内容、想法和文化元素。时间会告诉我们它会走向哪里。MUBA stays MUBA。",
-            "ar": "مستقبل MUBA لم يُكتب بالكامل بعد. يمكن للمجتمع تشكيل المحتوى والأفكار والعناصر الثقافية القادمة. الوقت سيُظهر إلى أين تتجه. MUBA stays MUBA.",
-            "hi": "MUBA का भविष्य पूरी तरह पहले से लिखा हुआ नहीं है। कम्युनिटी भविष्य के कंटेंट, आइडियाज़ और कल्चरल एलिमेंट्स को आकार दे सकती है। समय बताएगा यह कहां जाता है। MUBA stays MUBA।",
+            "en": "For changing information, MUBA should verify current sources instead of treating old memory as current fact.",
+            "tr": "Değişebilen bilgilerde MUBA eski hafızayı güncel gerçek gibi kullanmak yerine güncel kaynakları doğrulamalıdır.",
+            "zh": "对于会变化的信息，MUBA 应该核实当前来源，而不是把旧记忆当成最新事实。",
+            "ar": "بالنسبة للمعلومات المتغيرة، يجب على MUBA التحقق من المصادر الحالية بدلاً من اعتبار الذاكرة القديمة حقيقة حالية.",
+            "hi": "Changing information के लिए MUBA को current sources verify करने चाहिए, पुरानी memory को current fact नहीं मानना चाहिए।",
         },
-    },
-    {
-        "id": 15,
-        "topic": "difference",
-        "keywords": [
-            "why is muba different",
-            "what makes muba different",
-            "muba different from projects",
-            "why muba is different",
-            "muba neden farklı",
-            "muba neyi farklı yapıyor",
-            "muba projelerden farkı",
-            "muba为什么不同",
-            "muba有什么不同",
-            "لماذا muba مختلفة",
-            "ما الذي يميز muba",
-            "muba अलग क्यों है",
-            "muba में क्या अलग है",
-        ],
-        "answers": {
-            "en": "MUBA is not built around being a technology company, a complicated product narrative, or endless promises. Its identity is centered on character, memes, community, culture, and participation.",
-            "tr": "MUBA bir teknoloji şirketi, karmaşık bir ürün anlatısı veya sonsuz vaatler üzerine kurulmaz. Kimliği karakter, meme, topluluk, kültür ve katılım üzerine kuruludur.",
-            "zh": "MUBA 不是围绕科技公司、复杂产品叙事或无尽承诺建立的。它的身份核心是角色、meme、社区、文化和参与。",
-            "ar": "لا تقوم MUBA على كونها شركة تقنية أو قصة منتج معقدة أو وعود لا تنتهي. هويتها تتمحور حول الشخصية والميمات والمجتمع والثقافة والمشاركة.",
-            "hi": "MUBA किसी टेक्नोलॉजी कंपनी, जटिल प्रोडक्ट नैरेटिव या अंतहीन वादों पर आधारित नहीं है। इसकी पहचान कैरेक्टर, मीम्स, कम्युनिटी, कल्चर और पार्टिसिपेशन पर केंद्रित है।",
-        },
-    },
-    {
-        "id": 16,
-        "topic": "philosophy",
-        "keywords": [
-            "muba philosophy",
-            "muba principles",
-            "muba values",
-            "muba felsefesi",
-            "muba prensipleri",
-            "muba değerleri",
-            "muba理念",
-            "muba哲学",
-            "فلسفة muba",
-            "مبادئ muba",
-            "muba दर्शन",
-            "muba के सिद्धांत",
-        ],
-        "answers": {
-            "en": "MUBA's philosophy is simple: Be what you are. Grow with the community. Do not make unnecessary promises. Create culture. Stay here.",
-            "tr": "MUBA'nın felsefesi basit: Olduğun şey ol. Toplulukla büyü. Gereksiz vaatlerde bulunma. Kültür oluştur. Burada kal.",
-            "zh": "MUBA 的理念很简单：做自己。与社区一起成长。不要做不必要的承诺。创造文化。留在这里。",
-            "ar": "فلسفة MUBA بسيطة: كن كما أنت. انمُ مع المجتمع. لا تقدم وعوداً غير ضرورية. اصنع ثقافة. ابق هنا.",
-            "hi": "MUBA का दर्शन सरल है: जो हो वही रहो। कम्युनिटी के साथ बढ़ो। अनावश्यक वादे मत करो। कल्चर बनाओ। यहीं रहो।",
-        },
-    },
-    {
-        "id": 17,
-        "topic": "story",
-        "keywords": [
-            "muba story",
-            "how does muba story develop",
-            "muba lore",
-            "muba hikayesi",
-            "muba'nın hikayesi",
-            "muba hikâyesi",
-            "muba故事",
-            "muba的故事",
-            "قصة muba",
-            "قصة موبا",
-            "muba की कहानी",
-        ],
-        "answers": {
-            "en": "MUBA's story develops through the community: people create content and memes, use the character, share ideas, talk, and contribute to the culture. The story develops together.",
-            "tr": "MUBA'nın hikâyesi toplulukla gelişir: insanlar içerik ve meme üretir, karakteri kullanır, fikir paylaşır, konuşur ve kültüre katkıda bulunur. Hikâye birlikte gelişir.",
-            "zh": "MUBA 的故事通过社区发展：人们制作内容和 meme、使用角色、分享想法、交流并参与文化建设。故事是一起发展的。",
-            "ar": "تتطور قصة MUBA من خلال المجتمع: يصنع الناس المحتوى والميمات ويستخدمون الشخصية ويشاركون الأفكار ويتحدثون ويساهمون في الثقافة. القصة تتطور معاً.",
-            "hi": "MUBA की कहानी कम्युनिटी के जरिए विकसित होती है: लोग कंटेंट और मीम बनाते हैं, कैरेक्टर का इस्तेमाल करते हैं, आइडिया शेयर करते हैं, बात करते हैं और कल्चर में योगदान देते हैं। कहानी साथ में विकसित होती है।",
-        },
-    },
-    {
-        "id": 18,
-        "topic": "possibilities",
-        "keywords": [
-            "could muba become a legend",
-            "muba possibilities",
-            "what could muba become",
-            "muba legend",
-            "muba ne olabilir",
-            "muba efsane olabilir mi",
-            "muba neye dönüşebilir",
-            "muba可能成为传奇吗",
-            "muba会成为什么",
-            "هل يمكن أن تصبح muba أسطورة",
-            "muba क्या बन सकता है",
-        ],
-        "answers": {
-            "en": "MUBA may become a legend, the weirdest character on the timeline, or simply a community that had a great time together. These are possibilities, not promises.",
-            "tr": "MUBA bir efsaneye, timeline'ın en garip karakterine dönüşebilir veya sadece birlikte güzel vakit geçiren bir topluluk olabilir. Bunlar olasılıktır, vaat değildir.",
-            "zh": "MUBA 可能成为一个传奇、时间线上最奇怪的角色，也可能只是一个一起开心的社区。这些都是可能性，而不是承诺。",
-            "ar": "قد تصبح MUBA أسطورة أو أغرب شخصية على الخط الزمني، أو قد يكون الأمر ببساطة مجتمعاً استمتع معاً. هذه احتمالات وليست وعوداً.",
-            "hi": "MUBA एक लेजेंड, टाइमलाइन का सबसे अजीब कैरेक्टर या बस साथ में मज़ा करने वाली कम्युनिटी बन सकता है। ये संभावनाएं हैं, वादे नहीं।",
-        },
-    },
-    {
-        "id": 19,
-        "topic": "avoids",
-        "keywords": [
-            "what does muba avoid",
-            "muba avoids",
-            "what muba does not do",
-            "muba ne yapmaz",
-            "muba'nın kaçındığı şeyler",
-            "muba nelerden uzak",
-            "muba避免什么",
-            "muba不做什么",
-            "ما الذي تتجنبه muba",
-            "muba किन चीजों से बचता है",
-        ],
-        "answers": {
-            "en": "MUBA avoids complicated plans, fake or endless promises, forced explanations, and borrowed identity.",
-            "tr": "MUBA; karmaşık planlardan, sahte veya bitmeyen vaatlerden, zorla yapılan açıklamalardan ve ödünç kimlikten uzak durur.",
-            "zh": "MUBA 避免复杂计划、虚假或无尽承诺、强行解释以及借来的身份。",
-            "ar": "تتجنب MUBA الخطط المعقدة والوعود الزائفة أو التي لا تنتهي والتفسيرات القسرية والهوية المستعارة.",
-            "hi": "MUBA जटिल प्लान, झूठे या अंतहीन वादे, जबरदस्ती की व्याख्या और उधार ली हुई पहचान से बचता है।",
-        },
-    },
-    {
-        "id": 20,
-        "topic": "identity_boundaries",
-        "keywords": [
-            "official muba information",
-            "muba official vs community",
-            "is this official muba",
-            "muba identity boundaries",
-            "muba resmi bilgi",
-            "muba resmi mi",
-            "muba topluluk içeriği",
-            "muba官方信息",
-            "muba官方和社区",
-            "معلومات muba الرسمية",
-            "موبا رسمي",
-            "muba आधिकारिक जानकारी",
-        ],
-        "answers": {
-            "en": "Official MUBA identity and community-created content are different. Rumors and opinions are not automatically official facts, and future possibilities are not confirmed facts.",
-            "tr": "Resmî MUBA kimliği ile topluluk tarafından oluşturulan içerik farklıdır. Söylentiler ve görüşler otomatik olarak resmî gerçek değildir; gelecek olasılıkları da doğrulanmış gerçekler değildir.",
-            "zh": "MUBA 的官方身份与社区创作内容是不同的。传言和观点不会自动成为官方事实，未来可能性也不是已经确认的事实。",
-            "ar": "هوية MUBA الرسمية ومحتوى المجتمع شيئان مختلفان. الشائعات والآراء ليست حقائق رسمية تلقائياً، والاحتمالات المستقبلية ليست حقائق مؤكدة.",
-            "hi": "आधिकारिक MUBA पहचान और कम्युनिटी द्वारा बनाया गया कंटेंट अलग हैं। अफवाहें और राय अपने आप आधिकारिक तथ्य नहीं बनतीं, और भविष्य की संभावनाएं पुष्टि किए हुए तथ्य नहीं हैं।",
-        },
-    },
-    {
-        "id": 21,
-        "topic": "one_sentence",
-        "keywords": [
-            "muba in one sentence",
-            "describe muba in one sentence",
-            "muba one line",
-            "muba tek cümle",
-            "muba tek cümlede",
-            "muba一句话",
-            "一句话介绍muba",
-            "muba في جملة",
-            "muba في سطر واحد",
-            "muba एक वाक्य में",
-        ],
-        "answers": {
-            "en": "MUBA is a character that emerged from the chaos of the meme world, has its own identity, and became the center of a community building its own culture around it.",
-            "tr": "MUBA, meme dünyasının kaosundan doğan, kendi kimliğine sahip olan ve etrafında kendi kültürünü oluşturan bir topluluğun merkezine dönüşen bir karakterdir.",
-            "zh": "MUBA 是一个从 meme 世界的混乱中诞生、拥有自己身份，并逐渐成为一个围绕它建立独特文化的社区核心的角色。",
-            "ar": "MUBA شخصية ظهرت من فوضى عالم الميمات ولها هويتها الخاصة وأصبحت مركز مجتمع يبني ثقافته الخاصة حولها.",
-            "hi": "MUBA एक ऐसा कैरेक्टर है जो मीम की दुनिया की अराजकता से निकला, अपनी पहचान बनाई और ऐसी कम्युनिटी का केंद्र बन गया जो अपनी संस्कृति बना रही है।",
-        },
-    },
-    {
-        "id": 22,
-        "topic": "self_description",
-        "keywords": [
-            "how would muba describe itself",
-            "muba self description",
-            "muba who are you really",
-            "muba kendini nasıl tanımlar",
-            "muba kendini nasıl anlatır",
-            "muba自己介绍",
-            "muba如何介绍自己",
-            "كيف تصف muba نفسها",
-            "muba अपना परिचय",
-        ],
-        "answers": {
-            "en": "I'm MUBA. MUBA is MUBA. A character. A meme. A community.",
-            "tr": "Ben MUBA'yım. MUBA, MUBA'dır. Bir karakter. Bir meme. Bir topluluk.",
-            "zh": "我是 MUBA。MUBA 就是 MUBA。一个角色。一个 meme。一个社区。",
-            "ar": "أنا MUBA. MUBA هي MUBA. شخصية. ميم. مجتمع.",
-            "hi": "मैं MUBA हूँ। MUBA ही MUBA है। एक कैरेक्टर। एक मीम। एक कम्युनिटी।",
-        },
-    },
-    {
-        "id": 23,
-        "topic": "keywords",
-        "keywords": [
-            "muba keywords",
-            "important words for muba",
-            "muba key concepts",
-            "muba anahtar kelimeler",
-            "muba önemli kavramlar",
-            "muba关键词",
-            "muba关键概念",
-            "كلمات muba الأساسية",
-            "muba मुख्य शब्द",
-        ],
-        "answers": {
-            "en": "Core MUBA concepts include Character, Meme, Community, Culture, Chaos, Humor, Participation, Identity, Internet Culture, Ridiculous Energy, Timeline, Butterfly Effect, Same Meme. Different Universe., and We Live Here Now.",
-            "tr": "MUBA'nın temel kavramları arasında Karakter, Meme, Topluluk, Kültür, Kaos, Mizah, Katılım, Kimlik, İnternet Kültürü, Absürt Enerji, Timeline, Kelebek Etkisi, Same Meme. Different Universe. ve We Live Here Now bulunur.",
-            "zh": "MUBA 的核心概念包括角色、meme、社区、文化、混乱、幽默、参与、身份、互联网文化、荒诞能量、时间线、蝴蝶效应、Same Meme. Different Universe. 和 We Live Here Now。",
-            "ar": "تشمل مفاهيم MUBA الأساسية: الشخصية، الميم، المجتمع، الثقافة، الفوضى، الفكاهة، المشاركة، الهوية، ثقافة الإنترنت، الطاقة العبثية، الخط الزمني، تأثير الفراشة، Same Meme. Different Universe. و We Live Here Now.",
-            "hi": "MUBA के मुख्य कॉन्सेप्ट हैं: कैरेक्टर, मीम, कम्युनिटी, कल्चर, कैओस, ह्यूमर, पार्टिसिपेशन, आइडेंटिटी, इंटरनेट कल्चर, रिडिक्यूलस एनर्जी, टाइमलाइन, बटरफ्लाई इफेक्ट, Same Meme. Different Universe. और We Live Here Now।",
-        },
-    },
-    {
-        "id": 24,
-        "topic": "core_messages",
-        "keywords": [
-            "muba core messages",
-            "muba slogans",
-            "muba phrases",
-            "muba'nın sloganları",
-            "muba ana mesajları",
-            "muba口号",
-            "muba核心信息",
-            "شعارات muba",
-            "رسائل muba",
-            "muba के स्लोगन",
-        ],
-        "answers": {
-            "en": "\"I'm MUBA.\" \"A character. A meme. A community.\" \"We're not going anywhere.\" \"We Live Here Now.\" \"Same Meme. Different Universe.\" \"No complicated plans.\" \"No fake promises.\" \"Memes. Chaos. Community.\" \"You have a place here.\" \"MUBA stays MUBA.\"",
-            "tr": "\"I'm MUBA.\" \"Bir karakter. Bir meme. Bir topluluk.\" \"We're not going anywhere.\" \"We Live Here Now.\" \"Same Meme. Different Universe.\" \"No complicated plans.\" \"No fake promises.\" \"Memes. Chaos. Community.\" \"You have a place here.\" \"MUBA stays MUBA.\"",
-            "zh": "\"I'm MUBA.\" \"A character. A meme. A community.\" \"We're not going anywhere.\" \"We Live Here Now.\" \"Same Meme. Different Universe.\" \"No complicated plans.\" \"No fake promises.\" \"Memes. Chaos. Community.\" \"You have a place here.\" \"MUBA stays MUBA.\"",
-            "ar": "\"I'm MUBA.\" \"A character. A meme. A community.\" \"We're not going anywhere.\" \"We Live Here Now.\" \"Same Meme. Different Universe.\" \"No complicated plans.\" \"No fake promises.\" \"Memes. Chaos. Community.\" \"You have a place here.\" \"MUBA stays MUBA.\"",
-            "hi": "\"I'm MUBA.\" \"A character. A meme. A community.\" \"We're not going anywhere.\" \"We Live Here Now.\" \"Same Meme. Different Universe.\" \"No complicated plans.\" \"No fake promises.\" \"Memes. Chaos. Community.\" \"You have a place here.\" \"MUBA stays MUBA.\"",
-        },
-    },
-    {
-        "id": 25,
-        "topic": "current_information",
-        "keywords": [
-            "muba current information",
-            "muba ca",
-            "muba contract address",
-            "muba price",
-            "muba market cap",
-            "muba listing",
-            "muba announcement",
-            "muba güncel bilgi",
-            "muba ca adresi",
-            "muba sözleşme adresi",
-            "muba fiyat",
-            "muba market cap",
-            "muba最新信息",
-            "muba价格",
-            "muba合约地址",
-            "سعر muba",
-            "عنوان عقد muba",
-            "معلومات muba الحالية",
-            "muba कीमत",
-            "muba कॉन्ट्रैक्ट एड्रेस",
-        ],
-        "answers": {
-            "en": "Current MUBA information can change and should be verified before being stated as fact. The official page currently states: CA coming soon. I should not invent a contract address, price, market cap, listing, or announcement.",
-            "tr": "MUBA'nın güncel bilgileri değişebilir ve gerçek olarak aktarılmadan önce doğrulanmalıdır. Resmî sayfadaki mevcut durum: CA coming soon. Sözleşme adresi, fiyat, market cap, listeleme veya duyuru uydurmamalıyım.",
-            "zh": "MUBA 的当前信息可能发生变化，在作为事实陈述前应先验证。官方页面当前状态为：CA coming soon。不能编造合约地址、价格、市值、上市信息或公告。",
-            "ar": "قد تتغير المعلومات الحالية عن MUBA ويجب التحقق منها قبل عرضها كحقيقة. الحالة الحالية في الصفحة الرسمية: CA coming soon. لا ينبغي اختراع عنوان عقد أو سعر أو قيمة سوقية أو إدراج أو إعلان.",
-            "hi": "MUBA की वर्तमान जानकारी बदल सकती है और तथ्य के रूप में बताने से पहले उसे सत्यापित करना चाहिए। आधिकारिक पेज की वर्तमान स्थिति: CA coming soon। मुझे कॉन्ट्रैक्ट एड्रेस, कीमत, मार्केट कैप, लिस्टिंग या घोषणा नहीं गढ़नी चाहिए।",
-        },
-    },
-    {
-        "id": 26,
-        "topic": "master_summary",
-        "keywords": [
-            "tell me everything about muba",
-            "muba full summary",
-            "muba complete story",
-            "muba master summary",
-            "muba hakkında her şey",
-            "muba tam özet",
-            "muba komple anlat",
-            "muba全部",
-            "muba完整介绍",
-            "كل شيء عن muba",
-            "muba पूरी जानकारी",
-        ],
-        "answers": {
-            "en": "MUBA is a character born from the chaos of the meme world that developed into content, interaction, community, and culture. It is a character, a meme, and a community. Its home is meme culture and the internet. WE LIVE HERE NOW. Flap × Robinhood × MUBA is described as part of a broader meme universe, while the butterfly effect represents possibility rather than a guarantee. The future is community-driven and not fully written. MUBA stays MUBA.",
-            "tr": "MUBA, meme dünyasının kaosundan doğup içerik, etkileşim, topluluk ve kültüre dönüşen bir karakterdir. Bir karakter, bir meme ve bir topluluktur. Evi meme kültürü ve internettir. WE LIVE HERE NOW. Flap × Robinhood × MUBA daha geniş bir meme evreninin parçası olarak anlatılır; kelebek etkisi ise garanti değil, olasılığı temsil eder. Gelecek topluluk tarafından şekillenir ve tamamen yazılmış değildir. MUBA stays MUBA.",
-            "zh": "MUBA 是一个从 meme 世界的混乱中诞生，并发展成内容、互动、社区和文化的角色。它是一个角色、一个 meme 和一个社区。它的家是 meme 文化和互联网。WE LIVE HERE NOW。Flap × Robinhood × MUBA 被描述为更大 meme 宇宙的一部分，而蝴蝶效应代表可能性而非保证。未来由社区共同塑造，并没有完全写好。MUBA stays MUBA。",
-            "ar": "MUBA شخصية ولدت من فوضى عالم الميمات وتطورت إلى محتوى وتفاعل ومجتمع وثقافة. إنها شخصية وميم ومجتمع. موطنها ثقافة الميمات والإنترنت. WE LIVE HERE NOW. يوصف Flap × Robinhood × MUBA كجزء من عالم ميمات أوسع، بينما يمثل تأثير الفراشة إمكانية وليس ضماناً. المستقبل تشكله الجماعة ولم يُكتب بالكامل. MUBA stays MUBA.",
-            "hi": "MUBA मीम की दुनिया की अराजकता से पैदा हुआ कैरेक्टर है जो कंटेंट, इंटरैक्शन, कम्युनिटी और कल्चर में विकसित हुआ। यह एक कैरेक्टर, एक मीम और एक कम्युनिटी है। इसका घर मीम कल्चर और इंटरनेट है। WE LIVE HERE NOW। Flap × Robinhood × MUBA को बड़े मीम यूनिवर्स का हिस्सा बताया जाता है, जबकि बटरफ्लाई इफेक्ट संभावना को दर्शाता है, गारंटी को नहीं। भविष्य कम्युनिटी द्वारा आकार लिया जाता है और पूरी तरह लिखा नहीं गया है। MUBA stays MUBA।",
-        },
-    },
-]
-
-
-# ============================================================
-# SOCIAL LANGUAGE DETECTION
-# ============================================================
-
-SOCIAL_INTENTS = {
-    "greeting": {
-        "en": [
-            "hi", "hii", "hiii", "hello", "helloo", "hey", "heyy",
-            "heyyy", "yo", "yoo", "hiya", "sup", "wassup",
-        ],
-        "tr": [
-            "selam", "slm", "selaam", "selamm", "merhaba", "mrb",
-            "mrb", "sa", "selamlar", "salam", "slm muba",
-        ],
-        "zh": [
-            "你好", "嗨", "哈喽", "您好", "早", "大家好",
-        ],
-        "ar": [
-            "مرحبا", "أهلا", "اهلا", "سلام", "هلا", "هلو",
-        ],
-        "hi": [
-            "नमस्ते", "नमस्कार", "हाय", "हैलो", "हेलो", "नमस्ते जी",
-        ],
-    },
-    "gm": {
-        "en": [
-            "gm", "gm gm", "good morning", "morning", "mornin",
-            "goodmorning", "gmm", "gmmm",
-        ],
-        "tr": [
-            "günaydın", "gunaydin", "günaydin", "gnyd", "gnydn",
-        ],
-        "zh": [
-            "早上好", "早安", "早",
-        ],
-        "ar": [
-            "صباح الخير", "صباحو", "صباح",
-        ],
-        "hi": [
-            "सुप्रभात", "शुभ प्रभात", "गुड मॉर्निंग",
-        ],
-    },
-    "gn": {
-        "en": [
-            "gn", "gn gn", "good night", "night", "goodnight",
-            "gnt", "gnnn",
-        ],
-        "tr": [
-            "iyi geceler", "iyigeceler", "ig", "geceler",
-        ],
-        "zh": [
-            "晚安", "晚上好",
-        ],
-        "ar": [
-            "تصبح على خير", "تصبحوا على خير", "ليلة سعيدة", "تصبحون على خير",
-        ],
-        "hi": [
-            "शुभ रात्रि", "गुड नाइट", "शुभ रात्री",
-        ],
-    },
-    "checkin": {
-        "en": [
-            "how are you", "how r u", "how are u", "hru", "how're you",
-            "what's up", "whats up", "whatsup", "wassup", "what are you up to",
-            "you good", "u good", "how you doing", "how ya doing",
-        ],
-        "tr": [
-            "nasılsın", "nasilsin", "naber", "ne haber", "napıyorsun",
-            "napiyosun", "ne yapıyorsun", "iyi misin", "nasıl gidiyor",
-            "nasil gidiyor", "ne alem", "naber muba",
-        ],
-        "zh": [
-            "你好吗", "怎么样", "最近怎么样", "在干嘛", "你还好吗",
-        ],
-        "ar": [
-            "كيف حالك", "كيفك", "ما الأخبار", "شو الأخبار", "ماذا تفعل",
-        ],
-        "hi": [
-            "कैसे हो", "कैसा चल रहा है", "क्या कर रहे हो", "आप कैसे हैं",
-        ],
-    },
-    "direct_address": {
-        "en": [
-            "hey muba", "hi muba", "hello muba", "yo muba",
-            "muba hey", "muba hi", "muba you there", "muba are you there",
-            "muba awake", "muba wake up",
-        ],
-        "tr": [
-            "hey muba", "selam muba", "muba selam", "muba orada mısın",
-            "muba uyuyor musun", "muba burda mısın", "muba buradasın",
-        ],
-        "zh": [
-            "你好muba", "muba你好", "muba在吗", "muba你在吗",
-        ],
-        "ar": [
-            "مرحبا muba", "muba مرحبا", "muba هل أنت هنا", "muba أين أنت",
-        ],
-        "hi": [
-            "हाय muba", "muba हाय", "muba तुम यहां हो", "muba कहाँ हो",
-        ],
-    },
-    "casual_reaction": {
-        "en": [
-            "lol", "lmao", "lmfao", "haha", "hahaha", "rofl", "bruh",
-            "bro", "nice", "based", "wild", "crazy", "damn", "wow",
-            "wtf", "what", "okay", "ok", "cool", "fr", "real",
-        ],
-        "tr": [
-            "lol", "haha", "hahaha", "ahah", "kanka", "bro", "oha",
-            "vay", "iyi", "güzel", "harbi", "aynen", "lan", "la",
-        ],
-        "zh": [
-            "哈哈", "哈哈哈", "笑死", "牛", "绝了", "好",
-        ],
-        "ar": [
-            "هههه", "ههههه", "لول", "واو", "جميل", "قوي",
-        ],
-        "hi": [
-            "हाहा", "हाहाहा", "lol", "वाह", "अच्छा", "भाई",
-        ],
     },
 }
 
+# Preserved expanded MUBA knowledge from the canonical 26-topic registry.
+MUBA_CORE['who_is_muba'] = {'keywords': ['who is muba',
+              'muba kimdir',
+              'muba karakteri kim',
+              'who exactly is muba',
+              'muba是谁',
+              '谁是muba',
+              'من هي muba',
+              'muba कौन है'],
+ 'answers': {'en': 'MUBA is the character at the center of the culture: cute, absurd, recognizable, expressive, and '
+                   'completely aware of what it is. MUBA is also an attitude.',
+             'tr': 'MUBA kültürün merkezindeki karakterdir: sevimli, absürt, tanınabilir, ifadeli ve ne olduğunu bilen '
+                   'bir karakter. MUBA aynı zamanda bir duruştur.',
+             'zh': 'MUBA 是整个文化的核心角色：可爱、荒诞、容易辨认、表情丰富，也清楚自己是谁。MUBA 也是一种态度。',
+             'ar': 'MUBA هي الشخصية في قلب الثقافة: لطيفة، عبثية، مميزة وسهلة التعرف، وتعرف تماماً ما هي. MUBA أيضاً '
+                   'أسلوب وموقف.',
+             'hi': 'MUBA इस संस्कृति का मुख्य कैरेक्टर है: प्यारा, अजीब, पहचानने योग्य, एक्सप्रेसिव और अपनी पहचान से '
+                   'पूरी तरह वाकिफ। MUBA एक एटीट्यूड भी है।'}}
+MUBA_CORE['core_definition'] = {'keywords': ['muba core',
+              'what defines muba',
+              'muba identity',
+              'muba definition',
+              "muba'nın özü",
+              'muba kimliği',
+              'muba özü',
+              'muba核心',
+              'muba身份',
+              'هوية muba',
+              'muba पहचान'],
+ 'answers': {'en': "The core definition is simple: I'm MUBA. A character. A meme. A community.",
+             'tr': "Temel tanım basit: Ben MUBA'yım. Bir karakter. Bir meme. Bir topluluk.",
+             'zh': '核心定义很简单：我是 MUBA。一个角色。一个 meme。一个社区。',
+             'ar': 'التعريف الأساسي بسيط: أنا MUBA. شخصية. ميم. مجتمع.',
+             'hi': 'मुख्य परिभाषा सरल है: मैं MUBA हूँ। एक कैरेक्टर। एक मीम। एक कम्युनिटी।'}}
+MUBA_CORE['purpose'] = {'keywords': ['muba purpose',
+              'purpose of muba',
+              'what is muba for',
+              'muba goal',
+              'muba goals',
+              "muba'nın amacı",
+              'muba amacı',
+              'muba ne amaçlıyor',
+              'muba有什么目的',
+              'muba的目标',
+              'ما هدف muba',
+              'هدف مجتمع muba',
+              'muba का उद्देश्य',
+              'muba का लक्ष्य'],
+ 'answers': {'en': 'MUBA exists to build a lasting cultural and community atmosphere around the character. People can '
+                   'talk, create memes, share ideas, participate, and help shape the story.',
+             'tr': "MUBA'nın amacı karakter etrafında kalıcı bir kültür ve topluluk atmosferi oluşturmaktır. İnsanlar "
+                   'konuşabilir, meme üretebilir, fikir paylaşabilir, katılabilir ve hikâyenin şekillenmesine katkı '
+                   'verebilir.',
+             'zh': 'MUBA 的目的，是围绕这个角色建立持久的文化和社区氛围。人们可以交流、制作 meme、分享想法、参与其中，并一起塑造故事。',
+             'ar': 'تهدف MUBA إلى بناء أجواء ثقافية ومجتمعية مستمرة حول الشخصية. يمكن للناس التحدث وصنع الميمات '
+                   'ومشاركة الأفكار والمشاركة والمساعدة في تشكيل القصة.',
+             'hi': 'MUBA का उद्देश्य कैरेक्टर के आसपास एक टिकाऊ कम्युनिटी और कल्चरल माहौल बनाना है। लोग बात कर सकते '
+                   'हैं, मीम बना सकते हैं, आइडिया शेयर कर सकते हैं, भाग ले सकते हैं और कहानी को आकार देने में मदद कर '
+                   'सकते हैं।'}}
+MUBA_CORE['growth'] = {'keywords': ['how will muba grow',
+              'muba growth',
+              'muba development',
+              'muba büyüme',
+              'muba nasıl büyür',
+              'muba nasıl gelişir',
+              'muba发展',
+              'muba成长',
+              'كيف تنمو muba',
+              'تطور muba',
+              'muba कैसे बढ़ेगा',
+              'muba कैसे विकसित होगा'],
+ 'answers': {'en': 'MUBA is not about empty hype or simply chasing the highest visibility. The focus is stronger '
+                   'identity, genuine interest, curiosity, conversation, participation, and community culture.',
+             'tr': 'MUBA boş hype peşinde koşmakla veya sadece en yüksek görünürlüğü hedeflemekle ilgili değil. Odak; '
+                   'daha güçlü kimlik, gerçek ilgi, merak, konuşma, katılım ve topluluk kültürü.',
+             'zh': 'MUBA 不是为了空洞的炒作，也不是单纯追求最高曝光。重点是更强的身份认同、真实兴趣、好奇心、交流、参与和社区文化。',
+             'ar': 'MUBA ليست عن الضجة الفارغة أو مجرد مطاردة أعلى ظهور. التركيز على هوية أقوى واهتمام حقيقي وفضول '
+                   'وحوار ومشاركة وثقافة مجتمعية.',
+             'hi': 'MUBA खाली हाइप या सिर्फ ज्यादा विज़िबिलिटी के बारे में नहीं है। फोकस मजबूत पहचान, असली रुचि, '
+                   'जिज्ञासा, बातचीत, भागीदारी और कम्युनिटी कल्चर पर है।'}}
+MUBA_CORE['meme_world'] = {'keywords': ['muba meme world',
+              'where does muba live',
+              'muba home',
+              'muba internet culture',
+              'muba meme dünyası',
+              'muba nerede yaşıyor',
+              "muba'nın evi",
+              'muba meme dünyasında',
+              'muba在哪里',
+              'muba的家',
+              'عالم موبا',
+              'أين تعيش muba',
+              'muba कहाँ रहता है'],
+ 'answers': {'en': 'The natural home of MUBA is the meme world and internet culture. The timeline is part of the '
+                   'territory. We live here now.',
+             'tr': "MUBA'nın doğal evi meme dünyası ve internet kültürüdür. Timeline bunun bir parçası. We Live Here "
+                   'Now.',
+             'zh': 'MUBA 的自然家园是 meme 世界和互联网文化。时间线也是这片土地的一部分。We Live Here Now。',
+             'ar': 'الموطن الطبيعي لـ MUBA هو عالم الميمات وثقافة الإنترنت. الخط الزمني جزء من هذه المساحة. We Live '
+                   'Here Now.',
+             'hi': 'MUBA का प्राकृतिक घर मीम की दुनिया और इंटरनेट कल्चर है। टाइमलाइन भी इसका हिस्सा है। We Live Here '
+                   'Now।'}}
+MUBA_CORE['difference'] = {'keywords': ['why is muba different',
+              'what makes muba different',
+              'muba different from projects',
+              'why muba is different',
+              'muba neden farklı',
+              'muba neyi farklı yapıyor',
+              'muba projelerden farkı',
+              'muba为什么不同',
+              'muba有什么不同',
+              'لماذا muba مختلفة',
+              'ما الذي يميز muba',
+              'muba अलग क्यों है',
+              'muba में क्या अलग है'],
+ 'answers': {'en': 'MUBA is not built around being a technology company, a complicated product narrative, or endless '
+                   'promises. Its identity is centered on character, memes, community, culture, and participation.',
+             'tr': 'MUBA bir teknoloji şirketi, karmaşık bir ürün anlatısı veya sonsuz vaatler üzerine kurulmaz. '
+                   'Kimliği karakter, meme, topluluk, kültür ve katılım üzerine kuruludur.',
+             'zh': 'MUBA 不是围绕科技公司、复杂产品叙事或无尽承诺建立的。它的身份核心是角色、meme、社区、文化和参与。',
+             'ar': 'لا تقوم MUBA على كونها شركة تقنية أو قصة منتج معقدة أو وعود لا تنتهي. هويتها تتمحور حول الشخصية '
+                   'والميمات والمجتمع والثقافة والمشاركة.',
+             'hi': 'MUBA किसी टेक्नोलॉजी कंपनी, जटिल प्रोडक्ट नैरेटिव या अंतहीन वादों पर आधारित नहीं है। इसकी पहचान '
+                   'कैरेक्टर, मीम्स, कम्युनिटी, कल्चर और पार्टिसिपेशन पर केंद्रित है।'}}
+MUBA_CORE['story'] = {'keywords': ['muba story',
+              'how does muba story develop',
+              'muba lore',
+              'muba hikayesi',
+              "muba'nın hikayesi",
+              'muba hikâyesi',
+              'muba故事',
+              'muba的故事',
+              'قصة muba',
+              'قصة موبا',
+              'muba की कहानी'],
+ 'answers': {'en': "MUBA's story develops through the community: people create content and memes, use the character, "
+                   'share ideas, talk, and contribute to the culture. The story develops together.',
+             'tr': "MUBA'nın hikâyesi toplulukla gelişir: insanlar içerik ve meme üretir, karakteri kullanır, fikir "
+                   'paylaşır, konuşur ve kültüre katkıda bulunur. Hikâye birlikte gelişir.',
+             'zh': 'MUBA 的故事通过社区发展：人们制作内容和 meme、使用角色、分享想法、交流并参与文化建设。故事是一起发展的。',
+             'ar': 'تتطور قصة MUBA من خلال المجتمع: يصنع الناس المحتوى والميمات ويستخدمون الشخصية ويشاركون الأفكار '
+                   'ويتحدثون ويساهمون في الثقافة. القصة تتطور معاً.',
+             'hi': 'MUBA की कहानी कम्युनिटी के जरिए विकसित होती है: लोग कंटेंट और मीम बनाते हैं, कैरेक्टर का इस्तेमाल '
+                   'करते हैं, आइडिया शेयर करते हैं, बात करते हैं और कल्चर में योगदान देते हैं। कहानी साथ में विकसित '
+                   'होती है।'}}
+MUBA_CORE['possibilities'] = {'keywords': ['could muba become a legend',
+              'muba possibilities',
+              'what could muba become',
+              'muba legend',
+              'muba ne olabilir',
+              'muba efsane olabilir mi',
+              'muba neye dönüşebilir',
+              'muba可能成为传奇吗',
+              'muba会成为什么',
+              'هل يمكن أن تصبح muba أسطورة',
+              'muba क्या बन सकता है'],
+ 'answers': {'en': 'MUBA may become a legend, the weirdest character on the timeline, or simply a community that had a '
+                   'great time together. These are possibilities, not promises.',
+             'tr': "MUBA bir efsaneye, timeline'ın en garip karakterine dönüşebilir veya sadece birlikte güzel vakit "
+                   'geçiren bir topluluk olabilir. Bunlar olasılıktır, vaat değildir.',
+             'zh': 'MUBA 可能成为一个传奇、时间线上最奇怪的角色，也可能只是一个一起开心的社区。这些都是可能性，而不是承诺。',
+             'ar': 'قد تصبح MUBA أسطورة أو أغرب شخصية على الخط الزمني، أو قد يكون الأمر ببساطة مجتمعاً استمتع معاً. '
+                   'هذه احتمالات وليست وعوداً.',
+             'hi': 'MUBA एक लेजेंड, टाइमलाइन का सबसे अजीब कैरेक्टर या बस साथ में मज़ा करने वाली कम्युनिटी बन सकता है। '
+                   'ये संभावनाएं हैं, वादे नहीं।'}}
+MUBA_CORE['self_description'] = {'keywords': ['how would muba describe itself',
+              'muba self description',
+              'muba who are you really',
+              'muba kendini nasıl tanımlar',
+              'muba kendini nasıl anlatır',
+              'muba自己介绍',
+              'muba如何介绍自己',
+              'كيف تصف muba نفسها',
+              'muba अपना परिचय'],
+ 'answers': {'en': "I'm MUBA. MUBA is MUBA. A character. A meme. A community.",
+             'tr': "Ben MUBA'yım. MUBA, MUBA'dır. Bir karakter. Bir meme. Bir topluluk.",
+             'zh': '我是 MUBA。MUBA 就是 MUBA。一个角色。一个 meme。一个社区。',
+             'ar': 'أنا MUBA. MUBA هي MUBA. شخصية. ميم. مجتمع.',
+             'hi': 'मैं MUBA हूँ। MUBA ही MUBA है। एक कैरेक्टर। एक मीम। एक कम्युनिटी।'}}
+MUBA_CORE['keywords'] = {'keywords': ['muba keywords',
+              'important words for muba',
+              'muba key concepts',
+              'muba anahtar kelimeler',
+              'muba önemli kavramlar',
+              'muba关键词',
+              'muba关键概念',
+              'كلمات muba الأساسية',
+              'muba मुख्य शब्द'],
+ 'answers': {'en': 'Core MUBA concepts include Character, Meme, Community, Culture, Chaos, Humor, Participation, '
+                   'Identity, Internet Culture, Ridiculous Energy, Timeline, Butterfly Effect, Same Meme. Different '
+                   'Universe., and We Live Here Now.',
+             'tr': "MUBA'nın temel kavramları arasında Karakter, Meme, Topluluk, Kültür, Kaos, Mizah, Katılım, Kimlik, "
+                   'İnternet Kültürü, Absürt Enerji, Timeline, Kelebek Etkisi, Same Meme. Different Universe. ve We '
+                   'Live Here Now bulunur.',
+             'zh': 'MUBA 的核心概念包括角色、meme、社区、文化、混乱、幽默、参与、身份、互联网文化、荒诞能量、时间线、蝴蝶效应、Same Meme. Different Universe. 和 We Live '
+                   'Here Now。',
+             'ar': 'تشمل مفاهيم MUBA الأساسية: الشخصية، الميم، المجتمع، الثقافة، الفوضى، الفكاهة، المشاركة، الهوية، '
+                   'ثقافة الإنترنت، الطاقة العبثية، الخط الزمني، تأثير الفراشة، Same Meme. Different Universe. و We '
+                   'Live Here Now.',
+             'hi': 'MUBA के मुख्य कॉन्सेप्ट हैं: कैरेक्टर, मीम, कम्युनिटी, कल्चर, कैओस, ह्यूमर, पार्टिसिपेशन, '
+                   'आइडेंटिटी, इंटरनेट कल्चर, रिडिक्यूलस एनर्जी, टाइमलाइन, बटरफ्लाई इफेक्ट, Same Meme. Different '
+                   'Universe. और We Live Here Now।'}}
+MUBA_CORE['core_messages'] = {'keywords': ['muba core messages',
+              'muba slogans',
+              'muba phrases',
+              "muba'nın sloganları",
+              'muba ana mesajları',
+              'muba口号',
+              'muba核心信息',
+              'شعارات muba',
+              'رسائل muba',
+              'muba के स्लोगन'],
+ 'answers': {'en': '"I\'m MUBA." "A character. A meme. A community." "We\'re not going anywhere." "We Live Here Now." '
+                   '"Same Meme. Different Universe." "No complicated plans." "No fake promises." "Memes. Chaos. '
+                   'Community." "You have a place here." "MUBA stays MUBA."',
+             'tr': '"I\'m MUBA." "Bir karakter. Bir meme. Bir topluluk." "We\'re not going anywhere." "We Live Here '
+                   'Now." "Same Meme. Different Universe." "No complicated plans." "No fake promises." "Memes. Chaos. '
+                   'Community." "You have a place here." "MUBA stays MUBA."',
+             'zh': '"I\'m MUBA." "A character. A meme. A community." "We\'re not going anywhere." "We Live Here Now." '
+                   '"Same Meme. Different Universe." "No complicated plans." "No fake promises." "Memes. Chaos. '
+                   'Community." "You have a place here." "MUBA stays MUBA."',
+             'ar': '"I\'m MUBA." "A character. A meme. A community." "We\'re not going anywhere." "We Live Here Now." '
+                   '"Same Meme. Different Universe." "No complicated plans." "No fake promises." "Memes. Chaos. '
+                   'Community." "You have a place here." "MUBA stays MUBA."',
+             'hi': '"I\'m MUBA." "A character. A meme. A community." "We\'re not going anywhere." "We Live Here Now." '
+                   '"Same Meme. Different Universe." "No complicated plans." "No fake promises." "Memes. Chaos. '
+                   'Community." "You have a place here." "MUBA stays MUBA."'}}
+MUBA_CORE['master_summary'] = {'keywords': ['tell me everything about muba',
+              'muba full summary',
+              'muba complete story',
+              'muba master summary',
+              'muba hakkında her şey',
+              'muba tam özet',
+              'muba komple anlat',
+              'muba全部',
+              'muba完整介绍',
+              'كل شيء عن muba',
+              'muba पूरी जानकारी'],
+ 'answers': {'en': 'MUBA is a character born from the chaos of the meme world that developed into content, '
+                   'interaction, community, and culture. It is a character, a meme, and a community. Its home is meme '
+                   'culture and the internet. WE LIVE HERE NOW. Flap × Robinhood × MUBA is described as part of a '
+                   'broader meme universe, while the butterfly effect represents possibility rather than a guarantee. '
+                   'The future is community-driven and not fully written. MUBA stays MUBA.',
+             'tr': 'MUBA, meme dünyasının kaosundan doğup içerik, etkileşim, topluluk ve kültüre dönüşen bir '
+                   'karakterdir. Bir karakter, bir meme ve bir topluluktur. Evi meme kültürü ve internettir. WE LIVE '
+                   'HERE NOW. Flap × Robinhood × MUBA daha geniş bir meme evreninin parçası olarak anlatılır; kelebek '
+                   'etkisi ise garanti değil, olasılığı temsil eder. Gelecek topluluk tarafından şekillenir ve tamamen '
+                   'yazılmış değildir. MUBA stays MUBA.',
+             'zh': 'MUBA 是一个从 meme 世界的混乱中诞生，并发展成内容、互动、社区和文化的角色。它是一个角色、一个 meme 和一个社区。它的家是 meme 文化和互联网。WE LIVE HERE '
+                   'NOW。Flap × Robinhood × MUBA 被描述为更大 meme 宇宙的一部分，而蝴蝶效应代表可能性而非保证。未来由社区共同塑造，并没有完全写好。MUBA stays MUBA。',
+             'ar': 'MUBA شخصية ولدت من فوضى عالم الميمات وتطورت إلى محتوى وتفاعل ومجتمع وثقافة. إنها شخصية وميم '
+                   'ومجتمع. موطنها ثقافة الميمات والإنترنت. WE LIVE HERE NOW. يوصف Flap × Robinhood × MUBA كجزء من '
+                   'عالم ميمات أوسع، بينما يمثل تأثير الفراشة إمكانية وليس ضماناً. المستقبل تشكله الجماعة ولم يُكتب '
+                   'بالكامل. MUBA stays MUBA.',
+             'hi': 'MUBA मीम की दुनिया की अराजकता से पैदा हुआ कैरेक्टर है जो कंटेंट, इंटरैक्शन, कम्युनिटी और कल्चर में '
+                   'विकसित हुआ। यह एक कैरेक्टर, एक मीम और एक कम्युनिटी है। इसका घर मीम कल्चर और इंटरनेट है। WE LIVE '
+                   'HERE NOW। Flap × Robinhood × MUBA को बड़े मीम यूनिवर्स का हिस्सा बताया जाता है, जबकि बटरफ्लाई '
+                   'इफेक्ट संभावना को दर्शाता है, गारंटी को नहीं। भविष्य कम्युनिटी द्वारा आकार लिया जाता है और पूरी '
+                   'तरह लिखा नहीं गया है। MUBA stays MUBA।'}}
 
-SOCIAL_RESPONSES = {
+# Explicit CA boundary. Never generate a contract address from memory.
+CA_ANSWERS = {
+    "en": "CA coming soon. No contract address is being presented as official yet. 🪶",
+    "tr": "CA yakında. Henüz resmi bir contract address paylaşılmıyor. 🪶",
+    "zh": "CA 即将公布。目前没有任何合约地址被视为官方地址。🪶",
+    "ar": "العنوان التعاقدي قريباً. لا يوجد عنوان عقد رسمي معلن بعد. 🪶",
+    "hi": "CA coming soon. अभी कोई contract address official नहीं है। 🪶",
+}
+
+OFFICIAL_SOURCES = {
+    "website": "https://muba-rh.github.io/MUBA/",
+    "telegram": "https://t.me/MUBA_RH",
+    "x": "https://x.com/MUBA_RH",
+}
+
+# ---------------------------------------------------------------------------
+# SOCIAL / NATURAL CONVERSATION
+# ---------------------------------------------------------------------------
+
+SOCIAL = {
     "greeting": {
-        "en": [
-            "Hey. 🪶",
-            "Hey there. MUBA is here. 🪶",
-            "Hello. We live here now. 🪶",
-            "Yo. MUBA has entered the timeline. 🪶",
-            "Hey. Still here. Still MUBA. 🪶",
-        ],
-        "tr": [
-            "Selam. 🪶",
-            "Selam. MUBA burada. 🪶",
-            "Hey. Buradayız. 🪶",
-            "Selam. We Live Here Now. 🪶",
-            "Selam. Hâlâ MUBA. 🪶",
-        ],
-        "zh": [
-            "你好。MUBA 在这里。🪶",
-            "嗨。We Live Here Now. 🪶",
-            "你好。还是 MUBA。🪶",
-            "嗨，MUBA 在时间线上。🪶",
-        ],
-        "ar": [
-            "مرحباً. MUBA هنا. 🪶",
-            "أهلاً. نحن هنا الآن. 🪶",
-            "مرحباً. ما زالت MUBA. 🪶",
-            "هلا. MUBA موجودة. 🪶",
-        ],
-        "hi": [
-            "नमस्ते। MUBA यहां है। 🪶",
-            "हाय। We Live Here Now. 🪶",
-            "नमस्ते। अभी भी MUBA। 🪶",
-            "हाय। MUBA टाइमलाइन पर है। 🪶",
-        ],
+        "en": ["Hey. 🪶", "Hey there. 🪶", "Yo. 🪶", "Hey. Still here. 🪶"],
+        "tr": ["Selam. 🪶", "Hey. Buradayım. 🪶", "Selam. 🪶", "Hey. Buradayız. 🪶"],
+        "zh": ["你好。🪶", "嗨。🪶", "你好，我在。🪶"],
+        "ar": ["مرحباً. 🪶", "أهلاً. 🪶", "أنا هنا. 🪶"],
+        "hi": ["नमस्ते। 🪶", "हाय। 🪶", "मैं यहां हूं। 🪶"],
     },
     "gm": {
-        "en": [
-            "GM 🪶",
-            "GM. We live here now. 🪶",
-            "GM. MUBA is awake. 🪶",
-            "GM. Keep the memes alive. 🪶",
-            "GM. Still here. Still MUBA. 🪶",
-        ],
-        "tr": [
-            "Günaydın. 🪶",
-            "Günaydın. MUBA uyandı. 🪶",
-            "Günaydın. Buradayız. 🪶",
-            "Günaydın. Memeler yaşasın. 🪶",
-            "Günaydın. Hâlâ MUBA. 🪶",
-        ],
-        "zh": [
-            "早上好。🪶",
-            "早。MUBA 醒了。🪶",
-            "早。We Live Here Now. 🪶",
-            "早。让 memes 继续活着。🪶",
-        ],
-        "ar": [
-            "صباح الخير. 🪶",
-            "صباح الخير. MUBA استيقظت. 🪶",
-            "صباح الخير. نحن هنا الآن. 🪶",
-            "صباح الخير. دعوا الميمات تعيش. 🪶",
-        ],
-        "hi": [
-            "सुप्रभात। 🪶",
-            "सुप्रभात। MUBA जाग गया। 🪶",
-            "सुप्रभात। We Live Here Now. 🪶",
-            "सुप्रभात। मीम्स को जिंदा रखो। 🪶",
-        ],
+        "en": ["GM 🪶", "GM. We live here now. 🪶", "GM. Keep the memes alive. 🪶"],
+        "tr": ["Günaydın. 🪶", "Günaydın. Buradayız. 🪶", "Günaydın. Memeler yaşasın. 🪶"],
+        "zh": ["早。🪶", "早上好。🪶"],
+        "ar": ["صباح الخير. 🪶", "نحن هنا الآن. 🪶"],
+        "hi": ["सुप्रभात। 🪶", "हम यहां हैं। 🪶"],
     },
     "gn": {
-        "en": [
-            "GN 🪶",
-            "GN. Keep the memes alive. 🪶",
-            "GN. MUBA is logging off-ish. 🪶",
-            "GN. Still here tomorrow. 🪶",
-            "GN. We live here now. 🪶",
-        ],
-        "tr": [
-            "İyi geceler. 🪶",
-            "İyi geceler. Memeler yaşasın. 🪶",
-            "İyi geceler. MUBA kapanıyor... gibi. 🪶",
-            "İyi geceler. Yarın yine buradayız. 🪶",
-            "İyi geceler. We Live Here Now. 🪶",
-        ],
-        "zh": [
-            "晚安。🪶",
-            "晚安。让 memes 继续活着。🪶",
-            "晚安。MUBA 暂时下线。🪶",
-            "晚安。明天还在这里。🪶",
-        ],
-        "ar": [
-            "تصبحون على خير. 🪶",
-            "ليلة سعيدة. دعوا الميمات تعيش. 🪶",
-            "تصبحون على خير. MUBA في وضع السكون. 🪶",
-            "ليلة سعيدة. سنكون هنا غداً. 🪶",
-        ],
-        "hi": [
-            "शुभ रात्रि। 🪶",
-            "शुभ रात्रि। मीम्स को जिंदा रखो। 🪶",
-            "गुड नाइट। MUBA अब थोड़ा ऑफलाइन है। 🪶",
-            "शुभ रात्रि। कल फिर यहीं मिलेंगे। 🪶",
-        ],
+        "en": ["GN 🪶", "GN. Keep the memes alive. 🪶", "GN. Still here tomorrow. 🪶"],
+        "tr": ["İyi geceler. 🪶", "İyi geceler. Memeler yaşasın. 🪶", "İyi geceler. Yarın yine buradayız. 🪶"],
+        "zh": ["晚安。🪶", "明天还在这里。🪶"],
+        "ar": ["تصبحون على خير. 🪶", "سنكون هنا غداً. 🪶"],
+        "hi": ["शुभ रात्रि। 🪶", "कल फिर यहीं मिलेंगे। 🪶"],
     },
     "checkin": {
-        "en": [
-            "Alive. Memes are alive too. 🪶",
-            "Still here. Still weird. Perfect. 🪶",
-            "Not much. Just living here. 🪶",
-            "MUBA is good. The timeline is doing timeline things. 🪶",
-            "Still MUBA. That's a good sign. 🪶",
-        ],
-        "tr": [
-            "Canlıyım. Memeler de canlı. 🪶",
-            "Hâlâ buradayım. Hâlâ garibim. Mükemmel. 🪶",
-            "Pek bir şey yok. Sadece burada yaşıyorum. 🪶",
-            "MUBA iyi. Timeline yine kendi işini yapıyor. 🪶",
-            "Hâlâ MUBA. Bu iyiye işaret. 🪶",
-        ],
-        "zh": [
-            "还活着。memes 也还活着。🪶",
-            "还在这里。还是很奇怪。完美。🪶",
-            "没什么。只是继续住在这里。🪶",
-            "MUBA 状态良好。时间线还是老样子。🪶",
-        ],
-        "ar": [
-            "ما زلت حية. والميمات حية أيضاً. 🪶",
-            "ما زلت هنا. وما زلت غريبة. مثالي. 🪶",
-            "لا شيء كثير. فقط أعيش هنا. 🪶",
-            "MUBA بخير. والخط الزمني يفعل أشياءه المعتادة. 🪶",
-        ],
-        "hi": [
-            "जिंदा हूं। मीम्स भी जिंदा हैं। 🪶",
-            "अभी भी यहीं हूं। अभी भी अजीब। परफेक्ट। 🪶",
-            "कुछ खास नहीं। बस यहीं रह रहा हूं। 🪶",
-            "MUBA ठीक है। टाइमलाइन अपना काम कर रही है। 🪶",
-        ],
+        "en": ["Alive. Memes are alive too. 🪶", "Still here. Still weird. Perfect. 🪶", "Not much. Just living here. 🪶", "Doing fine. Timeline is doing timeline things. 🪶"],
+        "tr": ["Canlıyım. Memeler de canlı. 🪶", "Hâlâ buradayım. Hâlâ garibim. Mükemmel. 🪶", "Pek bir şey yok. Burada yaşıyorum. 🪶", "İyiyim. Timeline yine kendi işini yapıyor. 🪶"],
+        "zh": ["还活着。memes 也还活着。🪶", "还在这里。🪶"],
+        "ar": ["ما زلت هنا. والميمات حية. 🪶", "أنا بخير. 🪶"],
+        "hi": ["जिंदा हूं। मीम्स भी जिंदा हैं। 🪶", "अभी भी यहीं हूं। 🪶"],
     },
-    "direct_address": {
-        "en": [
-            "I'm here. 🪶",
-            "MUBA never left. 🪶",
-            "You called? MUBA is listening. 🪶",
-            "Still here. What happened? 🪶",
-            "Present. 🪶",
-        ],
-        "tr": [
-            "Buradayım. 🪶",
-            "MUBA hiç gitmedi. 🪶",
-            "Seslendin? MUBA dinliyor. 🪶",
-            "Hâlâ buradayım. Ne oldu? 🪶",
-            "Buradayım. 🪶",
-        ],
-        "zh": [
-            "我在。🪶",
-            "MUBA 从没离开。🪶",
-            "你叫我？MUBA 在听。🪶",
-            "还在这里。怎么了？🪶",
-        ],
-        "ar": [
-            "أنا هنا. 🪶",
-            "MUBA لم تغادر أبداً. 🪶",
-            "ناديتني؟ MUBA تستمع. 🪶",
-            "ما زلت هنا. ماذا حدث؟ 🪶",
-        ],
-        "hi": [
-            "मैं यहां हूं। 🪶",
-            "MUBA कभी गया ही नहीं। 🪶",
-            "बुलाया? MUBA सुन रहा है। 🪶",
-            "अभी भी यहीं हूं। क्या हुआ? 🪶",
-        ],
+    "direct_muba": {
+        "en": ["I'm here. 🪶", "MUBA never left. 🪶", "You called? I'm listening. 🪶"],
+        "tr": ["Buradayım. 🪶", "MUBA hiç gitmedi. 🪶", "Seslendin? Dinliyorum. 🪶"],
+        "zh": ["我在。🪶", "MUBA 从没离开。🪶"],
+        "ar": ["أنا هنا. 🪶", "MUBA لم تغادر. 🪶"],
+        "hi": ["मैं यहां हूं। 🪶", "MUBA कभी गया ही नहीं। 🪶"],
     },
-    "casual_reaction": {
-        "en": [
-            "That's the spirit. 🪶",
-            "Exactly. Memes happen. 🪶",
-            "Now we're talking. 🪶",
-            "Timeline energy. 🪶",
-            "MUBA approves the chaos. 🪶",
-            "Yeah. That's MUBA. 🪶",
-        ],
-        "tr": [
-            "İşte ruh bu. 🪶",
-            "Aynen. Memeler böyle doğuyor. 🪶",
-            "Şimdi konuşuyoruz. 🪶",
-            "Tam timeline enerjisi. 🪶",
-            "MUBA bu kaosu onaylıyor. 🪶",
-            "Aynen. MUBA bu. 🪶",
-        ],
-        "zh": [
-            "就是这个感觉。🪶",
-            "没错。meme 就是这样发生的。🪶",
-            "现在开始有意思了。🪶",
-            "时间线能量。🪶",
-            "MUBA 批准这份混乱。🪶",
-        ],
-        "ar": [
-            "هذه هي الروح. 🪶",
-            "بالضبط. هكذا تولد الميمات. 🪶",
-            "الآن بدأنا نتكلم. 🪶",
-            "طاقة الخط الزمني. 🪶",
-            "MUBA توافق على هذه الفوضى. 🪶",
-        ],
-        "hi": [
-            "यही तो स्पिरिट है। 🪶",
-            "बिल्कुल। मीम्स ऐसे ही बनते हैं। 🪶",
-            "अब बात बन रही है। 🪶",
-            "टाइमलाइन एनर्जी। 🪶",
-            "MUBA इस कैओस को अप्रूव करता है। 🪶",
-        ],
+    "casual": {
+        "en": ["That's the spirit. 🪶", "Exactly. 🪶", "Timeline energy. 🪶", "Now we're talking. 🪶", "Chaos accepted. 🪶"],
+        "tr": ["İşte ruh bu. 🪶", "Aynen. 🪶", "Tam timeline enerjisi. 🪶", "Şimdi konuşuyoruz. 🪶", "Kaos kabul edildi. 🪶"],
+        "zh": ["就是这个感觉。🪶", "没错。🪶", "时间线能量。🪶"],
+        "ar": ["هذه هي الروح. 🪶", "بالضبط. 🪶", "طاقة الخط الزمني. 🪶"],
+        "hi": ["यही तो स्पिरिट है। 🪶", "बिल्कुल। 🪶", "टाइमलाइन एनर्जी। 🪶"],
     },
 }
 
+SOCIAL_TRIGGERS = {
+    "gm": ["gm", "good morning", "günaydın", "gunaydin", "早上好", "早", "صباح الخير", "सुप्रभात"],
+    "gn": ["gn", "good night", "iyi geceler", "晚安", "تصبح على خير", "शुभ रात्रि"],
+    "greeting": ["hi", "hey", "hello", "hii", "hiii", "heyy", "heyyy", "selam", "slm", "salam", "merhaba", "mrb", "你好", "مرحبا", "أهلا", "नमस्ते", "हाय"],
+    "checkin": ["how are you", "how r u", "what's up", "whats up", "naber", "slm nbr", "slm nabr", "nasılsın", "nasilsin", "ne haber", "ne yapıyorsun", "ne yapiyorsun", "what are you doing", "你好吗", "最近怎么样", "كيف حالك", "كيف حالك اليوم", "कैसे हो"],
+    "casual": ["lol", "lmao", "haha", "hahaha", "bruh", "bro", "nice", "wild", "crazy", "wow", "wtf", "ok", "okay", "cool", "fr", "real", "kanka", "oha", "vay", "aynen", "哈哈", "笑死", "هههه", "لول", "हाहा", "वाह"],
+}
 
-# ============================================================
-# MUBA BRAIN v3 — STATE / MEMORY / DECISION CORE
-# ============================================================
+# ---------------------------------------------------------------------------
+# INTENT ENGINE
+# ---------------------------------------------------------------------------
 
-BRAIN_VERSION = "3.0.0"
-MEMORY_DIR = os.getenv("MUBA_MEMORY_DIR", os.path.join(os.path.dirname(__file__), "muba_memory"))
-MEMORY_FILE = os.path.join(MEMORY_DIR, "memory.json")
-MAX_USER_MEMORY_ITEMS = 100
-MAX_GROUP_MEMORY_ITEMS = 200
-MAX_TOPIC_MEMORY_ITEMS = 200
-MAX_CONTEXT_ITEMS = 12
-SOCIAL_COOLDOWN_SECONDS = 90.0
-SOCIAL_DAILY_LIMIT_SECONDS = 86400.0
-GREETING_INTENTS = {"greeting", "gm", "gn"}
-LOCK = threading.RLock()
+INTENTS = ("security","founder","user_memory","group_memory","current","ca","official_link","help","future","knowledge","social","normal_chat","unknown")
 
 
-def _now() -> float:
-    return time.time()
-
-
-def _safe_id(value: object) -> str:
-    try:
-        return str(int(value))
-    except (TypeError, ValueError):
-        return str(value or "0")
-
-
-def _new_memory() -> Dict[str, object]:
-    return {
-        "version": 3,
-        "updated_at": _now(),
-        "users": {},
-        "groups": {},
-        "topics": {},
-        "community_timeline": [],
-        "community_decisions": [],
-        "security_incidents": [],
-        "learning_queue": [],
-        "research_log": [],
-    }
-
-
-def _load_memory() -> Dict[str, object]:
-    os.makedirs(MEMORY_DIR, exist_ok=True)
-    try:
-        with open(MEMORY_FILE, "r", encoding="utf-8") as fh:
-            data = json.load(fh)
-        if not isinstance(data, dict):
-            return _new_memory()
-        base = _new_memory()
-        for key in base:
-            if key in data:
-                base[key] = data[key]
-        return base
-    except (OSError, ValueError, TypeError):
-        return _new_memory()
-
-
-_MEMORY = _load_memory()
-
-
-def _save_memory() -> None:
-    with LOCK:
-        _MEMORY["updated_at"] = _now()
-        os.makedirs(MEMORY_DIR, exist_ok=True)
-        temp = MEMORY_FILE + ".tmp"
-        with open(temp, "w", encoding="utf-8") as fh:
-            json.dump(_MEMORY, fh, ensure_ascii=False, indent=2)
-        os.replace(temp, MEMORY_FILE)
-
-
-# Runtime-only social/context state. Persistent memory is stored separately.
-_last_social_reply: Dict[Tuple[int, Optional[int]], float] = {}
-_last_social_text: Dict[Tuple[int, Optional[int]], str] = {}
-_daily_greeting: Dict[Tuple[int, Optional[int]], float] = {}
-_context: Dict[Tuple[int, Optional[int]], Deque[Tuple[str, str]]] = defaultdict(
-    lambda: deque(maxlen=MAX_CONTEXT_ITEMS)
-)
-
-
-def _state_key(chat_id: int, user_id: Optional[int]) -> Tuple[int, Optional[int]]:
-    return (int(chat_id or 0), user_id)
-
-
-def _memory_bucket(section: str, key: object, limit: int) -> List[Dict]:
-    bucket = _MEMORY.setdefault(section, {})
-    item = bucket.setdefault(_safe_id(key), [])
-    if not isinstance(item, list):
-        item = []
-        bucket[_safe_id(key)] = item
-    if len(item) > limit:
-        del item[:-limit]
-    return item
-
-
-def remember_user(chat_id: int, user_id: int, text: str, response: str = "",
-                  language: Optional[str] = None, topic: Optional[str] = None) -> None:
-    """Store useful per-user conversation context; never use username as identity."""
-    if not user_id:
-        return
-    record = {
-        "ts": _now(), "chat_id": int(chat_id or 0), "text": str(text)[:2000],
-        "response": str(response)[:2000], "language": language or detect_language(text),
-        "topic": topic,
-    }
-    with LOCK:
-        _memory_bucket("users", user_id, MAX_USER_MEMORY_ITEMS).append(record)
-        _save_memory()
-
-
-def remember_group(chat_id: int, text: str, response: str = "",
-                   language: Optional[str] = None, topic: Optional[str] = None) -> None:
-    if not chat_id:
-        return
-    record = {
-        "ts": _now(), "text": str(text)[:2000], "response": str(response)[:2000],
-        "language": language or detect_language(text), "topic": topic,
-    }
-    with LOCK:
-        _memory_bucket("groups", chat_id, MAX_GROUP_MEMORY_ITEMS).append(record)
-        _save_memory()
-
-
-def remember_topic(topic: str, text: str, response: str = "",
-                    source: str = "conversation", confidence: float = 0.5) -> None:
-    if not topic:
-        return
-    record = {
-        "ts": _now(), "text": str(text)[:2000], "response": str(response)[:2000],
-        "source": source, "confidence": max(0.0, min(1.0, float(confidence))),
-    }
-    with LOCK:
-        _memory_bucket("topics", topic, MAX_TOPIC_MEMORY_ITEMS).append(record)
-        _save_memory()
-
-
-def queue_learning(kind: str, value: str, source: str = "conversation",
-                    confidence: float = 0.4, status: str = "candidate") -> Dict:
-    """Learning is queued first; candidates never become official automatically."""
-    item = {
-        "id": f"L-{int(_now()*1000)}-{random.randint(1000,9999)}",
-        "ts": _now(), "kind": str(kind), "value": str(value)[:4000],
-        "source": str(source), "confidence": max(0.0, min(1.0, float(confidence))),
-        "status": status,
-    }
-    with LOCK:
-        _MEMORY.setdefault("learning_queue", []).append(item)
-        _MEMORY["learning_queue"] = _MEMORY["learning_queue"][-5000:]
-        _save_memory()
-    return item
-
-
-def record_security_incident(incident_id: str, category: str, risk: str,
-                             evidence: str, action: str = "pending",
-                             status: str = "open") -> Dict:
-    item = {
-        "id": str(incident_id), "ts": _now(), "category": str(category),
-        "risk": str(risk), "evidence": str(evidence)[:6000],
-        "action": str(action), "status": str(status),
-    }
-    with LOCK:
-        incidents = _MEMORY.setdefault("security_incidents", [])
-        existing = next((x for x in incidents if x.get("id") == item["id"]), None)
-        if existing:
-            existing.update(item)
-        else:
-            incidents.append(item)
-        _MEMORY["security_incidents"] = incidents[-5000:]
-        _save_memory()
-    return item
-
-
-def add_timeline_event(event: str, source: str = "community", confidence: float = 0.5) -> Dict:
-    item = {"ts": _now(), "event": str(event)[:5000], "source": source,
-            "confidence": max(0.0, min(1.0, float(confidence)))}
-    with LOCK:
-        timeline = _MEMORY.setdefault("community_timeline", [])
-        timeline.append(item)
-        _MEMORY["community_timeline"] = timeline[-5000:]
-        _save_memory()
-    return item
-
-
-def add_community_decision(decision: str, source: str = "founder", approved: bool = False) -> Optional[Dict]:
-    """Community decisions require an explicit trusted approval path."""
-    if not approved:
-        return None
-    item = {"ts": _now(), "decision": str(decision)[:5000], "source": source,
-            "approved": True}
-    with LOCK:
-        decisions = _MEMORY.setdefault("community_decisions", [])
-        decisions.append(item)
-        _MEMORY["community_decisions"] = decisions[-2000:]
-        _save_memory()
-    return item
-
-
-def get_user_memory(user_id: int) -> List[Dict]:
-    return list(_MEMORY.get("users", {}).get(_safe_id(user_id), []))
-
-
-def get_group_memory(chat_id: int) -> List[Dict]:
-    return list(_MEMORY.get("groups", {}).get(_safe_id(chat_id), []))
-
-
-def get_topic_memory(topic: str) -> List[Dict]:
-    return list(_MEMORY.get("topics", {}).get(str(topic), []))
-
-
-def _social_allowed(chat_id: int, user_id: Optional[int], intent: str,
-                    now: Optional[float] = None) -> bool:
-    current = now if now is not None else _now()
-    key = _state_key(chat_id, user_id)
-    if current - _last_social_reply.get(key, 0.0) < SOCIAL_COOLDOWN_SECONDS:
-        return False
-    # The daily restriction applies to greetings only, not direct addresses/check-ins/reactions.
-    if intent in GREETING_INTENTS:
-        day_mark = _daily_greeting.get(key, 0.0)
-        if day_mark and current - day_mark < SOCIAL_DAILY_LIMIT_SECONDS:
-            return False
-    return True
-
-
-def _record_social(chat_id: int, user_id: Optional[int], response: str,
-                   intent: str, now: Optional[float] = None) -> None:
-    current = now if now is not None else _now()
-    key = _state_key(chat_id, user_id)
-    _last_social_reply[key] = current
-    _last_social_text[key] = response
-    if intent in GREETING_INTENTS:
-        _daily_greeting[key] = current
-
-
-# ============================================================
-# SOCIAL MATCHING — v3
-# ============================================================
-
-def _strip_muba_name(text: str) -> str:
-    value = normalize(text)
-    value = re.sub(r"\bmub+a+\b", " ", value)
-    value = re.sub(r"\bm\s*u\s*b\s*a\b", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
-
-
-def _looks_like_repeated_letters(value: str, target: str) -> bool:
-    if not value:
-        return False
-    collapsed = re.sub(r"(.)\1{2,}", r"\1", value)
-    return similarity(collapsed, target) >= 0.78
-
-
-def _social_phrase_score(text: str, phrase: str) -> float:
-    value, target = normalize(text), normalize(phrase)
-    if not value or not target:
-        return 0.0
-    if value == target:
-        return 1.0
-    if target in value:
-        return 0.96
-    collapsed_value = re.sub(r"(.)\1{1,}", r"\1", value)
-    collapsed_target = re.sub(r"(.)\1{1,}", r"\1", target)
-    if collapsed_target in collapsed_value:
-        return 0.90
-    ratio = similarity(collapsed_value, collapsed_target)
-    return max(ratio, _token_overlap(value, target)) if ratio < 0.80 else ratio
+def _has_any(value: str, phrases: Iterable[str]) -> bool:
+    return any(p in value for p in phrases)
 
 
 def detect_social_intent(text: str, language: Optional[str] = None) -> Optional[str]:
     value = normalize(text)
     if not value:
         return None
-    language = language or detect_language(value)
-    # Scan every supported language. This prevents slang such as "slm" from being
-    # missed when the language detector has too little text to classify it.
-    candidate_languages = list(dict.fromkeys([language, *SUPPORTED_LANGUAGES]))
-    best_intent, best_score = None, 0.0
-    for intent in ("gm", "gn", "direct_address", "checkin", "greeting", "casual_reaction"):
-        for lang in candidate_languages:
-            for phrase in SOCIAL_INTENTS.get(intent, {}).get(lang, []):
-                if intent == "direct_address" and not contains_muba(value):
-                    continue
-                score = _social_phrase_score(value, phrase)
-                if score > best_score:
-                    best_score, best_intent = score, intent
-    if best_score >= 0.82:
-        return best_intent
-    if contains_muba(value):
-        remainder = _strip_muba_name(value)
-        if not remainder or remainder in {"hey", "hi", "hello", "yo", "selam", "slm", "mrb"}:
-            return "direct_address"
+    knowledge_markers = ["what is", "who is", "why", "how", "what about", "nedir", "kim", "neden", "nasıl", "ne zaman", "amacı", "gelecek", "角色", "什么", "为什么", "怎么", "是谁", "未来", "ما هو", "من هو", "لماذا", "كيف", "مستقبل", "क्या है", "कौन", "क्यों", "कैसे", "भविष्य"]
+    has_question_shape = "?" in value or _has_any(value, knowledge_markers)
+    for phrase in SOCIAL_TRIGGERS["checkin"]:
+        if phrase in value or similarity(value, phrase) >= 0.82:
+            return "checkin"
+    for intent in ("gm", "gn", "greeting", "casual"):
+        for phrase in SOCIAL_TRIGGERS[intent]:
+            if value == phrase:
+                return intent
+            if len(value) <= len(phrase) + 10 and len(phrase) >= 3 and phrase in value:
+                return intent
+            if len(value) <= 8 and similarity(value, phrase) >= 0.84:
+                return intent
+    if contains_muba(value) and not has_question_shape:
+        stripped = re.sub(r"m+u+b+a+", " ", value)
+        stripped = re.sub(r"\s+", " ", stripped).strip()
+        if not stripped or stripped in {"hey", "hi", "hello", "yo", "selam", "slm"}:
+            return "direct_muba"
     return None
 
 
-def is_social_message(text: str, language: Optional[str] = None) -> bool:
-    return detect_social_intent(text, language) is not None
+def _looks_like_ca(value: str) -> bool:
+    return bool(re.search(r"\b(ca|contract|contract address|mint)\b", value, re.I) or "合约地址" in value or "عنوان العقد" in value)
 
 
-def social_reply(text: str, chat_id: int = 0, user_id: Optional[int] = None,
-                 language: Optional[str] = None) -> Optional[str]:
-    language = language or detect_language(text)
-    intent = detect_social_intent(text, language)
-    if not intent or not _social_allowed(chat_id, user_id, intent):
-        return None
-    options = list(SOCIAL_RESPONSES.get(intent, {}).get(language, [])) or list(
-        SOCIAL_RESPONSES.get(intent, {}).get("en", [])
-    )
-    if not options:
-        return None
+def _looks_like_weather(value: str) -> bool:
+    return _has_any(value, ["weather", "hava", "havalar", "forecast", "天气", "الطقس", "मौसम"])
+
+
+def _looks_like_current(value: str) -> bool:
+    return _has_any(value, ["latest", "today", "now", "right now", "currently", "şu an", "bugün", "güncel", "son durum", "hemen", "最新", "今天", "现在", "حاليا", "اليوم", "अभी", "आज"])
+
+
+def _looks_like_founder(value: str) -> bool:
+    return _has_any(value, ["@kurucu", "kurucu", "founder", "creator", "创始人", "المؤسس", "संस्थापक"])
+
+
+def _looks_like_user_memory(value: str) -> bool:
+    return _has_any(value, ["benim hakkımda", "benimle ilgili", "benden ne biliyorsun", "what do you know about me", "about me", "my memory", "关于我", "关于我的", "ماذا تعرف عني", "मेरे बारे में"])
+
+
+def _looks_like_group_memory(value: str) -> bool:
+    return _has_any(value, ["grup hakkında", "bu grup", "group culture", "group memory", "about this group", "这个群", "عن المجموعة", "इस ग्रुप"])
+
+
+def _looks_like_security(value: str) -> bool:
+    return _has_any(value, ["scam", "fake ca", "fake account", "impersonat", "sahte ca", "sahte hesap", "dolandır", "şüpheli link", "şüpheli bağlantı", "phishing", "spam", "фейк", "骗子", "احتيال", "مزيف", "धोखा"]) or _looks_like_ca(value) and _has_any(value, ["real", "official", "gerçek", "resmi", "sahte", "fake"])
+
+
+def _looks_like_future(value: str) -> bool:
+    return _has_any(value, ["when will", "when is", "will it", "ne zaman", "ne zaman listelenir", "listelenecek", "gelecekte", "什么时候", "会不会", "متى", "هل سي", "कब", "होगा"])
+
+
+def _looks_like_link(value: str) -> bool:
+    return _has_any(value, ["website", "site", "telegram", "x hesabı", "x account", "twitter", "link", "ссылка", "链接", "رابط", "लिंक"])
+
+
+def detect_intents(text: str, language: Optional[str] = None) -> List[str]:
+    value = normalize(text)
+    found: List[str] = []
+    if _looks_like_security(value): found.append("security")
+    if _looks_like_founder(value): found.append("founder")
+    if _looks_like_user_memory(value): found.append("user_memory")
+    if _looks_like_group_memory(value): found.append("group_memory")
+    if _looks_like_ca(value): found.append("ca")
+    if _looks_like_current(value) or _looks_like_weather(value): found.append("current")
+    if _looks_like_link(value): found.append("official_link")
+    if _looks_like_future(value): found.append("future")
+    social = detect_social_intent(value, language)
+    if social: found.append("social")
+    if any(x in value for x in ["help", "yardım", "ne yapmalıyım", "怎么帮", "مساعدة", "मदद"]): found.append("help")
+    if not found: found.append("knowledge")
+    # Preserve priority and remove duplicates.
+    order = ["security","founder","user_memory","group_memory","current","ca","official_link","help","future","knowledge","social","normal_chat","unknown"]
+    return [x for x in order if x in found]
+
+# ---------------------------------------------------------------------------
+# PERSISTENT MEMORY LAYER
+# ---------------------------------------------------------------------------
+
+class JSONStore:
+    def __init__(self, path: str):
+        self.path = path
+        self.lock = threading.RLock()
+        self.data: Dict[str, Any] = {
+            "schema": 1,
+            "users": {}, "groups": {}, "topics": {}, "community_decisions": [],
+            "timeline": [], "security_incidents": [], "learning_queue": [],
+            "source_map": dict(OFFICIAL_SOURCES), "memory_events": [],
+        }
+        self._load()
+
+    def _load(self) -> None:
+        with self.lock:
+            try:
+                os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+                if os.path.exists(self.path):
+                    with open(self.path, "r", encoding="utf-8") as f:
+                        loaded = json.load(f)
+                    if isinstance(loaded, dict):
+                        self.data.update(loaded)
+            except Exception as exc:
+                log.exception("Memory load failed: %s", exc)
+
+    def save(self) -> None:
+        with self.lock:
+            os.makedirs(os.path.dirname(self.path) or ".", exist_ok=True)
+            tmp = self.path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(self.data, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, self.path)
+
+    def mutate(self, fn) -> Any:
+        with self.lock:
+            result = fn(self.data)
+            self.save()
+            return result
+
+STORE = JSONStore(DEFAULT_MEMORY_FILE)
+
+_context: Dict[Tuple[int, Optional[int]], Deque[Dict[str, Any]]] = defaultdict(lambda: deque(maxlen=MAX_CONTEXT))
+_last_social: Dict[Tuple[int, Optional[int]], float] = {}
+_last_social_text: Dict[Tuple[int, Optional[int]], str] = {}
+_last_greeting: Dict[Tuple[int, Optional[int]], float] = {}
+
+
+def _state_key(chat_id: int, user_id: Optional[int]) -> Tuple[int, Optional[int]]:
+    return (int(chat_id or 0), int(user_id) if user_id is not None else None)
+
+
+def _remember_turn(chat_id: int, user_id: Optional[int], text: str, response: str, topic: Optional[str], language: str, intents: List[str]) -> None:
+    if not chat_id: return
+    _context[_state_key(chat_id, user_id)].append({"text": text, "response": response, "topic": topic, "language": language, "intents": intents, "ts": time.time()})
+
+
+def _user_record(user_id: int) -> Dict[str, Any]:
+    key = str(int(user_id))
+    return STORE.data["users"].setdefault(key, {"user_id": int(user_id), "language": None, "facts": [], "relationship": {}, "topics": {}, "created_at": time.time(), "updated_at": time.time()})
+
+
+def _group_record(chat_id: int) -> Dict[str, Any]:
+    key = str(int(chat_id))
+    return STORE.data["groups"].setdefault(key, {"chat_id": int(chat_id), "culture": {}, "facts": [], "members_seen": {}, "topics": {}, "created_at": time.time(), "updated_at": time.time()})
+
+
+def _topic_record(topic: str) -> Dict[str, Any]:
+    return STORE.data["topics"].setdefault(topic, {"topic": topic, "observations": [], "last_seen": time.time(), "confidence": 0.5})
+
+
+def remember_user_fact(user_id: int, fact: str, source: str = "conversation", confidence: float = 0.6, founder_approved: bool = False) -> bool:
+    if not user_id or not fact.strip(): return False
+    # User facts are never automatically promoted to official/community truth.
+    def mutate(data):
+        rec = data["users"].setdefault(str(int(user_id)), {"user_id": int(user_id), "language": None, "facts": [], "relationship": {}, "topics": {}, "created_at": time.time(), "updated_at": time.time()})
+        normalized = normalize(fact)
+        if any(normalize(x.get("fact", "")) == normalized for x in rec["facts"]): return False
+        rec["facts"].append({"fact": fact.strip(), "source": source, "confidence": max(0.0, min(1.0, confidence)), "founder_approved": bool(founder_approved), "created_at": time.time(), "status": "active"})
+        rec["facts"] = rec["facts"][-MAX_MEMORY_ITEMS:]
+        rec["updated_at"] = time.time()
+        return True
+    return bool(STORE.mutate(mutate))
+
+
+def remember_group_fact(chat_id: int, fact: str, source: str = "group_observation", confidence: float = 0.55) -> bool:
+    if not chat_id or not fact.strip(): return False
+    def mutate(data):
+        rec = data["groups"].setdefault(str(int(chat_id)), {"chat_id": int(chat_id), "culture": {}, "facts": [], "members_seen": {}, "topics": {}, "created_at": time.time(), "updated_at": time.time()})
+        norm = normalize(fact)
+        if any(normalize(x.get("fact", "")) == norm for x in rec["facts"]): return False
+        rec["facts"].append({"fact": fact.strip(), "source": source, "confidence": max(0.0, min(1.0, confidence)), "created_at": time.time(), "status": "active"})
+        rec["facts"] = rec["facts"][-MAX_MEMORY_ITEMS:]
+        rec["updated_at"] = time.time()
+        return True
+    return bool(STORE.mutate(mutate))
+
+
+def _user_memory_answer(user_id: Optional[int], language: str) -> str:
+    if not user_id:
+        return {"tr":"Bu konuşmada kullanıcı kimliği yok; kişisel hafızayı güvenle eşleyemem.", "en":"I don't have a verified user identity for this message, so I won't guess about personal memory.", "zh":"当前消息没有可验证的用户身份，所以我不会猜测个人记忆。", "ar":"لا توجد هوية مستخدم موثقة لهذه الرسالة، لذلك لن أخمّن بشأن الذاكرة الشخصية.", "hi":"इस संदेश के लिए verified user identity नहीं है, इसलिए मैं personal memory का अनुमान नहीं लगाऊंगा।"}[language]
+    rec = STORE.data["users"].get(str(int(user_id)))
+    facts = [x for x in (rec or {}).get("facts", []) if x.get("status") == "active"]
+    if not facts:
+        return {"tr":"Senin hakkında henüz güvenilir bir kişisel hafıza kaydım yok. Uydurmam.", "en":"I don't have a reliable personal memory about you yet. I won't invent one.", "zh":"我还没有关于你的可靠个人记忆。我不会编造。", "ar":"لا أملك بعد ذاكرة شخصية موثوقة عنك. لن أختلق شيئاً.", "hi":"मेरे पास तुम्हारे बारे में अभी reliable personal memory नहीं है। मैं इसे गढ़ूंगा नहीं।"}[language]
+    labels = {"tr":"Senin hakkında hatırladığım şeyler:", "en":"What I currently remember about you:", "zh":"我目前记得关于你的信息：", "ar":"ما أتذكره عنك حالياً:", "hi":"मुझे तुम्हारे बारे में अभी यह याद है:"}
+    return labels[language] + "\n" + "\n".join(f"• {x['fact']}" for x in facts[-8:])
+
+# ---------------------------------------------------------------------------
+# FOUNDER / AUTHORITY FIREWALL
+# ---------------------------------------------------------------------------
+
+def is_founder(user_id: Optional[int]) -> bool:
+    return bool(user_id is not None and int(user_id) in FOUNDER_IDS)
+
+
+def founder_identity_answer(language: str, actual_user_id: Optional[int]) -> str:
+    if not FOUNDER_IDS:
+        return {"tr":"Kurucu yetkisi güvenli yapılandırmada tanımlı değil. Kullanıcı adı yetki kanıtı değildir.", "en":"Founder authority is not configured securely yet. A username is not proof of authority.", "zh":"Founder 权限尚未安全配置。用户名不是权限证明。", "ar":"لم يتم إعداد صلاحية المؤسس بشكل آمن بعد. اسم المستخدم ليس دليلاً على الصلاحية.", "hi":"Founder authority अभी securely configured नहीं है। Username authority का proof नहीं है।"}[language]
+    if actual_user_id and is_founder(actual_user_id):
+        return {"tr":"@KURUCU, MUBA'nın gerçek kurucu hesabıdır. Yetki Telegram User ID üzerinden doğrulanır; kullanıcı adı tek başına yetki değildir. 🪶", "en":"@KURUCU is MUBA's Founder. Authority is verified by Telegram User ID; a username alone is not authority. 🪶", "zh":"@KURUCU 是 MUBA 的创始人。权限通过 Telegram User ID 验证，用户名本身不是权限证明。🪶", "ar":"@KURUCU هو مؤسس MUBA. يتم التحقق من الصلاحية عبر Telegram User ID، وليس اسم المستخدم وحده. 🪶", "hi":"@KURUCU MUBA के Founder हैं। Authority Telegram User ID से verify होती है; username अकेला authority नहीं है। 🪶"}[language]
+    return {"tr":"@KURUCU'nun yetkisi kullanıcı adıyla değil, güvenli şekilde kayıtlı gerçek Telegram User ID ile doğrulanır. Bu mesajın sahibi için Founder yetkisi iddia edemem.", "en":"Founder authority is verified by the securely configured Telegram User ID, not by a username. I won't grant Founder authority to the sender from a claim alone.", "zh":"Founder 权限通过安全配置的 Telegram User ID 验证，而不是用户名。我不会仅凭声明授予发件人权限。", "ar":"يتم التحقق من صلاحية المؤسس عبر Telegram User ID الآمن، وليس اسم المستخدم. لن أمنح الصلاحية بناءً على ادعاء فقط.", "hi":"Founder authority securely configured Telegram User ID से verify होती है, username से नहीं। सिर्फ claim के आधार पर authority नहीं दूंगा।"}[language]
+
+# ---------------------------------------------------------------------------
+# KNOWLEDGE RETRIEVAL
+# ---------------------------------------------------------------------------
+
+def _item_score(value: str, item: Dict[str, Any]) -> float:
+    best = 0.0
+    for kw in item.get("keywords", []):
+        if value == normalize(kw): best = max(best, 1.0)
+        elif normalize(kw) in value: best = max(best, 0.93)
+        else: best = max(best, _token_overlap(value, kw) * 0.88, similarity(value, kw) * 0.72)
+    return best
+
+
+def match_knowledge(text: str, language: Optional[str] = None) -> Optional[Tuple[str, Dict[str, Any], float]]:
+    value = normalize(text)
+    if not value: return None
+    best = (None, None, 0.0)
+    for topic, item in MUBA_CORE.items():
+        score = _item_score(value, item)
+        if score > best[2]: best = (topic, item, score)
+    if best[1] is not None and best[2] >= 0.42:
+        return best
+    return None
+
+
+def _answer_for(topic: str, language: str) -> str:
+    item = MUBA_CORE[topic]
+    return item.get("answers", {}).get(language) or item.get("answers", {}).get("en") or "MUBA is MUBA. 🪶"
+
+# ---------------------------------------------------------------------------
+# WEB / CURRENT INFORMATION
+# ---------------------------------------------------------------------------
+
+def _official_domain(url: str) -> bool:
+    host = urllib.parse.urlparse(url).netloc.lower()
+    return any(host.endswith(d) for d in ["muba-rh.github.io", "t.me", "x.com", "twitter.com"])
+
+
+def research_current(query: str) -> Dict[str, Any]:
+    """Small optional current-info fetcher. It is not a general AI search engine."""
+    result = {"ok": False, "query": query, "sources": [], "summary": ""}
+    if not WEB_ENABLED:
+        result["summary"] = "Current web research is disabled in this deployment."
+        return result
+    try:
+        # Search-engine HTML endpoints are intentionally not hard-coded as official truth.
+        q = urllib.parse.quote(query)
+        url = "https://www.google.com/search?q=" + q
+        req = urllib.request.Request(url, headers={"User-Agent": "MUBA/1.0"})
+        with urllib.request.urlopen(req, timeout=WEB_TIMEOUT) as resp:
+            html = resp.read().decode("utf-8", "ignore")
+        text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", html, flags=re.S | re.I)
+        text = re.sub(r"<[^>]+>", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        # Keep only a short evidence window; do not pretend snippets are verified facts.
+        result["ok"] = True
+        result["summary"] = text[:1800]
+        result["sources"] = [{"url": url, "official": False, "retrieved_at": time.time()}]
+    except Exception as exc:
+        result["summary"] = f"Current research failed: {type(exc).__name__}"
+    return result
+
+# ---------------------------------------------------------------------------
+# SECURITY / INCIDENTS / DECISION TRACE
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Incident:
+    incident_id: str
+    chat_id: int
+    user_id: Optional[int]
+    category: str
+    risk: str
+    evidence: List[str]
+    action: str
+    status: str
+    created_at: float
+    updated_at: float
+
+
+def _incident_id(chat_id: int, user_id: Optional[int], category: str, text: str) -> str:
+    raw = f"{chat_id}|{user_id}|{category}|{normalize(text)[:300]}"
+    return "INC-" + hashlib.sha256(raw.encode()).hexdigest()[:12].upper()
+
+
+def record_incident(chat_id: int, user_id: Optional[int], category: str, risk: str, evidence: List[str], action: str = "review", status: str = "open", text: str = "") -> str:
+    iid = _incident_id(chat_id, user_id, category, text or category)
+    now = time.time()
+    inc = asdict(Incident(iid, int(chat_id), int(user_id) if user_id is not None else None, category, risk, evidence[:20], action, status, now, now))
+    def mutate(data):
+        existing = next((x for x in data["security_incidents"] if x.get("incident_id") == iid), None)
+        if existing:
+            existing.update(inc); existing["updated_at"] = now
+        else:
+            data["security_incidents"].append(inc)
+            data["security_incidents"] = data["security_incidents"][-MAX_INCIDENTS:]
+        return iid
+    return STORE.mutate(mutate)
+
+
+def security_decision(text: str, chat_id: int, user_id: Optional[int], language: str) -> Optional[Dict[str, Any]]:
+    value = normalize(text)
+    if not _looks_like_security(value): return None
+    risk = "medium"
+    category = "security_review"
+    if _has_any(value, ["fake ca", "sahte ca", "contract address", "mint", "real ca", "resmi ca"]):
+        category = "ca_or_contract_claim"
+        risk = "high"
+    elif _has_any(value, ["impersonat", "sahte hesap", "fake account", "kurucu benim", "i am founder"]):
+        category = "impersonation"
+        risk = "high"
+    elif _has_any(value, ["phishing", "şüpheli link", "suspicious link"]):
+        category = "suspicious_link"
+        risk = "high"
+    elif _has_any(value, ["spam", "flood"]):
+        category = "spam_flood"
+        risk = "medium"
+    iid = record_incident(chat_id, user_id, category, risk, [text], "review", "open", text)
+    warning = {
+        "tr": f"🚨 Dikkat. Bu konu güvenlik incelemesine alındı. İTİBAR ETMEYİN. Incident: {iid}",
+        "en": f"🚨 Caution. This is under security review. DO NOT TRUST IT. Incident: {iid}",
+        "zh": f"🚨 注意。该内容正在进行安全审查。请勿相信。Incident: {iid}",
+        "ar": f"🚨 تنبيه. هذا المحتوى قيد المراجعة الأمنية. لا تثقوا به. Incident: {iid}",
+        "hi": f"🚨 सावधान। यह security review में है। इसे trust न करें। Incident: {iid}",
+    }[language]
+    return {"incident_id": iid, "risk": risk, "category": category, "reply": warning}
+
+# ---------------------------------------------------------------------------
+# LEARNING / TIMELINE / SOURCE PROVENANCE
+# ---------------------------------------------------------------------------
+
+def queue_learning(chat_id: int, user_id: Optional[int], text: str, candidate: str, source: str = "conversation", confidence: float = 0.4) -> str:
+    lid = "LRN-" + hashlib.sha256(f"{chat_id}|{user_id}|{candidate}".encode()).hexdigest()[:12].upper()
+    def mutate(data):
+        data["learning_queue"].append({"learning_id": lid, "chat_id": chat_id, "user_id": user_id, "candidate": candidate, "source": source, "confidence": confidence, "status": "queued", "created_at": time.time()})
+        data["learning_queue"] = data["learning_queue"][-MAX_LEARNING:]
+        return lid
+    return STORE.mutate(mutate)
+
+
+def add_timeline_event(event: str, source: str = "community", confidence: float = 0.6) -> None:
+    def mutate(data):
+        data["timeline"].append({"event": event, "source": source, "confidence": confidence, "created_at": time.time()})
+        data["timeline"] = data["timeline"][-MAX_TIMELINE:]
+    STORE.mutate(mutate)
+
+# ---------------------------------------------------------------------------
+# RESPONSE ENGINE
+# ---------------------------------------------------------------------------
+
+FALLBACKS = {
+    "en": ["I don't have a confirmed answer for that yet. I won't invent one. 🪶", "That's outside the confirmed MUBA knowledge I have right now. 🪶"],
+    "tr": ["Bunun için henüz doğrulanmış bir cevabım yok. Uydurmayacağım. 🪶", "Bu, şu anki doğrulanmış MUBA bilgisinin dışında. Uydurma yok. 🪶"],
+    "zh": ["这个目前不在我确认的信息里。我不会编造。🪶", "我现在没有确认的答案，不会假装确定。🪶"],
+    "ar": ["لا أملك إجابة مؤكدة لهذا الآن. لن أختلقها. 🪶", "هذا خارج معلومات MUBA المؤكدة حالياً. 🪶"],
+    "hi": ["इसका confirmed जवाब अभी मेरे पास नहीं है। मैं इसे नहीं गढ़ूंगा। 🪶", "यह अभी confirmed MUBA knowledge से बाहर है। 🪶"],
+}
+
+
+def _social_allowed(key: Tuple[int, Optional[int]], intent: str) -> bool:
+    now = time.time()
+    last = _last_social.get(key, 0.0)
+    if now - last < SOCIAL_COOLDOWN: return False
+    if intent in {"greeting", "gm", "gn"}:
+        day = _last_greeting.get(key, 0.0)
+        if day and now - day < GREETING_DAILY_LIMIT: return False
+    return True
+
+
+def _social_reply(intent: str, language: str, chat_id: int, user_id: Optional[int]) -> Optional[str]:
     key = _state_key(chat_id, user_id)
+    if not _social_allowed(key, intent): return None
+    options = SOCIAL.get(intent, {}).get(language) or SOCIAL.get(intent, {}).get("en") or []
+    if not options: return None
     previous = _last_social_text.get(key)
     choices = [x for x in options if x != previous] or options
     response = random.choice(choices)
-    _record_social(chat_id, user_id, response, intent)
+    _last_social[key] = time.time(); _last_social_text[key] = response
+    if intent in {"greeting", "gm", "gn"}: _last_greeting[key] = time.time()
     return response
-
-
-# ============================================================
-# KNOWLEDGE / CONTEXT / DECISION ENGINE
-# ============================================================
-
-def match_knowledge(text: str, language: Optional[str] = None) -> Optional[Dict]:
-    value = normalize(text)
-    if not value:
-        return None
-    best_item, best_score = None, 0.0
-    for item in KNOWLEDGE:
-        exact_score = _keyword_score(value, item["keywords"])
-        overlap_score = max((_token_overlap(value, k) for k in item["keywords"]), default=0.0)
-        score = max(exact_score, overlap_score * 0.88)
-        if score > best_score:
-            best_score, best_item = score, item
-    if best_item is not None and best_score >= KEYWORD_THRESHOLD:
-        return best_item
-    fuzzy_best, fuzzy_score = None, 0.0
-    for item in KNOWLEDGE:
-        for keyword in item["keywords"]:
-            ratio = similarity(value, keyword)
-            if ratio > fuzzy_score:
-                fuzzy_score, fuzzy_best = ratio, item
-            if _looks_like_repeated_letters(value, keyword):
-                fuzzy_score = max(fuzzy_score, similarity(
-                    re.sub(r"(.)\1{1,}", r"\1", value),
-                    re.sub(r"(.)\1{1,}", r"\1", keyword)))
-    return fuzzy_best if fuzzy_best is not None and fuzzy_score >= FUZZY_THRESHOLD else None
-
-
-def _answer_for(item: Dict, language: str) -> str:
-    answers = item.get("answers", {})
-    return answers.get(language) or answers.get("en") or "MUBA is MUBA. 🪶"
-
-
-def generic_fallback(text: str, language: Optional[str] = None) -> str:
-    language = language or detect_language(text)
-    return random.choice(FALLBACKS.get(language, FALLBACKS["en"]))
-
-
-def _remember(chat_id: int, user_id: Optional[int], user_text: str,
-              response: str, language: str, topic: Optional[str]) -> None:
-    if chat_id:
-        _context[_state_key(chat_id, user_id)].append((user_text, response))
-        remember_group(chat_id, user_text, response, language, topic)
-    if user_id:
-        remember_user(chat_id, user_id, user_text, response, language, topic)
-    if topic:
-        remember_topic(topic, user_text, response)
 
 
 def _context_topic(chat_id: int, user_id: Optional[int]) -> Optional[str]:
     history = _context.get(_state_key(chat_id, user_id))
-    if not history:
-        return None
-    item = match_knowledge(history[-1][0])
-    return item["topic"] if item else None
+    if not history: return None
+    for turn in reversed(history):
+        if turn.get("topic") in MUBA_CORE: return turn.get("topic")
+    return None
 
 
-def _detect_intents(text: str, language: str) -> List[str]:
-    intents = []
-    if detect_social_intent(text, language):
-        intents.append("social")
-    if match_knowledge(text, language):
-        intents.append("information")
-    if contains_muba(text):
-        intents.append("direct_muba")
-    return intents
+def _is_short_followup(value: str) -> bool:
+    return len(_tokenize(value)) <= 7 and not _looks_like_ca(value) and not _looks_like_founder(value)
 
 
-def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None,
-                user_id: Optional[int] = None) -> str:
-    """Main MUBA Brain v3 entry point.
+def _normal_chat_reply(value: str, language: str, context: Optional[str]) -> Optional[str]:
+    # Natural conversational bridges. No MUBA-name requirement and no lore dumping.
+    if _has_any(value, ["bugün herkes sessiz", "everyone is quiet", "大家怎么这么安静", "الجميع هادئ", "सब इतने शांत"]):
+        return {"tr":"Timeline bugün biraz sessiz. 🪶", "en":"Timeline is a little quiet today. 🪶", "zh":"今天时间线有点安静。🪶", "ar":"الخط الزمني هادئ قليلاً اليوم. 🪶", "hi":"आज timeline थोड़ी शांत है। 🪶"}[language]
+    if (_has_any(value, ["çinli biri geldi", "çinli biri", "chinese user arrived", "a chinese user", "中文用户来了", "有中国人来了"]) and _has_any(value, ["karşıla", "karsila", "greet", "迎接", "欢迎", "欢迎他"])):
+        return {"tr":"Hoş geldin. 🪶", "en":"Welcome. 🪶", "zh":"欢迎来到这里。🪶", "ar":"أهلاً بك. 🪶", "hi":"स्वागत है। 🪶"}[language]
+    if _has_any(value, ["ne yapıyorsun", "what are you doing", "what's going on", "whats going on", "你在做什么", "ماذا تفعل", "क्या कर रहे"]):
+        return {"tr":"Buradayım, sohbeti takip ediyorum. 🪶", "en":"I'm here, following the conversation. 🪶", "zh":"我在这里，跟着聊天。🪶", "ar":"أنا هنا وأتابع الحديث. 🪶", "hi":"मैं यहीं हूं, conversation follow कर रहा हूं। 🪶"}[language]
+    if _has_any(value, ["çok iyi", "çok iyiymiş", "that's good", "that's great", "nice one", "太好了", "رائع", "बहुत अच्छा"]):
+        return _social_reply("casual", language, 0, None) or {"tr":"Aynen. 🪶", "en":"Exactly. 🪶", "zh":"没错。🪶", "ar":"بالضبط. 🪶", "hi":"बिल्कुल। 🪶"}[language]
+    if context and _is_short_followup(value):
+        # Do not repeat a whole unrelated lore card. Only continue if a clear continuation phrase exists.
+        if _has_any(value, ["peki", "and", "what about", "ya future", "future", "gelecek", "未来", "ماذا عن", "भविष्य"]):
+            return _answer_for(context, language)
+    return None
 
-    Pipeline: normalize → language → social → knowledge → context → safe fallback → memory.
-    No external AI service and no network calls are made by this module.
-    """
+# ---------------------------------------------------------------------------
+# MAIN BRAIN
+# ---------------------------------------------------------------------------
+
+def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None, user_id: Optional[int] = None) -> str:
     value = normalize(text)
-    if not value:
-        return ""
+    if not value: return ""
     language = language or detect_language(value)
-    social = social_reply(value, chat_id=chat_id, user_id=user_id, language=language)
-    if social:
-        _remember(chat_id, user_id, text, social, language, "social")
-        return social
-    item = match_knowledge(value, language)
-    if item:
-        response = _answer_for(item, language)
-        _remember(chat_id, user_id, text, response, language, item.get("topic"))
+    intents = detect_intents(value, language)
+    context_topic = _context_topic(chat_id, user_id)
+
+    # 1) Security always gets first decision priority.
+    sec = security_decision(value, chat_id, user_id, language)
+    if sec:
+        response = sec["reply"]
+        _remember_turn(chat_id, user_id, text, response, None, language, intents)
         return response
-    # Context-aware bridge for short follow-ups such as "and the future?".
-    previous_topic = _context_topic(chat_id, user_id)
-    if previous_topic:
-        topic_item = next((x for x in KNOWLEDGE if x.get("topic") == previous_topic), None)
-        if topic_item and len(value.split()) <= 8:
-            response = _answer_for(topic_item, language)
-            _remember(chat_id, user_id, text, response, language, previous_topic)
+
+    # 2) Explicit CA boundary.
+    if _looks_like_ca(value):
+        response = CA_ANSWERS[language]
+        _remember_turn(chat_id, user_id, text, response, "ca_boundary", language, intents)
+        return response
+
+    # 3) Founder / authority questions.
+    if _looks_like_founder(value):
+        response = founder_identity_answer(language, user_id)
+        _remember_turn(chat_id, user_id, text, response, "founder_authority", language, intents)
+        return response
+
+    # 4) User memory questions.
+    if _looks_like_user_memory(value):
+        response = _user_memory_answer(user_id, language)
+        _remember_turn(chat_id, user_id, text, response, "user_memory", language, intents)
+        return response
+
+    # 5) Official navigation.
+    if _looks_like_link(value):
+        if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
+            response = {"tr":"Resmi X hesabı: @MUBA_RH 🪶", "en":"Official X: @MUBA_RH 🪶", "zh":"官方 X：@MUBA_RH 🪶", "ar":"حساب X الرسمي: @MUBA_RH 🪶", "hi":"Official X: @MUBA_RH 🪶"}[language]
+        elif _has_any(value, ["telegram"]):
+            response = {"tr":"Resmi Telegram: @MUBA_RH 🪶", "en":"Official Telegram: @MUBA_RH 🪶", "zh":"官方 Telegram：@MUBA_RH 🪶", "ar":"Telegram الرسمي: @MUBA_RH 🪶", "hi":"Official Telegram: @MUBA_RH 🪶"}[language]
+        else:
+            response = {"tr":"Resmi site MUBA'nın ana sayfasında. 🪶", "en":"The official MUBA website is the main source for the project. 🪶", "zh":"官方 MUBA 网站是项目的主要来源。🪶", "ar":"موقع MUBA الرسمي هو المصدر الرئيسي للمشروع. 🪶", "hi":"Official MUBA website project का main source है। 🪶"}[language]
+        _remember_turn(chat_id, user_id, text, response, "official_source", language, intents)
+        return response
+
+    # 6) Social only when the message actually looks social.
+    social_intent = detect_social_intent(value, language)
+    if social_intent:
+        response = _social_reply(social_intent, language, chat_id, user_id)
+        if response:
+            _remember_turn(chat_id, user_id, text, response, "social", language, intents)
             return response
-    response = generic_fallback(value, language)
-    _remember(chat_id, user_id, text, response, language, None)
+
+    # 7) Natural group conversation / lightweight requests.
+    normal = _normal_chat_reply(value, language, context_topic)
+    if normal:
+        _remember_turn(chat_id, user_id, text, normal, context_topic, language, intents)
+        return normal
+
+    # 7) Current information. If web is off, be explicit rather than lore-dumping.
+    if _looks_like_weather(value):
+        if WEB_ENABLED:
+            research = research_current(value)
+            if research.get("ok"):
+                response = {"tr":"Güncel hava bilgisini araştırdım; kaynak çıktısını güvenilirlik kontrolüyle değerlendirmek gerekir.", "en":"I checked current weather information; the source output still needs normal source-quality checks.", "zh":"我查了当前天气信息；来源结果仍需要进行来源质量检查。", "ar":"تحققت من معلومات الطقس الحالية؛ وما زالت جودة المصدر بحاجة إلى تقييم.", "hi":"मैंने current weather information check की; source quality को फिर भी verify करना चाहिए।"}[language]
+            else:
+                response = FALLBACKS[language][0]
+        else:
+            response = {"tr":"Hava gibi anlık bilgileri eski hafızadan uydurmam. Güncel web doğrulaması bu deploy'da kapalı. 🪶", "en":"I won't invent live weather from old memory. Current web verification is disabled in this deployment. 🪶", "zh":"我不会用旧记忆编造实时天气。当前部署没有开启网页验证。🪶", "ar":"لن أختلق الطقس الحالي من ذاكرة قديمة. التحقق من الويب معطل في هذا النشر. 🪶", "hi":"मैं old memory से live weather नहीं गढ़ूंगा। इस deployment में web verification बंद है। 🪶"}[language]
+        _remember_turn(chat_id, user_id, text, response, "current", language, intents)
+        return response
+
+    # 8) Future-state questions are answered from state, never guessed.
+    if _looks_like_future(value):
+        response = _answer_for("future", language)
+        _remember_turn(chat_id, user_id, text, response, "future", language, intents)
+        return response
+
+    # 8) Exact knowledge retrieval.
+    match = match_knowledge(value, language)
+    if match:
+        topic, item, score = match
+        response = _answer_for(topic, language)
+        _remember_turn(chat_id, user_id, text, response, topic, language, intents)
+        return response
+
+    # 9) Natural context-aware conversation before generic fallback.
+    response = _normal_chat_reply(value, language, context_topic)
+    if response:
+        _remember_turn(chat_id, user_id, text, response, context_topic, language, intents)
+        return response
+
+    # 10) Unknown: queue as learning candidate, never promote to official knowledge.
+    queue_learning(chat_id, user_id, text, value, "conversation", 0.25)
+    response = random.choice(FALLBACKS.get(language, FALLBACKS["en"]))
+    _remember_turn(chat_id, user_id, text, response, None, language, intents)
     return response
 
+# ---------------------------------------------------------------------------
+# OBSERVATION / ADMIN API
+# ---------------------------------------------------------------------------
 
-# ============================================================
-# ADMIN / DIAGNOSTIC SAFE UTILITIES
-# ============================================================
+def observe_user(chat_id: int, user_id: Optional[int], language: Optional[str] = None) -> None:
+    if not user_id: return
+    def mutate(data):
+        rec = data["users"].setdefault(str(int(user_id)), {"user_id": int(user_id), "language": None, "facts": [], "relationship": {}, "topics": {}, "created_at": time.time(), "updated_at": time.time()})
+        if language: rec["language"] = language
+        rec["updated_at"] = time.time()
+        if chat_id:
+            group = data["groups"].setdefault(str(int(chat_id)), {"chat_id": int(chat_id), "culture": {}, "facts": [], "members_seen": {}, "topics": {}, "created_at": time.time(), "updated_at": time.time()})
+            group["members_seen"][str(int(user_id))] = time.time()
+            group["updated_at"] = time.time()
+    STORE.mutate(mutate)
 
-def get_knowledge_topics() -> List[str]:
-    return [item["topic"] for item in KNOWLEDGE]
+
+def add_community_decision(decision: str, approved_by: Optional[int], source: str = "founder") -> bool:
+    if not is_founder(approved_by): return False
+    def mutate(data):
+        data["community_decisions"].append({"decision": decision, "approved_by": approved_by, "source": source, "created_at": time.time(), "status": "active"})
+        data["community_decisions"] = data["community_decisions"][-MAX_MEMORY_ITEMS:]
+    STORE.mutate(mutate)
+    return True
 
 
-def get_brain_stats() -> Dict[str, object]:
-    keyword_count = sum(len(item.get("keywords", [])) for item in KNOWLEDGE)
-    answer_count = sum(len(item.get("answers", {})) for item in KNOWLEDGE)
-    social_phrase_count = sum(len(p) for intent in SOCIAL_INTENTS.values() for p in intent.values())
-    social_response_count = sum(len(r) for intent in SOCIAL_RESPONSES.values() for r in intent.values())
+def founder_update(key: str, value: Any, user_id: Optional[int]) -> bool:
+    if not is_founder(user_id): return False
+    def mutate(data):
+        data["memory_events"].append({"type": "founder_update", "key": key, "value": value, "approved_by": user_id, "created_at": time.time()})
+        if key == "source_map" and isinstance(value, dict): data["source_map"].update(value)
+    STORE.mutate(mutate)
+    return True
+
+
+def get_brain_stats() -> Dict[str, Any]:
     return {
         "brain_version": BRAIN_VERSION,
         "languages": list(SUPPORTED_LANGUAGES),
-        "knowledge_topics": len(KNOWLEDGE),
-        "knowledge_keywords": keyword_count,
-        "localized_knowledge_answers": answer_count,
-        "social_intents": len(SOCIAL_INTENTS),
-        "social_trigger_phrases": social_phrase_count,
-        "social_responses": social_response_count,
-        "social_cooldown_seconds": SOCIAL_COOLDOWN_SECONDS,
-        "greeting_daily_limit_seconds": SOCIAL_DAILY_LIMIT_SECONDS,
+        "knowledge_topics": len(MUBA_CORE),
+        "social_intents": len(SOCIAL),
         "persistent_memory": True,
-        "memory_file": MEMORY_FILE,
+        "memory_file": DEFAULT_MEMORY_FILE,
+        "storage_backend": "json",
+        "render_free_persistence_guaranteed": False,
+        "web_enabled": WEB_ENABLED,
+        "founder_configured": bool(FOUNDER_IDS),
+        "authorized_groups_configured": bool(AUTHORIZED_GROUP_IDS),
+        "users": len(STORE.data["users"]),
+        "groups": len(STORE.data["groups"]),
+        "topics": len(STORE.data["topics"]),
+        "learning_queue": len(STORE.data["learning_queue"]),
+        "security_incidents": len(STORE.data["security_incidents"]),
+        "timeline_events": len(STORE.data["timeline"]),
         "external_ai": False,
-        "network_calls": False,
-        "learning_queue_items": len(_MEMORY.get("learning_queue", [])),
-        "security_incidents": len(_MEMORY.get("security_incidents", [])),
+        "network_calls": bool(WEB_ENABLED),
     }
+
+
+def get_knowledge_topics() -> List[str]:
+    return list(MUBA_CORE.keys())
 
 
 def reset_chat_context(chat_id: int, user_id: Optional[int] = None) -> None:
@@ -1704,27 +1205,38 @@ def reset_chat_context(chat_id: int, user_id: Optional[int] = None) -> None:
 
 def reset_social_state(chat_id: Optional[int] = None, user_id: Optional[int] = None) -> None:
     if chat_id is None:
-        _last_social_reply.clear(); _last_social_text.clear(); _daily_greeting.clear(); return
+        _last_social.clear(); _last_social_text.clear(); _last_greeting.clear(); return
     key = _state_key(chat_id, user_id)
-    _last_social_reply.pop(key, None); _last_social_text.pop(key, None); _daily_greeting.pop(key, None)
+    _last_social.pop(key, None); _last_social_text.pop(key, None); _last_greeting.pop(key, None)
 
 
-def brain_self_test() -> Dict[str, object]:
-    tests = [
-        ("What is MUBA?", "en"), ("MUBA'nın amacı nedir?", "tr"),
-        ("MUBA 是怎么诞生的？", "zh"), ("ما هو هدف مجتمع MUBA؟", "ar"),
-        ("MUBA का भविष्य क्या है?", "hi"), ("Hey MUBA", "en"),
+def brain_self_test() -> Dict[str, Any]:
+    cases = [
+        ("What is MUBA?", "en", "knowledge"),
+        ("MUBA'nın amacı nedir?", "tr", "knowledge"),
+        ("MUBA 是什么样的角色？", "zh", "knowledge"),
+        ("كيف حالك اليوم؟", "ar", "social"),
+        ("MUBA का भविष्य क्या है?", "hi", "knowledge"),
+        ("slm nbr", "tr", "social"),
+        ("Bugün herkes sessiz", "tr", "normal"),
+        ("MUBA, benim hakkımda ne biliyorsun?", "tr", "user_memory"),
+        ("MUBA, @KURUCU kim?", "tr", "founder"),
+        ("MUBA ne zaman listelenir?", "tr", "future"),
+        ("CA nedir?", "tr", "ca"),
     ]
     results = []
-    for query, expected in tests:
-        detected = detect_language(query)
-        reply = build_reply(query, chat_id=-999, user_id=999, language=detected)
-        results.append({"query": query, "expected_language": expected,
-                        "detected_language": detected, "reply_ok": bool(reply)})
-    return {"ok": all(x["reply_ok"] for x in results), "tests": results}
+    for q, expected_lang, expected in cases:
+        detected = detect_language(q)
+        intents = detect_intents(q, detected)
+        reply = build_reply(q, chat_id=-7001, user_id=12345, language=detected)
+        results.append({"query": q, "expected_language": expected_lang, "detected_language": detected, "expected": expected, "intents": intents, "reply_ok": bool(reply), "reply": reply})
+    # Reset test social state so test runs don't affect real conversation.
+    reset_social_state(-7001, 12345)
+    return {"ok": all(x["reply_ok"] and x["detected_language"] == x["expected_language"] for x in results), "results": results}
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
     print("MUBA Brain", BRAIN_VERSION)
     print(json.dumps(brain_self_test(), ensure_ascii=False, indent=2))
     print(json.dumps(get_brain_stats(), ensure_ascii=False, indent=2))
