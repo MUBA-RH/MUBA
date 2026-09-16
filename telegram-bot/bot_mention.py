@@ -9,6 +9,31 @@ from telegram import Update
 from telegram.helpers import mention_html
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
+
+PORT = int(os.environ.get("PORT", "10000"))
+
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"MUBA is alive.\n")
+
+    def log_message(self, format, *args):
+        return
+
+
+def start_health_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    server.serve_forever()
+
+
+def run_health_server():
+    Thread(target=start_health_server, daemon=True).start()
+
 
 # ============================================================
 # MUBA TELEGRAM AI BOT
@@ -694,11 +719,14 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ============================================================
-# LOCAL POLLING MODE
-# Render production uses webhook.py.
+# PRODUCTION POLLING MODE + RENDER HEALTH SERVER
+# The Telegram bot uses polling; the health server keeps Render port detection happy.
 # ============================================================
 
 def main():
+    # Render requires a listening HTTP port for this web service.
+    run_health_server()
+
     application = (
         Application.builder()
         .token(TELEGRAM_BOT_TOKEN)
