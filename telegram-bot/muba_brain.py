@@ -17,8 +17,11 @@ The brain is intentionally self-contained. It does not make network calls.
 
 from __future__ import annotations
 
+import json
+import os
 import random
 import re
+import threading
 import time
 import unicodedata
 from collections import defaultdict, deque
@@ -1243,62 +1246,241 @@ SOCIAL_RESPONSES = {
 
 
 # ============================================================
-# INTERNAL STATE
+# MUBA BRAIN v3 — STATE / MEMORY / DECISION CORE
 # ============================================================
 
+BRAIN_VERSION = "3.0.0"
+MEMORY_DIR = os.getenv("MUBA_MEMORY_DIR", os.path.join(os.path.dirname(__file__), "muba_memory"))
+MEMORY_FILE = os.path.join(MEMORY_DIR, "memory.json")
+MAX_USER_MEMORY_ITEMS = 100
+MAX_GROUP_MEMORY_ITEMS = 200
+MAX_TOPIC_MEMORY_ITEMS = 200
+MAX_CONTEXT_ITEMS = 12
+SOCIAL_COOLDOWN_SECONDS = 90.0
+SOCIAL_DAILY_LIMIT_SECONDS = 86400.0
+GREETING_INTENTS = {"greeting", "gm", "gn"}
+LOCK = threading.RLock()
+
+
+def _now() -> float:
+    return time.time()
+
+
+def _safe_id(value: object) -> str:
+    try:
+        return str(int(value))
+    except (TypeError, ValueError):
+        return str(value or "0")
+
+
+def _new_memory() -> Dict[str, object]:
+    return {
+        "version": 3,
+        "updated_at": _now(),
+        "users": {},
+        "groups": {},
+        "topics": {},
+        "community_timeline": [],
+        "community_decisions": [],
+        "security_incidents": [],
+        "learning_queue": [],
+        "research_log": [],
+    }
+
+
+def _load_memory() -> Dict[str, object]:
+    os.makedirs(MEMORY_DIR, exist_ok=True)
+    try:
+        with open(MEMORY_FILE, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        if not isinstance(data, dict):
+            return _new_memory()
+        base = _new_memory()
+        for key in base:
+            if key in data:
+                base[key] = data[key]
+        return base
+    except (OSError, ValueError, TypeError):
+        return _new_memory()
+
+
+_MEMORY = _load_memory()
+
+
+def _save_memory() -> None:
+    with LOCK:
+        _MEMORY["updated_at"] = _now()
+        os.makedirs(MEMORY_DIR, exist_ok=True)
+        temp = MEMORY_FILE + ".tmp"
+        with open(temp, "w", encoding="utf-8") as fh:
+            json.dump(_MEMORY, fh, ensure_ascii=False, indent=2)
+        os.replace(temp, MEMORY_FILE)
+
+
+# Runtime-only social/context state. Persistent memory is stored separately.
 _last_social_reply: Dict[Tuple[int, Optional[int]], float] = {}
 _last_social_text: Dict[Tuple[int, Optional[int]], str] = {}
-_daily_social: Dict[Tuple[int, Optional[int]], float] = {}
-_context: Dict[int, Deque[Tuple[str, str]]] = defaultdict(
+_daily_greeting: Dict[Tuple[int, Optional[int]], float] = {}
+_context: Dict[Tuple[int, Optional[int]], Deque[Tuple[str, str]]] = defaultdict(
     lambda: deque(maxlen=MAX_CONTEXT_ITEMS)
 )
 
 
 def _state_key(chat_id: int, user_id: Optional[int]) -> Tuple[int, Optional[int]]:
-    """
-    Prefer per-member state when user_id is supplied.
-    Without user_id, state falls back to per-chat state.
-    """
     return (int(chat_id or 0), user_id)
 
 
-def _social_allowed(
-    chat_id: int,
-    user_id: Optional[int],
-    now: Optional[float] = None,
-) -> bool:
-    current = now if now is not None else time.time()
+def _memory_bucket(section: str, key: object, limit: int) -> List[Dict]:
+    bucket = _MEMORY.setdefault(section, {})
+    item = bucket.setdefault(_safe_id(key), [])
+    if not isinstance(item, list):
+        item = []
+        bucket[_safe_id(key)] = item
+    if len(item) > limit:
+        del item[:-limit]
+    return item
+
+
+def remember_user(chat_id: int, user_id: int, text: str, response: str = "",
+                  language: Optional[str] = None, topic: Optional[str] = None) -> None:
+    """Store useful per-user conversation context; never use username as identity."""
+    if not user_id:
+        return
+    record = {
+        "ts": _now(), "chat_id": int(chat_id or 0), "text": str(text)[:2000],
+        "response": str(response)[:2000], "language": language or detect_language(text),
+        "topic": topic,
+    }
+    with LOCK:
+        _memory_bucket("users", user_id, MAX_USER_MEMORY_ITEMS).append(record)
+        _save_memory()
+
+
+def remember_group(chat_id: int, text: str, response: str = "",
+                   language: Optional[str] = None, topic: Optional[str] = None) -> None:
+    if not chat_id:
+        return
+    record = {
+        "ts": _now(), "text": str(text)[:2000], "response": str(response)[:2000],
+        "language": language or detect_language(text), "topic": topic,
+    }
+    with LOCK:
+        _memory_bucket("groups", chat_id, MAX_GROUP_MEMORY_ITEMS).append(record)
+        _save_memory()
+
+
+def remember_topic(topic: str, text: str, response: str = "",
+                    source: str = "conversation", confidence: float = 0.5) -> None:
+    if not topic:
+        return
+    record = {
+        "ts": _now(), "text": str(text)[:2000], "response": str(response)[:2000],
+        "source": source, "confidence": max(0.0, min(1.0, float(confidence))),
+    }
+    with LOCK:
+        _memory_bucket("topics", topic, MAX_TOPIC_MEMORY_ITEMS).append(record)
+        _save_memory()
+
+
+def queue_learning(kind: str, value: str, source: str = "conversation",
+                    confidence: float = 0.4, status: str = "candidate") -> Dict:
+    """Learning is queued first; candidates never become official automatically."""
+    item = {
+        "id": f"L-{int(_now()*1000)}-{random.randint(1000,9999)}",
+        "ts": _now(), "kind": str(kind), "value": str(value)[:4000],
+        "source": str(source), "confidence": max(0.0, min(1.0, float(confidence))),
+        "status": status,
+    }
+    with LOCK:
+        _MEMORY.setdefault("learning_queue", []).append(item)
+        _MEMORY["learning_queue"] = _MEMORY["learning_queue"][-5000:]
+        _save_memory()
+    return item
+
+
+def record_security_incident(incident_id: str, category: str, risk: str,
+                             evidence: str, action: str = "pending",
+                             status: str = "open") -> Dict:
+    item = {
+        "id": str(incident_id), "ts": _now(), "category": str(category),
+        "risk": str(risk), "evidence": str(evidence)[:6000],
+        "action": str(action), "status": str(status),
+    }
+    with LOCK:
+        incidents = _MEMORY.setdefault("security_incidents", [])
+        existing = next((x for x in incidents if x.get("id") == item["id"]), None)
+        if existing:
+            existing.update(item)
+        else:
+            incidents.append(item)
+        _MEMORY["security_incidents"] = incidents[-5000:]
+        _save_memory()
+    return item
+
+
+def add_timeline_event(event: str, source: str = "community", confidence: float = 0.5) -> Dict:
+    item = {"ts": _now(), "event": str(event)[:5000], "source": source,
+            "confidence": max(0.0, min(1.0, float(confidence)))}
+    with LOCK:
+        timeline = _MEMORY.setdefault("community_timeline", [])
+        timeline.append(item)
+        _MEMORY["community_timeline"] = timeline[-5000:]
+        _save_memory()
+    return item
+
+
+def add_community_decision(decision: str, source: str = "founder", approved: bool = False) -> Optional[Dict]:
+    """Community decisions require an explicit trusted approval path."""
+    if not approved:
+        return None
+    item = {"ts": _now(), "decision": str(decision)[:5000], "source": source,
+            "approved": True}
+    with LOCK:
+        decisions = _MEMORY.setdefault("community_decisions", [])
+        decisions.append(item)
+        _MEMORY["community_decisions"] = decisions[-2000:]
+        _save_memory()
+    return item
+
+
+def get_user_memory(user_id: int) -> List[Dict]:
+    return list(_MEMORY.get("users", {}).get(_safe_id(user_id), []))
+
+
+def get_group_memory(chat_id: int) -> List[Dict]:
+    return list(_MEMORY.get("groups", {}).get(_safe_id(chat_id), []))
+
+
+def get_topic_memory(topic: str) -> List[Dict]:
+    return list(_MEMORY.get("topics", {}).get(str(topic), []))
+
+
+def _social_allowed(chat_id: int, user_id: Optional[int], intent: str,
+                    now: Optional[float] = None) -> bool:
+    current = now if now is not None else _now()
     key = _state_key(chat_id, user_id)
-
-    last = _last_social_reply.get(key, 0.0)
-
-    if current - last < SOCIAL_COOLDOWN_SECONDS:
+    if current - _last_social_reply.get(key, 0.0) < SOCIAL_COOLDOWN_SECONDS:
         return False
-
-    day_mark = _daily_social.get(key, 0.0)
-
-    if day_mark and current - day_mark < SOCIAL_DAILY_LIMIT_SECONDS:
-        return False
-
+    # The daily restriction applies to greetings only, not direct addresses/check-ins/reactions.
+    if intent in GREETING_INTENTS:
+        day_mark = _daily_greeting.get(key, 0.0)
+        if day_mark and current - day_mark < SOCIAL_DAILY_LIMIT_SECONDS:
+            return False
     return True
 
 
-def _record_social(
-    chat_id: int,
-    user_id: Optional[int],
-    response: str,
-    now: Optional[float] = None,
-) -> None:
-    current = now if now is not None else time.time()
+def _record_social(chat_id: int, user_id: Optional[int], response: str,
+                   intent: str, now: Optional[float] = None) -> None:
+    current = now if now is not None else _now()
     key = _state_key(chat_id, user_id)
-
     _last_social_reply[key] = current
-    _daily_social[key] = current
     _last_social_text[key] = response
+    if intent in GREETING_INTENTS:
+        _daily_greeting[key] = current
 
 
 # ============================================================
-# SOCIAL MATCHING
+# SOCIAL MATCHING — v3
 # ============================================================
 
 def _strip_muba_name(text: str) -> str:
@@ -1311,92 +1493,49 @@ def _strip_muba_name(text: str) -> str:
 def _looks_like_repeated_letters(value: str, target: str) -> bool:
     if not value:
         return False
-
     collapsed = re.sub(r"(.)\1{2,}", r"\1", value)
     return similarity(collapsed, target) >= 0.78
 
 
 def _social_phrase_score(text: str, phrase: str) -> float:
-    value = normalize(text)
-    target = normalize(phrase)
-
+    value, target = normalize(text), normalize(phrase)
     if not value or not target:
         return 0.0
-
     if value == target:
         return 1.0
-
     if target in value:
         return 0.96
-
     collapsed_value = re.sub(r"(.)\1{1,}", r"\1", value)
     collapsed_target = re.sub(r"(.)\1{1,}", r"\1", target)
-
     if collapsed_target in collapsed_value:
         return 0.90
-
     ratio = similarity(collapsed_value, collapsed_target)
-
-    if ratio >= 0.80:
-        return ratio
-
-    overlap = _token_overlap(value, target)
-
-    return max(ratio, overlap)
+    return max(ratio, _token_overlap(value, target)) if ratio < 0.80 else ratio
 
 
 def detect_social_intent(text: str, language: Optional[str] = None) -> Optional[str]:
-    """
-    Detect social intent before knowledge matching.
-
-    Priority:
-    1. GM/GN
-    2. Direct MUBA address
-    3. Check-in
-    4. Greeting
-    5. Casual reaction
-    """
     value = normalize(text)
-
     if not value:
         return None
-
     language = language or detect_language(value)
-
-    candidate_languages = [language]
-
-    if language != "en":
-        candidate_languages.append("en")
-
-    best_intent: Optional[str] = None
-    best_score = 0.0
-
+    # Scan every supported language. This prevents slang such as "slm" from being
+    # missed when the language detector has too little text to classify it.
+    candidate_languages = list(dict.fromkeys([language, *SUPPORTED_LANGUAGES]))
+    best_intent, best_score = None, 0.0
     for intent in ("gm", "gn", "direct_address", "checkin", "greeting", "casual_reaction"):
-        phrases: List[str] = []
-
         for lang in candidate_languages:
-            phrases.extend(SOCIAL_INTENTS.get(intent, {}).get(lang, []))
-
-        for phrase in phrases:
-            score = _social_phrase_score(value, phrase)
-
-            if intent == "direct_address" and not contains_muba(value):
-                continue
-
-            if score > best_score:
-                best_score = score
-                best_intent = intent
-
+            for phrase in SOCIAL_INTENTS.get(intent, {}).get(lang, []):
+                if intent == "direct_address" and not contains_muba(value):
+                    continue
+                score = _social_phrase_score(value, phrase)
+                if score > best_score:
+                    best_score, best_intent = score, intent
     if best_score >= 0.82:
         return best_intent
-
-    # Generic MUBA address with no clear phrase.
     if contains_muba(value):
         remainder = _strip_muba_name(value)
-
-        if not remainder or remainder in {"hey", "hi", "hello", "yo", "selam", "slm"}:
+        if not remainder or remainder in {"hey", "hi", "hello", "yo", "selam", "slm", "mrb"}:
             return "direct_address"
-
     return None
 
 
@@ -1404,258 +1543,130 @@ def is_social_message(text: str, language: Optional[str] = None) -> bool:
     return detect_social_intent(text, language) is not None
 
 
-def social_reply(
-    text: str,
-    chat_id: int = 0,
-    user_id: Optional[int] = None,
-    language: Optional[str] = None,
-) -> Optional[str]:
-    """
-    Return a varied social reply.
-
-    In a group, passing user_id enables the intended per-member daily limit.
-    If user_id is omitted, the limit falls back to chat-level state.
-    """
+def social_reply(text: str, chat_id: int = 0, user_id: Optional[int] = None,
+                 language: Optional[str] = None) -> Optional[str]:
     language = language or detect_language(text)
     intent = detect_social_intent(text, language)
-
-    if not intent:
+    if not intent or not _social_allowed(chat_id, user_id, intent):
         return None
-
-    if not _social_allowed(chat_id, user_id):
-        return None
-
-    options = list(
-        SOCIAL_RESPONSES.get(intent, {}).get(language, [])
+    options = list(SOCIAL_RESPONSES.get(intent, {}).get(language, [])) or list(
+        SOCIAL_RESPONSES.get(intent, {}).get("en", [])
     )
-
-    if not options:
-        options = list(
-            SOCIAL_RESPONSES.get(intent, {}).get("en", [])
-        )
-
     if not options:
         return None
-
     key = _state_key(chat_id, user_id)
     previous = _last_social_text.get(key)
-
-    if len(options) > 1 and previous in options:
-        choices = [item for item in options if item != previous]
-    else:
-        choices = options
-
+    choices = [x for x in options if x != previous] or options
     response = random.choice(choices)
-
-    _record_social(
-        chat_id=chat_id,
-        user_id=user_id,
-        response=response,
-    )
-
+    _record_social(chat_id, user_id, response, intent)
     return response
 
 
 # ============================================================
-# KNOWLEDGE MATCHING
+# KNOWLEDGE / CONTEXT / DECISION ENGINE
 # ============================================================
 
-def match_knowledge(
-    text: str,
-    language: Optional[str] = None,
-) -> Optional[Dict]:
-    """Find the strongest MUBA knowledge item using exact, keyword and fuzzy matching."""
+def match_knowledge(text: str, language: Optional[str] = None) -> Optional[Dict]:
     value = normalize(text)
-
     if not value:
         return None
-
-    best_item: Optional[Dict] = None
-    best_score = 0.0
-
+    best_item, best_score = None, 0.0
     for item in KNOWLEDGE:
         exact_score = _keyword_score(value, item["keywords"])
-
-        token_scores = [
-            _token_overlap(value, keyword)
-            for keyword in item["keywords"]
-        ]
-
-        overlap_score = max(token_scores, default=0.0)
-
-        score = max(
-            exact_score,
-            overlap_score * 0.88,
-        )
-
+        overlap_score = max((_token_overlap(value, k) for k in item["keywords"]), default=0.0)
+        score = max(exact_score, overlap_score * 0.88)
         if score > best_score:
-            best_score = score
-            best_item = item
-
+            best_score, best_item = score, item
     if best_item is not None and best_score >= KEYWORD_THRESHOLD:
         return best_item
-
-    # Fuzzy pass against every keyword for typo-heavy questions.
-    fuzzy_best: Optional[Dict] = None
-    fuzzy_score = 0.0
-
+    fuzzy_best, fuzzy_score = None, 0.0
     for item in KNOWLEDGE:
         for keyword in item["keywords"]:
             ratio = similarity(value, keyword)
-
             if ratio > fuzzy_score:
-                fuzzy_score = ratio
-                fuzzy_best = item
-
+                fuzzy_score, fuzzy_best = ratio, item
             if _looks_like_repeated_letters(value, keyword):
-                fuzzy_score = max(
-                    fuzzy_score,
-                    similarity(
-                        re.sub(r"(.)\1{1,}", r"\1", value),
-                        re.sub(r"(.)\1{1,}", r"\1", keyword),
-                    ),
-                )
-
-    if fuzzy_best is not None and fuzzy_score >= FUZZY_THRESHOLD:
-        return fuzzy_best
-
-    return None
+                fuzzy_score = max(fuzzy_score, similarity(
+                    re.sub(r"(.)\1{1,}", r"\1", value),
+                    re.sub(r"(.)\1{1,}", r"\1", keyword)))
+    return fuzzy_best if fuzzy_best is not None and fuzzy_score >= FUZZY_THRESHOLD else None
 
 
 def _answer_for(item: Dict, language: str) -> str:
     answers = item.get("answers", {})
-
-    return (
-        answers.get(language)
-        or answers.get("en")
-        or "MUBA is MUBA. 🪶"
-    )
+    return answers.get(language) or answers.get("en") or "MUBA is MUBA. 🪶"
 
 
-# ============================================================
-# FALLBACKS
-# ============================================================
-
-FALLBACKS = {
-    "en": [
-        "MUBA is still figuring that one out. No fake answers. 🪶",
-        "That's outside the confirmed MUBA lore. We don't invent facts. 🪶",
-        "Not in the known MUBA file yet. The story is still being written. 🪶",
-        "MUBA doesn't make things up just to sound serious. 🪶",
-    ],
-    "tr": [
-        "MUBA bunu henüz net olarak bilmiyor. Sahte cevap yok. 🪶",
-        "Bu, doğrulanmış MUBA bilgisinin dışında. Gerçek uydurmuyoruz. 🪶",
-        "Bu bilgi MUBA dosyasında henüz yok. Hikâye hâlâ yazılıyor. 🪶",
-        "MUBA sırf ciddi görünmek için bir şeyler uydurmaz. 🪶",
-    ],
-    "zh": [
-        "这个还不在已确认的 MUBA 信息里。我们不编造事实。🪶",
-        "MUBA 目前没有确认这个答案。故事还在继续。🪶",
-        "这超出了已知的 MUBA 设定。我们不为了听起来厉害而编造。🪶",
-    ],
-    "ar": [
-        "هذا ليس ضمن معلومات MUBA المؤكدة بعد. نحن لا نختلق الحقائق. 🪶",
-        "MUBA لا تملك إجابة مؤكدة لهذا حالياً. القصة ما زالت تتطور. 🪶",
-        "هذا خارج المعلومات المعروفة عن MUBA. لا نختلق الأشياء. 🪶",
-    ],
-    "hi": [
-        "यह अभी MUBA की पुष्टि की हुई जानकारी में नहीं है। हम तथ्य नहीं गढ़ते। 🪶",
-        "MUBA के पास अभी इसका पक्का जवाब नहीं है। कहानी अभी बन रही है। 🪶",
-        "यह ज्ञात MUBA जानकारी से बाहर है। सिर्फ अच्छा सुनाने के लिए कुछ नहीं गढ़ेंगे। 🪶",
-    ],
-}
-
-
-def generic_fallback(
-    text: str,
-    language: Optional[str] = None,
-) -> str:
+def generic_fallback(text: str, language: Optional[str] = None) -> str:
     language = language or detect_language(text)
-    return random.choice(
-        FALLBACKS.get(language, FALLBACKS["en"])
-    )
+    return random.choice(FALLBACKS.get(language, FALLBACKS["en"]))
 
 
-# ============================================================
-# CONVERSATION CONTEXT
-# ============================================================
-
-def _remember(chat_id: int, user_text: str, response: str) -> None:
-    if not chat_id:
-        return
-
-    _context[int(chat_id)].append(
-        (user_text, response)
-    )
+def _remember(chat_id: int, user_id: Optional[int], user_text: str,
+              response: str, language: str, topic: Optional[str]) -> None:
+    if chat_id:
+        _context[_state_key(chat_id, user_id)].append((user_text, response))
+        remember_group(chat_id, user_text, response, language, topic)
+    if user_id:
+        remember_user(chat_id, user_id, user_text, response, language, topic)
+    if topic:
+        remember_topic(topic, user_text, response)
 
 
-def _context_topic(chat_id: int) -> Optional[str]:
-    history = _context.get(int(chat_id or 0))
-
+def _context_topic(chat_id: int, user_id: Optional[int]) -> Optional[str]:
+    history = _context.get(_state_key(chat_id, user_id))
     if not history:
         return None
-
-    last_user_message = history[-1][0]
-    item = match_knowledge(last_user_message)
-
+    item = match_knowledge(history[-1][0])
     return item["topic"] if item else None
 
 
-# ============================================================
-# REPLY BUILDER
-# ============================================================
+def _detect_intents(text: str, language: str) -> List[str]:
+    intents = []
+    if detect_social_intent(text, language):
+        intents.append("social")
+    if match_knowledge(text, language):
+        intents.append("information")
+    if contains_muba(text):
+        intents.append("direct_muba")
+    return intents
 
-def build_reply(
-    text: str,
-    chat_id: int = 0,
-    language: Optional[str] = None,
-    user_id: Optional[int] = None,
-) -> str:
-    """
-    Main local-brain entry point.
 
-    Order:
-    1. Detect language.
-    2. Detect social intent.
-    3. Match MUBA knowledge.
-    4. Use context-aware fallback.
+def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None,
+                user_id: Optional[int] = None) -> str:
+    """Main MUBA Brain v3 entry point.
+
+    Pipeline: normalize → language → social → knowledge → context → safe fallback → memory.
+    No external AI service and no network calls are made by this module.
     """
     value = normalize(text)
-
     if not value:
         return ""
-
     language = language or detect_language(value)
-
-    # Social layer gets priority over broad knowledge matching.
-    social = social_reply(
-        value,
-        chat_id=chat_id,
-        user_id=user_id,
-        language=language,
-    )
-
+    social = social_reply(value, chat_id=chat_id, user_id=user_id, language=language)
     if social:
-        _remember(chat_id, text, social)
+        _remember(chat_id, user_id, text, social, language, "social")
         return social
-
     item = match_knowledge(value, language)
-
     if item:
         response = _answer_for(item, language)
-        _remember(chat_id, text, response)
+        _remember(chat_id, user_id, text, response, language, item.get("topic"))
         return response
-
-    # If a message clearly names MUBA but has no known intent,
-    # use a MUBA-safe fallback instead of pretending certainty.
+    # Context-aware bridge for short follow-ups such as "and the future?".
+    previous_topic = _context_topic(chat_id, user_id)
+    if previous_topic:
+        topic_item = next((x for x in KNOWLEDGE if x.get("topic") == previous_topic), None)
+        if topic_item and len(value.split()) <= 8:
+            response = _answer_for(topic_item, language)
+            _remember(chat_id, user_id, text, response, language, previous_topic)
+            return response
     response = generic_fallback(value, language)
-    _remember(chat_id, text, response)
+    _remember(chat_id, user_id, text, response, language, None)
     return response
 
 
 # ============================================================
-# BRAIN UTILITIES
+# ADMIN / DIAGNOSTIC SAFE UTILITIES
 # ============================================================
 
 def get_knowledge_topics() -> List[str]:
@@ -1663,99 +1674,57 @@ def get_knowledge_topics() -> List[str]:
 
 
 def get_brain_stats() -> Dict[str, object]:
-    knowledge_count = len(KNOWLEDGE)
-
-    keyword_count = sum(
-        len(item.get("keywords", []))
-        for item in KNOWLEDGE
-    )
-
-    answer_count = sum(
-        len(item.get("answers", {}))
-        for item in KNOWLEDGE
-    )
-
-    social_phrase_count = sum(
-        len(phrases)
-        for intent in SOCIAL_INTENTS.values()
-        for phrases in intent.values()
-    )
-
-    social_response_count = sum(
-        len(responses)
-        for intent in SOCIAL_RESPONSES.values()
-        for responses in intent.values()
-    )
-
+    keyword_count = sum(len(item.get("keywords", [])) for item in KNOWLEDGE)
+    answer_count = sum(len(item.get("answers", {})) for item in KNOWLEDGE)
+    social_phrase_count = sum(len(p) for intent in SOCIAL_INTENTS.values() for p in intent.values())
+    social_response_count = sum(len(r) for intent in SOCIAL_RESPONSES.values() for r in intent.values())
     return {
+        "brain_version": BRAIN_VERSION,
         "languages": list(SUPPORTED_LANGUAGES),
-        "knowledge_topics": knowledge_count,
+        "knowledge_topics": len(KNOWLEDGE),
         "knowledge_keywords": keyword_count,
         "localized_knowledge_answers": answer_count,
         "social_intents": len(SOCIAL_INTENTS),
         "social_trigger_phrases": social_phrase_count,
         "social_responses": social_response_count,
         "social_cooldown_seconds": SOCIAL_COOLDOWN_SECONDS,
-        "social_daily_limit_seconds": SOCIAL_DAILY_LIMIT_SECONDS,
+        "greeting_daily_limit_seconds": SOCIAL_DAILY_LIMIT_SECONDS,
+        "persistent_memory": True,
+        "memory_file": MEMORY_FILE,
         "external_ai": False,
+        "network_calls": False,
+        "learning_queue_items": len(_MEMORY.get("learning_queue", [])),
+        "security_incidents": len(_MEMORY.get("security_incidents", [])),
     }
 
 
-def reset_chat_context(chat_id: int) -> None:
-    _context.pop(int(chat_id or 0), None)
+def reset_chat_context(chat_id: int, user_id: Optional[int] = None) -> None:
+    _context.pop(_state_key(chat_id, user_id), None)
 
 
-def reset_social_state(
-    chat_id: Optional[int] = None,
-    user_id: Optional[int] = None,
-) -> None:
+def reset_social_state(chat_id: Optional[int] = None, user_id: Optional[int] = None) -> None:
     if chat_id is None:
-        _last_social_reply.clear()
-        _last_social_text.clear()
-        _daily_social.clear()
-        return
-
+        _last_social_reply.clear(); _last_social_text.clear(); _daily_greeting.clear(); return
     key = _state_key(chat_id, user_id)
-
-    _last_social_reply.pop(key, None)
-    _last_social_text.pop(key, None)
-    _daily_social.pop(key, None)
+    _last_social_reply.pop(key, None); _last_social_text.pop(key, None); _daily_greeting.pop(key, None)
 
 
-# ============================================================
-# LOCAL SELF-TEST
-# ============================================================
+def brain_self_test() -> Dict[str, object]:
+    tests = [
+        ("What is MUBA?", "en"), ("MUBA'nın amacı nedir?", "tr"),
+        ("MUBA 是怎么诞生的？", "zh"), ("ما هو هدف مجتمع MUBA؟", "ar"),
+        ("MUBA का भविष्य क्या है?", "hi"), ("Hey MUBA", "en"),
+    ]
+    results = []
+    for query, expected in tests:
+        detected = detect_language(query)
+        reply = build_reply(query, chat_id=-999, user_id=999, language=detected)
+        results.append({"query": query, "expected_language": expected,
+                        "detected_language": detected, "reply_ok": bool(reply)})
+    return {"ok": all(x["reply_ok"] for x in results), "tests": results}
+
 
 if __name__ == "__main__":
-    tests = [
-        ("What is MUBA?", "en"),
-        ("Who is MUBA?", "en"),
-        ("MUBA'nın amacı nedir?", "tr"),
-        ("MUBA 是怎么诞生的？", "zh"),
-        ("ما هو هدف مجتمع MUBA؟", "ar"),
-        ("MUBA का भविष्य क्या है?", "hi"),
-        ("GM", "en"),
-        ("GN", "en"),
-        ("How are you?", "en"),
-        ("Hey MUBA, what's up?", "en"),
-        ("MUBA lol", "en"),
-    ]
-
-    print("MUBA Brain self-test")
-    print("-" * 60)
-
-    for query, expected_language in tests:
-        detected = detect_language(query)
-        result = build_reply(
-            query,
-            chat_id=999,
-            user_id=1,
-            language=detected,
-        )
-        print(f"Q: {query}")
-        print(f"Language: {detected} (expected: {expected_language})")
-        print(f"A: {result}")
-        print()
-
-    print("Brain stats:")
-    print(get_brain_stats())
+    print("MUBA Brain", BRAIN_VERSION)
+    print(json.dumps(brain_self_test(), ensure_ascii=False, indent=2))
+    print(json.dumps(get_brain_stats(), ensure_ascii=False, indent=2))
