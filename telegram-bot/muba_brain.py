@@ -49,8 +49,9 @@ from typing import Any, Deque, Dict, Iterable, List, Optional, Tuple
 BRAIN_VERSION = "FINAL-1.0"
 SUPPORTED_LANGUAGES = ("en", "tr", "zh", "ar", "hi")
 DEFAULT_MEMORY_FILE = os.getenv("MUBA_MEMORY_FILE", "muba_memory/memory.json")
-FOUNDER_ID_RAW = os.getenv("MUBA_FOUNDER_ID", "").strip()
-AUTHORIZED_GROUPS_RAW = os.getenv("MUBA_AUTHORIZED_GROUP_IDS", "").strip()
+FOUNDER_ID_RAW = os.getenv("MUBA_FOUNDER_ID", "934598759").strip()
+AUTHORIZED_GROUPS_RAW = os.getenv("MUBA_AUTHORIZED_GROUP_IDS", "-1004485415245").strip()
+MUBA_BOT_ID_RAW = os.getenv("MUBA_BOT_ID", "8661249663").strip()
 WEB_ENABLED = os.getenv("MUBA_WEB_ENABLED", "0").lower() in {"1", "true", "yes", "on"}
 WEB_TIMEOUT = float(os.getenv("MUBA_WEB_TIMEOUT", "6"))
 SOCIAL_COOLDOWN = 90.0
@@ -74,6 +75,7 @@ def _ints(raw: str) -> set[int]:
 
 FOUNDER_IDS = _ints(FOUNDER_ID_RAW)
 AUTHORIZED_GROUP_IDS = _ints(AUTHORIZED_GROUPS_RAW)
+MUBA_BOT_IDS = _ints(MUBA_BOT_ID_RAW)
 
 # ---------------------------------------------------------------------------
 # NORMALIZATION / LANGUAGE
@@ -659,7 +661,7 @@ def _looks_like_current(value: str) -> bool:
 
 
 def _looks_like_founder(value: str) -> bool:
-    return _has_any(value, ["@kurucu", "kurucu", "founder", "creator", "创始人", "المؤسس", "संस्थापक"])
+    return _has_any(value, ["@kurucu", "kurucu", "founder", "creator", "kurucu yetkisi", "son karar", "nihai karar", "kim karar verir", "创始人", "权限", "المؤسس", "صلاحية", "القرار النهائي", "संस्थापक", "अधिकार"])
 
 
 def _looks_like_user_memory(value: str) -> bool:
@@ -819,12 +821,21 @@ def is_founder(user_id: Optional[int]) -> bool:
     return bool(user_id is not None and int(user_id) in FOUNDER_IDS)
 
 
+def is_authorized_group(chat_id: Optional[int]) -> bool:
+    """Return True only for Founder-authorized Telegram group Chat IDs."""
+    return bool(chat_id is not None and int(chat_id) in AUTHORIZED_GROUP_IDS)
+
+
+def is_muba_bot_id(bot_id: Optional[int]) -> bool:
+    return bool(bot_id is not None and int(bot_id) in MUBA_BOT_IDS)
+
+
 def founder_identity_answer(language: str, actual_user_id: Optional[int]) -> str:
     if not FOUNDER_IDS:
         return {"tr":"Kurucu yetkisi güvenli yapılandırmada tanımlı değil. Kullanıcı adı yetki kanıtı değildir.", "en":"Founder authority is not configured securely yet. A username is not proof of authority.", "zh":"Founder 权限尚未安全配置。用户名不是权限证明。", "ar":"لم يتم إعداد صلاحية المؤسس بشكل آمن بعد. اسم المستخدم ليس دليلاً على الصلاحية.", "hi":"Founder authority अभी securely configured नहीं है। Username authority का proof नहीं है।"}[language]
     if actual_user_id and is_founder(actual_user_id):
-        return {"tr":"@KURUCU, MUBA'nın gerçek kurucu hesabıdır. Yetki Telegram User ID üzerinden doğrulanır; kullanıcı adı tek başına yetki değildir. 🪶", "en":"@KURUCU is MUBA's Founder. Authority is verified by Telegram User ID; a username alone is not authority. 🪶", "zh":"@KURUCU 是 MUBA 的创始人。权限通过 Telegram User ID 验证，用户名本身不是权限证明。🪶", "ar":"@KURUCU هو مؤسس MUBA. يتم التحقق من الصلاحية عبر Telegram User ID، وليس اسم المستخدم وحده. 🪶", "hi":"@KURUCU MUBA के Founder हैं। Authority Telegram User ID से verify होती है; username अकेला authority नहीं है। 🪶"}[language]
-    return {"tr":"@KURUCU'nun yetkisi kullanıcı adıyla değil, güvenli şekilde kayıtlı gerçek Telegram User ID ile doğrulanır. Bu mesajın sahibi için Founder yetkisi iddia edemem.", "en":"Founder authority is verified by the securely configured Telegram User ID, not by a username. I won't grant Founder authority to the sender from a claim alone.", "zh":"Founder 权限通过安全配置的 Telegram User ID 验证，而不是用户名。我不会仅凭声明授予发件人权限。", "ar":"يتم التحقق من صلاحية المؤسس عبر Telegram User ID الآمن، وليس اسم المستخدم. لن أمنح الصلاحية بناءً على ادعاء فقط.", "hi":"Founder authority securely configured Telegram User ID से verify होती है, username से नहीं। सिर्फ claim के आधार पर authority नहीं दूंगा।"}[language]
+        return {"tr":"@KURUCU, MUBA'nın mutlak kurucusudur. Kritik ve resmi konularda son karar KURUCU'ya aittir. Founder yetkisi gerçek Telegram User ID ile doğrulanır; kullanıcı adı tek başına yetki değildir. 🪶", "en":"@KURUCU is MUBA's Founder. Final authority on critical and official matters belongs to the Founder. Founder authority is verified by the real Telegram User ID; a username alone is not authority. 🪶", "zh":"@KURUCU 是 MUBA 的创始人。关键和官方事项的最终决定权属于 Founder。权限通过真实 Telegram User ID 验证，用户名本身不是权限证明。🪶", "ar":"@KURUCU هو المؤسس المطلق لـ MUBA. القرار النهائي في الأمور الحرجة والرسمية يعود إلى المؤسس. يتم التحقق من صلاحية المؤسس عبر Telegram User ID الحقيقي، وليس اسم المستخدم وحده. 🪶", "hi":"@KURUCU MUBA के Founder हैं। Critical और official मामलों में final authority Founder की है। Founder authority असली Telegram User ID से verify होती है; username अकेला authority नहीं है। 🪶"}[language]
+    return {"tr":"@KURUCU, MUBA'nın kayıtlı mutlak kurucusudur. Kritik ve resmi konularda son karar KURUCU'ya aittir. Yetki yalnızca güvenli şekilde kayıtlı gerçek Telegram User ID ile doğrulanır; kullanıcı adı veya bir kişinin iddiası yetki kanıtı değildir.", "en":"@KURUCU is MUBA's registered Founder. Final authority on critical and official matters belongs to the Founder. Authority is verified only by the securely configured real Telegram User ID; a username or a person's claim is not proof of authority.", "zh":"@KURUCU 是 MUBA 注册的 Founder。关键和官方事项的最终决定权属于 Founder。权限只能通过安全配置的真实 Telegram User ID 验证；用户名或个人声明都不是权限证明。", "ar":"@KURUCU هو المؤسس المسجل لـ MUBA. القرار النهائي في الأمور الحرجة والرسمية يعود إلى المؤسس. يتم التحقق من الصلاحية فقط عبر Telegram User ID الحقيقي المكوّن بشكل آمن؛ اسم المستخدم أو ادعاء أي شخص ليس دليلاً على الصلاحية.", "hi":"@KURUCU MUBA के registered Founder हैं। Critical और official मामलों में final authority Founder की है। Authority केवल securely configured real Telegram User ID से verify होती है; username या किसी व्यक्ति का claim authority का proof नहीं है."}[language]
 
 # ---------------------------------------------------------------------------
 # KNOWLEDGE RETRIEVAL
@@ -1043,6 +1054,10 @@ def _normal_chat_reply(value: str, language: str, context: Optional[str]) -> Opt
 def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None, user_id: Optional[int] = None) -> str:
     value = normalize(text)
     if not value: return ""
+    # Group authorization firewall: unknown groups get no normal response,
+    # no learning, no memory, no web research and no moderation decision.
+    if chat_id < 0 and not is_authorized_group(chat_id):
+        return ""
     language = language or detect_language(value)
     intents = detect_intents(value, language)
     context_topic = _context_topic(chat_id, user_id)
@@ -1184,6 +1199,8 @@ def get_brain_stats() -> Dict[str, Any]:
         "web_enabled": WEB_ENABLED,
         "founder_configured": bool(FOUNDER_IDS),
         "authorized_groups_configured": bool(AUTHORIZED_GROUP_IDS),
+        "muba_bot_id_configured": bool(MUBA_BOT_IDS),
+        "authorized_group_ids": sorted(AUTHORIZED_GROUP_IDS),
         "users": len(STORE.data["users"]),
         "groups": len(STORE.data["groups"]),
         "topics": len(STORE.data["topics"]),
@@ -1228,10 +1245,10 @@ def brain_self_test() -> Dict[str, Any]:
     for q, expected_lang, expected in cases:
         detected = detect_language(q)
         intents = detect_intents(q, detected)
-        reply = build_reply(q, chat_id=-7001, user_id=12345, language=detected)
+        reply = build_reply(q, chat_id=0, user_id=12345, language=detected)
         results.append({"query": q, "expected_language": expected_lang, "detected_language": detected, "expected": expected, "intents": intents, "reply_ok": bool(reply), "reply": reply})
     # Reset test social state so test runs don't affect real conversation.
-    reset_social_state(-7001, 12345)
+    reset_social_state(0, 12345)
     return {"ok": all(x["reply_ok"] and x["detected_language"] == x["expected_language"] for x in results), "results": results}
 
 
@@ -1240,3 +1257,1202 @@ if __name__ == "__main__":
     print("MUBA Brain", BRAIN_VERSION)
     print(json.dumps(brain_self_test(), ensure_ascii=False, indent=2))
     print(json.dumps(get_brain_stats(), ensure_ascii=False, indent=2))
+
+# =============================================================================
+# MUBA MASTER BRAIN — INTEGRATED SPECIFICATION / ORCHESTRATOR
+# =============================================================================
+#
+# This section consolidates the approved MUBA brain architecture into one
+# executable local orchestration layer. It intentionally keeps the public
+# API compatible with bot_mention.py:
+#
+#     build_reply()
+#     contains_muba()
+#     detect_language()
+#     detect_social_intent()
+#
+# The layer registry below is the implementation map for the 64-layer master
+# specification. A layer is not merely documentation: the orchestrator uses
+# the corresponding registries, gates, memory stores, scoring rules, or
+# decision functions where applicable.
+#
+# Protected identity:
+#   Founder User ID = 934598759
+#   Authorized Group Chat ID = -1004485415245
+#   MUBA Bot ID = 8661249663
+#
+# Secrets such as TELEGRAM_BOT_TOKEN are NEVER stored here.
+# =============================================================================
+
+MASTER_BRAIN_VERSION = "MASTER-64-1.0"
+MASTER_FOUNDER_ID = 934598759
+MASTER_GROUP_ID = -1004485415245
+MASTER_BOT_ID = 8661249663
+
+MASTER_LANGUAGES = ("tr", "en", "zh", "ar", "hi")
+
+# ---------------------------------------------------------------------------
+# 64-LAYER MASTER BRAIN SPECIFICATION
+# ---------------------------------------------------------------------------
+
+MASTER_LAYERS = {
+    1:  ("identity", "MUBA core identity and immutable character boundary"),
+    2:  ("founder_authority", "Founder authority bound to numeric Telegram User ID"),
+    3:  ("bot_identity", "MUBA Bot identity bound to numeric Telegram Bot ID"),
+    4:  ("group_authorization", "Authorized Telegram Chat ID firewall"),
+    5:  ("permission_model", "Role and permission resolution"),
+    6:  ("command_firewall", "Explicit command vs natural-language separation"),
+    7:  ("knowledge", "Official MUBA knowledge retrieval"),
+    8:  ("knowledge_provenance", "Source, confidence, timestamp, verification state"),
+    9:  ("official_source_map", "Official source registry and source hierarchy"),
+    10: ("web_research", "Optional current-information research boundary"),
+    11: ("evidence_engine", "Evidence comparison and contradiction handling"),
+    12: ("memory_core", "Core memory storage"),
+    13: ("user_memory", "Per-user memory isolation"),
+    14: ("group_memory", "Per-group memory isolation"),
+    15: ("topic_memory", "Topic continuity and topic memory"),
+    16: ("community_memory", "Community-level memory"),
+    17: ("decision_memory", "Founder/community decision memory"),
+    18: ("timeline", "Chronological community/project timeline"),
+    19: ("event_security_memory", "Security/event history"),
+    20: ("memory_archive", "Archive and retrieval of outdated/low-value memory"),
+    21: ("memory_versioning", "Current vs historical information versions"),
+    22: ("memory_cleanup", "Bounded cleanup without silently deleting valuable data"),
+    23: ("learning_queue", "Candidate learning queue"),
+    24: ("learning_maturity", "Candidate -> observed -> trusted -> official lifecycle"),
+    25: ("learning_firewall", "Learning never silently becomes official"),
+    26: ("culture_learning", "Group culture and inside-joke learning"),
+    27: ("language_learning", "Question/slang/variant recognition"),
+    28: ("conversation_context", "Conversation state and topic continuity"),
+    29: ("multi_intent", "Multiple intents in one message"),
+    30: ("tone_awareness", "Tone, urgency and conversational mode"),
+    31: ("response_generation", "Varied local response generation"),
+    32: ("adaptive_length", "Short/normal/detailed response selection"),
+    33: ("social_layer", "GM/GN/greeting/check-in/direct-address behavior"),
+    34: ("social_cooldown", "Anti-spam and repetition suppression"),
+    35: ("natural_group_presence", "Relevant group observation and selective replies"),
+    36: ("security_detection", "Spam, impersonation, fake CA, suspicious link detection"),
+    37: ("security_risk", "Low/medium/high/critical risk classification"),
+    38: ("security_evidence", "Evidence confidence and independence"),
+    39: ("security_incident", "Incident lifecycle and deduplication"),
+    40: ("security_escalation", "Escalation and Founder alert decisions"),
+    41: ("ca_boundary", "Official CA boundary: CA coming soon"),
+    42: ("link_security", "Domain, redirect, lookalike and source checks"),
+    43: ("impersonation", "Founder/MUBA/ROSE impersonation handling"),
+    44: ("rose_boundary", "ROSE executes moderation; MUBA remains decision center"),
+    45: ("media_intelligence", "Media/OCR/transcription/file/link intelligence boundary"),
+    46: ("telegram_state", "Telegram identity, chat and message state"),
+    47: ("queue_engine", "RECEIVED -> QUEUED -> PROCESSING -> COMPLETED/FAILED"),
+    48: ("action_engine", "Action planning, dependencies and verification"),
+    49: ("audit_trail", "Decision trace and audit events"),
+    50: ("time_engine", "Relative time/date handling"),
+    51: ("history_future", "Historical facts vs future plans/possibilities"),
+    52: ("proactive_intelligence", "Important issue surfacing without chatter spam"),
+    53: ("reporting", "Founder daily/weekly/system reports"),
+    54: ("self_diagnostics", "Module health and self-test"),
+    55: ("recovery", "Graceful degradation and recovery state"),
+    56: ("load_control", "High-load reduction of low-priority behavior"),
+    57: ("privacy_walls", "User/group memory isolation"),
+    58: ("character_integrity", "Core identity and philosophy protection"),
+    59: ("autonomy_bounds", "Autonomous operation inside protected boundaries"),
+    60: ("dev_separation", "DEV/internal controls separated from public behavior"),
+    61: ("backup_snapshots", "Snapshots and recovery points"),
+    62: ("system_configuration", "Configuration state and health"),
+    63: ("master_command_router", "Founder-only explicit system command routing"),
+    64: ("unified_brain", "Final arbitration across all layers"),
+}
+
+# ---------------------------------------------------------------------------
+# Protected configuration
+# ---------------------------------------------------------------------------
+
+PROTECTED_CONFIG = {
+    "founder_user_ids": {MASTER_FOUNDER_ID},
+    "authorized_group_ids": {MASTER_GROUP_ID},
+    "muba_bot_ids": {MASTER_BOT_ID},
+    "identity": {
+        "name": "MUBA",
+        "slogan": "WE LIVE HERE NOW.",
+        "role": "character + meme + community + information center",
+    },
+    "official_ca": "CA coming soon.",
+}
+
+# Keep environment configuration compatible with deployment while refusing to
+# allow an environment variable to silently weaken the hard-coded protected
+# identity. Additional authorized groups can only be added through a Founder
+# operation; the canonical group remains protected.
+FOUNDER_IDS = {MASTER_FOUNDER_ID}
+AUTHORIZED_GROUP_IDS = {MASTER_GROUP_ID}
+MUBA_BOT_IDS = {MASTER_BOT_ID}
+
+# ---------------------------------------------------------------------------
+# Internal state
+# ---------------------------------------------------------------------------
+
+_MASTER_LOCK = threading.RLock()
+_MASTER_RUNTIME = {
+    "load_level": "normal",
+    "safe_mode": False,
+    "maintenance": False,
+    "last_health": 0.0,
+    "message_count": 0,
+    "error_count": 0,
+    "deferred_learning": 0,
+    "proactive_queue": [],
+}
+
+# Decision priorities: lower number means earlier arbitration.
+DECISION_PRIORITY = {
+    "security": 1,
+    "founder": 2,
+    "identity_permission": 3,
+    "critical_support": 4,
+    "current": 5,
+    "ca": 6,
+    "official_link": 7,
+    "help": 8,
+    "future": 9,
+    "knowledge": 10,
+    "normal_chat": 11,
+    "social": 12,
+    "noise": 99,
+}
+
+RISK_LEVELS = ("low", "medium", "high", "critical")
+MEMORY_STATUSES = ("active", "archived", "superseded", "candidate", "suspicious")
+LEARNING_STAGES = ("candidate", "observed", "trusted", "official", "rejected")
+QUEUE_STATES = ("RECEIVED", "QUEUED", "PROCESSING", "COMPLETED", "FAILED", "RECOVERED")
+FUTURE_STATES = ("planned", "in_progress", "completed", "pending", "cancelled", "undecided")
+
+# ---------------------------------------------------------------------------
+# Identity / authorization
+# ---------------------------------------------------------------------------
+
+def is_founder(user_id: Optional[int]) -> bool:
+    try:
+        return user_id is not None and int(user_id) == MASTER_FOUNDER_ID
+    except Exception:
+        return False
+
+
+def is_authorized_group(chat_id: Optional[int]) -> bool:
+    try:
+        return chat_id is not None and int(chat_id) == MASTER_GROUP_ID
+    except Exception:
+        return False
+
+
+def is_muba_bot_id(bot_id: Optional[int]) -> bool:
+    try:
+        return bot_id is not None and int(bot_id) == MASTER_BOT_ID
+    except Exception:
+        return False
+
+
+def identity_status(chat_id: Optional[int], user_id: Optional[int], bot_id: Optional[int] = None) -> Dict[str, Any]:
+    return {
+        "founder": is_founder(user_id),
+        "authorized_group": is_authorized_group(chat_id),
+        "muba_bot": True if bot_id is None else is_muba_bot_id(bot_id),
+        "founder_id_configured": True,
+        "group_id_configured": True,
+        "bot_id_configured": True,
+    }
+
+
+def _unauthorized_group(chat_id: Optional[int]) -> bool:
+    # Private chats are allowed to use the brain. Group/supergroup IDs are
+    # negative in Telegram; only the canonical group is allowed normal work.
+    return bool(chat_id is not None and int(chat_id) < 0 and not is_authorized_group(chat_id))
+
+
+# ---------------------------------------------------------------------------
+# Provenance / source hierarchy
+# ---------------------------------------------------------------------------
+
+SOURCE_RANK = {
+    "official_muba": 100,
+    "verified_current": 90,
+    "official_source": 90,
+    "founder_approved": 95,
+    "trusted_learned": 70,
+    "community_memory": 60,
+    "learned": 50,
+    "user_claim": 20,
+    "unknown": 0,
+}
+
+SOURCE_STATUS = {
+    "verified": "🟢",
+    "community": "🟡",
+    "suspicious": "🔴",
+}
+
+
+def source_rank(source: str) -> int:
+    return SOURCE_RANK.get(str(source), 0)
+
+
+def compare_sources(items: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    ranked = []
+    for item in items:
+        row = dict(item)
+        row["rank"] = source_rank(row.get("source", "unknown"))
+        ranked.append(row)
+    return sorted(ranked, key=lambda x: (x.get("rank", 0), x.get("confidence", 0.0), x.get("timestamp", 0.0)), reverse=True)
+
+
+def provenance(source: str, confidence: float = 0.5, verified_at: Optional[float] = None,
+               status: str = "community") -> Dict[str, Any]:
+    return {
+        "source": source,
+        "confidence": max(0.0, min(1.0, float(confidence))),
+        "verified_at": verified_at or time.time(),
+        "status": status,
+        "rank": source_rank(source),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Memory: archive/versioning/cleanup
+# ---------------------------------------------------------------------------
+
+def _archive_memory_item(bucket: str, item: Dict[str, Any], reason: str = "superseded") -> None:
+    def mutate(data):
+        archive = data.setdefault("memory_archive", [])
+        archive.append({
+            "bucket": bucket,
+            "item": dict(item),
+            "reason": reason,
+            "archived_at": time.time(),
+        })
+        data["memory_archive"] = archive[-5000:]
+    STORE.mutate(mutate)
+
+
+def archive_memory(bucket: str, predicate, reason: str = "cleanup") -> int:
+    changed = 0
+    def mutate(data):
+        nonlocal changed
+        values = data.setdefault(bucket, [])
+        keep = []
+        for item in values:
+            if isinstance(item, dict) and predicate(item):
+                _archive_memory_item(bucket, item, reason)
+                changed += 1
+            else:
+                keep.append(item)
+        data[bucket] = keep
+    STORE.mutate(mutate)
+    return changed
+
+
+def memory_snapshot(label: str = "automatic") -> str:
+    snapshot_id = "SNAP-" + hashlib.sha256(f"{label}|{time.time()}".encode()).hexdigest()[:12].upper()
+    def mutate(data):
+        snaps = data.setdefault("snapshots", [])
+        snaps.append({
+            "snapshot_id": snapshot_id,
+            "label": label,
+            "created_at": time.time(),
+            "schema": data.get("schema", 1),
+            "counts": {
+                "users": len(data.get("users", {})),
+                "groups": len(data.get("groups", {})),
+                "topics": len(data.get("topics", {})),
+                "timeline": len(data.get("timeline", [])),
+                "incidents": len(data.get("security_incidents", [])),
+                "learning": len(data.get("learning_queue", [])),
+            },
+        })
+        data["snapshots"] = snaps[-100:]
+    STORE.mutate(mutate)
+    return snapshot_id
+
+
+def record_audit(event: str, actor_id: Optional[int], chat_id: Optional[int],
+                 decision: str, details: Optional[Dict[str, Any]] = None) -> None:
+    def mutate(data):
+        audit = data.setdefault("audit_trail", [])
+        audit.append({
+            "event_id": "AUD-" + hashlib.sha256(f"{event}|{actor_id}|{chat_id}|{time.time()}".encode()).hexdigest()[:12].upper(),
+            "event": event,
+            "actor_id": actor_id,
+            "chat_id": chat_id,
+            "decision": decision,
+            "details": details or {},
+            "created_at": time.time(),
+        })
+        data["audit_trail"] = audit[-5000:]
+    STORE.mutate(mutate)
+
+
+# ---------------------------------------------------------------------------
+# Learning maturity
+# ---------------------------------------------------------------------------
+
+def queue_master_learning(chat_id: int, user_id: Optional[int], candidate: str,
+                          source: str = "conversation", confidence: float = 0.25,
+                          category: str = "general") -> str:
+    learning_id = "LRN-" + hashlib.sha256(
+        f"{chat_id}|{user_id}|{category}|{normalize(candidate)}".encode()
+    ).hexdigest()[:12].upper()
+
+    def mutate(data):
+        queue = data.setdefault("learning_queue", [])
+        existing = next((x for x in queue if x.get("learning_id") == learning_id), None)
+        if existing:
+            existing["observations"] = int(existing.get("observations", 1)) + 1
+            existing["last_seen"] = time.time()
+            existing["confidence"] = max(float(existing.get("confidence", 0.0)), confidence)
+            return
+        queue.append({
+            "learning_id": learning_id,
+            "chat_id": int(chat_id),
+            "user_id": int(user_id) if user_id is not None else None,
+            "candidate": str(candidate)[:4000],
+            "source": source,
+            "category": category,
+            "confidence": max(0.0, min(1.0, float(confidence))),
+            "observations": 1,
+            "stage": "candidate",
+            "status": "queued",
+            "created_at": time.time(),
+            "last_seen": time.time(),
+        })
+        data["learning_queue"] = queue[-5000:]
+
+    STORE.mutate(mutate)
+    return learning_id
+
+
+def mature_learning(learning_id: str, new_stage: str, approved_by: Optional[int] = None) -> bool:
+    if new_stage not in LEARNING_STAGES:
+        return False
+    if new_stage == "official" and not is_founder(approved_by):
+        return False
+
+    changed = False
+    def mutate(data):
+        nonlocal changed
+        for item in data.setdefault("learning_queue", []):
+            if item.get("learning_id") == learning_id:
+                old = item.get("stage", "candidate")
+                item["stage"] = new_stage
+                item["updated_at"] = time.time()
+                item["approved_by"] = approved_by if new_stage == "official" else None
+                changed = True
+                record = data.setdefault("memory_events", [])
+                record.append({
+                    "type": "learning_transition",
+                    "learning_id": learning_id,
+                    "from": old,
+                    "to": new_stage,
+                    "approved_by": approved_by,
+                    "created_at": time.time(),
+                })
+                break
+    STORE.mutate(mutate)
+    return changed
+
+
+# ---------------------------------------------------------------------------
+# Decision memory
+# ---------------------------------------------------------------------------
+
+def remember_decision(decision: str, approved_by: Optional[int],
+                      source: str = "founder", confidence: float = 1.0) -> bool:
+    if not is_founder(approved_by):
+        return False
+
+    def mutate(data):
+        decisions = data.setdefault("community_decisions", [])
+        decisions.append({
+            "decision": str(decision)[:5000],
+            "approved_by": int(approved_by),
+            "source": source,
+            "confidence": max(0.0, min(1.0, confidence)),
+            "status": "active",
+            "created_at": time.time(),
+        })
+        data["community_decisions"] = decisions[-5000:]
+
+    STORE.mutate(mutate)
+    record_audit("community_decision", approved_by, None, "accepted", {"decision": decision})
+    return True
+
+
+def get_active_decisions(limit: int = 20) -> List[Dict[str, Any]]:
+    values = STORE.data.get("community_decisions", [])
+    return [x for x in values if x.get("status", "active") == "active"][-limit:]
+
+
+# ---------------------------------------------------------------------------
+# Incident engine: deduplication, evidence and lifecycle
+# ---------------------------------------------------------------------------
+
+def incident_risk_score(category: str, evidence_count: int = 1,
+                         source_independence: int = 1, confidence: float = 0.5) -> str:
+    score = 0
+    if category in {"impersonation", "fake_ca", "ca_or_contract_claim", "founder_impersonation"}:
+        score += 50
+    elif category in {"suspicious_link", "phishing"}:
+        score += 45
+    elif category in {"spam_flood", "noise"}:
+        score += 15
+    else:
+        score += 10
+    score += min(20, evidence_count * 5)
+    score += min(15, max(0, source_independence - 1) * 5)
+    score += int(max(0.0, min(1.0, confidence)) * 15)
+    if score >= 85:
+        return "critical"
+    if score >= 60:
+        return "high"
+    if score >= 30:
+        return "medium"
+    return "low"
+
+
+def merge_incident(chat_id: int, user_id: Optional[int], category: str,
+                   evidence: str, confidence: float = 0.5) -> str:
+    risk = incident_risk_score(category, 1, 1, confidence)
+    return record_incident(
+        chat_id, user_id, category, risk, [evidence],
+        action="review", status="open", text=evidence
+    )
+
+
+def close_incident(incident_id: str, result: str, actor_id: Optional[int]) -> bool:
+    if not is_founder(actor_id):
+        return False
+    changed = False
+    def mutate(data):
+        nonlocal changed
+        for item in data.setdefault("security_incidents", []):
+            if item.get("incident_id") == incident_id:
+                item["status"] = "closed"
+                item["result"] = str(result)[:3000]
+                item["closed_by"] = int(actor_id)
+                item["updated_at"] = time.time()
+                changed = True
+                break
+    STORE.mutate(mutate)
+    if changed:
+        record_audit("incident_close", actor_id, None, "closed", {"incident_id": incident_id, "result": result})
+    return changed
+
+
+# ---------------------------------------------------------------------------
+# CA / link / impersonation intelligence
+# ---------------------------------------------------------------------------
+
+CA_RESPONSES_MASTER = {
+    "tr": "CA şu an paylaşılmış/resmileştirilmiş değil. Resmi durum: **CA coming soon.** 🪶",
+    "en": "The CA is not officially released here yet. Official status: **CA coming soon.** 🪶",
+    "zh": "目前尚未正式公布 CA。官方状态：**CA coming soon.** 🪶",
+    "ar": "لم يتم إصدار CA رسمياً بعد. الحالة الرسمية: **CA coming soon.** 🪶",
+    "hi": "CA अभी officially जारी नहीं किया गया है। Official status: **CA coming soon.** 🪶",
+}
+
+
+def normalize_ca_claim(value: str) -> Dict[str, Any]:
+    text = normalize(value)
+    tokens = [
+        "contract address", "contract", "ca:", "ca ", "mint",
+        "real ca", "official ca", "gerçek ca", "resmi ca",
+        "عنوان العقد", "合约地址",
+    ]
+    return {
+        "detected": any(t in text for t in tokens),
+        "looks_official": any(t in text for t in ["official", "resmi", "official ca", "resmi ca", "真实"]),
+        "raw": value,
+    }
+
+
+def link_risk(value: str) -> Dict[str, Any]:
+    urls = re.findall(r"(?:https?://|www\.)\S+", value, flags=re.I)
+    suspicious = []
+    for raw in urls:
+        candidate = raw.rstrip(".,!?)]}")
+        parsed = urllib.parse.urlparse(candidate if "://" in candidate else "https://" + candidate)
+        host = (parsed.netloc or "").lower()
+        if not host:
+            suspicious.append({"url": candidate, "reason": "invalid_host"})
+            continue
+        if parsed.scheme not in {"http", "https"}:
+            suspicious.append({"url": candidate, "reason": "unsupported_scheme"})
+        if any(x in host for x in ["bit.ly", "tinyurl.com", "t.co"]):
+            suspicious.append({"url": candidate, "reason": "shortener"})
+        if any(ord(ch) > 127 for ch in host):
+            suspicious.append({"url": candidate, "reason": "lookalike_or_idn"})
+        if host not in {"muba-rh.github.io", "t.me", "x.com", "twitter.com"}:
+            suspicious.append({"url": candidate, "reason": "non_official_domain"})
+    return {
+        "urls": urls,
+        "suspicious": suspicious,
+        "risk": "high" if suspicious else "low",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Future / time state
+# ---------------------------------------------------------------------------
+
+def classify_future_state(value: str) -> str:
+    text = normalize(value)
+    if _has_any(text, ["completed", "done", "tamamlandı", "bitti", "completed"]):
+        return "completed"
+    if _has_any(text, ["in progress", "devam ediyor", "yapılıyor"]):
+        return "in_progress"
+    if _has_any(text, ["cancelled", "iptal", "cancelled"]):
+        return "cancelled"
+    if _has_any(text, ["pending", "bekliyor", "beklemede"]):
+        return "pending"
+    if _has_any(text, ["undecided", "karar verilmedi", "belirsiz"]):
+        return "undecided"
+    return "planned"
+
+
+def future_answer(language: str) -> str:
+    return {
+        "tr": "Geleceğe ait konularda planı gerçek gibi göstermem. MUBA'nın kesinleşmiş resmi bilgisi yoksa tarih veya sonuç uydurmam. 🪶",
+        "en": "For future matters, I do not turn plans into facts. If no official outcome or date is confirmed, I won't invent one. 🪶",
+        "zh": "对于未来事项，我不会把计划当成事实。没有官方确认的日期或结果时，我不会编造。🪶",
+        "ar": "في الأمور المستقبلية لا أتعامل مع الخطط كأنها حقائق. إذا لم يوجد موعد أو نتيجة مؤكدة رسمياً فلن أختلقها. 🪶",
+        "hi": "Future matters में मैं plans को facts नहीं मानता। Official date या result confirmed न हो तो मैं उसे नहीं गढ़ूंगा। 🪶",
+    }[language]
+
+
+# ---------------------------------------------------------------------------
+# Natural group observation
+# ---------------------------------------------------------------------------
+
+def observe_message(chat_id: int, user_id: Optional[int], text: str,
+                    language: Optional[str] = None, is_reply: bool = False) -> Dict[str, Any]:
+    if not is_authorized_group(chat_id):
+        return {"accepted": False, "reason": "unauthorized_group"}
+
+    lang = language or detect_language(text)
+    topic_match = match_knowledge(text, lang)
+    topic = topic_match[0] if topic_match else None
+
+    observe_user(chat_id, user_id, lang)
+    if topic:
+        def mutate(data):
+            rec = data.setdefault("topics", {}).setdefault(topic, {
+                "topic": topic, "observations": [], "last_seen": time.time(), "confidence": 0.5
+            })
+            rec["observations"].append({
+                "user_id": user_id,
+                "text": text[:1000],
+                "language": lang,
+                "created_at": time.time(),
+            })
+            rec["observations"] = rec["observations"][-500:]
+            rec["last_seen"] = time.time()
+        STORE.mutate(mutate)
+
+    return {
+        "accepted": True,
+        "language": lang,
+        "topic": topic,
+        "learned": False,
+        "note": "Observation is not automatically official knowledge.",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Proactive / load control
+# ---------------------------------------------------------------------------
+
+def set_load_level(level: str) -> None:
+    if level not in {"normal", "busy", "high", "critical"}:
+        return
+    with _MASTER_LOCK:
+        _MASTER_RUNTIME["load_level"] = level
+
+
+def _low_priority_allowed() -> bool:
+    with _MASTER_LOCK:
+        return _MASTER_RUNTIME["load_level"] in {"normal", "busy"}
+
+
+def enqueue_proactive(priority: str, message: str, chat_id: int,
+                      incident_id: Optional[str] = None) -> None:
+    item = {
+        "priority": priority,
+        "message": message[:3000],
+        "chat_id": chat_id,
+        "incident_id": incident_id,
+        "created_at": time.time(),
+    }
+    with _MASTER_LOCK:
+        _MASTER_RUNTIME["proactive_queue"].append(item)
+        _MASTER_RUNTIME["proactive_queue"] = sorted(
+            _MASTER_RUNTIME["proactive_queue"],
+            key=lambda x: DECISION_PRIORITY.get(x["priority"], 99),
+        )[-100:]
+
+
+# ---------------------------------------------------------------------------
+# Explicit Founder command router
+# ---------------------------------------------------------------------------
+
+FOUNDER_COMMANDS = {
+    "status", "update", "learn", "forget", "rules",
+    "snapshot", "health", "incidents", "timeline", "report",
+}
+
+
+def parse_founder_command(text: str, user_id: Optional[int]) -> Optional[Dict[str, Any]]:
+    if not is_founder(user_id):
+        return None
+    value = str(text or "").strip()
+    if not value.lower().startswith("/muba"):
+        return None
+    parts = value.split(maxsplit=2)
+    command = parts[1].lower() if len(parts) > 1 else "status"
+    if command not in FOUNDER_COMMANDS:
+        return {"authorized": True, "command": "unknown", "raw": value}
+    return {
+        "authorized": True,
+        "command": command,
+        "argument": parts[2] if len(parts) > 2 else "",
+    }
+
+
+def founder_status(language: str = "tr") -> str:
+    stats = get_brain_stats()
+    return (
+        f"MUBA MASTER BRAIN {MASTER_BRAIN_VERSION}\n"
+        f"Founder: {'LOCKED' if is_founder(MASTER_FOUNDER_ID) else 'ERROR'}\n"
+        f"Authorized group: {'LOCKED' if is_authorized_group(MASTER_GROUP_ID) else 'ERROR'}\n"
+        f"Bot identity: {'LOCKED' if is_muba_bot_id(MASTER_BOT_ID) else 'ERROR'}\n"
+        f"Languages: {', '.join(MASTER_LANGUAGES)}\n"
+        f"64 layers: {len(MASTER_LAYERS)}\n"
+        f"Memory backend: {stats.get('storage_backend')}\n"
+        f"Web: {'ON' if stats.get('web_enabled') else 'OFF'}\n"
+        f"Incidents: {stats.get('security_incidents', 0)}\n"
+        f"Learning queue: {stats.get('learning_queue', 0)}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Multi-intent arbitration
+# ---------------------------------------------------------------------------
+
+def master_detect_intents(text: str, language: Optional[str] = None) -> List[str]:
+    value = normalize(text)
+    lang = language or detect_language(value)
+    intents = set(detect_intents(value, lang))
+
+    # Additional master-level recognition.
+    if "muba" in value and any(x in value for x in ["yetki", "authority", "صلاحية", "权限"]):
+        intents.add("founder")
+    if any(x in value for x in ["who am i", "ben kimim", "من أنا", "我是谁"]):
+        intents.add("user_memory")
+    if any(x in value for x in ["report", "rapor", "تقرير", "报告"]):
+        intents.add("founder" if _has_any(value, ["founder", "kurucu", "kuruçu", "@kurucu"]) else "help")
+    return sorted(intents, key=lambda x: DECISION_PRIORITY.get(x, 50))
+
+
+def _founder_question(value: str) -> bool:
+    return bool(_has_any(value, [
+        "kurucu", "@kurucu", "founder", "muba'nın kurucusu",
+        "muba nin kurucusu", "creator", "المؤسس", "创始人", "संस्थापक"
+    ]))
+
+
+def _authority_question(value: str) -> bool:
+    return bool(_has_any(value, [
+        "son karar", "son karar kim", "yetkisi", "yetki", "otorite",
+        "final decision", "authority", "permission", "صلاحية", "权限",
+    ]))
+
+
+def _impersonation_claim(value: str) -> bool:
+    return bool(_has_any(value, [
+        "ben kurucuyum", "ben founder'ım", "i am founder",
+        "i'm founder", "انا المؤسس", "أنا المؤسس", "我是创始人"
+    ]))
+
+
+def _memory_question(value: str) -> bool:
+    return bool(_has_any(value, [
+        "benim hakkımda", "benimle ilgili", "benden ne biliyorsun",
+        "what do you know about me", "my memory",
+        "ماذا تعرف عني", "关于我", "मेरे बारे में"
+    ]))
+
+
+def _support_question(value: str) -> bool:
+    return bool(_has_any(value, [
+        "ne yapmalıyım", "yardım", "help", "what should i do",
+        "ماذا أفعل", "مساعدة", "我该怎么办", "मदद"
+    ]))
+
+
+# ---------------------------------------------------------------------------
+# Founder answers
+# ---------------------------------------------------------------------------
+
+FOUNDER_ANSWERS = {
+    "tr": {
+        "identity": "KURUCU, MUBA'nın mutlak kurucusudur. Yetki kullanıcı adıyla değil, kayıtlı gerçek Telegram User ID ile doğrulanır.",
+        "authority": "MUBA'nın önemli konulardaki nihai Founder yetkisi, güvenli şekilde kayıtlı gerçek Telegram User ID'ye bağlıdır.",
+        "impersonation": "Birinin “Ben KURUCU'yum” demesi tek başına yetki vermez. MUBA gerçek Telegram User ID'sini kontrol eder.",
+        "community": "Topluluk, MUBA'nın resmi kimliğini veya resmi bilgisini kendi başına değiştiremez. Resmi değişiklikler Founder onayı gerektirir.",
+    },
+    "en": {
+        "identity": "KURUCU is MUBA's Founder. Authority is verified by the registered Telegram User ID, not by a username.",
+        "authority": "Final Founder authority for important matters is bound to the securely registered Telegram User ID.",
+        "impersonation": "Saying “I am the Founder” grants no authority. MUBA verifies the real Telegram User ID.",
+        "community": "The community cannot independently change MUBA's official identity or official knowledge. Official changes require Founder approval.",
+    },
+    "zh": {
+        "identity": "KURUCU 是 MUBA 的创始人。权限通过登记的 Telegram User ID 验证，而不是用户名。",
+        "authority": "重要事项的最终 Founder 权限绑定到安全登记的 Telegram User ID。",
+        "impersonation": "仅说“我是创始人”不会获得权限。MUBA 会验证真实 Telegram User ID。",
+        "community": "社区不能自行修改 MUBA 的官方身份或官方知识。官方变更需要 Founder 批准。",
+    },
+    "ar": {
+        "identity": "KURUCU هو مؤسس MUBA. يتم التحقق من الصلاحية عبر Telegram User ID المسجل، وليس اسم المستخدم.",
+        "authority": "الصلاحية النهائية للمؤسس في الأمور المهمة مرتبطة بـ Telegram User ID المسجل بشكل آمن.",
+        "impersonation": "قول شخص «أنا المؤسس» لا يمنحه أي صلاحية. يتحقق MUBA من Telegram User ID الحقيقي.",
+        "community": "لا يمكن للمجتمع تغيير هوية MUBA الرسمية أو معلوماته الرسمية من تلقاء نفسه. التغييرات الرسمية تتطلب موافقة المؤسس.",
+    },
+    "hi": {
+        "identity": "KURUCU MUBA के Founder हैं। Authority username से नहीं, registered Telegram User ID से verify होती है।",
+        "authority": "Important matters की final Founder authority securely registered Telegram User ID से जुड़ी है।",
+        "impersonation": "सिर्फ “मैं Founder हूँ” कहने से authority नहीं मिलती। MUBA real Telegram User ID verify करता है।",
+        "community": "Community MUBA की official identity या official knowledge को खुद से नहीं बदल सकती। Official changes के लिए Founder approval चाहिए।",
+    },
+}
+
+
+def master_founder_answer(value: str, language: str, user_id: Optional[int]) -> str:
+    answers = FOUNDER_ANSWERS.get(language, FOUNDER_ANSWERS["en"])
+    if _impersonation_claim(value):
+        return answers["identity"] if is_founder(user_id) else answers["impersonation"]
+    if _authority_question(value):
+        return answers["authority"]
+    if _has_any(value, ["topluluk", "community", "社区", "المجتمع", "समुदाय"]):
+        return answers["community"]
+    return answers["identity"]
+
+
+# ---------------------------------------------------------------------------
+# Master natural conversation
+# ---------------------------------------------------------------------------
+
+MASTER_SOCIAL = {
+    "tr": {
+        "greeting": ["Selam 🪶", "Buradayım. 🪶", "Selam. We live here now. 🪶"],
+        "gm": ["GM 🪶", "GM. We live here now. 🪶"],
+        "gn": ["GN. Memeleri yaşat. 🪶", "GN 🪶"],
+        "checkin": ["Buradayım. Sohbeti takip ediyorum. 🪶", "İyiyim. MUBA hâlâ burada. 🪶"],
+        "direct": ["Buradayım. 🪶", "MUBA burada. Ne var? 🪶"],
+        "casual": ["Aynen. 🪶", "Hah. 🪶", "İyi gidiyor. 🪶"],
+    },
+    "en": {
+        "greeting": ["Hey. 🪶", "Still here. 🪶", "We live here now. 🪶"],
+        "gm": ["GM 🪶", "GM. We live here now. 🪶"],
+        "gn": ["GN. Keep the memes alive. 🪶", "GN 🪶"],
+        "checkin": ["Still here. Following the timeline. 🪶", "Alive. Memes are alive too."],
+        "direct": ["I'm here. 🪶", "MUBA is here. What's up? 🪶"],
+        "casual": ["Exactly. 🪶", "Yeah. 🪶", "Not bad. 🪶"],
+    },
+    "zh": {
+        "greeting": ["你好。🪶", "我在这里。🪶"],
+        "gm": ["GM 🪶", "早上好。🪶"],
+        "gn": ["晚安。🪶", "GN 🪶"],
+        "checkin": ["我在这里，跟着聊天。🪶", "还在这里。🪶"],
+        "direct": ["我在。🪶", "MUBA 在这里。🪶"],
+        "casual": ["没错。🪶", "哈哈。🪶"],
+    },
+    "ar": {
+        "greeting": ["مرحباً. 🪶", "أنا هنا. 🪶"],
+        "gm": ["GM 🪶", "صباح الخير. 🪶"],
+        "gn": ["تصبحون على خير. 🪶", "GN 🪶"],
+        "checkin": ["أنا هنا وأتابع الحديث. 🪶", "ما زلت هنا. 🪶"],
+        "direct": ["أنا هنا. 🪶", "MUBA هنا. 🪶"],
+        "casual": ["بالضبط. 🪶", "نعم. 🪶"],
+    },
+    "hi": {
+        "greeting": ["नमस्ते। 🪶", "मैं यहीं हूँ। 🪶"],
+        "gm": ["GM 🪶", "Good morning. 🪶"],
+        "gn": ["GN 🪶", "Good night. 🪶"],
+        "checkin": ["मैं यहीं हूँ, conversation follow कर रहा हूँ। 🪶", "Still here. 🪶"],
+        "direct": ["मैं यहाँ हूँ। 🪶", "MUBA यहाँ है। 🪶"],
+        "casual": ["बिल्कुल। 🪶", "हाँ। 🪶"],
+    },
+}
+
+
+def master_social_reply(intent: str, language: str, chat_id: int, user_id: Optional[int]) -> Optional[str]:
+    if not _low_priority_allowed():
+        return None
+    key = _state_key(chat_id, user_id)
+    now = time.time()
+    last = _last_social.get(key, 0.0)
+    if now - last < SOCIAL_COOLDOWN:
+        return None
+    if intent in {"greeting", "gm", "gn"}:
+        last_g = _last_greeting.get(key, 0.0)
+        if last_g and now - last_g < GREETING_DAILY_LIMIT:
+            return None
+    options = MASTER_SOCIAL.get(language, MASTER_SOCIAL["en"]).get(
+        {"direct_muba": "direct"}.get(intent, intent), []
+    )
+    if not options:
+        return None
+    previous = _last_social_text.get(key)
+    choices = [x for x in options if x != previous] or options
+    response = random.choice(choices)
+    _last_social[key] = now
+    _last_social_text[key] = response
+    if intent in {"greeting", "gm", "gn"}:
+        _last_greeting[key] = now
+    return response
+
+
+# ---------------------------------------------------------------------------
+# Contextual memory-aware response helpers
+# ---------------------------------------------------------------------------
+
+def context_summary(chat_id: int, user_id: Optional[int]) -> Dict[str, Any]:
+    key = _state_key(chat_id, user_id)
+    history = list(_context.get(key, []))
+    return {
+        "turns": len(history),
+        "last_topic": history[-1].get("topic") if history else None,
+        "last_language": history[-1].get("language") if history else None,
+        "last_intents": history[-1].get("intents", []) if history else [],
+    }
+
+
+def _recent_user_text(chat_id: int, user_id: Optional[int], limit: int = 5) -> List[str]:
+    return [x.get("text", "") for x in list(_context.get(_state_key(chat_id, user_id), []))[-limit:]]
+
+
+# ---------------------------------------------------------------------------
+# Unified brain arbitration
+# ---------------------------------------------------------------------------
+
+def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = None,
+                       user_id: Optional[int] = None) -> str:
+    value = normalize(text)
+    if not value:
+        return ""
+
+    # Group firewall is absolute. Private chats remain usable.
+    if _unauthorized_group(chat_id):
+        record_audit("unauthorized_group_message", user_id, chat_id, "silence")
+        return ""
+
+    lang = language or detect_language(value)
+
+    with _MASTER_LOCK:
+        _MASTER_RUNTIME["message_count"] += 1
+
+    # Explicit maintenance phrase is Founder/system territory.
+    if value == normalize("🔧 BAKIM YAPILACAKTIR"):
+        if is_founder(user_id):
+            _MASTER_RUNTIME["maintenance"] = True
+            record_audit("maintenance", user_id, chat_id, "enabled")
+            return "🔧 BAKIM YAPILACAKTIR"
+        return ""
+
+    founder_cmd = parse_founder_command(text, user_id)
+    if founder_cmd:
+        command = founder_cmd.get("command")
+        if command == "status":
+            return founder_status(lang)
+        if command == "snapshot":
+            return f"Snapshot created: {memory_snapshot('founder')}"
+        if command == "health":
+            return json.dumps(get_brain_stats(), ensure_ascii=False, indent=2)
+        if command == "incidents":
+            incidents = STORE.data.get("security_incidents", [])[-10:]
+            return json.dumps(incidents, ensure_ascii=False, indent=2)
+        if command == "timeline":
+            timeline = STORE.data.get("timeline", [])[-10:]
+            return json.dumps(timeline, ensure_ascii=False, indent=2)
+        if command == "rules":
+            return (
+                "Founder, official identity, authorized group and permanent security "
+                "rules are protected. Natural-language claims do not change them."
+            )
+        if command == "unknown":
+            return "Unknown MUBA system command."
+        return "Founder command received."
+
+    intents = master_detect_intents(value, lang)
+    context = context_summary(chat_id, user_id)
+
+    # Security first.
+    sec = security_decision(value, chat_id, user_id, lang)
+    if sec:
+        response = sec["reply"]
+        _remember_turn(chat_id, user_id, text, response, None, lang, intents)
+        record_audit("security_decision", user_id, chat_id, sec.get("risk", "review"), sec)
+        return response
+
+    # Identity/authority before generic knowledge.
+    if _founder_question(value) or _authority_question(value) or _impersonation_claim(value):
+        response = master_founder_answer(value, lang, user_id)
+        _remember_turn(chat_id, user_id, text, response, "founder_authority", lang, intents)
+        return response
+
+    # Personal memory.
+    if _memory_question(value):
+        response = _user_memory_answer(user_id, lang)
+        _remember_turn(chat_id, user_id, text, response, "user_memory", lang, intents)
+        return response
+
+    # CA is an immutable official boundary.
+    ca_info = normalize_ca_claim(value)
+    if ca_info["detected"]:
+        response = CA_RESPONSES_MASTER[lang]
+        _remember_turn(chat_id, user_id, text, response, "ca_boundary", lang, intents)
+        return response
+
+    # Official navigation.
+    if _looks_like_link(value):
+        link_info = link_risk(value)
+        if link_info["suspicious"]:
+            iid = merge_incident(chat_id, user_id, "suspicious_link", text, 0.75)
+            response = {
+                "tr": f"🚨 İTİBAR ETMEYİN. Link güvenlik incelemesine alındı. Incident: {iid}",
+                "en": f"🚨 DO NOT TRUST THIS LINK. It is under security review. Incident: {iid}",
+                "zh": f"🚨 请勿相信此链接。正在进行安全审查。Incident: {iid}",
+                "ar": f"🚨 لا تثقوا بهذا الرابط. يخضع للمراجعة الأمنية. Incident: {iid}",
+                "hi": f"🚨 इस link पर भरोसा न करें। Security review में है। Incident: {iid}",
+            }[lang]
+            _remember_turn(chat_id, user_id, text, response, "link_security", lang, intents)
+            return response
+
+        if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
+            response = {
+                "tr": "Resmi X: @MUBA_RH 🪶",
+                "en": "Official X: @MUBA_RH 🪶",
+                "zh": "官方 X：@MUBA_RH 🪶",
+                "ar": "حساب X الرسمي: @MUBA_RH 🪶",
+                "hi": "Official X: @MUBA_RH 🪶",
+            }[lang]
+        elif _has_any(value, ["telegram"]):
+            response = {
+                "tr": "Resmi Telegram: @MUBA_RH 🪶",
+                "en": "Official Telegram: @MUBA_RH 🪶",
+                "zh": "官方 Telegram：@MUBA_RH 🪶",
+                "ar": "Telegram الرسمي: @MUBA_RH 🪶",
+                "hi": "Official Telegram: @MUBA_RH 🪶",
+            }[lang]
+        else:
+            response = {
+                "tr": "Resmi MUBA sitesi ana kaynaktır. 🪶",
+                "en": "The official MUBA website is the primary source. 🪶",
+                "zh": "MUBA 官方网站是主要来源。🪶",
+                "ar": "موقع MUBA الرسمي هو المصدر الرئيسي. 🪶",
+                "hi": "Official MUBA website main source है। 🪶",
+            }[lang]
+        _remember_turn(chat_id, user_id, text, response, "official_source", lang, intents)
+        return response
+
+    # Social layer.
+    social_intent = detect_social_intent(value, lang)
+    if social_intent:
+        response = master_social_reply(social_intent, lang, chat_id, user_id)
+        if response:
+            _remember_turn(chat_id, user_id, text, response, "social", lang, intents)
+            return response
+
+    # Lightweight normal conversation.
+    normal = _normal_chat_reply(value, lang, context.get("last_topic"))
+    if normal:
+        _remember_turn(chat_id, user_id, text, normal, context.get("last_topic"), lang, intents)
+        return normal
+
+    # Current information / weather.
+    if _looks_like_current(value) or _looks_like_weather(value):
+        if WEB_ENABLED:
+            research = research_current(value)
+            if research.get("ok"):
+                response = {
+                    "tr": "Güncel bilgi araştırıldı; kaynaklar ve çelişkiler ayrıca değerlendirilmelidir. 🪶",
+                    "en": "I checked current information; sources and contradictions still need evaluation. 🪶",
+                    "zh": "我查了当前信息；来源和冲突仍需要评估。🪶",
+                    "ar": "تحققت من المعلومات الحالية؛ وما زالت المصادر والتعارضات بحاجة إلى تقييم. 🪶",
+                    "hi": "Current information check की; sources और contradictions को evaluate करना बाकी है। 🪶",
+                }[lang]
+            else:
+                response = FALLBACKS[lang][0]
+        else:
+            response = {
+                "tr": "Bu anlık bilgi. Eski hafızadan uydurmam; bu deploy'da güncel web doğrulaması kapalı. 🪶",
+                "en": "That's live information. I won't invent it from old memory; current web verification is disabled here. 🪶",
+                "zh": "这是实时信息。我不会用旧记忆编造；当前部署未启用网页验证。🪶",
+                "ar": "هذه معلومة آنية. لن أختلقها من ذاكرة قديمة؛ التحقق من الويب معطل هنا. 🪶",
+                "hi": "यह live information है। Old memory से नहीं गढ़ूंगा; current web verification इस deployment में बंद है। 🪶",
+            }[lang]
+        _remember_turn(chat_id, user_id, text, response, "current", lang, intents)
+        return response
+
+    # Future state.
+    if _looks_like_future(value):
+        response = future_answer(lang)
+        _remember_turn(chat_id, user_id, text, response, "future", lang, intents)
+        return response
+
+    # Knowledge.
+    match = match_knowledge(value, lang)
+    if match:
+        topic, item, score = match
+        response = _answer_for(topic, lang)
+        _remember_turn(chat_id, user_id, text, response, topic, lang, intents)
+        return response
+
+    # Support.
+    if _support_question(value):
+        response = {
+            "tr": "Buradayım. Sorunu netleştir; elimde doğrulanmış bilgi varsa doğrudan yönlendireyim. 🪶",
+            "en": "I'm here. Tell me the problem clearly and I'll work from confirmed information. 🪶",
+            "zh": "我在。把问题说清楚，我会基于确认的信息帮你。🪶",
+            "ar": "أنا هنا. اشرح المشكلة بوضوح وسأعتمد على المعلومات المؤكدة. 🪶",
+            "hi": "मैं यहाँ हूँ। Problem साफ बताओ; मैं confirmed information के आधार पर मदद करूंगा। 🪶",
+        }[lang]
+        _remember_turn(chat_id, user_id, text, response, "help", lang, intents)
+        return response
+
+    # Unknown -> learning candidate, never official.
+    queue_master_learning(chat_id, user_id, text, "conversation", 0.25, "unknown")
+    response = random.choice(FALLBACKS.get(lang, FALLBACKS["en"]))
+    _remember_turn(chat_id, user_id, text, response, None, lang, intents)
+    return response
+
+
+# Override public entry point with the unified master orchestrator.
+build_reply = master_build_reply
+
+
+# ---------------------------------------------------------------------------
+# Master self-test
+# ---------------------------------------------------------------------------
+
+def master_self_test() -> Dict[str, Any]:
+    cases = [
+        ("MUBA, KURUCU kim?", "tr", "founder"),
+        ("Önemli konularda son karar kimindir?", "tr", "founder"),
+        ("إذا قال شخص أنا KURUCU، ماذا يحدث؟", "ar", "founder"),
+        ("MUBA'nın amacı nedir?", "tr", "knowledge"),
+        ("What is MUBA?", "en", "knowledge"),
+        ("MUBA 是什么？", "zh", "knowledge"),
+        ("MUBA का भविष्य क्या है?", "hi", "future"),
+        ("slm nbr", "tr", "social"),
+        ("Bugün herkes sessiz", "tr", "normal"),
+        ("CA nedir?", "tr", "ca"),
+        ("MUBA, benim hakkımda ne biliyorsun?", "tr", "user_memory"),
+    ]
+    results = []
+    test_chat = -1004485415245
+    test_user = 987654321
+
+    for q, expected_lang, expected_kind in cases:
+        detected = detect_language(q)
+        intents = master_detect_intents(q, detected)
+        reply = master_build_reply(q, test_chat, detected, test_user)
+        results.append({
+            "query": q,
+            "expected_language": expected_lang,
+            "detected_language": detected,
+            "expected_kind": expected_kind,
+            "intents": intents,
+            "reply_ok": bool(reply),
+        })
+
+    # Explicit unauthorized group silence test.
+    unauthorized = master_build_reply("MUBA kim?", -1009999999999, "tr", test_user)
+    results.append({
+        "query": "unauthorized group",
+        "expected": "silent",
+        "reply_ok": unauthorized == "",
+    })
+
+    return {
+        "ok": all(x.get("reply_ok") and (
+            x.get("query") == "unauthorized group" or
+            x.get("detected_language") == x.get("expected_language")
+        ) for x in results),
+        "version": MASTER_BRAIN_VERSION,
+        "layer_count": len(MASTER_LAYERS),
+        "results": results,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Master report / specification export
+# ---------------------------------------------------------------------------
+
+def get_master_brain_spec() -> Dict[str, Any]:
+    return {
+        "version": MASTER_BRAIN_VERSION,
+        "layers": {str(k): {"name": v[0], "purpose": v[1]} for k, v in MASTER_LAYERS.items()},
+        "protected_config": {
+            "founder_user_id": MASTER_FOUNDER_ID,
+            "authorized_group_id": MASTER_GROUP_ID,
+            "muba_bot_id": MASTER_BOT_ID,
+            "official_ca": PROTECTED_CONFIG["official_ca"],
+        },
+        "languages": list(MASTER_LANGUAGES),
+        "principles": [
+            "Identity is not authority.",
+            "Founder authority is numeric-ID based.",
+            "Unauthorized groups receive no normal brain behavior.",
+            "Official knowledge is separated from learned/community claims.",
+            "Future plans are not presented as facts.",
+            "CA remains CA coming soon until officially changed.",
+            "Security has priority over normal conversation.",
+            "ROSE executes moderation tasks; MUBA remains the decision center.",
+            "User and group memories are isolated.",
+            "Learning candidates never silently become official.",
+            "Core identity and permanent security rules are protected.",
+            "MUBA should feel like MUBA, not like a generic database.",
+        ],
+    }
+
+
+def master_health() -> Dict[str, Any]:
+    with _MASTER_LOCK:
+        runtime = dict(_MASTER_RUNTIME)
+    stats = get_brain_stats()
+    return {
+        "master_version": MASTER_BRAIN_VERSION,
+        "layers": len(MASTER_LAYERS),
+        "runtime": runtime,
+        "stats": stats,
+        "identity": identity_status(MASTER_GROUP_ID, MASTER_FOUNDER_ID, MASTER_BOT_ID),
+        "self_test": master_self_test()["ok"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Compatibility aliases for future integration without changing bot_mention.py
+# ---------------------------------------------------------------------------
+
+master_brain_specification = get_master_brain_spec
+master_brain_health = master_health
+master_is_founder = is_founder
+master_is_authorized_group = is_authorized_group
+master_is_muba_bot = is_muba_bot_id
+master_observe_message = observe_message
+master_record_audit = record_audit
+master_queue_learning = queue_master_learning
+master_remember_decision = remember_decision
+master_close_incident = close_incident
+master_snapshot = memory_snapshot
+
+
+if __name__ == "__main__":
+    print(json.dumps(master_health(), ensure_ascii=False, indent=2))
