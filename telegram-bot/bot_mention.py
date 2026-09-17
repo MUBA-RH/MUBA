@@ -79,6 +79,11 @@ def should_answer(update: Update) -> bool:
     if not text:
         return False
 
+    # Protected hash commands must reach the brain, where numeric Founder ID
+    # and authorized-group checks decide whether they have any effect.
+    if text in {"#STOP", "#START"}:
+        return True
+
     if contains_muba(text):
         return True
 
@@ -121,9 +126,16 @@ async def start_command(
     if not update.effective_message:
         return
 
-    await update.effective_message.reply_text(
-        "MUBA is here.\n\nWe Live Here Now. 🪶"
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    user_id = update.effective_user.id if update.effective_user else None
+    response = build_reply(
+        "/start",
+        chat_id=chat_id,
+        language=detect_language(update.effective_message.text or ""),
+        user_id=user_id,
     )
+    if response:
+        await update.effective_message.reply_text(response)
 
 
 async def handle_message(
@@ -167,6 +179,7 @@ async def handle_message(
         user_name
         and update.effective_chat
         and update.effective_chat.type != ChatType.PRIVATE
+        and text not in {"#STOP", "#START"}
     ):
         response = f"{user_name} — {response}"
 
