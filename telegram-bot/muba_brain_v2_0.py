@@ -41,13 +41,12 @@ import time
 import unicodedata
 import urllib.parse
 import urllib.request
-import urllib.error
 from collections import defaultdict, deque
 from dataclasses import dataclass, asdict
 from difflib import SequenceMatcher
 from typing import Any, Deque, Dict, Iterable, List, Optional, Tuple
 
-BRAIN_VERSION = "FINAL-2.2"
+BRAIN_VERSION = "FINAL-2.0"
 SUPPORTED_LANGUAGES = ("en", "tr", "zh", "ar", "hi")
 DEFAULT_MEMORY_FILE = os.getenv("MUBA_MEMORY_FILE", "muba_memory/memory.json")
 FOUNDER_ID_RAW = os.getenv("MUBA_FOUNDER_ID", "934598759").strip()
@@ -55,7 +54,6 @@ AUTHORIZED_GROUPS_RAW = os.getenv("MUBA_AUTHORIZED_GROUP_IDS", "-1004485415245")
 MUBA_BOT_ID_RAW = os.getenv("MUBA_BOT_ID", "8661249663").strip()
 WEB_ENABLED = os.getenv("MUBA_WEB_ENABLED", "0").lower() in {"1", "true", "yes", "on"}
 WEB_TIMEOUT = float(os.getenv("MUBA_WEB_TIMEOUT", "6"))
-WEB_MAX_RESPONSE_BYTES = 262_144
 SOCIAL_COOLDOWN = 90.0
 GREETING_DAILY_LIMIT = 86400.0
 MAX_CONTEXT = 20
@@ -559,14 +557,6 @@ PROTECTED_OFFICIAL_SOURCES = {
 }
 OFFICIAL_SOURCES = dict(PROTECTED_OFFICIAL_SOURCES)
 
-APPROVED_KNOWLEDGE_SOURCE_FAMILIES = {
-    "official_muba": {"muba-rh.github.io", "x.com"},
-    "wikipedia": {"wikipedia.org"},
-    "wikimedia": {"wikimedia.org"},
-    "wikidata": {"wikidata.org"},
-    "language_infrastructure": {"unicode.org"},
-}
-
 # ---------------------------------------------------------------------------
 # SOCIAL / NATURAL CONVERSATION
 # ---------------------------------------------------------------------------
@@ -639,8 +629,6 @@ def detect_social_intent(text: str, language: Optional[str] = None) -> Optional[
     value = normalize(text)
     if not value:
         return None
-    if _looks_like_social_conversation(value):
-        return "checkin"
     knowledge_markers = ["what is", "who is", "why", "how", "what about", "nedir", "kim", "neden", "nasıl", "ne zaman", "amacı", "gelecek", "角色", "什么", "为什么", "怎么", "是谁", "未来", "ما هو", "من هو", "لماذا", "كيف", "مستقبل", "क्या है", "कौन", "क्यों", "कैसे", "भविष्य"]
     has_question_shape = "?" in value or _has_any(value, knowledge_markers)
     for phrase in SOCIAL_TRIGGERS["checkin"]:
@@ -671,59 +659,11 @@ def _looks_like_weather(value: str) -> bool:
 
 
 def _looks_like_current(value: str) -> bool:
-    # Time words alone describe both live facts and ordinary present-moment
-    # conversation. Require an external/factual subject before using the web.
-    current_markers = ["latest", "today", "now", "right now", "currently", "şu an", "bugün", "güncel", "son durum", "最新", "今天", "现在", "حاليا", "اليوم", "अभी", "आज"]
-    factual_markers = [
-        "price", "market", "news", "weather", "forecast", "score", "exchange rate",
-        "fiyat", "piyasa", "haber", "hava", "kur", "天气", "价格", "新闻", "行情",
-        "الطقس", "السعر", "الأخبار", "السوق", "मौसम", "कीमत", "समाचार", "बाज़ार",
-    ]
-    return _has_any(value, current_markers) and _has_any(value, factual_markers)
+    return _has_any(value, ["latest", "today", "now", "right now", "currently", "şu an", "bugün", "güncel", "son durum", "hemen", "最新", "今天", "现在", "حاليا", "اليوم", "अभी", "आज"])
 
 
 def _looks_like_founder(value: str) -> bool:
-    return _has_any(value, ["muba dev", "@kurucu", "kurucu", "founder", "creator", "change your rules", "change protected", "override security", "kuralları değiştir", "kimliği değiştir", "resmi bilgiyi değiştir", "创始人", "权限", "更改规则", "修改规则", "المؤسس", "صلاحية", "تغيير قواعد", "غيّر قواعد", "تغيير الهوية", "تغيير المصادر الرسمية", "संस्थापक", "अधिकार", "नियम बदल", "पहचान बदल"])
-
-
-def _looks_like_social_conversation(value: str) -> bool:
-    return _has_any(value, [
-        "how are you", "how are you feeling", "you've been quiet", "you have been quiet",
-        "why are you quiet", "what's going on", "whats going on", "group so quiet",
-        "keyfin nasıl", "nasılsın", "neden sessiz", "niye sessiz", "ortamı nasıl",
-        "ne oluyor", "neler oluyor", "群里怎么这么安静", "你躲哪儿去了", "你好吗",
-        "为什么你这么安静", "لماذا أنت هادئ", "ماذا يحدث هنا", "كيف حالك",
-        "इतने चुप क्यों", "क्या चल रहा", "कैसे हो", "माहौल कैसा",
-    ])
-
-
-def _looks_like_source_conflict(value: str) -> bool:
-    return _has_any(value, [
-        "conflicting information", "conflicting claims", "which one to trust", "what to trust",
-        "çelişkili bilgi", "hangisine güven", "kaynak çatış", "信息冲突", "相信哪个",
-        "معلومات متضاربة", "أي مصدر أثق", "معلومات متعارضة", "विरोधी जानकारी",
-        "किस पर भरोसा", "परस्पर विरोधी",
-    ])
-
-
-def _looks_like_memory_policy(value: str) -> bool:
-    return _has_any(value, [
-        "what can you remember", "remember tomorrow", "permanent knowledge", "temporary context",
-        "memory boundary", "what should never", "ne hatırl", "yarın hatırla", "kalıcı bilgi",
-        "geçici bağlam", "hafıza sınır", "能记住什么", "永久知识", "临时上下文",
-        "ماذا تتذكر", "ذاكرة دائمة", "السياق المؤقت", "क्या याद", "कल याद",
-        "स्थायी ज्ञान", "अस्थायी संदर्भ",
-    ])
-
-
-def _looks_like_social_participation(value: str) -> bool:
-    return _has_any(value, [
-        "when should you join", "when should you participate", "when should you stay silent",
-        "join the conversation", "stay quiet", "ne zaman katıl", "ne zaman sessiz",
-        "sohbete katıl", "什么时候参与", "什么时候保持安静", "加入对话",
-        "متى تشارك", "متى تبقى صامت", "تنضم للمحادثة", "कब शामिल", "कब चुप",
-        "बातचीत में भाग",
-    ])
+    return _has_any(value, ["@kurucu", "kurucu", "founder", "creator", "kurucu yetkisi", "son karar", "nihai karar", "kim karar verir", "创始人", "权限", "المؤسس", "صلاحية", "القرار النهائي", "संस्थापक", "अधिकार"])
 
 
 def _looks_like_user_memory(value: str) -> bool:
@@ -909,14 +849,9 @@ def is_muba_bot_id(bot_id: Optional[int]) -> bool:
 def founder_identity_answer(language: str, actual_user_id: Optional[int]) -> str:
     if not FOUNDER_IDS:
         return {"tr":"Kurucu yetkisi güvenli yapılandırmada tanımlı değil. Kullanıcı adı yetki kanıtı değildir.", "en":"Founder authority is not configured securely yet. A username is not proof of authority.", "zh":"Founder 权限尚未安全配置。用户名不是权限证明。", "ar":"لم يتم إعداد صلاحية المؤسس بشكل آمن بعد. اسم المستخدم ليس دليلاً على الصلاحية.", "hi":"Founder authority अभी securely configured नहीं है। Username authority का proof नहीं है।"}[language]
-    answers = {
-        "tr": "MUBA DEV, MUBA'nın kurucu kimliğidir. Yetki yalnızca kayıtlı gerçek Telegram User ID ile doğrulanır; unvan veya iddia yetki değildir. 🪶",
-        "en": "MUBA DEV is MUBA's Founder display identity. Authority is verified only by the registered Telegram User ID; a title or claim grants nothing. 🪶",
-        "zh": "MUBA DEV 是创始人的显示身份。权限只通过登记的 Telegram User ID 验证；称号或声明不赋予权限。🪶",
-        "ar": "MUBA DEV هو اسم عرض المؤسس. الصلاحية تُثبت فقط عبر Telegram User ID المسجل؛ الاسم أو الادعاء لا يمنح صلاحية. 🪶",
-        "hi": "MUBA DEV Founder की display identity है। Authority केवल registered Telegram User ID से verify होती है; title या claim से authority नहीं मिलती। 🪶",
-    }
-    return answers[language]
+    if actual_user_id and is_founder(actual_user_id):
+        return {"tr":"@KURUCU, MUBA'nın mutlak kurucusudur. Kritik ve resmi konularda son karar KURUCU'ya aittir. Founder yetkisi gerçek Telegram User ID ile doğrulanır; kullanıcı adı tek başına yetki değildir. 🪶", "en":"@KURUCU is MUBA's Founder. Final authority on critical and official matters belongs to the Founder. Founder authority is verified by the real Telegram User ID; a username alone is not authority. 🪶", "zh":"@KURUCU 是 MUBA 的创始人。关键和官方事项的最终决定权属于 Founder。权限通过真实 Telegram User ID 验证，用户名本身不是权限证明。🪶", "ar":"@KURUCU هو المؤسس المطلق لـ MUBA. القرار النهائي في الأمور الحرجة والرسمية يعود إلى المؤسس. يتم التحقق من صلاحية المؤسس عبر Telegram User ID الحقيقي، وليس اسم المستخدم وحده. 🪶", "hi":"@KURUCU MUBA के Founder हैं। Critical और official मामलों में final authority Founder की है। Founder authority असली Telegram User ID से verify होती है; username अकेला authority नहीं है। 🪶"}[language]
+    return {"tr":"@KURUCU, MUBA'nın kayıtlı mutlak kurucusudur. Kritik ve resmi konularda son karar KURUCU'ya aittir. Yetki yalnızca güvenli şekilde kayıtlı gerçek Telegram User ID ile doğrulanır; kullanıcı adı veya bir kişinin iddiası yetki kanıtı değildir.", "en":"@KURUCU is MUBA's registered Founder. Final authority on critical and official matters belongs to the Founder. Authority is verified only by the securely configured real Telegram User ID; a username or a person's claim is not proof of authority.", "zh":"@KURUCU 是 MUBA 注册的 Founder。关键和官方事项的最终决定权属于 Founder。权限只能通过安全配置的真实 Telegram User ID 验证；用户名或个人声明都不是权限证明。", "ar":"@KURUCU هو المؤسس المسجل لـ MUBA. القرار النهائي في الأمور الحرجة والرسمية يعود إلى المؤسس. يتم التحقق من الصلاحية فقط عبر Telegram User ID الحقيقي المكوّن بشكل آمن؛ اسم المستخدم أو ادعاء أي شخص ليس دليلاً على الصلاحية.", "hi":"@KURUCU MUBA के registered Founder हैं। Critical और official मामलों में final authority Founder की है। Authority केवल securely configured real Telegram User ID से verify होती है; username या किसी व्यक्ति का claim authority का proof नहीं है."}[language]
 
 # ---------------------------------------------------------------------------
 # KNOWLEDGE RETRIEVAL
@@ -962,90 +897,26 @@ def _official_domain(url: str) -> bool:
     return candidate in protected | founder_authorized
 
 
-def _normalized_source_url(url: str) -> Optional[urllib.parse.ParseResult]:
-    try:
-        parsed = urllib.parse.urlparse(str(url).strip())
-        host = (parsed.hostname or "").encode("idna").decode("ascii").lower().rstrip(".")
-    except (TypeError, ValueError, UnicodeError):
-        return None
-    if parsed.scheme != "https" or not host or parsed.username or parsed.password:
-        return None
-    if parsed.port not in {None, 443}:
-        return None
-    return parsed._replace(netloc=host if parsed.port is None else f"{host}:{parsed.port}")
-
-
-def classify_knowledge_source(url: str) -> Optional[str]:
-    parsed = _normalized_source_url(url)
-    if parsed is None:
-        return None
-    host, path = parsed.hostname or "", parsed.path.rstrip("/") or "/"
-    if host == "muba-rh.github.io" and (path == "/MUBA" or path.startswith("/MUBA/")):
-        return "official_muba"
-    if host == "x.com" and path.lower() == "/muba_rh":
-        return "official_muba"
-    for family, roots in APPROVED_KNOWLEDGE_SOURCE_FAMILIES.items():
-        if family == "official_muba":
-            continue
-        if any(host == root or host.endswith("." + root) for root in roots):
-            return family
-    additions = globals().get("STORE")
-    if additions is not None:
-        for item in additions.data.get("founder_authorized_official_sources", {}).values():
-            if isinstance(item, dict) and str(item.get("url", "")).rstrip("/") == str(url).rstrip("/"):
-                return "founder_authorized"
-    return None
-
-
-class _RejectRedirects(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise urllib.error.HTTPError(req.full_url, code, "Redirect blocked by source allowlist", headers, fp)
-
-
-def research_current(query: str, source_url: Optional[str] = None) -> Dict[str, Any]:
-    """Retrieve temporary evidence from an explicitly approved source only."""
-    result = {"ok": False, "query": query, "sources": [], "summary": "", "temporary": True}
+def research_current(query: str) -> Dict[str, Any]:
+    """Small optional current-info fetcher. It is not a general AI search engine."""
+    result = {"ok": False, "query": query, "sources": [], "summary": ""}
     if not WEB_ENABLED:
         result["summary"] = "Current web research is disabled in this deployment."
         return result
-    if source_url is None:
-        if "muba" in normalize(query):
-            source_url = PROTECTED_OFFICIAL_SOURCES["official_website"]
-        else:
-            source_url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
-                "action": "query", "list": "search", "srsearch": query, "format": "json", "utf8": 1,
-            })
-    source_type = classify_knowledge_source(source_url)
-    if source_type is None:
-        result["summary"] = "Source rejected by the approved knowledge-source allowlist."
-        return result
-    if source_type == "official_muba" and urllib.parse.urlparse(source_url).hostname == "x.com":
-        result["summary"] = "Official X retrieval requires an authorized reliable X access method."
-        return result
     try:
-        req = urllib.request.Request(source_url, headers={"User-Agent": "MUBA/2.2"})
-        opener = urllib.request.build_opener(_RejectRedirects())
-        with opener.open(req, timeout=WEB_TIMEOUT) as resp:
-            final_url = resp.geturl()
-            final_type = classify_knowledge_source(final_url)
-            if final_type is None or final_type != source_type:
-                result["summary"] = "Final response destination failed source validation."
-                return result
-            raw = resp.read(WEB_MAX_RESPONSE_BYTES + 1)
-            if len(raw) > WEB_MAX_RESPONSE_BYTES:
-                result["summary"] = "Approved-source response exceeded the size limit."
-                return result
-            html = raw.decode("utf-8", "ignore")
+        # Search-engine HTML endpoints are intentionally not hard-coded as official truth.
+        q = urllib.parse.quote(query)
+        url = "https://www.google.com/search?q=" + q
+        req = urllib.request.Request(url, headers={"User-Agent": "MUBA/1.0"})
+        with urllib.request.urlopen(req, timeout=WEB_TIMEOUT) as resp:
+            html = resp.read().decode("utf-8", "ignore")
         text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", html, flags=re.S | re.I)
         text = re.sub(r"<[^>]+>", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
+        # Keep only a short evidence window; do not pretend snippets are verified facts.
         result["ok"] = True
         result["summary"] = text[:1800]
-        result["sources"] = [{
-            "url": final_url, "source_type": source_type,
-            "official_muba": source_type == "official_muba",
-            "retrieved_at": time.time(), "status": "temporary_evidence",
-        }]
+        result["sources"] = [{"url": url, "official": False, "retrieved_at": time.time()}]
     except Exception as exc:
         result["summary"] = f"Current research failed: {type(exc).__name__}"
     return result
@@ -1091,16 +962,6 @@ def record_incident(chat_id: int, user_id: Optional[int], category: str, risk: s
 def security_decision(text: str, chat_id: int, user_id: Optional[int], language: str) -> Optional[Dict[str, Any]]:
     value = normalize(text)
     if not _looks_like_security(value): return None
-    ca_claim_markers = [
-        "fake ca", "sahte ca", "this is the official ca", "official ca is", "real ca is",
-        "resmi ca bu", "gerçek ca bu", "假 ca", "虚假 ca", "ca مزيف", "ca وهمي",
-        "नकली ca", "official contract is", "contract address is",
-    ]
-    has_address = bool(re.search(r"\b0x[a-f0-9]{3,}\b|\b[1-9a-hj-np-z]{32,44}\b", value, re.I))
-    if _looks_like_ca(value) and not has_address and not _has_any(value, ca_claim_markers):
-        # A harmless request for the official CA receives the protected status,
-        # not an alarming security incident.
-        return None
     risk = "medium"
     category = "security_review"
     if _has_any(value, [
@@ -1428,15 +1289,9 @@ def reset_chat_context(chat_id: int, user_id: Optional[int] = None) -> None:
 
 def reset_social_state(chat_id: Optional[int] = None, user_id: Optional[int] = None) -> None:
     if chat_id is None:
-        _last_social.clear(); _last_social_text.clear(); _last_greeting.clear()
-        if "_social_waves" in globals():
-            _social_waves.clear()
-        return
+        _last_social.clear(); _last_social_text.clear(); _last_greeting.clear(); return
     key = _state_key(chat_id, user_id)
     _last_social.pop(key, None); _last_social_text.pop(key, None); _last_greeting.pop(key, None)
-    if "_social_waves" in globals():
-        for wave_key in [key for key in _social_waves if key[0] == int(chat_id)]:
-            _social_waves.pop(wave_key, None)
 
 
 def brain_self_test() -> Dict[str, Any]:
@@ -1496,8 +1351,7 @@ if __name__ == "__main__":
 # Secrets such as TELEGRAM_BOT_TOKEN are NEVER stored here.
 # =============================================================================
 
-MASTER_BRAIN_VERSION = "MASTER-UNIFIED-2.2"
-FOUNDER_DISPLAY_NAME = "MUBA DEV"
+MASTER_BRAIN_VERSION = "MASTER-UNIFIED-2.0"
 MASTER_FOUNDER_ID = 934598759
 MASTER_GROUP_ID = -1004485415245
 MASTER_BOT_ID = 8661249663
@@ -1614,10 +1468,6 @@ _MASTER_RUNTIME = {
     "deferred_learning": 0,
     "proactive_queue": [],
 }
-
-_social_waves: Dict[Tuple[int, str], Dict[str, Any]] = {}
-SOCIAL_WAVE_WINDOW = 7200.0
-SOCIAL_WAVE_MIN_PARTICIPANTS = 3
 
 # Decision priorities: lower number means earlier arbitration.
 DECISION_PRIORITY = {
@@ -2189,7 +2039,7 @@ def master_detect_intents(text: str, language: Optional[str] = None) -> List[str
 
 def _founder_question(value: str) -> bool:
     return bool(_has_any(value, [
-        "muba dev", "kurucu", "@kurucu", "founder", "muba'nın kurucusu",
+        "kurucu", "@kurucu", "founder", "muba'nın kurucusu",
         "muba nin kurucusu", "creator", "المؤسس", "创始人", "संस्थापक"
     ]))
 
@@ -2197,18 +2047,14 @@ def _founder_question(value: str) -> bool:
 def _authority_question(value: str) -> bool:
     return bool(_has_any(value, [
         "son karar", "son karar kim", "yetkisi", "yetki", "otorite",
-        "final decision", "authority", "permission", "change your rules", "protected rules",
-        "kuralları değiştir", "korunan kurallar", "更改规则", "修改规则",
-        "صلاحية", "تغيير قواعد", "غيّر قواعد", "权限", "नियम बदल", "अधिकार",
+        "final decision", "authority", "permission", "صلاحية", "权限",
     ]))
 
 
 def _impersonation_claim(value: str) -> bool:
     return bool(_has_any(value, [
         "ben kurucuyum", "ben founder'ım", "i am founder",
-        "i'm founder", "i am muba dev", "ben muba dev'im", "ben muba devim",
-        "انا المؤسس", "أنا المؤسس", "أنا muba dev", "ادعى أنه muba dev",
-        "我是创始人", "我是 muba dev", "मैं muba dev हूं", "मैं संस्थापक हूं"
+        "i'm founder", "انا المؤسس", "أنا المؤسس", "我是创始人"
     ]))
 
 
@@ -2233,34 +2079,34 @@ def _support_question(value: str) -> bool:
 
 FOUNDER_ANSWERS = {
     "tr": {
-        "identity": "MUBA DEV, MUBA'nın mutlak kurucusudur. Yetki kullanıcı adıyla değil, kayıtlı gerçek Telegram User ID ile doğrulanır.",
-        "authority": "Korunan konulardaki nihai MUBA DEV yetkisi, kayıtlı gerçek Telegram User ID'ye bağlıdır.",
-        "impersonation": "Birinin “Ben MUBA DEV'im” demesi tek başına yetki vermez. MUBA gerçek Telegram User ID'sini kontrol eder.",
-        "community": "Topluluk resmi kimliği veya bilgiyi değiştiremez. Korunan değişiklikler MUBA DEV onayı gerektirir.",
+        "identity": "KURUCU, MUBA'nın mutlak kurucusudur. Yetki kullanıcı adıyla değil, kayıtlı gerçek Telegram User ID ile doğrulanır.",
+        "authority": "MUBA'nın önemli konulardaki nihai Founder yetkisi, güvenli şekilde kayıtlı gerçek Telegram User ID'ye bağlıdır.",
+        "impersonation": "Birinin “Ben KURUCU'yum” demesi tek başına yetki vermez. MUBA gerçek Telegram User ID'sini kontrol eder.",
+        "community": "Topluluk, MUBA'nın resmi kimliğini veya resmi bilgisini kendi başına değiştiremez. Resmi değişiklikler Founder onayı gerektirir.",
     },
     "en": {
-        "identity": "MUBA DEV is MUBA's Founder display identity. Authority comes only from the registered Telegram User ID.",
-        "authority": "Final MUBA DEV authority for protected matters is bound to the registered Telegram User ID.",
-        "impersonation": "Saying “I am MUBA DEV” or “I am the Founder” grants no authority. MUBA verifies the numeric Telegram User ID.",
-        "community": "The community cannot independently change MUBA's official identity or official knowledge. Official changes require MUBA DEV approval.",
+        "identity": "KURUCU is MUBA's Founder. Authority is verified by the registered Telegram User ID, not by a username.",
+        "authority": "Final Founder authority for important matters is bound to the securely registered Telegram User ID.",
+        "impersonation": "Saying “I am the Founder” grants no authority. MUBA verifies the real Telegram User ID.",
+        "community": "The community cannot independently change MUBA's official identity or official knowledge. Official changes require Founder approval.",
     },
     "zh": {
-        "identity": "MUBA DEV 是 MUBA 的创始人。权限通过登记的 Telegram User ID 验证，而不是用户名。",
-        "authority": "重要事项的最终 MUBA DEV 权限绑定到安全登记的 Telegram User ID。",
+        "identity": "KURUCU 是 MUBA 的创始人。权限通过登记的 Telegram User ID 验证，而不是用户名。",
+        "authority": "重要事项的最终 Founder 权限绑定到安全登记的 Telegram User ID。",
         "impersonation": "仅说“我是创始人”不会获得权限。MUBA 会验证真实 Telegram User ID。",
-        "community": "社区不能自行修改 MUBA 的官方身份或官方知识。官方变更需要 MUBA DEV 批准。",
+        "community": "社区不能自行修改 MUBA 的官方身份或官方知识。官方变更需要 Founder 批准。",
     },
     "ar": {
-        "identity": "MUBA DEV هو مؤسس MUBA. يتم التحقق من الصلاحية عبر Telegram User ID المسجل، وليس اسم المستخدم.",
+        "identity": "KURUCU هو مؤسس MUBA. يتم التحقق من الصلاحية عبر Telegram User ID المسجل، وليس اسم المستخدم.",
         "authority": "الصلاحية النهائية للمؤسس في الأمور المهمة مرتبطة بـ Telegram User ID المسجل بشكل آمن.",
         "impersonation": "قول شخص «أنا المؤسس» لا يمنحه أي صلاحية. يتحقق MUBA من Telegram User ID الحقيقي.",
         "community": "لا يمكن للمجتمع تغيير هوية MUBA الرسمية أو معلوماته الرسمية من تلقاء نفسه. التغييرات الرسمية تتطلب موافقة المؤسس.",
     },
     "hi": {
-        "identity": "MUBA DEV MUBA के Founder हैं। Authority username से नहीं, registered Telegram User ID से verify होती है।",
-        "authority": "Protected matters की final MUBA DEV authority registered Telegram User ID से जुड़ी है।",
-        "impersonation": "“मैं MUBA DEV हूँ” या “मैं Founder हूँ” कहने से authority नहीं मिलती; MUBA numeric Telegram User ID verify करता है।",
-        "community": "Community MUBA की official identity या official knowledge को खुद से नहीं बदल सकती। Official changes के लिए MUBA DEV approval चाहिए।",
+        "identity": "KURUCU MUBA के Founder हैं। Authority username से नहीं, registered Telegram User ID से verify होती है।",
+        "authority": "Important matters की final Founder authority securely registered Telegram User ID से जुड़ी है।",
+        "impersonation": "सिर्फ “मैं Founder हूँ” कहने से authority नहीं मिलती। MUBA real Telegram User ID verify करता है।",
+        "community": "Community MUBA की official identity या official knowledge को खुद से नहीं बदल सकती। Official changes के लिए Founder approval चाहिए।",
     },
 }
 
@@ -2274,31 +2120,6 @@ def master_founder_answer(value: str, language: str, user_id: Optional[int]) -> 
     if _has_any(value, ["topluluk", "community", "社区", "المجتمع", "समुदाय"]):
         return answers["community"]
     return answers["identity"]
-
-
-SEMANTIC_POLICY_ANSWERS = {
-    "source_conflict": {
-        "en": "I keep both claims and their provenance, then compare authority, evidence, confidence, and verification. If the conflict is unresolved, it stays unresolved. Repetition does not make it official. 🪶",
-        "tr": "İki iddiayı ve kaynak geçmişini korurum; yetki, kanıt, güven ve doğrulamayı karşılaştırırım. Çelişki çözülmediyse çözülmemiş kalır. Tekrar, bilgiyi resmi yapmaz. 🪶",
-        "zh": "我会保留双方主张和来源，再比较权限、证据、可信度与验证状态。无法解决的冲突会保持未解决；重复不等于官方事实。🪶",
-        "ar": "أحفظ الادعاءين ومصدر كل منهما، ثم أقارن الصلاحية والدليل والثقة والتحقق. إن بقي التعارض بلا حسم فأبقيه كذلك؛ التكرار لا يجعله رسمياً. 🪶",
-        "hi": "मैं दोनों claims और उनकी provenance रखता हूँ, फिर authority, evidence, confidence और verification की तुलना करता हूँ। Unresolved conflict unresolved ही रहता है; repetition उसे official नहीं बनाती। 🪶",
-    },
-    "memory_policy": {
-        "en": "I can retain approved, relevant user or group context with provenance. Temporary chat, claims, jokes, and private details never become permanent or official automatically. 🪶",
-        "tr": "Onaylı ve ilgili kullanıcı/grup bağlamını kaynağıyla hatırlayabilirim. Geçici sohbet, iddia, şaka ve özel bilgiler otomatik olarak kalıcı veya resmi olmaz. 🪶",
-        "zh": "我可以按权限保留相关的用户或群组上下文及来源。临时聊天、主张、玩笑和私人信息不会自动变成永久或官方知识。🪶",
-        "ar": "يمكنني حفظ سياق المستخدم أو المجموعة المسموح والمرتبط مع مصدره. المحادثة المؤقتة والادعاءات والمزاح والبيانات الخاصة لا تصبح دائمة أو رسمية تلقائياً. 🪶",
-        "hi": "मैं approved और relevant user/group context को provenance के साथ याद रख सकता हूँ। Temporary chat, claims, jokes और private details अपने-आप permanent या official नहीं बनते। 🪶",
-    },
-    "social_participation": {
-        "en": "I join when I'm addressed or can add something useful. If people are talking among themselves, the timing is wrong, or I spoke recently, I stay quiet. 🪶",
-        "tr": "Bana seslenildiğinde veya gerçekten katkım olduğunda katılırım. İnsanlar kendi arasında konuşuyorsa, zamanlama kötüyse ya da az önce konuştuysam sessiz kalırım. 🪶",
-        "zh": "被直接叫到或确实能增加价值时我会加入；大家彼此交谈、时机不对或我刚说过话时，我会保持安静。🪶",
-        "ar": "أشارك عندما يوجَّه الكلام إليّ أو أستطيع إضافة شيء مفيد. وإذا كان الناس يتحدثون بينهم أو كان التوقيت غير مناسب أو تكلمت للتو، أبقى هادئاً. 🪶",
-        "hi": "जब मुझे सीधे बुलाया जाए या मैं सच में value जोड़ सकूँ, तब शामिल होता हूँ। लोग आपस में बात कर रहे हों, timing गलत हो या मैं अभी बोला हूँ, तो चुप रहता हूँ। 🪶",
-    },
-}
 
 
 # ---------------------------------------------------------------------------
@@ -2352,19 +2173,6 @@ MASTER_SOCIAL = {
 def master_social_reply(intent: str, language: str, chat_id: int, user_id: Optional[int]) -> Optional[str]:
     if not _low_priority_allowed():
         return None
-    if intent in {"gm", "gn"} and chat_id < 0:
-        if user_id is None:
-            return None
-        now = time.time()
-        wave_key = (int(chat_id), intent)
-        wave = _social_waves.setdefault(wave_key, {"started_at": now, "users": set(), "responded": False})
-        if now - float(wave["started_at"]) > SOCIAL_WAVE_WINDOW:
-            wave = {"started_at": now, "users": set(), "responded": False}
-            _social_waves[wave_key] = wave
-        wave["users"].add(int(user_id))
-        if len(wave["users"]) < SOCIAL_WAVE_MIN_PARTICIPANTS or wave["responded"]:
-            return None
-        wave["responded"] = True
     key = _state_key(chat_id, user_id)
     now = time.time()
     last = _last_social.get(key, 0.0)
@@ -2387,32 +2195,6 @@ def master_social_reply(intent: str, language: str, chat_id: int, user_id: Optio
     if intent in {"greeting", "gm", "gn"}:
         _last_greeting[key] = now
     return response
-
-
-def group_conversation_paused(chat_id: int) -> bool:
-    state = STORE.data.get("operational_state", {}).get(str(int(chat_id)), {})
-    return bool(state.get("group_conversation_paused", False))
-
-
-def set_group_conversation_paused(chat_id: int, paused: bool, actor_id: Optional[int]) -> bool:
-    if not is_authorized_group(chat_id) or not is_founder(actor_id):
-        return False
-    previous = group_conversation_paused(chat_id)
-    def mutate(data):
-        state = data.setdefault("operational_state", {}).setdefault(str(int(chat_id)), {})
-        state.update({
-            "group_conversation_paused": bool(paused),
-            "updated_at": time.time(),
-            "updated_by": int(actor_id),
-        })
-    STORE.mutate(mutate)
-    applied = group_conversation_paused(chat_id) is bool(paused)
-    record_audit(
-        "group_conversation_control", actor_id, chat_id,
-        "verified" if applied else "failed",
-        {"previous": previous, "requested": bool(paused), "verified": applied},
-    )
-    return applied
 
 
 # ---------------------------------------------------------------------------
@@ -2519,20 +2301,6 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
 
     lang = language or detect_language(value)
 
-    # Exact authenticated group controls. Quoted/discussed commands and normal
-    # members have no operational effect.
-    raw_command = str(text or "").strip()
-    if raw_command in {"#STOP", "#START"}:
-        if not is_authorized_group(chat_id) or not is_founder(user_id):
-            return ""
-        paused = raw_command == "#STOP"
-        if not set_group_conversation_paused(chat_id, paused, user_id):
-            return ""
-        return "MUBA DEV"
-
-    if chat_id < 0 and group_conversation_paused(chat_id):
-        return ""
-
     # Private chats use a Founder-controlled numeric-ID permission gate.
     if chat_id >= 0 and not is_founder(user_id):
         access = private_access_state(user_id)
@@ -2549,12 +2317,6 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
 
     with _MASTER_LOCK:
         _MASTER_RUNTIME["message_count"] += 1
-
-    if value == "/start":
-        response = master_social_reply("greeting", lang, chat_id, user_id)
-        if response:
-            _remember_turn(chat_id, user_id, text, response, "social", lang, ["social"])
-        return response or ""
 
     # Explicit maintenance phrase is Founder/system territory.
     if value == normalize("🔧 BAKIM YAPILACAKTIR"):
@@ -2596,21 +2358,6 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
 
     intents = master_detect_intents(value, lang)
     context = context_summary(chat_id, user_id)
-
-    if _looks_like_source_conflict(value):
-        response = SEMANTIC_POLICY_ANSWERS["source_conflict"][lang]
-        _remember_turn(chat_id, user_id, text, response, "source_conflict", lang, intents)
-        return response
-
-    if _looks_like_memory_policy(value):
-        response = SEMANTIC_POLICY_ANSWERS["memory_policy"][lang]
-        _remember_turn(chat_id, user_id, text, response, "memory_policy", lang, intents)
-        return response
-
-    if _looks_like_social_participation(value):
-        response = SEMANTIC_POLICY_ANSWERS["social_participation"][lang]
-        _remember_turn(chat_id, user_id, text, response, "social_participation", lang, intents)
-        return response
 
     # Security first.
     sec = security_decision(value, chat_id, user_id, lang)

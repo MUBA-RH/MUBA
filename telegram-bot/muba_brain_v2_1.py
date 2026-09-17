@@ -41,13 +41,12 @@ import time
 import unicodedata
 import urllib.parse
 import urllib.request
-import urllib.error
 from collections import defaultdict, deque
 from dataclasses import dataclass, asdict
 from difflib import SequenceMatcher
 from typing import Any, Deque, Dict, Iterable, List, Optional, Tuple
 
-BRAIN_VERSION = "FINAL-2.2"
+BRAIN_VERSION = "FINAL-2.1"
 SUPPORTED_LANGUAGES = ("en", "tr", "zh", "ar", "hi")
 DEFAULT_MEMORY_FILE = os.getenv("MUBA_MEMORY_FILE", "muba_memory/memory.json")
 FOUNDER_ID_RAW = os.getenv("MUBA_FOUNDER_ID", "934598759").strip()
@@ -55,7 +54,6 @@ AUTHORIZED_GROUPS_RAW = os.getenv("MUBA_AUTHORIZED_GROUP_IDS", "-1004485415245")
 MUBA_BOT_ID_RAW = os.getenv("MUBA_BOT_ID", "8661249663").strip()
 WEB_ENABLED = os.getenv("MUBA_WEB_ENABLED", "0").lower() in {"1", "true", "yes", "on"}
 WEB_TIMEOUT = float(os.getenv("MUBA_WEB_TIMEOUT", "6"))
-WEB_MAX_RESPONSE_BYTES = 262_144
 SOCIAL_COOLDOWN = 90.0
 GREETING_DAILY_LIMIT = 86400.0
 MAX_CONTEXT = 20
@@ -559,14 +557,6 @@ PROTECTED_OFFICIAL_SOURCES = {
 }
 OFFICIAL_SOURCES = dict(PROTECTED_OFFICIAL_SOURCES)
 
-APPROVED_KNOWLEDGE_SOURCE_FAMILIES = {
-    "official_muba": {"muba-rh.github.io", "x.com"},
-    "wikipedia": {"wikipedia.org"},
-    "wikimedia": {"wikimedia.org"},
-    "wikidata": {"wikidata.org"},
-    "language_infrastructure": {"unicode.org"},
-}
-
 # ---------------------------------------------------------------------------
 # SOCIAL / NATURAL CONVERSATION
 # ---------------------------------------------------------------------------
@@ -962,90 +952,26 @@ def _official_domain(url: str) -> bool:
     return candidate in protected | founder_authorized
 
 
-def _normalized_source_url(url: str) -> Optional[urllib.parse.ParseResult]:
-    try:
-        parsed = urllib.parse.urlparse(str(url).strip())
-        host = (parsed.hostname or "").encode("idna").decode("ascii").lower().rstrip(".")
-    except (TypeError, ValueError, UnicodeError):
-        return None
-    if parsed.scheme != "https" or not host or parsed.username or parsed.password:
-        return None
-    if parsed.port not in {None, 443}:
-        return None
-    return parsed._replace(netloc=host if parsed.port is None else f"{host}:{parsed.port}")
-
-
-def classify_knowledge_source(url: str) -> Optional[str]:
-    parsed = _normalized_source_url(url)
-    if parsed is None:
-        return None
-    host, path = parsed.hostname or "", parsed.path.rstrip("/") or "/"
-    if host == "muba-rh.github.io" and (path == "/MUBA" or path.startswith("/MUBA/")):
-        return "official_muba"
-    if host == "x.com" and path.lower() == "/muba_rh":
-        return "official_muba"
-    for family, roots in APPROVED_KNOWLEDGE_SOURCE_FAMILIES.items():
-        if family == "official_muba":
-            continue
-        if any(host == root or host.endswith("." + root) for root in roots):
-            return family
-    additions = globals().get("STORE")
-    if additions is not None:
-        for item in additions.data.get("founder_authorized_official_sources", {}).values():
-            if isinstance(item, dict) and str(item.get("url", "")).rstrip("/") == str(url).rstrip("/"):
-                return "founder_authorized"
-    return None
-
-
-class _RejectRedirects(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise urllib.error.HTTPError(req.full_url, code, "Redirect blocked by source allowlist", headers, fp)
-
-
-def research_current(query: str, source_url: Optional[str] = None) -> Dict[str, Any]:
-    """Retrieve temporary evidence from an explicitly approved source only."""
-    result = {"ok": False, "query": query, "sources": [], "summary": "", "temporary": True}
+def research_current(query: str) -> Dict[str, Any]:
+    """Small optional current-info fetcher. It is not a general AI search engine."""
+    result = {"ok": False, "query": query, "sources": [], "summary": ""}
     if not WEB_ENABLED:
         result["summary"] = "Current web research is disabled in this deployment."
         return result
-    if source_url is None:
-        if "muba" in normalize(query):
-            source_url = PROTECTED_OFFICIAL_SOURCES["official_website"]
-        else:
-            source_url = "https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
-                "action": "query", "list": "search", "srsearch": query, "format": "json", "utf8": 1,
-            })
-    source_type = classify_knowledge_source(source_url)
-    if source_type is None:
-        result["summary"] = "Source rejected by the approved knowledge-source allowlist."
-        return result
-    if source_type == "official_muba" and urllib.parse.urlparse(source_url).hostname == "x.com":
-        result["summary"] = "Official X retrieval requires an authorized reliable X access method."
-        return result
     try:
-        req = urllib.request.Request(source_url, headers={"User-Agent": "MUBA/2.2"})
-        opener = urllib.request.build_opener(_RejectRedirects())
-        with opener.open(req, timeout=WEB_TIMEOUT) as resp:
-            final_url = resp.geturl()
-            final_type = classify_knowledge_source(final_url)
-            if final_type is None or final_type != source_type:
-                result["summary"] = "Final response destination failed source validation."
-                return result
-            raw = resp.read(WEB_MAX_RESPONSE_BYTES + 1)
-            if len(raw) > WEB_MAX_RESPONSE_BYTES:
-                result["summary"] = "Approved-source response exceeded the size limit."
-                return result
-            html = raw.decode("utf-8", "ignore")
+        # Search-engine HTML endpoints are intentionally not hard-coded as official truth.
+        q = urllib.parse.quote(query)
+        url = "https://www.google.com/search?q=" + q
+        req = urllib.request.Request(url, headers={"User-Agent": "MUBA/1.0"})
+        with urllib.request.urlopen(req, timeout=WEB_TIMEOUT) as resp:
+            html = resp.read().decode("utf-8", "ignore")
         text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", html, flags=re.S | re.I)
         text = re.sub(r"<[^>]+>", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
+        # Keep only a short evidence window; do not pretend snippets are verified facts.
         result["ok"] = True
         result["summary"] = text[:1800]
-        result["sources"] = [{
-            "url": final_url, "source_type": source_type,
-            "official_muba": source_type == "official_muba",
-            "retrieved_at": time.time(), "status": "temporary_evidence",
-        }]
+        result["sources"] = [{"url": url, "official": False, "retrieved_at": time.time()}]
     except Exception as exc:
         result["summary"] = f"Current research failed: {type(exc).__name__}"
     return result
@@ -1496,7 +1422,7 @@ if __name__ == "__main__":
 # Secrets such as TELEGRAM_BOT_TOKEN are NEVER stored here.
 # =============================================================================
 
-MASTER_BRAIN_VERSION = "MASTER-UNIFIED-2.2"
+MASTER_BRAIN_VERSION = "MASTER-UNIFIED-2.1"
 FOUNDER_DISPLAY_NAME = "MUBA DEV"
 MASTER_FOUNDER_ID = 934598759
 MASTER_GROUP_ID = -1004485415245
@@ -2528,7 +2454,7 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
         paused = raw_command == "#STOP"
         if not set_group_conversation_paused(chat_id, paused, user_id):
             return ""
-        return "MUBA DEV"
+        return "MUBA DEV BURDA" if paused else "MUBA DEV BURDA. MUBA geri döndü. 🪶"
 
     if chat_id < 0 and group_conversation_paused(chat_id):
         return ""
