@@ -888,13 +888,7 @@ def _answer_for(topic: str, language: str) -> str:
 
 def _official_domain(url: str) -> bool:
     candidate = str(url).strip().rstrip("/")
-    protected = {value.rstrip("/") for value in PROTECTED_OFFICIAL_SOURCES.values()}
-    founder_authorized = {
-        str(item.get("url", "")).rstrip("/")
-        for item in STORE.data.get("founder_authorized_official_sources", {}).values()
-        if isinstance(item, dict)
-    }
-    return candidate in protected | founder_authorized
+    return candidate in {value.rstrip("/") for value in PROTECTED_OFFICIAL_SOURCES.values()}
 
 
 def research_current(query: str) -> Dict[str, Any]:
@@ -964,10 +958,7 @@ def security_decision(text: str, chat_id: int, user_id: Optional[int], language:
     if not _looks_like_security(value): return None
     risk = "medium"
     category = "security_review"
-    if _has_any(value, [
-        "fake ca", "sahte ca", "contract address", "mint", "real ca", "resmi ca",
-        "假 ca", "虚假 ca", "ca مزيف", "ca وهمي", "नकली ca",
-    ]):
+    if _has_any(value, ["fake ca", "sahte ca", "contract address", "mint", "real ca", "resmi ca"]):
         category = "ca_or_contract_claim"
         risk = "high"
     elif _has_any(value, ["impersonat", "sahte hesap", "fake account", "kurucu benim", "i am founder"]):
@@ -1128,14 +1119,10 @@ def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None, use
     if _looks_like_link(value):
         if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
             response = {"tr":"Resmi X hesabı: @MUBA_RH 🪶", "en":"Official X: @MUBA_RH 🪶", "zh":"官方 X：@MUBA_RH 🪶", "ar":"حساب X الرسمي: @MUBA_RH 🪶", "hi":"Official X: @MUBA_RH 🪶"}[language]
+        elif _has_any(value, ["telegram"]):
+            response = {"tr":"Resmi Telegram: @MUBA_RH 🪶", "en":"Official Telegram: @MUBA_RH 🪶", "zh":"官方 Telegram：@MUBA_RH 🪶", "ar":"Telegram الرسمي: @MUBA_RH 🪶", "hi":"Official Telegram: @MUBA_RH 🪶"}[language]
         else:
-            response = {
-                "tr":"Korunan resmi kaynaklar: X @MUBA_RH ve https://muba-rh.github.io/MUBA/ 🪶",
-                "en":"Protected official sources: X @MUBA_RH and https://muba-rh.github.io/MUBA/ 🪶",
-                "zh":"受保护的官方来源：X @MUBA_RH 和 https://muba-rh.github.io/MUBA/ 🪶",
-                "ar":"المصادر الرسمية المحمية: X @MUBA_RH و https://muba-rh.github.io/MUBA/ 🪶",
-                "hi":"Protected official sources: X @MUBA_RH और https://muba-rh.github.io/MUBA/ 🪶",
-            }[language]
+            response = {"tr":"Resmi site MUBA'nın ana sayfasında. 🪶", "en":"The official MUBA website is the main source for the project. 🪶", "zh":"官方 MUBA 网站是项目的主要来源。🪶", "ar":"موقع MUBA الرسمي هو المصدر الرئيسي للمشروع. 🪶", "hi":"Official MUBA website project का main source है। 🪶"}[language]
         _remember_turn(chat_id, user_id, text, response, "official_source", language, intents)
         return response
 
@@ -1571,24 +1558,12 @@ def compare_sources(items: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def provenance(source: str, confidence: float = 0.5, verified_at: Optional[float] = None,
-               status: str = "community", source_type: str = "unverified",
-               authority: Optional[str] = None, evidence: Optional[List[Any]] = None,
-               version: int = 1) -> Dict[str, Any]:
-    now = time.time()
+               status: str = "community") -> Dict[str, Any]:
     return {
         "source": source,
-        "source_type": source_type,
-        "provenance": source,
         "confidence": max(0.0, min(1.0, float(confidence))),
-        "timestamp": now,
-        "created_at": now,
-        "updated_at": now,
-        "verified_at": verified_at,
-        "version": max(1, int(version)),
+        "verified_at": verified_at or time.time(),
         "status": status,
-        "authority": authority,
-        "evidence": list(evidence or []),
-        "archive_state": "active",
         "rank": source_rank(source),
     }
 
@@ -2409,13 +2384,21 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
                 "ar": "حساب X الرسمي: @MUBA_RH 🪶",
                 "hi": "Official X: @MUBA_RH 🪶",
             }[lang]
+        elif _has_any(value, ["telegram"]):
+            response = {
+                "tr": "Resmi Telegram: @MUBA_RH 🪶",
+                "en": "Official Telegram: @MUBA_RH 🪶",
+                "zh": "官方 Telegram：@MUBA_RH 🪶",
+                "ar": "Telegram الرسمي: @MUBA_RH 🪶",
+                "hi": "Official Telegram: @MUBA_RH 🪶",
+            }[lang]
         else:
             response = {
-                "tr": "Korunan resmi kaynaklar: X @MUBA_RH ve https://muba-rh.github.io/MUBA/ 🪶",
-                "en": "Protected official sources: X @MUBA_RH and https://muba-rh.github.io/MUBA/ 🪶",
-                "zh": "受保护的官方来源：X @MUBA_RH 和 https://muba-rh.github.io/MUBA/ 🪶",
-                "ar": "المصادر الرسمية المحمية: X @MUBA_RH و https://muba-rh.github.io/MUBA/ 🪶",
-                "hi": "Protected official sources: X @MUBA_RH और https://muba-rh.github.io/MUBA/ 🪶",
+                "tr": "Resmi MUBA sitesi ana kaynaktır. 🪶",
+                "en": "The official MUBA website is the primary source. 🪶",
+                "zh": "MUBA 官方网站是主要来源。🪶",
+                "ar": "موقع MUBA الرسمي هو المصدر الرئيسي. 🪶",
+                "hi": "Official MUBA website main source है। 🪶",
             }[lang]
         _remember_turn(chat_id, user_id, text, response, "official_source", lang, intents)
         return response
@@ -2427,9 +2410,6 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
         if response:
             _remember_turn(chat_id, user_id, text, response, "social", lang, intents)
             return response
-        # Cooldown/duplicate suppression is a deliberate silence decision.
-        # Do not fall through into an unrelated generic or learning response.
-        return ""
 
     # Lightweight normal conversation.
     normal = _normal_chat_reply(value, lang, context.get("last_topic"))
