@@ -24,6 +24,7 @@ from muba_brain import (
     contains_muba,
     detect_language,
     detect_social_intent,
+    is_authorized_group,
 )
 
 
@@ -79,12 +80,23 @@ def should_answer(update: Update) -> bool:
     if not text:
         return False
 
+    # Protected hash commands must reach the brain, where numeric Founder ID
+    # and authorized-group checks decide whether they have any effect.
+    if text in {"#STOP", "#START"}:
+        return True
+
     if contains_muba(text):
         return True
 
     chat = update.effective_chat
 
     if chat and chat.type == ChatType.PRIVATE:
+        return True
+
+    # Open group-facing questions in the protected group may reach the router
+    # without requiring the word MUBA. The brain still owns pause, authority,
+    # relevance, and deliberate-silence decisions.
+    if chat and is_authorized_group(chat.id) and text.endswith(("?", "？")):
         return True
 
     # Plain group greetings must reach the local brain even
@@ -121,9 +133,16 @@ async def start_command(
     if not update.effective_message:
         return
 
-    await update.effective_message.reply_text(
-        "MUBA is here.\n\nWe Live Here Now. 🪶"
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    user_id = update.effective_user.id if update.effective_user else None
+    response = build_reply(
+        "/start",
+        chat_id=chat_id,
+        language=detect_language(update.effective_message.text or ""),
+        user_id=user_id,
     )
+    if response:
+        await update.effective_message.reply_text(response)
 
 
 async def handle_message(
@@ -167,6 +186,7 @@ async def handle_message(
         user_name
         and update.effective_chat
         and update.effective_chat.type != ChatType.PRIVATE
+        and text not in {"#STOP", "#START"}
     ):
         response = f"{user_name} — {response}"
 

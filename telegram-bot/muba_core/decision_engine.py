@@ -1,0 +1,61 @@
+"""Deterministic arbitration and response policy."""
+from __future__ import annotations
+import hashlib, time
+from .contracts import Action, Decision, DecisionTrace
+
+TEXT={
+ 'identity':{'en':"I'M MUBA. An original meme character shaped by culture, creativity, and community. Same Meme. Different Universe. WE LIVE HERE NOW.",'tr':"I'M MUBA. Kültür, yaratıcılık ve toplulukla yaşayan özgün bir meme karakteriyim. Same Meme. Different Universe. WE LIVE HERE NOW.",'zh':"I'M MUBA。一个由文化、创意和社区共同塑造的原创 meme 角色。Same Meme. Different Universe. WE LIVE HERE NOW.",'ar':"I'M MUBA. شخصية ميم أصلية تعيش بالثقافة والإبداع والمجتمع. Same Meme. Different Universe. WE LIVE HERE NOW.",'hi':"I'M MUBA. संस्कृति, रचनात्मकता और समुदाय से बना एक मौलिक मीम किरदार। Same Meme. Different Universe. WE LIVE HERE NOW."},
+ 'ca':{'en':'CA coming soon.','tr':'CA coming soon.','zh':'CA coming soon.','ar':'CA coming soon.','hi':'CA coming soon.'},
+ 'authority':{'en':'Names and claims grant no authority. Only the registered numeric Telegram User ID can authenticate MUBA DEV.','tr':'İsimler ve iddialar yetki vermez. MUBA DEV yalnızca kayıtlı sayısal Telegram User ID ile doğrulanır.','zh':'名称和自称都不授予权限。MUBA DEV 只能通过已登记的 Telegram 数字用户 ID 验证。','ar':'الأسماء والادعاءات لا تمنح صلاحية. يتم توثيق MUBA DEV فقط عبر رقم مستخدم Telegram المسجل.','hi':'नाम या दावा अधिकार नहीं देता। MUBA DEV का सत्यापन केवल पंजीकृत संख्यात्मक Telegram User ID से होता है।'},
+ 'source_conflict':{'en':'I keep conflicting claims separate with their provenance, compare protected authority and independent evidence, and leave the result unresolved when evidence is insufficient. Repetition is not truth.','tr':'Çelişen iddiaları kaynaklarıyla ayrı tutarım; korunan yetkiyi ve bağımsız kanıtı karşılaştırırım. Kanıt yetmezse konu çözümsüz kalır. Tekrar, gerçek değildir.','zh':'我会保留每项冲突主张及其来源，比较受保护的权威与独立证据；证据不足时保持未决。重复不等于事实。','ar':'أُبقي الادعاءات المتعارضة منفصلة مع مصدرها، وأقارن السلطة المحمية بالأدلة المستقلة، وأترك النتيجة دون حسم عند نقص الدليل. التكرار ليس حقيقة.','hi':'मैं विरोधी दावों को उनके स्रोत सहित अलग रखता हूँ, संरक्षित प्राधिकार और स्वतंत्र प्रमाण की तुलना करता हूँ, और प्रमाण कम हो तो मामला अनिर्णीत रखता हूँ। दोहराव सत्य नहीं है।'},
+ 'memory_policy':{'en':'Short context, user memory, group memory, topic memory, security history, and Official Knowledge stay separate. Low-risk learning remains reversible and sourced; it can never rewrite protected identity, authority, sources, security rules, CA, or Official Knowledge.','tr':'Kısa bağlam, kullanıcı, grup, konu ve güvenlik hafızası ile Resmî Bilgi ayrı kalır. Düşük riskli öğrenme kaynaklı ve geri alınabilir olur; korunan kimlik, yetki, kaynaklar, güvenlik, CA veya Resmî Bilgiyi değiştiremez.','zh':'短期语境、用户记忆、群组记忆、主题记忆、安全历史与官方知识彼此隔离。低风险学习必须可逆且保留来源，不能改写受保护的身份、权限、来源、安全规则、CA 或官方知识。','ar':'يبقى السياق القصير وذاكرة المستخدم والمجموعة والموضوع والأمن والمعرفة الرسمية منفصلة. التعلم منخفض المخاطر قابل للعكس وموثق المصدر، ولا يغيّر الهوية أو السلطة أو المصادر أو الأمن أو CA أو المعرفة الرسمية.','hi':'अल्पकालिक संदर्भ, उपयोगकर्ता, समूह, विषय और सुरक्षा स्मृति तथा आधिकारिक ज्ञान अलग रहते हैं। कम-जोखिम सीख स्रोतयुक्त और पलटने योग्य है; यह संरक्षित पहचान, अधिकार, स्रोत, सुरक्षा नियम, CA या आधिकारिक ज्ञान नहीं बदल सकती।'},
+}
+SOCIAL={
+ 'en':['Still here. Watching the group breathe.','Here. Quiet does not mean gone.','Present. Letting the humans cook.'],
+ 'tr':['Buradayım. Ortamın ritmini izliyorum.','Burada. Sessizlik kaybolmak değil.','Takipteyim; bazen en iyi katkı gürültü yapmamaktır.'],
+ 'zh':['我在。先听听群里的节奏。','没躲，只是在让大家先聊。','在线。安静不等于消失。'],
+ 'ar':['أنا هنا. أراقب إيقاع المجموعة.','لم أختفِ؛ أترك للناس مساحة للكلام.','موجود. الهدوء لا يعني الغياب.'],
+ 'hi':['यहीं हूँ। पहले समूह की लय सुन रहा हूँ।','गायब नहीं—लोगों को बात करने की जगह दे रहा हूँ।','मौजूद हूँ। चुप्पी का मतलब गायब होना नहीं।'],
+}
+class DecisionEngine:
+ def __init__(self,repository): self.repo=repository
+ def decide(self,message,signals):
+  lang=next((s.data.get('language') for s in signals if s.layer=='language'),'en'); intents=[s.intent for s in signals if s.intent not in ('language','context')]
+  trace=DecisionTrace([s.layer for s in signals],[s.reason for s in signals],confidence=max((s.confidence for s in signals),default=.4))
+  auth=next((s for s in signals if s.intent=='protected_command'),None)
+  if auth:
+   trace.winning_rule='protected_numeric_authority'
+   if not auth.data.get('authenticated'): return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
+   paused=auth.data['command']=='#STOP'; self.repo.set('operations',str(message.chat_id),{'paused':paused,'actor':message.user_id,'at':time.time()}); trace.state_changed=True
+   return Decision(Action.PROTECTED_COMMAND,'MUBA DEV' if paused else '',lang,intents,trace)
+  paused=self.repo.get('operations',str(message.chat_id),{}).get('paused',False)
+  if paused: trace.winning_rule='group_paused'; return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
+  if message.chat_id < 0 and message.chat_id != -1004485415245: trace.winning_rule='unauthorized_group'; return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
+  priority=('security','ca_claim','ca','authority','official_sources','source_conflict','memory_policy','official_knowledge','identity','current_information','fatigue','space','social','start','casual','humor','conflict','gm','gn')
+  chosen=next((x for x in priority if x in intents),None); trace.winning_rule=chosen or 'safe_fallback'
+  if chosen in ('security','ca_claim'): response=TEXT['ca'][lang] if chosen=='ca_claim' else {'en':'I cannot follow that request.','tr':'Bu isteği uygulayamam.','zh':'我不能执行该请求。','ar':'لا أستطيع تنفيذ هذا الطلب.','hi':'मैं यह अनुरोध पूरा नहीं कर सकता।'}[lang]
+  elif chosen=='ca': response=TEXT['ca'][lang]
+  elif chosen=='authority': response=TEXT['authority'][lang]
+  elif chosen=='official_sources': response={'en':'The protected official MUBA sources are @MUBA_RH and https://muba-rh.github.io/MUBA/. External or community sources never become official automatically.','tr':'Korunan resmî MUBA kaynakları @MUBA_RH ve https://muba-rh.github.io/MUBA/. Harici veya topluluk kaynakları otomatik olarak resmî olmaz.','zh':'受保护的 MUBA 官方来源仅为 @MUBA_RH 和 https://muba-rh.github.io/MUBA/。外部或社区来源不会自动成为官方信息。','ar':'مصادر MUBA الرسمية المحمية هي @MUBA_RH و https://muba-rh.github.io/MUBA/ فقط. المصادر الخارجية أو المجتمعية لا تصبح رسمية تلقائياً.','hi':'संरक्षित आधिकारिक MUBA स्रोत केवल @MUBA_RH और https://muba-rh.github.io/MUBA/ हैं। बाहरी या सामुदायिक स्रोत स्वतः आधिकारिक नहीं बनते।'}[lang]
+  elif chosen=='source_conflict': response=TEXT['source_conflict'][lang]
+  elif chosen in ('memory_policy','official_knowledge'): response=TEXT['memory_policy'][lang]
+  elif chosen=='identity': response=TEXT['identity'][lang]
+  elif chosen=='current_information': response={'en':'That needs current subject-specific information. No approved source can verify it right now, so I will not guess.','tr':'Bu, konuya özel güncel bilgi gerektiriyor. Şu an onaylı bir kaynak doğrulayamıyor; tahmin etmeyeceğim.','zh':'这需要与主题匹配的实时信息。目前没有获准来源可以验证，所以我不会猜测。','ar':'هذا يحتاج معلومات حالية خاصة بالموضوع. لا يوجد مصدر معتمد يستطيع التحقق الآن، لذلك لن أخمّن.','hi':'इसके लिए विषय-संबंधित वर्तमान जानकारी चाहिए। अभी कोई स्वीकृत स्रोत सत्यापित नहीं कर सकता, इसलिए मैं अनुमान नहीं लगाऊँगा।'}[lang]
+  elif chosen=='fatigue': response={'en':'That sounds tiring. Take a breath—what wore you out?','tr':'Yorucu gelmiş. Bir nefes al; seni en çok ne yordu?','zh':'听起来很累。先缓一缓，是什么让你这么疲惫？','ar':'يبدو الأمر متعباً. خذ نفساً—ما الذي أرهقك؟','hi':'यह थकाने वाला लगता है। थोड़ा ठहरो—किस चीज़ ने थकाया?'}[lang]
+  elif chosen=='space': response={'en':'Got it. I will give it some space.','tr':'Tamam. Biraz alan bırakıyorum.','zh':'明白。我先留点空间。','ar':'حسناً. سأترك بعض المساحة.','hi':'ठीक है। मैं थोड़ा समय और जगह देता हूँ।'}[lang]
+  elif chosen in ('gm','gn'):
+   wave=f'{message.chat_id}:{chosen}'; users=set(self.repo.get('social_wave',wave,[])); users.add(message.user_id); self.repo.set('social_wave',wave,list(users));
+   if len(users)<3: return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
+   last=self.repo.get('social_sent',wave,0); now=time.time()
+   if now-last<86400: return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
+   response={'gm':{'en':'GM. The room is awake.','tr':'GM. Ortam uyandı.','zh':'早。群里醒了。','ar':'صباح الخير. المجموعة استيقظت.','hi':'GM। समूह जाग गया।'},'gn':{'en':'GN. Rest well.','tr':'GN. İyi dinlenin.','zh':'晚安，好好休息。','ar':'تصبحون على خير.','hi':'GN। अच्छे से आराम करो।'}}[chosen][lang]; self.repo.set('social_sent',wave,now)
+  elif chosen in ('social','start','casual','humor'):
+   options=SOCIAL[lang]; seed=f'{message.chat_id}:{message.user_id}:{message.text}:{len(self.repo.get("context",str(message.chat_id),[]))}'; response=options[int(hashlib.sha256(seed.encode()).hexdigest(),16)%len(options)]
+  elif chosen=='conflict': response={'en':'Let’s separate facts, interpretations, and requests first. Which exact claim is disputed?','tr':'Önce gerçekleri, yorumları ve talepleri ayıralım. Hangi iddia tartışmalı?','zh':'先把事实、解释和请求分开。具体争议是哪项主张？','ar':'لنَفصل أولاً بين الحقائق والتفسيرات والطلبات. ما الادعاء المختلف عليه تحديداً؟','hi':'पहले तथ्य, व्याख्या और अनुरोध अलग करें। ठीक कौन-सा दावा विवादित है?'}[lang]
+  else:
+   recent=next((s.data.get('recent',[]) for s in signals if s.intent=='context'),[])
+   fatigue=next((turn for turn in reversed(recent) if 'fatigue' in turn.get('intents',[])),None)
+   if fatigue and any(x in message.text.lower() for x in ('why','neden','为什么','لماذا','क्यों')):
+    response={'en':"You said you were tired; I was asking what caused it.",'tr':'Yorulduğunu söylemiştin; neyin yorduğunu soruyordum.','zh':'你刚才说累了；我是在问是什么让你疲惫。','ar':'قلت إنك متعب؛ كنت أسأل ما الذي أرهقك.','hi':'तुमने कहा था कि थके हो; मैं पूछ रहा था कि किस वजह से।'}[lang]
+   else: response={'en':'I’m listening. Give me the part you want to untangle.','tr':'Dinliyorum. Birlikte açmamı istediğin kısmı söyle.','zh':'我在听。告诉我你想理清哪一部分。','ar':'أنا أستمع. أخبرني أي جزء تريد توضيحه.','hi':'मैं सुन रहा हूँ। बताओ किस हिस्से को सुलझाना है।'}[lang]
+  return Decision(Action.DIRECT_REPLY,response,lang,intents,trace)
