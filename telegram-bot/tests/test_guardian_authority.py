@@ -14,6 +14,8 @@ class GuardianAuthorityExam(unittest.TestCase):
    self.assertIsNone(authorized_command(-999,934598759,cmd))
  def test_unknown_control_is_never_authorized(self):
   self.assertTrue(is_control_attempt("#DELETEALL")); self.assertIsNone(authorized_command(-1004485415245,934598759,"#DELETEALL"))
+  self.assertIsNone(authorized_command(-1004485415245,934598759,"#stop"))
+  self.assertIsNone(authorized_command(-1004485415245,934598759,"#Start"))
  def test_command_arguments(self):
   self.assertEqual(authorized_command(-1004485415245,934598759,"#UNBAN 123"),"#UNBAN")
   self.assertEqual(command_arg("#UNBAN 123"),"123")
