@@ -29,9 +29,11 @@ from muba_brain import (
     get_assistant_language,
     set_assistant_language,
     clear_assistant_language,
+    group_conversation_paused,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
+from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
 logging.basicConfig(
@@ -85,9 +87,10 @@ def should_answer(update: Update) -> bool:
     message=update.effective_message
     if not message or not message.text: return False
     chat=update.effective_chat; text=message.text.strip()
-    if text in {"#STOP","#START"}: return True
     if chat and chat.type==ChatType.PRIVATE: return True
-    return bool(chat and is_authorized_group(chat.id) and group_event(text))
+    if not chat or not is_guardian_group(chat.id): return False
+    if is_control_attempt(text): return is_dev(update.effective_user.id if update.effective_user else None)
+    return bool(group_event(text))
 
 
 def language_keyboard():
@@ -175,7 +178,54 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
         if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang))
         return
-    if not is_authorized_group(chat.id): return
+    if not is_guardian_group(chat.id): return
+    cmd=authorized_command(chat.id,user_id,text)
+    if cmd:
+        if cmd in ("#START","#STOP"):
+            response=build_reply(cmd,chat_id=chat.id,language=detect_language(text),user_id=user_id)
+            if response: await message.reply_text(response,disable_web_page_preview=True)
+            return
+        if cmd in ("#GUARDIAN","#STATUS"):
+            await message.reply_text(status_text(group_conversation_paused(chat.id))); return
+        if cmd=="#HELP":
+            await message.reply_text(help_text()); return
+        if cmd=="#SECURITY":
+            await message.reply_text(security_text()); return
+        if cmd=="#LOCKDOWN":
+            set_lockdown(True); await message.reply_text("🛡️ GUARDIAN — LOCKDOWN"); return
+        if cmd=="#NORMAL":
+            set_lockdown(False); await message.reply_text("🛡️ GUARDIAN — NORMAL"); return
+        target=message.reply_to_message
+        try:
+            if cmd=="#DELETE":
+                if target: await target.delete(); await message.reply_text("🛡️ Deleted.")
+                return
+            if cmd=="#WARN":
+                if target and target.from_user: await message.reply_text("⚠️ GUARDIAN warning for "+(target.from_user.mention_html()),parse_mode="HTML")
+                return
+            if cmd in ("#MUTE","#UNMUTE","#BAN"):
+                if not target or not target.from_user: await message.reply_text("Reply to a user's message with "+cmd+"."); return
+                tid=target.from_user.id
+                if is_dev(tid): await message.reply_text("🛡️ DEV is protected."); return
+                if cmd=="#BAN": await context.bot.ban_chat_member(chat.id,tid); await message.reply_text("🛡️ User banned."); return
+                from telegram import ChatPermissions
+                perms=ChatPermissions.no_permissions() if cmd=="#MUTE" else ChatPermissions.all_permissions()
+                await context.bot.restrict_chat_member(chat.id,tid,permissions=perms)
+                await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted.")); return
+            if cmd=="#UNBAN":
+                arg=command_arg(text)
+                if arg.lstrip("-").isdigit(): await context.bot.unban_chat_member(chat.id,int(arg)); await message.reply_text("🛡️ User unbanned.")
+                else: await message.reply_text("Use: #UNBAN <user_id>")
+                return
+        except Exception:
+            logger.exception("Guardian moderation action failed")
+            await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
+            return
+    if is_control_attempt(text): return
+    guardian_event=inspect_message(chat.id,user_id,text)
+    if guardian_event:
+        if guardian_event.get("action")=="warn": await message.reply_text(guardian_event["text"])
+        return
     event=group_event(text)
     if not event: return
     if event=="assistant_redirect":
