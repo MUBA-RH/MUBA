@@ -34,6 +34,7 @@ from muba_brain import (
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
+from muba_daily import DAILY_LABELS, daily_text
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -102,8 +103,19 @@ def menu_keyboard(lang):
     rows=[]
     for topic in ("origin","identity","difference","purpose","community","plan"):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
+    rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
+
+def daily_keyboard(lang):
+    labels=DAILY_LABELS[lang]
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(labels["x"],callback_data="daily:x")],
+        [InlineKeyboardButton(labels["web"],callback_data="daily:web")],
+        [InlineKeyboardButton(labels["telegram"],callback_data="daily:telegram")],
+        [InlineKeyboardButton(labels["updates"],callback_data="daily:updates")],
+        [InlineKeyboardButton(labels["back"],callback_data="menu")],
+    ])
 
 def topic_keyboard(lang,topic):
     rows=[]
@@ -152,6 +164,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_assistant_language(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang)); return
+    if data=="daily":
+        await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang)); return
+    if data.startswith("daily:"):
+        section=data.split(":",1)[1]
+        await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang),disable_web_page_preview=True); return
     if data.startswith("topic:"):
         topic=data.split(":",1)[1]
         await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
