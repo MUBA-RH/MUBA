@@ -6,6 +6,9 @@ CATALOG=json.loads(r'''{"tr":[["MUBA tam olarak nedir?","MUBA özgün bir meme k
 
 def _norm(s): return re.sub(r"[^\\w\\s]"," ",(s or "").casefold()).strip()
 def match(lang,text):
+ v=_norm(text)
+ anchors={'tr':('muba','topluluk','meme','roadmap','i m muba','we live here now'),'en':('muba','community','meme','roadmap','we live here now'),'zh':('muba','社区','meme','路线图'),'ar':('muba','المجتمع','ميم','خارطة'),'hi':('muba','community','meme','roadmap')}
+ if not any(x in v for x in anchors.get(lang,('muba',))): return None
  best=(0.0,None)
  for q,a in CATALOG.get(lang,[]):
   score=difflib.SequenceMatcher(None,_norm(text),_norm(q)).ratio()
