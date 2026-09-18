@@ -1,0 +1,8 @@
+# Historical MUBA source archives are hash-verified verbatim evidence.
+# Preserve their bytes and exclude their legacy spacing from production lint.
+telegram-bot/MUBA_DEEP_MASTER_MEMORY_NOTE.txt -whitespace
+"telegram-bot/MUBA_DEEP_MASTER_MEMORY_NOTE_800_PLUS_UPDATED (1).txt" -whitespace
+telegram-bot/MUBA_MASTER_DATABASE_FULL_SOURCE.txt -whitespace
+telegram-bot/MUBA_MASTER_DATABASE_NOTE_1500_PLUS.txt -whitespace
+codex-input/MUBA_BRAIN.txt -whitespace
+codex-input/MUBA_BRAIN_001.txt -whitespace

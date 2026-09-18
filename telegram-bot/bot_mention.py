@@ -24,6 +24,7 @@ from muba_brain import (
     contains_muba,
     detect_language,
     detect_social_intent,
+    is_authorized_group,
 )
 
 
@@ -90,6 +91,12 @@ def should_answer(update: Update) -> bool:
     chat = update.effective_chat
 
     if chat and chat.type == ChatType.PRIVATE:
+        return True
+
+    # Open group-facing questions in the protected group may reach the router
+    # without requiring the word MUBA. The brain still owns pause, authority,
+    # relevance, and deliberate-silence decisions.
+    if chat and is_authorized_group(chat.id) and text.endswith(("?", "？")):
         return True
 
     # Plain group greetings must reach the local brain even
