@@ -1,72 +1,47 @@
-import os
+"""Legacy webhook-handler compatibility module backed by the local brain.
+
+Production starts ``bot_mention.py``. This module remains for ``webhook.py``
+compatibility and intentionally contains no external generative-AI client.
+"""
+from __future__ import annotations
+
 import logging
+import os
 
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from muba_brain import build_reply, detect_language
 
-from muba_brain import build_reply
-
-TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-log = logging.getLogger("muba.bot")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+logger = logging.getLogger("muba.legacy_transport")
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
+async def _reply(update, text: str) -> None:
+    message = update.effective_message
+    if not message:
         return
-    reply = build_reply(
-        "muba nedir",
-        chat_id=update.effective_chat.id if update.effective_chat else 0,
-        user_id=update.effective_user.id if update.effective_user else None,
-    )
-    await update.message.reply_text(reply or "MUBA.")
+    chat_id = update.effective_chat.id if update.effective_chat else 0
+    user_id = update.effective_user.id if update.effective_user else None
+    response = build_reply(text, chat_id=chat_id, user_id=user_id, language=detect_language(text))
+    if response:
+        await message.reply_text(response, disable_web_page_preview=True)
 
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        await update.message.reply_text("MUBA online.")
+async def start(update, context):
+    await _reply(update, "/start")
 
 
-async def ca(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:
-        return
-    reply = build_reply(
-        "CA",
-        chat_id=update.effective_chat.id if update.effective_chat else 0,
-        user_id=update.effective_user.id if update.effective_user else None,
-    )
-    await update.message.reply_text(reply or "CA coming soon.")
+async def status(update, context):
+    await _reply(update, "MUBA status?")
 
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
-        return
-    user_text = update.message.text.strip()
-    if not user_text:
-        return
-    chat = update.effective_chat
-    user = update.effective_user
-    reply = build_reply(
-        user_text,
-        chat_id=chat.id if chat else 0,
-        user_id=user.id if user else None,
-    )
-    if reply:
-        await update.message.reply_text(reply)
+async def ca(update, context):
+    await _reply(update, "What is the CA?")
 
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
-    log.exception("bot error: %s", context.error)
+async def handle_message(update, context):
+    message = update.effective_message
+    if message and message.text:
+        await _reply(update, message.text.strip())
 
 
-def main():
-    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("status", status))
-    application.add_handler(CommandHandler("ca", ca))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    application.add_error_handler(error_handler)
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-
-
-if __name__ == "__main__":
-    main()
+async def error_handler(update, context):
+    logger.error("Telegram update error: %s", context.error)
