@@ -1,3 +1,5 @@
+import re
+
 from layers.common import SpecialistLayer, signal
 
 
@@ -6,7 +8,14 @@ def detect(text):
     if any('\u4e00' <= c <= '\u9fff' for c in text): return 'zh'
     if any('\u0600' <= c <= '\u06ff' for c in text): return 'ar'
     if any('\u0900' <= c <= '\u097f' for c in text): return 'hi'
-    if any(c in value for c in 'çğıöşü') or any(w in value.split() for w in ('bugün','nasıl','nedir','neden','hafıza')): return 'tr'
+    tokens=set(re.findall(r'[^\\W\\d_]+',value,re.UNICODE))
+    turkish={
+        'selam','merhaba','günaydın','nasılsın','bugün','nasıl','nedir',
+        'neden','hafıza','kim','ne','zaman','nerede','hangi','mı','mi','mu',
+        'mü','ben','bana','biz','siz','bu','şu','için','hakkında','amaç',
+        'plan','ekip','kurucu','yakında','öğren','hatırla','kaynak','kanıt',
+    }
+    if any(c in value for c in 'çğıöşü') or tokens & turkish: return 'tr'
     return 'en'
 
 
