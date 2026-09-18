@@ -5,6 +5,7 @@ from .contracts import Message
 from .decision_engine import DecisionEngine
 from .registry import LayerRegistry
 from .router import Router
+from .operations import observe, remember_decision
 
 VERSION='LAYERED-3.0'
 class MubaCore:
@@ -14,6 +15,8 @@ class MubaCore:
   recent=self.repository.get('context',str(message.chat_id),[])
   signals=self.router.route(message,{'recent':recent})
   decision=self.engine.decide(message,signals); self.last_trace=decision.trace
+  observe(self.repository,message,decision)
+  remember_decision(self.repository,message.chat_id,decision)
   if 'conflict' in decision.intents:
    self.repository.append('conflict',str(message.chat_id),{'participants':[message.user_id],'reply_graph':[],'subthreads':[],'claims':[{'text':message.text,'type':'interpretation'}],'agreements':[],'disagreements':[],'unresolved_questions':[],'evidence':[],'resolution_status':'open','level':1,'confidence':decision.trace.confidence,'at':time.time()},50)
   # Unauthorized groups and protected pause do not create conversational memory.

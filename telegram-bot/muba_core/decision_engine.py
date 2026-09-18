@@ -22,6 +22,8 @@ class DecisionEngine:
  def decide(self,message,signals):
   lang=next((s.data.get('language') for s in signals if s.layer=='language'),'en'); intents=[s.intent for s in signals if s.intent not in ('language','context')]
   trace=DecisionTrace([s.layer for s in signals],[s.reason for s in signals],confidence=max((s.confidence for s in signals),default=.4))
+  if message.user_id == 8661249663:
+   trace.winning_rule='self_message'; return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
   auth=next((s for s in signals if s.intent=='protected_command'),None)
   if auth:
    trace.winning_rule='protected_numeric_authority'

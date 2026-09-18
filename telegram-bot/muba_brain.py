@@ -7,6 +7,8 @@ import importlib, os
 from types import MappingProxyType
 from muba_core import Message, MubaCore, VERSION
 from muba_core.actions import create as _create_action, transition as _transition_action, verify as _verify_action
+from muba_core.operations import specification as _specification, health as _health, audit as _audit, close_incident as _close_incident, snapshot as _snapshot
+from muba_core.memory import learning_candidate as _learning_candidate
 from state import JSONRepository, MemoryRepository
 
 BRAIN_VERSION=VERSION
@@ -34,6 +36,7 @@ def build_decision(text,chat_id=0,language=None,user_id=None,**metadata):
  return CORE.process(Message(text=text or '',chat_id=int(chat_id or 0),user_id=user_id,language=language,metadata=metadata))
 def is_founder(user_id): return user_id in FOUNDER_IDS
 def is_authorized_group(chat_id): return chat_id in AUTHORIZED_GROUP_IDS
+def is_muba_bot_id(user_id): return user_id in MUBA_BOT_IDS
 def group_conversation_paused(chat_id): return bool(STORE.get('operations',str(chat_id),{}).get('paused',False))
 def classify_knowledge_source(url): return importlib.import_module('layers.05_sources.policy').classify(url)
 def research_current(query,source_url=None):
@@ -43,6 +46,24 @@ def research_current(query,source_url=None):
 def create_action(chat_id,actor_id,action,target=None,message_id=None): return _create_action(STORE,chat_id,message_id,target,action)
 def update_action_state(action_id,state,actor_id=None,result=None): return _transition_action(STORE,action_id,state)
 def verify_action_result(action_id,verified,actor_id=None,verification=None): return _verify_action(STORE,action_id,verified)
+def get_master_brain_spec(): return _specification(VERSION,CORE.registry.names())
+def master_health(): return _health(STORE,VERSION,CORE.registry.names())
+def observe_message(text,chat_id=0,user_id=None,language=None,**metadata): return build_decision(text,chat_id,language,user_id,**metadata)
+def record_audit(category,actor_id=None,chat_id=0,evidence=None): return _audit(STORE,category,actor_id,chat_id,evidence)
+def queue_master_learning(scope,owner_id,value,provenance,confidence=.3): return _learning_candidate(STORE,scope,owner_id,value,provenance,confidence)
+def remember_decision(chat_id,decision,provenance='manual'): return __import__('muba_core.operations',fromlist=['remember_decision']).remember_decision(STORE,chat_id,decision,provenance)
+def close_incident(incident_id,actor_id,resolution): return _close_incident(STORE,incident_id,actor_id,resolution)
+def memory_snapshot(): return _snapshot(STORE)
+master_brain_specification=get_master_brain_spec
+master_is_founder=is_founder
+master_is_authorized_group=is_authorized_group
+master_is_muba_bot=is_muba_bot_id
+master_observe_message=observe_message
+master_record_audit=record_audit
+master_queue_learning=queue_master_learning
+master_remember_decision=remember_decision
+master_close_incident=close_incident
+master_snapshot=memory_snapshot
 def reset_runtime_state():
  global STORE,CORE
  STORE=MemoryRepository(); CORE=MubaCore(STORE)

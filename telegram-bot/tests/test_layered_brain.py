@@ -52,6 +52,17 @@ class BrainCase(unittest.TestCase):
  def test_registry_has_23_layers(self): self.assertEqual(len(LayerRegistry().names()),23)
  def test_router_skips_irrelevant(self): self.assertNotIn('official_knowledge',self.decision('Bugün çok yoruldum','tr').trace.activated_layers)
  def test_self_test(self): self.assertTrue(brain.brain_self_test()['ok'])
+ def test_bot_does_not_reply_to_itself(self):
+  d=self.decision('Who are you?',user=8661249663); self.assertEqual(d.response,''); self.assertEqual(d.trace.winning_rule,'self_message')
+ def test_master_operational_compatibility_api(self):
+  spec=brain.master_brain_specification(); self.assertEqual(len(spec['specialist_layers']),23); self.assertFalse(spec['external_generative_ai'])
+  self.assertTrue(brain.master_health()['ok']); self.assertTrue(brain.master_is_founder(934598759)); self.assertTrue(brain.master_is_muba_bot(8661249663))
+  audit=brain.master_record_audit('test',actor_id=934598759); self.assertTrue(brain.STORE.get('audit',audit))
+  snap=brain.master_snapshot(); self.assertEqual(snap['schema'],1); self.assertIn('state',snap)
+ def test_processing_records_observation_and_decision_memory(self):
+  self.decision('Who are you?')
+  self.assertTrue(brain.STORE.get('observations','-1004485415245'))
+  self.assertTrue(brain.STORE.get('decision_memory','-1004485415245'))
  def test_scoped_memory_and_protected_firewall(self):
   from muba_core.memory import remember, recall, learning_candidate, mature
   self.assertFalse(remember(brain.STORE,'official_knowledge',1,'claim','user'))
