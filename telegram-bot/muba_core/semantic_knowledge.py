@@ -4,6 +4,12 @@ No external API, model download, token, or paid service is required. Protected
 topics remain owned by the existing specialist layers.
 """
 TOPICS={
+"origin":{
+"en":"MUBA did not begin with a grand project story or a prewritten legend. The character came first; people saw it, shared it, commented, created around it, and a community formed naturally.",
+"tr":"MUBA büyük bir proje hikâyesi veya önceden yazılmış bir efsaneyle başlamadı. Önce karakter vardı; insanlar onu gördü, paylaştı, yorumladı, içerik üretti ve topluluk doğal biçimde oluştu.",
+"zh":"MUBA 并不是从宏大的项目故事或预先写好的传奇开始的。最先出现的是这个角色；人们看到它、分享它、评论并围绕它创作，社区由此自然形成。",
+"ar":"لم يبدأ MUBA بقصة مشروع ضخمة أو أسطورة مكتوبة مسبقاً. ظهرت الشخصية أولاً؛ رآها الناس وشاركوها وعلقوا عليها وصنعوا محتوى حولها، ثم تشكّل المجتمع بشكل طبيعي.",
+"hi":"MUBA किसी बड़ी project story या पहले से लिखी legend के साथ शुरू नहीं हुआ। पहले character आया; लोगों ने उसे देखा, share किया, comment किया, content बनाया और community स्वाभाविक रूप से बनी।"},
 "identity":{
 "en":"MUBA is an original meme character and community shaped by culture, creativity, participation, and consistency.",
 "tr":"MUBA; kültür, yaratıcılık, katılım ve istikrar etrafında şekillenen özgün bir meme karakteri ve topluluğudur.",
