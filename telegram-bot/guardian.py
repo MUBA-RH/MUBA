@@ -88,14 +88,14 @@ def inspect_message(chat_id,user_id,text,now=None):
  # Official CA is not configured yet: every contract-shaped address is unverified.
  if _ADDR_RE.search(text or ""):
   strike=register_fake_ca(user_id)
-  return {"kind":"fake_ca","action":"mute" if strike==1 else "ban","strike":strike,
+  return {"kind":"security","subkind":"fake_ca","action":"mute" if strike==1 else "ban","strike":strike,
           "mute_seconds":MUTE_SECONDS,
           "text":"🚨 GUARDIAN: Fake/unverified CA detected — user muted." if strike==1
                  else "🚨 GUARDIAN: Repeated fake/unverified CA — user banned."}
 
  links=links_in(text)
  if links and any(not is_official_link(url) for url in links):
-  return {"kind":"blocked_link","action":"delete","text":"🚨 GUARDIAN: Only official MUBA links are allowed."}
+  return {"kind":"suspicious_link","subkind":"blocked_link","action":"delete","text":"🚨 GUARDIAN: Only official MUBA links are allowed."}
 
  if any(x in v for x in _SCAM):
   return {"kind":"security","action":"warn","text":"🚨 GUARDIAN: Scam-like content detected. Trust only official MUBA sources."}
