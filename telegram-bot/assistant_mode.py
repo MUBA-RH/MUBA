@@ -41,3 +41,9 @@ def group_event(text):
  if any(x in v for x in ("scam","phishing","impersonat","taklit","dolandır")) and "muba" in v: return "security"
  if looks_like_muba_question(text): return "assistant_redirect"
  return None
+
+
+def assistant_relevant(text):
+ v=(text or "").casefold()
+ terms=("muba","community","topluluk","kimlik","identity","meme","karakter","character","amaç","purpose","plan","gelecek","future","köken","origin","fark","different","社区","身份","角色","المجتمع","هوية","الشخصية","community","पहचान","character")
+ return any(x in v for x in terms)
