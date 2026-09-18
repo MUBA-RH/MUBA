@@ -26,6 +26,10 @@ class Message:
     is_forwarded: bool = False
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
+    @property
+    def is_private(self) -> bool:
+        return self.chat_id >= 0
+
 
 @dataclass(frozen=True)
 class Signal:

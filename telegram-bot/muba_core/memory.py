@@ -2,7 +2,7 @@
 from __future__ import annotations
 import time, uuid
 PROTECTED_SCOPES={'core_identity','official_knowledge','official_sources','authority','permanent_security','ca'}
-STAGES=('CANDIDATE','OBSERVED','TRUSTED')
+STAGES=('CANDIDATE','OBSERVED','TRUSTED') # OFFICIAL requires the protected Founder/source process.
 
 def remember(repository,scope,owner_id,value,provenance,confidence=.5):
  if scope in PROTECTED_SCOPES: return False
@@ -18,3 +18,7 @@ def mature(repository,item_id,stage):
  item=repository.get('learning',item_id)
  if not item or STAGES.index(stage)<STAGES.index(item['maturity']): return False
  item['maturity']=stage; repository.set('learning',item_id,item); return True
+def forget(repository,item_id):
+ item=repository.get('learning',item_id)
+ if not item or not item.get('reversible'): return False
+ item['status']='removed'; item['removed_at']=time.time(); repository.set('learning',item_id,item); return True
