@@ -11,7 +11,7 @@ from .semantic_knowledge import TOPICS
 FRAMES={
 "tr":{
  "identity":(("muba",),("nedir","tanımla","anlat")),
- "purpose":(("muba","proje","karakter","seni"),("amaç","niye","neden","var","fikir","ortaya","hedef")),
+ "purpose":(("muba","proje","karakter","seni"),("amaç","amac","niye","neden","var","fikir","ortaya","hedef")),
  "difference":(("muba","karakter","meme","onu"),("fark","farklı","ayır","özgün","özel","yapan","ibaret","sadece")),
  "community":(("topluluk","insan","kullanıcı","katılımcı"),("rol","katkı","neresinde","yapabilir","merkez","paylaş","üret")),
  "plan":(("muba","proje","topluluk","sonra"),("plan","nasıl","gerçekleştir","büyü","sonra","gelecek","ilerle","yapacak")),
@@ -19,7 +19,7 @@ FRAMES={
 "en":{
  "identity":(("muba",),("what is muba","define muba","describe muba")),
  "purpose":(("muba","project","character"),("purpose","goal","aim","exist","why","idea","created")),
- "difference":(("muba","character","meme","it"),("different","difference","unique","apart","special","only","just","makes")),
+ "difference":(("muba","character","meme","it"),("different","difference","unique","apart","special","only","just","another","nothing more","makes")),
  "community":(("community","people","users","participants"),("role","contribute","fit","participate","create","share")),
  "plan":(("muba","project","community","then"),("plan","how","grow","next","then","future","build","achieve")),
 },
@@ -27,7 +27,7 @@ FRAMES={
  "identity":(("muba",),("什么","介绍","定义")),
  "purpose":(("muba","项目","角色"),("目的","目标","为什么","存在","理念","诞生")),
  "difference":(("muba","角色","meme","它"),("不同","区别","独特","特别","只是","特点")),
- "community":(("社区","大家","人们","用户","参与者"),("角色","作用","贡献","参与","做什么","位置")),
+ "community":(("社区","大家","人们","普通人","用户","参与者"),("角色","作用","贡献","参与","做什么","位置")),
  "plan":(("muba","项目","社区","以后"),("计划","如何","怎么","发展","下一步","未来","实现","壮大")),
 },
 "ar":{
