@@ -58,7 +58,7 @@ def resolve(text,language,recent):
  v=_norm(text); frames=FRAMES.get(language,FRAMES["en"]); scored={}
  for topic,(subjects,predicates) in frames.items():
   a,b=_hit(v,subjects),_hit(v,predicates)
-  scored[topic]=(2 if a else 0)+(3*b)+(1 if a and b else 0)-(1 if topic=="identity" else 0)
+  scored[topic]=(2*a)+(3*b)+(1 if a and b else 0)-(1 if topic=="identity" else 0)
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
  topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=3 else None
  if not topic and recent:
