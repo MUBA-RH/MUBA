@@ -16,7 +16,7 @@ class MubaCore:
   recent=self.repository.get('context',str(message.chat_id),[])
   signals=self.router.route(message,{'recent':recent})
   decision=self.engine.decide(message,signals)
-  if decision.trace.winning_rule in ('safe_fallback','deliberate_silence'):
+  if decision.trace.winning_rule in ('safe_fallback','deliberate_silence','casual','social'):
    semantic=resolve_semantic(message.text,decision.language,recent)
    if semantic:
     topic,response=semantic; decision.response=response; decision.intents=[topic]; decision.trace.winning_rule='semantic_'+topic
