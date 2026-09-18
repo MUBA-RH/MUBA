@@ -17,7 +17,7 @@ class MubaCore:
   signals=self.router.route(message,{'recent':recent})
   decision=self.engine.decide(message,signals)
   semantic=resolve_semantic(message.text,decision.language,recent)
-  semantic_context=any(x.get('active_topic') in ('identity','difference','purpose','plan','community') for x in recent)
+  semantic_context=any(x.get('active_topic') in ('origin','identity','difference','purpose','plan','community') for x in recent)
   protected={'security','impersonation','incident','ca_claim','ca','dev_identity','authority','moderation','official_sources','source_conflict','memory_policy','user_memory','group_memory','topic_memory','official_knowledge','current_information','timeline','archive','conflict','gm','gn','group_paused','unauthorized_group','self_message'}
   semantic_allowed=decision.trace.winning_rule in ('safe_fallback','deliberate_silence','casual','identity') or (semantic_context and decision.trace.winning_rule not in protected)
   if semantic and semantic_allowed:
