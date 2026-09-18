@@ -25,7 +25,8 @@ class DecisionEngine:
   chosen=next((x for x in priority if x in intents),None); trace.winning_rule=chosen or 'safe_fallback'
   if chosen in ('security','impersonation','ca_claim'): response=locale_text(lang,'ca') if chosen=='ca_claim' else locale_text(lang,'security_rejected')
   elif chosen=='ca': response=locale_text(lang,'ca')
-  elif chosen=='dev_identity': response=locale_text(lang,'dev_identity')\n  elif chosen=='authority': response=locale_text(lang,'authority')
+  elif chosen=='dev_identity': response=locale_text(lang,'dev_identity')
+  elif chosen=='authority': response=locale_text(lang,'authority')
   elif chosen=='incident': response=locale_text(lang,'incident')
   elif chosen=='moderation': response=locale_text(lang,'moderation')
   elif chosen=='official_sources': response=locale_text(lang,'official_sources')
