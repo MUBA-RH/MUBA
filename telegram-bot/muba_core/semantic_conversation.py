@@ -10,7 +10,7 @@ FRAMES={
 "tr":{
  "origin":(("muba","proje","karakter","seni"),("doğdu","ortaya çık","başla","başlangıç","köken","nasıl ortaya","nereden","fikirden")),
  "identity":(("muba","kimlik","karakter","bu durum","bu kimlik"),("nedir","tanımla","anlat","kimlik","şekillen","etkile","nasıl bir")),
- "purpose":(("muba","proje","karakter"),("amaç","amac","niye var","neden var","hedef","ne için")),
+ "purpose":(("muba","proje","karakter"),("amaç","amac","amacı","niye var","neden var","hedef","ne için")),
  "difference":(("muba","karakter","meme","onu"),("fark","farklı","ayır","özgün","özel","yapan","ibaret","sadece")),
  "community":(("topluluk","insan","kullanıcı","katılımcı"),("rol","katkı","neresinde","yapabilir","merkez","paylaş","üret","ne yap")),
  "plan":(("muba","proje","topluluk"),("plan","gerçekleştir","büyü","sonra ne","gelecek","ilerle","yapacak","bundan sonra","ne olacak")),
@@ -79,7 +79,7 @@ def resolve(text,language,recent):
   _,target=max(explicit)
   scored[target]=scored.get(target,0)+8
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
- topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None
+ topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None\n # Origin wording is more specific than generic why/purpose wording.\n if "origin" in scored and scored["origin"]>=6:\n  origin_preds=frames["origin"][1]\n  if _hit(v,origin_preds): topic="origin"
 
  # 3) ÖNCEKİ BAĞLAM: only resolve genuinely elliptical follow-ups.
  if not topic and recent:
