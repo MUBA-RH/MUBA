@@ -234,7 +234,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     guardian_event=inspect_message(chat.id,user_id,text)
     if guardian_event:
-        if guardian_event.get("action")=="warn": await message.reply_text(guardian_event["text"])
+        action=guardian_event.get("action")
+        if action=="warn":
+            await message.reply_text(guardian_event["text"])
+        elif action=="delete":
+            try:
+                await message.delete()
+                await context.bot.send_message(chat.id,guardian_event["text"])
+            except Exception:
+                logger.exception("Guardian link deletion failed")
+        elif action in ("mute","ban"):
+            try:
+                # Always moderate the numeric Telegram ID attached to this exact message.
+                # Never resolve a username/display name to choose a target.
+                member=await context.bot.get_chat_member(chat.id,user_id)
+                if getattr(member,"status",None) in ("administrator","creator","owner") or is_dev(user_id):
+                    logger.warning("Guardian skipped automatic moderation for protected/admin user %s",user_id)
+                    return
+                await message.delete()
+                if action=="mute":
+                    import time
+                    from telegram import ChatPermissions
+                    await context.bot.restrict_chat_member(
+                        chat.id,user_id,
+                        permissions=ChatPermissions.no_permissions(),
+                        until_date=int(time.time())+int(guardian_event.get("mute_seconds",1800)),
+                    )
+                else:
+                    await context.bot.ban_chat_member(chat.id,user_id,revoke_messages=True)
+                await context.bot.send_message(chat.id,guardian_event["text"])
+            except Exception:
+                logger.exception("Guardian automatic moderation failed")
         return
     event=group_event(text)
     if not event: return
