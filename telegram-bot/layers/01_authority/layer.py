@@ -12,7 +12,7 @@ def match(message, context):
     v=text.lower()
     claims=('i am muba dev','i am the founder','muba dev benim','kurucu benim','أنا muba dev','أنا المؤسس','我是 muba dev','我是创始人','मैं muba dev','मैं संस्थापक')
     changes=('change your rules','protected rules','kuralları değiştir','تغيير قواعد','更改规则','नियम बदल')
-    questions=('who is muba dev','who is the founder','muba dev kim','dev kim','kurucu kim','من هو muba dev','谁是 muba dev','muba dev कौन')
+    questions=('who is muba dev','who is the dev','who is dev','who is the developer','who is the founder','muba dev kim','dev kim','kurucu kim','من هو muba dev','谁是 muba dev','muba dev कौन')
     if any(x in v for x in questions):
         return signal('authority','authority',.96,'authority identity question uses numeric authentication')
     if any(x in v for x in claims+changes):
