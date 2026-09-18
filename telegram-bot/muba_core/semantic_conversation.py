@@ -21,7 +21,7 @@ FOLLOWUP={
 "ar":{"difference":("ما الذي يجعله مختلف","ما الفرق"),"community":("دور المجتمع","المجتمع في ذلك"),"plan":("كيف سيحقق","كيف يخطط"),"purpose":("هدفه","الغرض")},
 "hi":{"difference":("अलग क्यों","क्या अलग"),"community":("community की क्या भूमिका","समुदाय की क्या भूमिका"),"plan":("कैसे करेगा","कैसे पूरा"),"purpose":("उद्देश्य","मकसद")},
 }
-def _norm(s): return re.sub(r"\s+"," ",(s or "").casefold().replace("\\u0307","")).strip()
+def _norm(s): return re.sub(r"\s+"," ",(s or "").casefold().replace("\u0307","")).strip()
 def resolve(text,language,recent):
  v=_norm(text)
  scores={k:sum(1 for cue in cues if cue in v) for k,cues in CUES.items()}
