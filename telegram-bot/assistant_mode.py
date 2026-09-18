@@ -45,5 +45,5 @@ def group_event(text):
 
 def assistant_relevant(text):
  v=(text or "").casefold()
- terms=("muba","community","topluluk","kimlik","identity","meme","karakter","character","amaç","purpose","plan","gelecek","future","köken","origin","fark","different","社区","身份","角色","المجتمع","هوية","الشخصية","community","पहचान","character")
+ terms=("muba","community","topluluk","toplulu","kimlik","identity","meme","karakter","character","amaç","purpose","plan","gelecek","future","köken","origin","fark","different","社区","身份","角色","المجتمع","هوية","الشخصية","community","पहचान","character")
  return any(x in v for x in terms)
