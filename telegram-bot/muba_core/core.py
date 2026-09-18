@@ -6,6 +6,7 @@ from .decision_engine import DecisionEngine
 from .registry import LayerRegistry
 from .router import Router
 from .operations import observe, remember_decision
+from .semantic_conversation import resolve as resolve_semantic
 
 VERSION='LAYERED-3.0'
 class MubaCore:
@@ -14,7 +15,12 @@ class MubaCore:
  def process(self,message:Message):
   recent=self.repository.get('context',str(message.chat_id),[])
   signals=self.router.route(message,{'recent':recent})
-  decision=self.engine.decide(message,signals); self.last_trace=decision.trace
+  decision=self.engine.decide(message,signals)
+  if decision.trace.winning_rule in ('safe_fallback','deliberate_silence'):
+   semantic=resolve_semantic(message.text,decision.language,recent)
+   if semantic:
+    topic,response=semantic; decision.response=response; decision.intents=[topic]; decision.trace.winning_rule='semantic_'+topic
+  self.last_trace=decision.trace
   observe(self.repository,message,decision)
   remember_decision(self.repository,message.chat_id,decision)
   if 'conflict' in decision.intents:
