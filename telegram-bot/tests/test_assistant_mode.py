@@ -2,7 +2,7 @@ from __future__ import annotations
 import pathlib,sys,unittest
 ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 import muba_brain as brain
-from assistant_mode import LANGS,QUESTIONS,group_event,assistant_relevant,guided_answer
+from assistant_mode import LANGS,QUESTIONS,group_event,assistant_relevant,guided_answer,answer_for_question,match_catalog
 
 class AssistantModeExam(unittest.TestCase):
  def setUp(self): brain.reset_runtime_state()
@@ -12,9 +12,9 @@ class AssistantModeExam(unittest.TestCase):
  def test_guided_questions_cover_all_core_topics(self):
   expected={'origin','identity','difference','purpose','community','plan'}
   for lang in LANGS:
-   self.assertEqual(len(QUESTIONS[lang]),12)
+   self.assertEqual(len(QUESTIONS[lang]),24)
    self.assertEqual({t for t,_ in QUESTIONS[lang]},expected)
-   for i in range(12): self.assertTrue(guided_answer(lang,i))
+   for i in range(24): self.assertTrue(answer_for_question(lang,i))
  def test_group_is_silent_for_normal_chat(self):
   for text in ['Akşam maç kaçta?','Bitcoin ne olur?','hello guys','Bugün yemek ne yiyelim?','What is the weather?']:
    self.assertIsNone(group_event(text),text)
@@ -24,6 +24,10 @@ class AssistantModeExam(unittest.TestCase):
   self.assertEqual(group_event('Who is MUBA DEV?'),'dev')
   self.assertEqual(group_event('MUBA official source?'),'official')
   self.assertEqual(group_event('What is MUBA?'),'assistant_redirect')
+ def test_catalog_is_language_locked(self):
+  probes={"tr":"MUBA bir yapay zekâ mı?","en":"Is MUBA an AI?","zh":"MUBA 是人工智能吗？","ar":"هل MUBA ذكاء اصطناعي؟","hi":"क्या MUBA AI है?"}
+  for lang,q in probes.items():
+   i=match_catalog(lang,q); self.assertIsNotNone(i); self.assertTrue(answer_for_question(lang,i))
  def test_private_scope(self):
   self.assertTrue(assistant_relevant('MUBA nedir?'))
   self.assertTrue(assistant_relevant('Topluluğun rolü ne?'))
