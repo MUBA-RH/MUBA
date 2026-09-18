@@ -29,9 +29,11 @@ from muba_brain import (
     get_assistant_language,
     set_assistant_language,
     clear_assistant_language,
+    group_conversation_paused,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
+from guardian import authorized_command, is_control_attempt, is_guardian_group, is_dev, status_text, help_text
 
 
 logging.basicConfig(
@@ -85,9 +87,10 @@ def should_answer(update: Update) -> bool:
     message=update.effective_message
     if not message or not message.text: return False
     chat=update.effective_chat; text=message.text.strip()
-    if text in {"#STOP","#START"}: return True
     if chat and chat.type==ChatType.PRIVATE: return True
-    return bool(chat and is_authorized_group(chat.id) and group_event(text))
+    if not chat or not is_guardian_group(chat.id): return False
+    if is_control_attempt(text): return is_dev(update.effective_user.id if update.effective_user else None)
+    return bool(group_event(text))
 
 
 def language_keyboard():
@@ -175,7 +178,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
         if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang))
         return
-    if not is_authorized_group(chat.id): return
+    if not is_guardian_group(chat.id): return
+    cmd=authorized_command(chat.id,user_id,text)
+    if cmd:
+        if cmd in ("#START","#STOP"):
+            response=build_reply(cmd,chat_id=chat.id,language=detect_language(text),user_id=user_id)
+            if response: await message.reply_text(response,disable_web_page_preview=True)
+            return
+        if cmd in ("#GUARDIAN","#STATUS"):
+            await message.reply_text(status_text(group_conversation_paused(chat.id)))
+            return
+        if cmd=="#HELP":
+            await message.reply_text(help_text())
+            return
+    if is_control_attempt(text): return
     event=group_event(text)
     if not event: return
     if event=="assistant_redirect":
