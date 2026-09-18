@@ -6,10 +6,11 @@ No external AI service or API key is required.
 
 import hashlib
 import logging
+import hashlib
 import os
 
 from aiohttp import web
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto
 from telegram.constants import ChatType
 from telegram.ext import (
     Application,
@@ -17,6 +18,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     ContextTypes,
     MessageHandler,
+    InlineQueryHandler,
     filters,
 )
 
@@ -36,6 +38,7 @@ from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
+from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -109,6 +112,7 @@ def menu_keyboard(lang):
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
+    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio"))])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -335,6 +339,42 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if response: await message.reply_text(response,disable_web_page_preview=True)
 
 
+async def inline_studio(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q=update.inline_query
+    if not q or not q.from_user:return
+    prompt=clean_prompt(q.query)
+    if not prompt:return
+    from urllib.parse import urlencode
+    url=EXTERNAL_URL.rstrip("/")+"/studio/render?"+urlencode({"p":prompt,"k":"meme"})
+    rid=hashlib.sha256((str(q.from_user.id)+prompt).encode()).hexdigest()[:32]
+    await q.answer([InlineQueryResultPhoto(id=rid,photo_url=url,thumbnail_url=REFERENCE_URL,caption=prompt)],cache_time=1,is_personal=True)
+
+async def studio_page_handler(request: web.Request):
+    return web.Response(text=studio_html(EXTERNAL_URL),content_type="text/html")
+
+async def _reference(request):
+    async with request.app["http_session"].get(REFERENCE_URL,timeout=15) as r:
+        if r.status!=200:raise RuntimeError("reference unavailable")
+        return await r.read()
+
+async def studio_generate_handler(request: web.Request):
+    try:data=await request.json()
+    except Exception:return web.json_response({"error":"Invalid request."},status=400)
+    user=validate_init_data(str(data.get("initData","")),TOKEN)
+    if not user or not user.get("id"):return web.json_response({"error":"Open Studio from Telegram."},status=401)
+    uid=int(user["id"]);prompt=clean_prompt(str(data.get("prompt","")));kind=str(data.get("kind","meme"))
+    if not prompt:return web.json_response({"error":"Write something for MUBA."},status=400)
+    if not consume(uid):return web.json_response({"error":"Daily limit reached — 5/5."},status=429)
+    try:body=render_meme(await _reference(request),prompt,kind)
+    except Exception:logger.exception("Studio render failed");return web.json_response({"error":"Studio render failed."},status=503)
+    return web.Response(body=body,content_type="image/jpeg",headers={"X-MUBA-Remaining":str(remaining(uid))})
+
+async def studio_render_handler(request: web.Request):
+    prompt=clean_prompt(request.query.get("p",""));kind=request.query.get("k","meme")
+    if not prompt:return web.Response(status=400)
+    try:return web.Response(body=render_meme(await _reference(request),prompt,kind),content_type="image/jpeg")
+    except Exception:logger.exception("Inline render failed");return web.Response(status=503)
+
 async def error_handler(
     update: object,
     context: ContextTypes.DEFAULT_TYPE,
@@ -394,6 +434,7 @@ async def start_webhook_server():
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("ca", ca_command))
     application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(InlineQueryHandler(inline_studio))
 
     application.add_handler(
         MessageHandler(
@@ -433,6 +474,9 @@ async def start_webhook_server():
 
     app = web.Application()
 
+    import aiohttp
+    app["http_session"] = aiohttp.ClientSession()
+
     app["telegram_application"] = application
 
     app.router.add_get(
@@ -449,6 +493,9 @@ async def start_webhook_server():
         WEBHOOK_PATH,
         webhook_handler,
     )
+    app.router.add_get("/studio",studio_page_handler)
+    app.router.add_post("/studio/generate",studio_generate_handler)
+    app.router.add_get("/studio/render",studio_render_handler)
 
     runner = web.AppRunner(app)
 
@@ -479,6 +526,7 @@ async def start_webhook_server():
             "Stopping MUBA application."
         )
 
+        await app["http_session"].close()
         await runner.cleanup()
 
         await application.stop()
