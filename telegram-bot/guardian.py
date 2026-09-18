@@ -41,10 +41,7 @@ def command_arg(text):
  parts=(text or "").strip().split(maxsplit=1)
  return parts[1].strip() if len(parts)>1 else ""
 def status_text(paused=False):
- return "🛡️ GUARDIAN — "+("PAUSED" if paused else "ACTIVE")+"
-Main group: LOCKED
-Command authority: MUBA DEV ONLY
-Security: "+("LOCKDOWN" if _lockdown else "NORMAL")
+ return "🛡️ GUARDIAN — "+("PAUSED" if paused else "ACTIVE")+"\nMain group: LOCKED\nCommand authority: MUBA DEV ONLY\nSecurity: "+("LOCKDOWN" if _lockdown else "NORMAL")
 def help_text():
  return """🛡️ GUARDIAN DEV COMMANDS
 #START / #STOP — resume / pause
@@ -58,11 +55,7 @@ def help_text():
 #DELETE — delete replied message
 #HELP — this list"""
 def security_text():
- return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"
-Fake CA: 1st=MUTE / 2nd=BAN
-External links: DELETE
-Flood detection: ON
-DEV-only control: ON"
+ return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nFake CA: 1st=MUTE / 2nd=BAN\nExternal links: DELETE\nFlood detection: ON\nDEV-only control: ON"
 
 def _clean_url(raw):
  value=(raw or "").rstrip(".,!?;:)]}>'\"")
@@ -86,6 +79,15 @@ def reset_runtime_security_state():
 def register_fake_ca(user_id):
  _fake_ca_strikes[user_id]+=1
  return _fake_ca_strikes[user_id]
+def register_risk(user_id):
+ _risk_strikes[user_id]+=1
+ return _risk_strikes[user_id]
+def _credential_theft(v):
+ return any(x in v for x in ("seed phrase","private key","recovery phrase","mnemonic","seed kelim","özel anahtar"))
+def _wallet_lure(v):
+ wallet=any(x in v for x in ("connect wallet","wallet verify","verify wallet","cüzdanını bağla","cüzdan bağla","doğrula cüzdan"))
+ lure=any(x in v for x in ("claim","airdrop","giveaway","reward","ödül","bedava","free token"))
+ return wallet and lure
 
 def inspect_message(chat_id,user_id,text,now=None):
  """Return a Guardian event. Automatic sanctions always remain bound to sender numeric ID."""
@@ -103,24 +105,18 @@ def inspect_message(chat_id,user_id,text,now=None):
 
  links=links_in(text)
  if links and any(not is_official_link(url) for url in links):
-  # A normal external link is a policy violation: delete only.
-  # Strong phishing combinations escalate independently, without judging token/topic names.
   if _credential_theft(v) or _wallet_lure(v):
    strike=register_risk(user_id)
    return {"kind":"suspicious_link","subkind":"phishing","action":"mute" if strike==1 else "ban",
            "strike":strike,"mute_seconds":MUTE_SECONDS,
-           "text":"🚨 GUARDIAN: High-risk phishing pattern detected — user muted." if strike==1
-                  else "🚨 GUARDIAN: Repeated high-risk phishing — user banned."}
+           "text":"🚨 GUARDIAN: High-risk phishing pattern detected — user muted." if strike==1 else "🚨 GUARDIAN: Repeated high-risk phishing — user banned."}
   return {"kind":"suspicious_link","subkind":"blocked_link","action":"delete","text":"🚨 GUARDIAN: Only official MUBA links are allowed."}
 
- # Words discussed conversationally are not punishable by themselves.
- # Credential-theft language is high-risk only when it is an instruction/request, not a quoted warning.
  if _credential_theft(v) and any(x in v for x in ("send ","share ","give me","dm me","gönder","paylaş","yolla")):
   strike=register_risk(user_id)
   return {"kind":"security","subkind":"credential_theft","action":"mute" if strike==1 else "ban",
           "strike":strike,"mute_seconds":MUTE_SECONDS,
-          "text":"🚨 GUARDIAN: Credential-theft pattern detected — user muted." if strike==1
-                 else "🚨 GUARDIAN: Repeated credential-theft pattern — user banned."}
+          "text":"🚨 GUARDIAN: Credential-theft pattern detected — user muted." if strike==1 else "🚨 GUARDIAN: Repeated credential-theft pattern — user banned."}
 
  if any(x in v for x in _SCAM):
   return {"kind":"security","action":"warn","text":"🚨 GUARDIAN: Scam-like content detected. Trust only official MUBA sources."}
