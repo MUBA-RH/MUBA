@@ -76,8 +76,12 @@ def resolve(text,language,recent):
   hits=_hit(v,cues)
   if hits: explicit.append((hits,topic))
  if explicit:
-  _,target=max(explicit)
-  scored[target]=scored.get(target,0)+8
+  ranked=[]
+  for hits,target in explicit:
+   subjects,_=frames[target]
+   ranked.append((_hit(v,subjects),hits,target))
+  _,_,target=max(ranked)
+  scored[target]=scored.get(target,0)+12
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
  topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None
  # Origin wording is more specific than generic why/purpose wording.
