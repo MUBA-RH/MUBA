@@ -10,14 +10,14 @@ from .semantic_knowledge import TOPICS
 
 FRAMES={
 "tr":{
- "identity":(("muba",),("nedir","ne","kim","tanımla","anlat")),
- "purpose":(("muba","proje","karakter"),("amaç","niye","neden","var","fikir","ortaya","hedef")),
+ "identity":(("muba",),("nedir","tanımla","anlat")),
+ "purpose":(("muba","proje","karakter","seni"),("amaç","niye","neden","var","fikir","ortaya","hedef")),
  "difference":(("muba","karakter","meme","onu"),("fark","farklı","ayır","özgün","özel","yapan","ibaret","sadece")),
  "community":(("topluluk","insan","kullanıcı","katılımcı"),("rol","katkı","neresinde","yapabilir","merkez","paylaş","üret")),
  "plan":(("muba","proje","topluluk","sonra"),("plan","nasıl","gerçekleştir","büyü","sonra","gelecek","ilerle","yapacak")),
 },
 "en":{
- "identity":(("muba",),("what","define","describe")),
+ "identity":(("muba",),("what is muba","define muba","describe muba")),
  "purpose":(("muba","project","character"),("purpose","goal","aim","exist","why","idea","created")),
  "difference":(("muba","character","meme","it"),("different","difference","unique","apart","special","only","just","makes")),
  "community":(("community","people","users","participants"),("role","contribute","fit","participate","create","share")),
@@ -59,7 +59,8 @@ def resolve(text,language,recent):
  for topic,(subjects,predicates) in frames.items():
   a,b=_hit(v,subjects),_hit(v,predicates)
   scored[topic]=(2 if a else 0)+(3*b)+(1 if a and b else 0)-(1 if topic=="identity" else 0)
- topic=max(scored,key=scored.get) if scored and max(scored.values())>=3 else None
+ has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
+ topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=3 else None
  if not topic and recent:
   last=next((x.get("active_topic") for x in reversed(recent) if x.get("active_topic") in TOPICS),None)
   if last:
