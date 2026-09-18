@@ -58,13 +58,13 @@ def resolve(text,language,recent):
  v=_norm(text); frames=FRAMES.get(language,FRAMES["en"]); scored={}
  for topic,(subjects,predicates) in frames.items():
   a,b=_hit(v,subjects),_hit(v,predicates)
-  scored[topic]=(2 if a else 0)+(2*b)+(1 if a and b else 0)
+  scored[topic]=(2 if a else 0)+(3*b)+(1 if a and b else 0)-(1 if topic=="identity" else 0)
  topic=max(scored,key=scored.get) if scored and max(scored.values())>=3 else None
- if not topic:
-  for candidate,cues in FOLLOW.get(language,{}).items():
-   if any(c in v for c in cues): topic=candidate; break
  if not topic and recent:
   last=next((x.get("active_topic") for x in reversed(recent) if x.get("active_topic") in TOPICS),None)
-  if last and len(v.split())<=12: topic=last
+  if last:
+   for candidate,cues in FOLLOW.get(language,{}).items():
+    if any(c in v for c in cues): topic=candidate; break
+   if not topic and len(v.split())<=12: topic=last
  if not topic:return None
  return topic,TOPICS[topic].get(language,TOPICS[topic]["en"])
