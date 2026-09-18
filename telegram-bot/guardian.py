@@ -20,7 +20,7 @@ _ADDR_RE=re.compile(r"\b(?:0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b")
 _SCAM=("fake ca","sahte ca","scam","phishing","airdrop claim","connect wallet","seed phrase","private key","wallet verify","doğrula cüzdan","cüzdanını bağla")
 _ALLOWED_LINKS={("muba-rh.github.io","/MUBA"),("x.com","/MUBA_RH"),("t.me","/MUBA_RH")}
 _rate=defaultdict(lambda:deque(maxlen=12))
-_fake_ca_strikes=defaultdict(int)
+_fake_ca_strikes=defaultdict(int)\n_risk_strikes=defaultdict(int)
 _lockdown=False
 MUTE_SECONDS=30*60
 
@@ -74,7 +74,7 @@ def is_official_link(raw):
 def links_in(text): return _LINK_RE.findall(text or "")
 def fake_ca_strikes(user_id): return _fake_ca_strikes.get(user_id,0)
 def reset_runtime_security_state():
- _fake_ca_strikes.clear(); _rate.clear()
+ _fake_ca_strikes.clear(); _risk_strikes.clear(); _rate.clear()
 def register_fake_ca(user_id):
  _fake_ca_strikes[user_id]+=1
  return _fake_ca_strikes[user_id]
@@ -95,7 +95,24 @@ def inspect_message(chat_id,user_id,text,now=None):
 
  links=links_in(text)
  if links and any(not is_official_link(url) for url in links):
+  # A normal external link is a policy violation: delete only.
+  # Strong phishing combinations escalate independently, without judging token/topic names.
+  if _credential_theft(v) or _wallet_lure(v):
+   strike=register_risk(user_id)
+   return {"kind":"suspicious_link","subkind":"phishing","action":"mute" if strike==1 else "ban",
+           "strike":strike,"mute_seconds":MUTE_SECONDS,
+           "text":"🚨 GUARDIAN: High-risk phishing pattern detected — user muted." if strike==1
+                  else "🚨 GUARDIAN: Repeated high-risk phishing — user banned."}
   return {"kind":"suspicious_link","subkind":"blocked_link","action":"delete","text":"🚨 GUARDIAN: Only official MUBA links are allowed."}
+
+ # Words discussed conversationally are not punishable by themselves.
+ # Credential-theft language is high-risk only when it is an instruction/request, not a quoted warning.
+ if _credential_theft(v) and any(x in v for x in ("send ","share ","give me","dm me","gönder","paylaş","yolla")):
+  strike=register_risk(user_id)
+  return {"kind":"security","subkind":"credential_theft","action":"mute" if strike==1 else "ban",
+          "strike":strike,"mute_seconds":MUTE_SECONDS,
+          "text":"🚨 GUARDIAN: Credential-theft pattern detected — user muted." if strike==1
+                 else "🚨 GUARDIAN: Repeated credential-theft pattern — user banned."}
 
  if any(x in v for x in _SCAM):
   return {"kind":"security","action":"warn","text":"🚨 GUARDIAN: Scam-like content detected. Trust only official MUBA sources."}
