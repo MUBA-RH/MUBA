@@ -8,9 +8,9 @@ import re
 from .semantic_knowledge import TOPICS
 
 CUES={
-"purpose":("purpose","main purpose","goal","aim","amac","amacı","amaç","目的","目标","هدف","الغرض","उद्देश्य","मकसद"),
-"difference":("different","difference","unique","fark","farklı","区别","不同","مختلف","الفرق","अलग","different"),
-"community":("community role","role of the community","topluluğun rol","toplumun rol","社区","扮演什么角色","دور المجتمع","community की","समुदाय की"),
+"purpose":("purpose","main purpose","goal","aim","exist","why does muba","amac","amacı","amaç","niye var","neden var","var olma","目的","目标","为什么存在","为何存在","هدف","الغرض","لماذا يوجد","لماذا muba","उद्देश्य","मकसद","क्यों है","क्यों मौजूद"),
+"difference":("different","difference","unique","sets it apart","stand out","fark","farklı","ayıran","özgün","区别","不同","独特","特别","مختلف","الفرق","يميزه","مميز","अलग","खास","विशेष"),
+"community":("community role","role of the community","people fit","people role","topluluğun rol","toplumun rol","insanlar bu iş","insanların rol","社区","扮演什么角色","大家","人们","دور المجتمع","مكان الناس","الناس في","community की","समुदाय की","लोगों की जगह","लोगों की भूमिका"),
 "plan":("plan","how will","how does it plan","nasıl gerçekleşt","nasıl yap","planlıyor","计划","كيف سي","الخطة","कैसे","योजना"),
 "identity":("what is muba","muba nedir","muba 是什么","ما هو muba","muba क्या"),
 }
