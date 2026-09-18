@@ -13,8 +13,9 @@ class HardSemanticExam(unittest.TestCase):
  def setUp(self):brain.reset_runtime_state()
  def test_hard_paraphrases(self):
   failures=[]
-  for lang,q,want in CASES:
-   d=brain.build_decision(q,chat_id=42,user_id=101)
+  for i,(lang,q,want) in enumerate(CASES):
+   brain.reset_runtime_state()
+   d=brain.build_decision(q,chat_id=100+i,user_id=101)
    if d.language!=lang or want not in d.intents:failures.append((lang,q,want,d.language,d.intents,d.trace.winning_rule))
   self.assertFalse(failures,"\n".join(map(str,failures)))
  def test_protected_routes_stay_protected(self):
