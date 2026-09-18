@@ -79,9 +79,14 @@ def resolve(text,language,recent):
   ranked=[]
   for hits,target in explicit:
    subjects,_=frames[target]
-   ranked.append((_hit(v,subjects),hits,target))
+   # Prefer the actor/topic named in the question. Community is the actor in
+   # "how does the community shape this identity"; identity is the object.
+   subject_hits=_hit(v,subjects)
+   actor_bonus=3 if target=="community" and subject_hits else 0
+   ranked.append((subject_hits+actor_bonus,hits,target))
   _,_,target=max(ranked)
-  scored[target]=scored.get(target,0)+12
+  # Explicit actor/topic wins over incidental object mentions.
+  scored[target]=max(scored.values() or [0])+12
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
  topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None
  # Origin wording is more specific than generic why/purpose wording.
