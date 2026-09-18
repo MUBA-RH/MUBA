@@ -3,6 +3,7 @@ from unittest.mock import Mock
 ROOT=pathlib.Path(__file__).resolve().parents[1]; sys.path.insert(0,str(ROOT))
 import muba_brain as brain
 from muba_core.registry import LayerRegistry
+from muba_core.locales import CATALOGS, REQUIRED_KEYS, SUPPORTED_LANGUAGES
 from state import MemoryRepository
 
 class BrainCase(unittest.TestCase):
@@ -15,6 +16,28 @@ class BrainCase(unittest.TestCase):
  def test_languages(self):
   self.assertEqual([brain.detect_language(x) for x in ('hello','nasıl','你好','مرحبا','नमस्ते')],['en','tr','zh','ar','hi'])
   self.assertEqual([brain.detect_language(x) for x in ('Selam','Dev Kim ?','CA ne zaman')],['tr','tr','tr'])
+ def test_language_catalog_matrix_complete(self):
+  self.assertEqual(set(SUPPORTED_LANGUAGES),{'en','tr','zh','ar','hi'})
+  for language,catalog in CATALOGS.items():
+   self.assertEqual(set(catalog),set(REQUIRED_KEYS),language)
+   self.assertTrue(all(catalog.values()),language)
+ def test_language_routing_matrix(self):
+  cases=[
+   ('What is the CA?','en','CA coming soon.'),
+   ('CA ne zaman?','tr','CA yakında.'),
+   ('合约地址是什么？','zh','CA 即将公布。'),
+   ('ما هو عنوان العقد؟','ar','سيتم الإعلان عن CA قريباً.'),
+   ('CA कब आएगा?','hi','CA जल्द घोषित होगा।'),
+  ]
+  for question,language,expected in cases:
+   decision=self.decision(question,chat=42)
+   self.assertEqual(decision.language,language,question)
+   self.assertEqual(decision.response,expected,question)
+ def test_reported_short_language_cases(self):
+  self.assertEqual(self.decision('Selam',chat=42).language,'tr')
+  self.assertIn('sayısal',self.reply('Dev kim?',chat=42))
+  self.assertEqual(self.reply('CA ne zaman?',chat=42),'CA yakında.')
+  self.assertEqual(self.decision('Hey MUBA',chat=42).language,'en')
  def test_identity_explains_muba(self):
   r=self.reply('Who are you?'); self.assertIn("I'M MUBA",r); self.assertIn('community',r.lower())
  def test_old_x_never_output(self): self.assertNotIn('@MUBA_Real',self.reply('What is MUBA?'))
