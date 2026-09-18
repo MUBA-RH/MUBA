@@ -14,6 +14,7 @@ class BrainCase(unittest.TestCase):
   self.assertEqual(brain.BRAIN_VERSION,'LAYERED-3.0'); self.assertTrue(callable(brain.build_reply)); self.assertTrue(callable(brain.detect_social_intent))
  def test_languages(self):
   self.assertEqual([brain.detect_language(x) for x in ('hello','nasıl','你好','مرحبا','नमस्ते')],['en','tr','zh','ar','hi'])
+  self.assertEqual([brain.detect_language(x) for x in ('Selam','Dev Kim ?','CA ne zaman')],['tr','tr','tr'])
  def test_identity_explains_muba(self):
   r=self.reply('Who are you?'); self.assertIn("I'M MUBA",r); self.assertIn('community',r.lower())
  def test_old_x_never_output(self): self.assertNotIn('@MUBA_Real',self.reply('What is MUBA?'))
@@ -27,7 +28,10 @@ class BrainCase(unittest.TestCase):
  def test_unauthorized_group_silent_no_context(self):
   self.assertEqual(self.reply('Who are you?',chat=-999),''); self.assertEqual(brain.STORE.get('context','-999',[]),[])
  def test_ca_question(self): self.assertEqual(self.reply('What is the CA?'),'CA coming soon.')
- def test_ca_question_turkish_at_start(self): self.assertEqual(self.reply('CA Nedir ?','tr'),'CA coming soon.')
+ def test_ca_question_turkish_at_start(self): self.assertEqual(self.reply('CA Nedir ?'),'CA yakında.')
+ def test_turkish_ca_when_question(self): self.assertEqual(self.reply('CA ne zaman'),'CA yakında.')
+ def test_turkish_greeting_autodetected(self): self.assertNotIn('listening',self.reply('Selam',chat=42).lower())
+ def test_turkish_authority_question(self): self.assertIn('sayısal',self.reply('Dev Kim ?',chat=42))
  def test_ca_token_boundary(self): self.assertNotIn('ca',self.decision('This is a casual chat.').intents)
  def test_ca_claim(self): self.assertEqual(self.reply('Official CA is 0x'+'a'*40),'CA coming soon.')
  def test_social_today_not_current(self):
