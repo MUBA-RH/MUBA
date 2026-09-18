@@ -31,6 +31,7 @@ from muba_brain import (
     clear_assistant_language,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
+from human_catalog import match as match_human_catalog
 
 
 logging.basicConfig(
@@ -166,6 +167,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         catalog_index=match_catalog(lang,text)
         if catalog_index is not None:
             await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
+        human_answer=match_human_catalog(lang,text)
+        if human_answer:
+            await message.reply_text(human_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
         if not assistant_relevant(text):
             await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang)); return
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
