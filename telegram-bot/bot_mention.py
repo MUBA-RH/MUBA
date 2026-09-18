@@ -35,6 +35,7 @@ from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, 
 from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from muba_daily import DAILY_LABELS, daily_text
+from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -104,6 +105,10 @@ def menu_keyboard(lang):
     for topic in ("origin","identity","difference","purpose","community","plan"):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")])
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -116,6 +121,23 @@ def daily_keyboard(lang):
         [InlineKeyboardButton(labels["updates"],callback_data="daily:updates")],
         [InlineKeyboardButton(labels["back"],callback_data="menu")],
     ])
+
+def extra_keyboard(lang,mode):
+    labels=EXTRA_LABELS[lang]
+    if mode=="story":
+        rows=[[InlineKeyboardButton(f"📖 {i+1}/5",callback_data=f"story:{i}")] for i in range(5)]
+    elif mode=="lab":
+        rows=[
+            [InlineKeyboardButton("😂 Meme",callback_data="lab:meme")],
+            [InlineKeyboardButton("✍️ Tweet",callback_data="lab:tweet")],
+            [InlineKeyboardButton("🖼️ Visual 16:9",callback_data="lab:visual")],
+        ]
+    elif mode=="guide":
+        rows=[[InlineKeyboardButton(f"🧭 {i+1}/4",callback_data=f"guide:{i}")] for i in range(4)]
+    else:
+        rows=[]
+    rows.append([InlineKeyboardButton(labels["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
 
 def topic_keyboard(lang,topic):
     rows=[]
@@ -169,6 +191,18 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("daily:"):
         section=data.split(":",1)[1]
         await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang),disable_web_page_preview=True); return
+    if data.startswith("extra:"):
+        mode=data.split(":",1)[1]
+        if mode=="security":
+            context.user_data["muba_security_check"]=True
+            await q.edit_message_text(SECURITY_PROMPT[lang],reply_markup=extra_keyboard(lang,"security")); return
+        await q.edit_message_text(EXTRA_LABELS[lang][mode],reply_markup=extra_keyboard(lang,mode)); return
+    if data.startswith("story:"):
+        i=int(data.split(":",1)[1]); await q.edit_message_text(STORY[lang][i],reply_markup=extra_keyboard(lang,"story")); return
+    if data.startswith("lab:"):
+        kind=data.split(":",1)[1]; await q.edit_message_text(LAB[lang][kind],reply_markup=extra_keyboard(lang,"lab")); return
+    if data.startswith("guide:"):
+        i=int(data.split(":",1)[1]); await q.edit_message_text(GUIDE[lang][i],reply_markup=extra_keyboard(lang,"guide")); return
     if data.startswith("topic:"):
         topic=data.split(":",1)[1]
         await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
@@ -185,6 +219,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang=get_assistant_language(user_id)
         if not lang:
             await show_language(update); return
+        if context.user_data.pop("muba_security_check",False):
+            await message.reply_text(security_check(lang,text),disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
         catalog_index=match_catalog(lang,text)
         if catalog_index is not None:
             await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
