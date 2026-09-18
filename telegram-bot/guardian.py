@@ -32,7 +32,7 @@ _lockdown=False
 def is_guardian_group(chat_id): return chat_id==GROUP_ID
 def is_dev(user_id): return user_id==DEV_ID
 def command(text):
- value=(text or "").strip().upper().split(maxsplit=1)[0]
+ value=(text or "").strip().split(maxsplit=1)[0]
  return value if value in COMMANDS else None
 def is_control_attempt(text): return (text or "").strip().startswith("#")
 def authorized_command(chat_id,user_id,text):
@@ -66,10 +66,10 @@ def inspect_message(chat_id,user_id,text,now=None):
  if not is_guardian_group(chat_id) or is_dev(user_id): return None
  v=(text or "").casefold()
  if is_control_attempt(text): return {"kind":"unauthorized_control","action":"silent"}
- if any(x in v for x in _SCAM) or _ADDR_RE.search(text or ""):
-  return {"kind":"security","action":"warn","text":"🚨 GUARDIAN: Unverified CA / scam-like content detected. Trust only official MUBA sources."}
  if _LINK_RE.search(text or "") and (_lockdown or any(x in v for x in ("claim","airdrop","wallet","verify","connect","giveaway"))):
   return {"kind":"suspicious_link","action":"warn","text":"🚨 GUARDIAN: Suspicious link pattern detected. Do not connect wallets or share credentials."}
+ if any(x in v for x in _SCAM) or _ADDR_RE.search(text or ""):
+  return {"kind":"security","action":"warn","text":"🚨 GUARDIAN: Unverified CA / scam-like content detected. Trust only official MUBA sources."}
  now=time.time() if now is None else now
  key=(chat_id,user_id); q=_rate[key]; q.append(now)
  recent=[x for x in q if now-x<=8]
