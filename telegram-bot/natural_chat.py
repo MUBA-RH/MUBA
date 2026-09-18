@@ -216,6 +216,47 @@ DATA = {
 ("ready",["मैं तैयार हूँ","शुरू करें","चलो शुरू करें","आगे बढ़ें","तैयार हूँ"],["तैयार हो तो शुरू करें।","ठीक है। आगे बढ़ते हैं।","तैयार। भेजो।"])
 ]}
 
+# Extra colloquial forms: deliberately limited to private everyday chat.
+EXTRA = {
+"tr": {
+"good":["iyiyim","iyiym","iyiyim","iyidir","fena değil","şükür iyiyim","gayet iyim","ben de iyiyim"],
+"hello":["selamın aleyküm","sa","slm","selam naber","merhabalar"],
+"whats_up":["napiyon","napıyon","napıyosun","naber ne yapıyorsun","ne ediyorsun"],
+"how_going":["nasıl gidiyo","nasıl gidiyor ya","ne alemde","hayat nasıl","günün nasıl geçiyor"],
+"hungry":["acıktım","karnım zil çalıyor","yemek istiyorum","açlıktan ölüyorum","bir şeyler yesem"],
+"full":["doydum","karnım doydu","fazla kaçırdım","çok tokum","yemekten çıktım"],
+"tired":["yorgunum","pilim bitti","halim kalmadı","çok yoruldum","dinlenmem lazım"],
+"sleepy":["uykusuzum","uyumak istiyorum","yatacağım","yatağa gidiyorum","gözümden uyku akıyor"],
+"bored":["canım çok sıkıldı","of sıkıldım","çok boşluktayım","ne yapsam bilmiyorum","oyalanacak bir şey lazım"],
+"happy":["keyfim çok iyi","moralim iyi","bugün mutluyum","çok neşeliyim","güzel hissediyorum"],
+"sad":["mutsuzum","moral yok","canım sıkkın ya","modum düşük","bugün tadım yok"],
+"stress":["kafayı yiyeceğim","çok bunaldım","çok gerginim","stres bastı","kafam kazan gibi"],
+"work":["işe geldim","mesaideyim","iş başındayım","işten yoruldum","bugün mesai var"],
+"home":["eve geçtim","evdeyim şimdi","eve vardım","koltuğa attım kendimi","ev modundayım"],
+"outside":["dışardayım","sokaktayım","gezmedeyim","yürüyüşteyim","yola çıktım"],
+"weather":["hava ne alemde","bugün hava ne durumda","hava iyi mi","hava kötü mü","dışarısı nasıl"],
+"food":["ne yemek yapsam","ne sipariş versem","akşam ne yiyelim","yemek fikri ver","karnımı neyle doyursam"],
+"coffee":["kahve yapıyorum","kahve içer misin","kahve mi içsem","kahve şart","kahvesiz olmuyor"],
+"tea":["çay koydum","çay içer misin","çay mı içsem","çay şart","çay iyi gider"],
+"plans":["bugün ne yapıyoruz","bugün program ne","akşama ne yapalım","plan var mı","ne yapsak"],
+"busy":["çok işim var","yoğunluktan öldüm","koşturmacadayım","bugün başımı kaldıramıyorum","çok yoğun geçti"],
+"free":["canım boş","boş boş oturuyorum","şimdi müsaitim","vaktim bol","işim bitti"],
+"bye":["kaçıyorum","hadi görüşürüz","sonra konuşuruz","ben çıkıyorum","görüşmek üzere"]
+},
+"en":{"good":["I'm doing good","doing great","pretty good","all good","I'm okay"],"whats_up":["whatcha doing","what you doing","wyd","sup","what's happening"],"hungry":["getting hungry","could eat","need something to eat","starving right now","food time"],"tired":["worn out","I'm beat","no energy left","long day","need a rest"],"sleepy":["need some sleep","about to sleep","can't keep my eyes open","bed time","ready for bed"],"bored":["nothing going on","need something to do","so bored right now","I'm bored today","what can I do"],"weather":["weather any good","nice outside","bad weather today","what's it like out","how is it outside"],"plans":["what we doing today","anything planned","plans tonight","what's on today","any plans today"]},
+"zh":{"good":["我挺好","我很好啊","还不错","一切都好","状态不错"],"whats_up":["干嘛呢","在做啥","忙啥呢","最近干嘛","有啥新鲜的"],"hungry":["有点饿","饿死了","想吃饭","该吃东西了","想找点吃的"],"tired":["累死了","没精神","今天好累","需要休息","精力用完了"],"sleepy":["想睡了","要睡觉了","困得不行","该上床了","眼皮打架"],"bored":["闲得无聊","不知道做什么","今天好无聊","想找点事做","太闲了"],"weather":["天气好吗","外面冷不冷","外面热不热","今天会下雨吗","外面什么情况"],"plans":["今天有啥安排","晚上干嘛","有什么计划","今天做点什么","接下来干嘛"]},
+"ar":{"good":["أنا تمام","تمام الحمد لله","بخير جدا","الأمور تمام","أنا كويس"],"whats_up":["شو عم تعمل","ايش تسوي","وش تسوي","شو الأخبار","إيش الأخبار"],"hungry":["جعت","نفسي آكل","أريد أكل","وقت الأكل","محتاج آكل"],"tired":["تعبان","هلكان","ما عندي طاقة","أحتاج أرتاح","يوم طويل"],"sleepy":["بدي أنام","أريد أن أنام","سأنام الآن","حان وقت النوم","عيوني تغلق"],"bored":["طفشان","زهقان","ما عندي شيء","أريد شيء أفعله","اليوم ممل"],"weather":["الجو حلو","الجو بارد","الجو حار","هل ستمطر","كيف الجو برا"],"plans":["شو نعمل اليوم","ما خطة الليلة","عندنا خطط","ماذا بعد","ماذا سنفعل"]},
+"hi":{"good":["मैं बढ़िया हूँ","सब ठीक है","मैं ठीक हूं","काफी अच्छा हूँ","सब बढ़िया"],"whats_up":["क्या कर रहे","क्या चल रहा","क्या कर रहे हो अभी","क्या नया","क्या सीन है"],"hungry":["भूख लग रही","कुछ खाना है","खाने का टाइम","बहुत भूखा हूँ","कुछ खा लूँ"],"tired":["थक चुका हूँ","दम नहीं बचा","आज बहुत थकान है","आराम चाहिए","लंबा दिन था"],"sleepy":["सोना है","अब सोऊंगा","बिस्तर पर जा रहा हूँ","आंखें बंद हो रही","नींद से बुरा हाल"],"bored":["कुछ नहीं हो रहा","बहुत बोरियत है","क्या करूँ समझ नहीं आ रहा","टाइम पास चाहिए","आज बोरिंग है"],"weather":["मौसम ठीक है","बाहर ठंड है क्या","बाहर गर्मी है क्या","बारिश होगी क्या","बाहर कैसा मौसम"],"plans":["आज क्या करना है","रात का क्या प्लान","कोई प्लान है","अब क्या करें","आज का सीन क्या है"]}
+}
+
+# Attach colloquial variants to existing intents without changing existing responses.
+for _lang,_groups in EXTRA.items():
+    _by_intent={intent:(phrases,replies) for intent,phrases,replies in DATA[_lang]}
+    for _intent,_phrases in _groups.items():
+        if _intent in _by_intent:
+            _by_intent[_intent][0].extend(_phrases)
+
+
 def _norm(text):
     return " ".join(re.sub(r"[^\w\s]"," ",(text or "").casefold(),flags=re.UNICODE).split())
 
