@@ -85,6 +85,10 @@ def resolve(text,language,recent):
    actor_bonus=3 if target=="community" and subject_hits else 0
    ranked.append((subject_hits+actor_bonus,hits,target))
   _,_,target=max(ranked)
+  # Question intent overrides actor nouns: future/next-step questions are plan.
+  plan_pred_hits=_hit(v,frames["plan"][1])
+  if plan_pred_hits:
+   target="plan"
   # Explicit actor/topic wins over incidental object mentions.
   scored[target]=max(scored.values() or [0])+12
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
