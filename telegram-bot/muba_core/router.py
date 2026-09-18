@@ -1,5 +1,6 @@
 """Multi-intent router which activates only plausible specialist layers."""
 from __future__ import annotations
+import re
 from .contracts import Message
 
 BASE=('language','authority','context')
@@ -8,7 +9,7 @@ LEXICAL={
  'security':('ignore previous','secret','token','0x','prompt injection'),
  'official_knowledge':('official knowledge','resmi bilgi','官方知识','المعرفة الرسمية','आधिकारिक ज्ञान'),
  'sources':('source','evidence','trust','conflict','kaynak','kanıt','çeliş','来源','冲突','مصدر','متعارض','स्रोत','विरोध','官方来源','المصدر الرسمي','आधिकारिक स्रोत'),
- 'ca':(' ca','contract','kontrat','合约','العقد','कॉन्ट्रैक्ट'),
+ 'ca':('contract','kontrat','合约','العقد','कॉन्ट्रैक्ट'),
  'current_information':('weather','price','news','hava','fiyat','天气','价格','الطقس','السعر','मौसम','कीमत'),
  'user_memory':('remember about me','hakkımda','beni hatırla','记得我','تتذكر عني','मेरे बारे'),
  'group_memory':('group memory','community knowledge','grup hafız','topluluk bilg','群体记忆','ذاكرة المجموعة','समूह स्मृति'),
@@ -31,6 +32,7 @@ class Router:
   v=message.text.lower(); selected=list(BASE)
   for name,terms in LEXICAL.items():
    if any(term in v for term in terms): selected.append(name)
+  if re.search(r'(?<!\\w)ca(?!\\w)',v): selected.append('ca')
   # Cheap conversational specialists are the safe semantic fallback. They can
   # deliberately return no signal; routing them is not equivalent to replying.
   if len(selected)==len(BASE): selected.extend(('social','emotional','humor','conflict'))
