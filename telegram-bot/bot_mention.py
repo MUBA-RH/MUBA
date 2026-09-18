@@ -33,6 +33,7 @@ from muba_brain import (
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
+from natural_chat import match as match_natural_chat
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -173,6 +174,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         human_answer=match_human_catalog(lang,text)
         if human_answer:
             await message.reply_text(human_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
+        natural_answer=match_natural_chat(lang,text)
+        if natural_answer:
+            await message.reply_text(natural_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
         if not assistant_relevant(text):
             await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang)); return
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
