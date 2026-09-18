@@ -11,6 +11,7 @@ def match(lang,text):
  if not any(x in v for x in anchors.get(lang,('muba',))): return None
  best=(0.0,None)
  for q,a in CATALOG.get(lang,[]):
+  if v==_norm(q): return a
   score=difflib.SequenceMatcher(None,_norm(text),_norm(q)).ratio()
   if score>best[0]: best=(score,a)
  return best[1] if best[0]>=0.76 else None
