@@ -182,8 +182,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmd=authorized_command(chat.id,user_id,text)
     if cmd:
         if cmd in ("#START","#STOP"):
-            response=build_reply(cmd,chat_id=chat.id,language=detect_language(text),user_id=user_id)
-            if response: await message.reply_text(response,disable_web_page_preview=True)
+            build_reply(cmd,chat_id=chat.id,language=detect_language(text),user_id=user_id)
+            response="MUBA DEV IS HERE 🎙️" if cmd=="#STOP" else "MUBA COMMUNITY 🔥"
+            await message.reply_text(response,disable_web_page_preview=True)
             return
         if cmd in ("#GUARDIAN","#STATUS"):
             await message.reply_text(status_text(group_conversation_paused(chat.id))); return
