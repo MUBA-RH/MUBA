@@ -222,7 +222,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.exception("Guardian moderation action failed")
             await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
             return
-    if is_control_attempt(text): return
+    if is_control_attempt(text):
+        try:
+            await message.delete()
+        except Exception:
+            logger.exception("Guardian could not delete unauthorized control message")
+        return
     guardian_event=inspect_message(chat.id,user_id,text)
     if guardian_event:
         if guardian_event.get("action")=="warn": await message.reply_text(guardian_event["text"])
