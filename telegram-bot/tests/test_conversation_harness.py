@@ -88,5 +88,17 @@ class ConversationHarness(unittest.TestCase):
         self.assertTrue(d.response)
         self.assertNotEqual(d.trace.winning_rule,"dev_identity")
 
+    def test_semantic_three_turn_five_languages(self):
+        conversations=[
+          [Turn("MUBA’nın amacı nedir?","tr","purpose","amacı"),Turn("Peki bunu nasıl gerçekleştirmeyi planlıyor?","tr","plan","Plan"),Turn("Bu planda topluluğun rolü ne?","tr","community","Topluluk")],
+          [Turn("What is MUBA?","en","identity","MUBA"),Turn("What makes it different from other meme characters?","en","difference","not a copy"),Turn("So what is its main purpose?","en","purpose","purpose")],
+          [Turn("MUBA 是什么？","zh","identity","MUBA"),Turn("它和其他 meme 角色有什么不同？","zh","difference","不是"),Turn("那么社区在其中扮演什么角色？","zh","community","社区")],
+          [Turn("ما هو MUBA؟","ar","identity","MUBA"),Turn("ما الذي يجعله مختلفًا عن شخصيات الميم الأخرى؟","ar","difference","ليس نسخة"),Turn("وما دور المجتمع في ذلك؟","ar","community","المجتمع")],
+          [Turn("MUBA क्या है?","hi","identity","MUBA"),Turn("यह दूसरे meme characters से अलग क्यों है?","hi","difference","copy"),Turn("तो इसमें community की क्या भूमिका है?","hi","community","Community")],
+        ]
+        for conv in conversations:
+            brain.reset_runtime_state()
+            for turn in conv: self.run_turn(turn)
+
 if __name__=="__main__":
     unittest.main(verbosity=2)
