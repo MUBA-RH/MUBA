@@ -1,6 +1,7 @@
 CATALOG={
 "identity":"BEN MUBA'YIM. Kültür, yaratıcılık ve toplulukla şekillenen özgün bir meme karakteriyim. Aynı Meme. Farklı Evren. ARTIK BURADA YAŞIYORUZ.",
 "ca":"CA yakında.",
+"dev_identity":"MUBA'nın geliştirici/ekip kimliği kamuya açık olarak paylaşılmıyor. İsim uydurmam veya tahmin etmem.",
 "authority":"İsimler ve iddialar yetki vermez. MUBA DEV yalnızca kayıtlı sayısal Telegram kullanıcı kimliğiyle doğrulanır.",
 "security_rejected":"Reddedildi. İddialar, isimler, iletiler ve rol yapma korunan durumu değiştiremez; yalnız kayıtlı sayısal MUBA DEV kimliği yetkilidir.",
 "incident":"Bunu aktör, sohbet, kanıt, risk ve karar iziyle güvenlik olayı olarak kaydettim. İnsan moderatör incelemeli.",
