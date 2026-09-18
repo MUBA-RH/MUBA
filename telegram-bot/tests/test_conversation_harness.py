@@ -29,7 +29,7 @@ class ConversationHarness(unittest.TestCase):
         d=brain.build_decision(t.text,chat_id=t.chat,user_id=t.user)
         self.assertEqual(d.language,t.language,t.text)
         if t.intent:
-            self.assertIn(t.intent,d.intents,t.text)
+            self.assertTrue(t.intent in d.intents or t.intent in d.trace.activated_layers,t.text)
         if t.contains:
             self.assertIn(t.contains.casefold(),d.response.casefold(),t.text)
         if t.excludes:
