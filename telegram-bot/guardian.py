@@ -20,7 +20,8 @@ _ADDR_RE=re.compile(r"\b(?:0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b")
 _SCAM=("fake ca","sahte ca","scam","phishing","airdrop claim","connect wallet","seed phrase","private key","wallet verify","doğrula cüzdan","cüzdanını bağla")
 _ALLOWED_LINKS={("muba-rh.github.io","/MUBA"),("x.com","/MUBA_RH"),("t.me","/MUBA_RH")}
 _rate=defaultdict(lambda:deque(maxlen=12))
-_fake_ca_strikes=defaultdict(int)\n_risk_strikes=defaultdict(int)
+_fake_ca_strikes=defaultdict(int)
+_risk_strikes=defaultdict(int)
 _lockdown=False
 MUTE_SECONDS=30*60
 
@@ -40,7 +41,10 @@ def command_arg(text):
  parts=(text or "").strip().split(maxsplit=1)
  return parts[1].strip() if len(parts)>1 else ""
 def status_text(paused=False):
- return "🛡️ GUARDIAN — "+("PAUSED" if paused else "ACTIVE")+"\nMain group: LOCKED\nCommand authority: MUBA DEV ONLY\nSecurity: "+("LOCKDOWN" if _lockdown else "NORMAL")
+ return "🛡️ GUARDIAN — "+("PAUSED" if paused else "ACTIVE")+"
+Main group: LOCKED
+Command authority: MUBA DEV ONLY
+Security: "+("LOCKDOWN" if _lockdown else "NORMAL")
 def help_text():
  return """🛡️ GUARDIAN DEV COMMANDS
 #START / #STOP — resume / pause
@@ -54,7 +58,11 @@ def help_text():
 #DELETE — delete replied message
 #HELP — this list"""
 def security_text():
- return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nFake CA: 1st=MUTE / 2nd=BAN\nExternal links: DELETE\nFlood detection: ON\nDEV-only control: ON"
+ return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"
+Fake CA: 1st=MUTE / 2nd=BAN
+External links: DELETE
+Flood detection: ON
+DEV-only control: ON"
 
 def _clean_url(raw):
  value=(raw or "").rstrip(".,!?;:)]}>'\"")
