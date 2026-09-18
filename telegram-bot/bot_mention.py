@@ -35,6 +35,12 @@ logging.basicConfig(
 
 logger = logging.getLogger("muba")
 
+# Telegram Bot uses httpx internally. Its INFO request logs include the bot
+# token in the request URL, so keep transport logging at WARNING or above.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("telegram.request").setLevel(logging.WARNING)
+
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 if not TOKEN:
