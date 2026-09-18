@@ -22,6 +22,10 @@ class NaturalAssistantChatExam(unittest.TestCase):
  def test_language_is_locked(self):
   self.assertIsNone(match("en","nasılsın"))
   self.assertIsNone(match("tr","how are you"))
+ def test_colloquial_everyday_forms(self):
+  probes={"tr":["iyim","napiyon","acıktım","pilim bitti","dışardayım"],"en":["doing great","wyd","getting hungry"],"zh":["我挺好","干嘛呢","有点饿"],"ar":["أنا تمام","شو عم تعمل","جعت"],"hi":["मैं बढ़िया हूँ","क्या सीन है","भूख लग रही"]}
+  for lang,qs in probes.items():
+   for q in qs: self.assertTrue(match(lang,q),(lang,q))
  def test_unrelated_does_not_false_match(self):
   for lang in DATA:
    self.assertIsNone(match(lang,"zxqv 92817"))
