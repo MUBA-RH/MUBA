@@ -79,7 +79,11 @@ def resolve(text,language,recent):
   _,target=max(explicit)
   scored[target]=scored.get(target,0)+8
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
- topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None\n # Origin wording is more specific than generic why/purpose wording.\n if "origin" in scored and scored["origin"]>=6:\n  origin_preds=frames["origin"][1]\n  if _hit(v,origin_preds): topic="origin"
+ topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None
+ # Origin wording is more specific than generic why/purpose wording.
+ if "origin" in scored and scored["origin"]>=6:
+  origin_preds=frames["origin"][1]
+  if _hit(v,origin_preds): topic="origin"
 
  # 3) ÖNCEKİ BAĞLAM: only resolve genuinely elliptical follow-ups.
  if not topic and recent:
