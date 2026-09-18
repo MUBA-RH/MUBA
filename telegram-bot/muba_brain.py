@@ -71,6 +71,14 @@ master_queue_learning=queue_master_learning
 master_remember_decision=remember_decision
 master_close_incident=close_incident
 master_snapshot=memory_snapshot
+def get_assistant_language(user_id):
+ return STORE.get('assistant_language',str(user_id),None)
+def set_assistant_language(user_id,language):
+ if language not in SUPPORTED_LANGUAGES: return False
+ STORE.set('assistant_language',str(user_id),language); return True
+def clear_assistant_language(user_id):
+ STORE.set('assistant_language',str(user_id),None)
+
 def reset_runtime_state():
  global STORE,CORE
  STORE=MemoryRepository(); CORE=MubaCore(STORE)

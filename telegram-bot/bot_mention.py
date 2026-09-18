@@ -9,11 +9,12 @@ import logging
 import os
 
 from aiohttp import web
-from telegram import Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatType
 from telegram.ext import (
     Application,
     CommandHandler,
+    CallbackQueryHandler,
     ContextTypes,
     MessageHandler,
     filters,
@@ -25,7 +26,11 @@ from muba_brain import (
     detect_language,
     detect_social_intent,
     is_authorized_group,
+    get_assistant_language,
+    set_assistant_language,
+    clear_assistant_language,
 )
+from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant
 
 
 logging.basicConfig(
@@ -76,136 +81,108 @@ def get_user_name(update: Update) -> str:
 
 
 def should_answer(update: Update) -> bool:
-    message = update.effective_message
-
-    if not message or not message.text:
-        return False
-
-    text = message.text.strip()
-
-    if not text:
-        return False
-
-    # Protected hash commands must reach the brain, where numeric Founder ID
-    # and authorized-group checks decide whether they have any effect.
-    if text in {"#STOP", "#START"}:
-        return True
-
-    if contains_muba(text):
-        return True
-
-    chat = update.effective_chat
-
-    if chat and chat.type == ChatType.PRIVATE:
-        return True
-
-    # Open group-facing questions in the protected group may reach the router
-    # without requiring the word MUBA. The brain still owns pause, authority,
-    # relevance, and deliberate-silence decisions.
-    if chat and is_authorized_group(chat.id) and text.endswith(("?", "？")):
-        return True
-
-    # Plain group greetings must reach the local brain even
-    # when MUBA is not mentioned.
-    social_intent = detect_social_intent(text)
-
-    if social_intent in {"greeting", "gm", "gn"}:
-        return True
-
-    if message.reply_to_message:
-        replied_user = message.reply_to_message.from_user
-
-        if replied_user and replied_user.is_bot:
-            return True
-
-    entities = message.entities or []
-
-    for entity in entities:
-        if entity.type == "mention":
-            mention = text[
-                entity.offset:entity.offset + entity.length
-            ].lower()
-
-            if "muba" in mention:
-                return True
-
-    return False
+    message=update.effective_message
+    if not message or not message.text: return False
+    chat=update.effective_chat; text=message.text.strip()
+    if text in {"#STOP","#START"}: return True
+    if chat and chat.type==ChatType.PRIVATE: return True
+    return bool(chat and is_authorized_group(chat.id) and group_event(text))
 
 
-async def start_command(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-):
-    if not update.effective_message:
+def language_keyboard():
+    return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"lang:{code}")] for code,label in LANGS.items()])
+
+def menu_keyboard(lang):
+    labels=TOPIC_LABELS[lang]
+    rows=[]
+    for topic in ("origin","identity","difference","purpose","community","plan"):
+        rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
+    rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
+    return InlineKeyboardMarkup(rows)
+
+def topic_keyboard(lang,topic):
+    rows=[]
+    for i,(t,q) in enumerate(QUESTIONS[lang]):
+        if t==topic: rows.append([InlineKeyboardButton(q,callback_data=f"q:{i}")])
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
+async def show_language(update):
+    msg=update.effective_message
+    if msg: await msg.reply_text(TEXT["en"]["choose"],reply_markup=language_keyboard())
+
+
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_message: return
+    chat=update.effective_chat
+    if not chat or chat.type!=ChatType.PRIVATE: return
+    clear_assistant_language(update.effective_user.id)
+    await show_language(update)
+
+async def ca_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_message: return
+    chat=update.effective_chat
+    if chat and chat.type!=ChatType.PRIVATE and is_authorized_group(chat.id):
+        await update.effective_message.reply_text("Soon.")
+    elif chat and chat.type==ChatType.PRIVATE:
+        lang=get_assistant_language(update.effective_user.id)
+        if not lang: await show_language(update); return
+        response=build_reply("What is the CA?",chat_id=chat.id,user_id=update.effective_user.id,language=lang)
+        if response: await update.effective_message.reply_text(response)
+
+async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q=update.callback_query
+    if not q: return
+    await q.answer()
+    user_id=q.from_user.id; data=q.data or ""
+    if data.startswith("lang:"):
+        lang=data.split(":",1)[1]
+        if set_assistant_language(user_id,lang):
+            await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang))
         return
+    lang=get_assistant_language(user_id)
+    if not lang:
+        await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
+    if data=="language":
+        clear_assistant_language(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
+    if data=="menu":
+        await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang)); return
+    if data.startswith("topic:"):
+        topic=data.split(":",1)[1]
+        await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
+    if data.startswith("q:"):
+        i=int(data.split(":",1)[1]); answer=guided_answer(lang,i)
+        await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
 
-    chat_id = update.effective_chat.id if update.effective_chat else 0
-    user_id = update.effective_user.id if update.effective_user else None
-    response = build_reply(
-        "/start",
-        chat_id=chat_id,
-        language=detect_language(update.effective_message.text or ""),
-        user_id=user_id,
-    )
-    if response:
-        await update.effective_message.reply_text(response)
 
-
-async def handle_message(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-):
-    message = update.effective_message
-
-    if not message or not message.text:
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message=update.effective_message; chat=update.effective_chat
+    if not message or not message.text or not chat: return
+    text=message.text.strip(); user=update.effective_user; user_id=user.id if user else None
+    if chat.type==ChatType.PRIVATE:
+        lang=get_assistant_language(user_id)
+        if not lang:
+            await show_language(update); return
+        if not assistant_relevant(text):
+            await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang)); return
+        response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
+        if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang))
         return
-
-    if not should_answer(update):
+    if not is_authorized_group(chat.id): return
+    event=group_event(text)
+    if not event: return
+    if event=="assistant_redirect":
+        username=context.bot.username
+        button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
+        await message.reply_text("MUBA Assistant can answer that. Open the bot to explore MUBA.",reply_markup=button)
         return
-
-    text = message.text.strip()
-
-    chat_id = (
-        update.effective_chat.id
-        if update.effective_chat
-        else 0
-    )
-
-    user = update.effective_user
-    user_id = user.id if user else None
-
-    language = detect_language(text)
-
-    response = build_reply(
-        text,
-        chat_id=chat_id,
-        language=language,
-        user_id=user_id,
-    )
-
-    if not response:
+    if event=="fake_ca":
+        await message.reply_text("🚨 Fake CA warning. Do not trust unofficial contract addresses.")
         return
-
-    user_name = get_user_name(update)
-
-    if (
-        user_name
-        and update.effective_chat
-        and update.effective_chat.type != ChatType.PRIVATE
-        and text not in {"#STOP", "#START"}
-    ):
-        response = f"{user_name} — {response}"
-
-    try:
-        await message.reply_text(
-            response,
-            disable_web_page_preview=True,
-        )
-
-    except Exception:
-        logger.exception(
-            "Failed to send Telegram message."
-        )
+    if event=="ca":
+        await message.reply_text("Soon."); return
+    response=build_reply(text,chat_id=chat.id,language=detect_language(text),user_id=user_id)
+    if response: await message.reply_text(response,disable_web_page_preview=True)
 
 
 async def error_handler(
@@ -264,12 +241,9 @@ async def start_webhook_server():
         .build()
     )
 
-    application.add_handler(
-        CommandHandler(
-            "start",
-            start_command,
-        )
-    )
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("ca", ca_command))
+    application.add_handler(CallbackQueryHandler(callback_handler))
 
     application.add_handler(
         MessageHandler(
