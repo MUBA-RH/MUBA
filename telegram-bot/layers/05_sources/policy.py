@@ -15,7 +15,7 @@ MAX_BYTES=262_144
 
 def normalize_host(url: str) -> tuple[str,str]:
  p=urllib.parse.urlsplit(url.strip())
- if p.scheme.lower() != 'https' or p.username or p.password or not p.hostname: raise ValueError('invalid source URL')
+ if p.scheme.lower() != 'https' or p.username or p.password or not p.hostname or p.port not in (None,443): raise ValueError('invalid source URL')
  host=p.hostname.rstrip('.').lower().encode('idna').decode('ascii')
  return host, urllib.parse.urlunsplit(('https',p.netloc.lower(),p.path or '/',p.query,''))
 
@@ -24,6 +24,18 @@ def classify(url: str) -> str | None:
  try: host,_=normalize_host(url)
  except ValueError: return None
  return ALLOWED_HOSTS.get(host)
+
+def relevant_for(subject: str, url: str) -> bool:
+ """Prevent a permitted but irrelevant source from satisfying a query."""
+ category=classify(url)
+ normalized=(subject or '').casefold()
+ if normalized in {'weather','price','news','score','status'}:
+  return False  # The protected allowlist currently has no live provider.
+ if normalized in {'muba','muba_identity','official_muba'}:
+  return category == 'official_muba'
+ if normalized in {'language','unicode','locale'}:
+  return category == 'language'
+ return category == 'general'
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):

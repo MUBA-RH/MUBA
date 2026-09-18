@@ -16,8 +16,13 @@ class MubaCore:
   decision=self.engine.decide(message,signals); self.last_trace=decision.trace
   if 'conflict' in decision.intents:
    self.repository.append('conflict',str(message.chat_id),{'participants':[message.user_id],'reply_graph':[],'subthreads':[],'claims':[{'text':message.text,'type':'interpretation'}],'agreements':[],'disagreements':[],'unresolved_questions':[],'evidence':[],'resolution_status':'open','level':1,'confidence':decision.trace.confidence,'at':time.time()},50)
+
+  # Security/event evidence is append-only and scoped; it is not user truth.
+  risk=next((s for s in signals if s.layer in ('security','risk','incident')),None)
+  if risk:
+   self.repository.append('security_event',str(message.chat_id),{'actor_id':message.user_id,'chat_id':message.chat_id,'timestamp':time.time(),'kind':risk.intent,'risk':risk.data.get('risk','MEDIUM'),'evidence':message.text,'decision':decision.trace.winning_rule,'action_request':None,'action_result':None},100)
   # Unauthorized groups and protected pause do not create conversational memory.
   if decision.trace.winning_rule not in ('unauthorized_group','group_paused'):
-   self.repository.append('context',str(message.chat_id),{'user_id':message.user_id,'text':message.text,'response':decision.response,'language':decision.language,'intents':decision.intents,'at':time.time()},20)
+   self.repository.append('context',str(message.chat_id),{'user_id':message.user_id,'reply_to_user_id':message.reply_to_user_id,'text':message.text,'response':decision.response,'language':decision.language,'intents':decision.intents,'active_topic':decision.intents[0] if decision.intents else None,'unresolved':message.text if '?' in message.text and not decision.response else None,'social_state':decision.action.value,'conflict_state':'active' if 'conflict' in decision.intents else 'none','at':time.time()},20)
   self.repository.append('decision_trace',str(message.chat_id),{'layers':decision.trace.activated_layers,'suppressed':decision.trace.suppressed,'winner':decision.trace.winning_rule,'confidence':decision.trace.confidence,'state_changed':decision.trace.state_changed,'at':time.time()},100)
   return decision
