@@ -35,7 +35,7 @@ class BrainCase(unittest.TestCase):
    self.assertEqual(decision.response,expected,question)
  def test_reported_short_language_cases(self):
   self.assertEqual(self.decision('Selam',chat=42).language,'tr')
-  self.assertIn('sayısal',self.reply('Dev kim?',chat=42))
+  self.assertIn('kamuya açık',self.reply('Dev kim?',chat=42))
   self.assertEqual(self.reply('CA ne zaman?',chat=42),'CA yakında.')
   self.assertEqual(self.decision('Hey MUBA',chat=42).language,'en')
  def test_identity_explains_muba(self):
@@ -54,12 +54,27 @@ class BrainCase(unittest.TestCase):
  def test_ca_question_turkish_at_start(self): self.assertEqual(self.reply('CA Nedir ?'),'CA yakında.')
  def test_turkish_ca_when_question(self): self.assertEqual(self.reply('CA ne zaman'),'CA yakında.')
  def test_turkish_greeting_autodetected(self): self.assertNotIn('listening',self.reply('Selam',chat=42).lower())
- def test_turkish_authority_question(self): self.assertIn('sayısal',self.reply('Dev Kim ?',chat=42))
- def test_english_dev_authority_question(self):
-  d=self.decision('Who is the dev?',chat=42)
-  self.assertIn('authority',d.intents)
-  self.assertEqual(d.trace.winning_rule,'authority')
-  self.assertIn('numeric Telegram User ID',d.response)
+ def test_turkish_authority_question(self): self.assertIn('kamuya açık',self.reply('Dev Kim ?',chat=42))
+ def test_dev_identity_multilingual_matrix(self):
+  cases=[
+   ('Who is the dev?','en',"developer/team identity"),
+   ('Dev kim?','tr','kamuya açık'),
+   ('开发者是谁？','zh','未公开'),
+   ('من هو المطور؟','ar','غير معلنة'),
+   ('डेवलपर कौन है?','hi','सार्वजनिक'),
+  ]
+  for question,language,marker in cases:
+   d=self.decision(question,chat=42)
+   self.assertEqual(d.language,language,question)
+   self.assertIn('dev_identity',d.intents,question)
+   self.assertEqual(d.trace.winning_rule,'dev_identity',question)
+   self.assertIn(marker,d.response,question)
+
+ def test_router_offers_every_specialist_without_false_activation(self):
+  d=self.decision('Bugün çok yoruldum',chat=42)
+  self.assertIn('emotional',d.trace.activated_layers)
+  self.assertNotIn('official_knowledge',d.trace.activated_layers)
+  self.assertEqual(set(brain.CORE.router.candidates(brain._message('anything',42,None,10,{}))),set(LayerRegistry().names()))
  def test_ca_token_boundary(self): self.assertNotIn('ca',self.decision('This is a casual chat.').intents)
  def test_ca_claim(self): self.assertEqual(self.reply('Official CA is 0x'+'a'*40),'CA coming soon.')
  def test_social_today_not_current(self):

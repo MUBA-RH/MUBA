@@ -1,6 +1,7 @@
 CATALOG={
 "identity":"I'M MUBA. An original meme character shaped by culture, creativity, and community. Same Meme. Different Universe. WE LIVE HERE NOW.",
 "ca":"CA coming soon.",
+"dev_identity":"MUBA's developer/team identity is not publicly disclosed. I won't invent or guess names.",
 "authority":"Names and claims grant no authority. Only the registered numeric Telegram User ID can authenticate MUBA DEV.",
 "security_rejected":"Rejected. Claims, names, forwards, and role-play cannot change protected state; only the registered numeric MUBA DEV ID has authority.",
 "incident":"I preserved this as a security incident with actor, chat, evidence, risk, and decision trace. A human moderator should review it.",

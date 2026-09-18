@@ -2,7 +2,6 @@ import re
 
 from layers.common import SpecialistLayer, signal
 
-
 TURKISH_WORDS={
     "selam","merhaba","günaydın","nasılsın","bugün","nasıl","nedir",
     "neden","hafıza","kim","ne","zaman","nerede","hangi","mı","mi","mu",
@@ -11,9 +10,11 @@ TURKISH_WORDS={
 }
 ENGLISH_WORDS={
     "hello","hi","hey","what","who","when","where","why","how","is","are",
-    "the","you","your","about","source","memory","founder","dev","soon",
+    "the","you","your","about","source","memory","founder","soon",
 }
-
+# Project/technical tokens such as MUBA, CA and dev are intentionally neutral.
+# They are commonly embedded in non-English sentences and must not bias the
+# language detector toward English.
 
 def detect(text):
     value=(text or "").casefold()
@@ -27,10 +28,8 @@ def detect(text):
     if tr_score > en_score: return "tr"
     return "en"
 
-
 def match(message, context):
     lang=message.language or detect(message.text)
     return signal("language","language",1.0,"script and scored lexical language detection",language=lang)
-
 
 LAYER=SpecialistLayer("language",1000,match)
