@@ -10,4 +10,4 @@ def match(lang,text):
  for q,a in CATALOG.get(lang,[]):
   score=difflib.SequenceMatcher(None,_norm(text),_norm(q)).ratio()
   if score>best[0]: best=(score,a)
- return best[1] if best[0]>=0.76 else None\''')n
+ return best[1] if best[0]>=0.76 else None
