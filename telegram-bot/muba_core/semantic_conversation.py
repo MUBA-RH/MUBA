@@ -18,7 +18,7 @@ FRAMES={
 "en":{
  "origin":(("muba","project","character"),("emerge","origin","begin","start","come from","born","built around","first appear")),
  "identity":(("muba","identity","character","that","this"),("what is muba","define muba","describe muba","identity","shape","affect","what muba is")),
- "purpose":(("muba","project","character"),("purpose","goal","aim","why exist","what for")),
+ "purpose":(("muba","project","character"),("purpose","goal","aim","why exist","does muba exist","what for")),
  "difference":(("muba","character","meme","it"),("different","difference","unique","apart","special","only","just","another","nothing more","makes")),
  "community":(("community","people","users","participants"),("role","contribute","fit","participate","create","share","where")),
  "plan":(("muba","project","community"),("plan","grow","next","future","build","achieve","what comes next","after that")),
@@ -26,7 +26,7 @@ FRAMES={
 "zh":{
  "origin":(("muba","项目","角色"),("出现","诞生","起源","开始","最初","怎么来的","从何而来")),
  "identity":(("muba","身份","角色","这","这种"),("什么","介绍","定义","身份","塑造","影响","形成")),
- "purpose":(("muba","项目","角色"),("目的","目标","为什么存在","为何存在")),
+ "purpose":(("muba","项目","角色"),("目的","目标","为什么存在","为何存在","为什么")),
  "difference":(("muba","角色","meme","它"),("不同","区别","独特","特别","只是","特点")),
  "community":(("社区","大家","人们","普通人","用户","参与者"),("角色","作用","贡献","参与","做什么","位置","如何参与")),
  "plan":(("muba","项目","社区"),("计划","发展","下一步","未来","实现","壮大","以后怎么办")),
@@ -42,7 +42,7 @@ FRAMES={
 "hi":{
  "origin":(("muba","project","character"),("शुरू","जन्म","उभरा","मूल","कहां से","कैसे बना","शुरुआत")),
  "identity":(("muba","identity","पहचान","character","इससे","यह"),("क्या है","बताओ","परिभाष","पहचान","बनती","आकार","असर")),
- "purpose":(("muba","project","character"),("उद्देश्य","मकसद","क्यों मौजूद","लक्ष्य")),
+ "purpose":(("muba","project","character"),("उद्देश्य","मकसद","क्यों मौजूद","क्यों है","लक्ष्य")),
  "difference":(("muba","character","meme","यह","इसकी"),("अलग","फर्क","खास","विशेष","सिर्फ","बनाता")),
  "community":(("community","समुदाय","लोग","users"),("भूमिका","योगदान","जगह","हिस्सा","कर सकते","भाग")),
  "plan":(("muba","project","community"),("योजना","बढ़","अगला","भविष्य","पूरा","बनाए","आगे क्या")),
@@ -77,7 +77,7 @@ def resolve(text,language,recent):
   if hits: explicit.append((hits,topic))
  if explicit:
   _,target=max(explicit)
-  scored[target]=scored.get(target,0)+6
+  scored[target]=scored.get(target,0)+8
  has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
  topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=4 else None
 
