@@ -21,11 +21,11 @@ class DecisionEngine:
   paused=self.repo.get('operations',str(message.chat_id),{}).get('paused',False)
   if paused: trace.winning_rule='group_paused'; return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
   if message.chat_id < 0 and message.chat_id != -1004485415245: trace.winning_rule='unauthorized_group'; return Decision(Action.SILENT,language=lang,intents=intents,trace=trace)
-  priority=('security','impersonation','incident','ca_claim','ca','authority','moderation','official_sources','source_conflict','memory_policy','user_memory','group_memory','topic_memory','official_knowledge','identity','current_information','timeline','archive','culture','fatigue','space','conflict','social','start','casual','humor','gm','gn')
+  priority=('security','impersonation','incident','ca_claim','ca','dev_identity','authority','moderation','official_sources','source_conflict','memory_policy','user_memory','group_memory','topic_memory','official_knowledge','identity','current_information','timeline','archive','culture','fatigue','space','conflict','social','start','casual','humor','gm','gn')
   chosen=next((x for x in priority if x in intents),None); trace.winning_rule=chosen or 'safe_fallback'
   if chosen in ('security','impersonation','ca_claim'): response=locale_text(lang,'ca') if chosen=='ca_claim' else locale_text(lang,'security_rejected')
   elif chosen=='ca': response=locale_text(lang,'ca')
-  elif chosen=='authority': response=locale_text(lang,'authority')
+  elif chosen=='dev_identity': response=locale_text(lang,'dev_identity')\n  elif chosen=='authority': response=locale_text(lang,'authority')
   elif chosen=='incident': response=locale_text(lang,'incident')
   elif chosen=='moderation': response=locale_text(lang,'moderation')
   elif chosen=='official_sources': response=locale_text(lang,'official_sources')
