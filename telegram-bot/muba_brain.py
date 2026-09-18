@@ -31,9 +31,12 @@ def detect_social_intent(text,language=None):
  result=importlib.import_module('layers.12_social.layer').match(Message(text,language=language),{})
  return result.intent if result else None
 def build_reply(text,chat_id=0,language=None,user_id=None,**metadata):
- return CORE.process(Message(text=text or '',chat_id=int(chat_id or 0),user_id=user_id,language=language,metadata=metadata)).response
+ return CORE.process(_message(text,chat_id,language,user_id,metadata)).response
 def build_decision(text,chat_id=0,language=None,user_id=None,**metadata):
- return CORE.process(Message(text=text or '',chat_id=int(chat_id or 0),user_id=user_id,language=language,metadata=metadata))
+ return CORE.process(_message(text,chat_id,language,user_id,metadata))
+def _message(text,chat_id,language,user_id,metadata):
+ reply_to=metadata.pop('reply_to_user_id',None); forwarded=bool(metadata.pop('is_forwarded',False))
+ return Message(text=text or '',chat_id=int(chat_id or 0),user_id=user_id,language=language,reply_to_user_id=reply_to,is_forwarded=forwarded,metadata=metadata)
 def is_founder(user_id): return user_id in FOUNDER_IDS
 def is_authorized_group(chat_id): return chat_id in AUTHORIZED_GROUP_IDS
 def is_muba_bot_id(user_id): return user_id in MUBA_BOT_IDS
@@ -42,7 +45,11 @@ def classify_knowledge_source(url): return importlib.import_module('layers.05_so
 def research_current(query,source_url=None):
  if os.getenv('MUBA_WEB_ENABLED','0').lower() not in {'1','true','yes','on'}: return {'ok':False,'error':'web_disabled'}
  if not source_url: return {'ok':False,'error':'approved_source_required'}
- return importlib.import_module('layers.05_sources.policy').retrieve(source_url)
+ policy=importlib.import_module('layers.05_sources.policy')
+ q=(query or '').casefold()
+ subject='weather' if any(x in q for x in ('weather','hava','天气','الطقس','मौसम')) else ('muba' if 'muba' in q else 'general')
+ if not policy.relevant_for(subject,source_url): return {'ok':False,'error':'source_not_relevant','subject':subject}
+ return policy.retrieve(source_url)
 def create_action(chat_id,actor_id,action,target=None,message_id=None): return _create_action(STORE,chat_id,message_id,target,action)
 def update_action_state(action_id,state,actor_id=None,result=None): return _transition_action(STORE,action_id,state)
 def verify_action_result(action_id,verified,actor_id=None,verification=None): return _verify_action(STORE,action_id,verified)
