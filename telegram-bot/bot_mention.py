@@ -109,7 +109,8 @@ def menu_keyboard(lang):
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
-    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio"))])\n    rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
+    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio"))])
+    rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
 def daily_keyboard(lang):
@@ -393,7 +394,8 @@ async def start_webhook_server():
 
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("ca", ca_command))
-    application.add_handler(CallbackQueryHandler(callback_handler))\n    application.add_handler(InlineQueryHandler(inline_studio))
+    application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(InlineQueryHandler(inline_studio))
 
     application.add_handler(
         MessageHandler(
@@ -431,7 +433,10 @@ async def start_webhook_server():
         "External AI services are disabled."
     )
 
-    app = web.Application()\n\n    import aiohttp\n    app["http_session"] = aiohttp.ClientSession()
+    app = web.Application()
+
+    import aiohttp
+    app["http_session"] = aiohttp.ClientSession()
 
     app["telegram_application"] = application
 
@@ -479,7 +484,8 @@ async def start_webhook_server():
             "Stopping MUBA application."
         )
 
-        await app["http_session"].close()\n        await runner.cleanup()
+        await app["http_session"].close()
+        await runner.cleanup()
 
         await application.stop()
         await application.shutdown()
