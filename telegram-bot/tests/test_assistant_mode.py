@@ -24,6 +24,10 @@ class AssistantModeExam(unittest.TestCase):
   self.assertEqual(group_event('Who is MUBA DEV?'),'dev')
   self.assertEqual(group_event('MUBA official source?'),'official')
   self.assertEqual(group_event('What is MUBA?'),'assistant_redirect')
+ def test_guided_answers_are_unique(self):
+  for lang in LANGS:
+   answers=[answer_for_question(lang,i) for i in range(len(QUESTIONS[lang]))]
+   self.assertEqual(len(answers),len(set(answers)),lang)
  def test_catalog_is_language_locked(self):
   probes={"tr":"MUBA bir yapay zekâ mı?","en":"Is MUBA an AI?","zh":"MUBA 是人工智能吗？","ar":"هل MUBA ذكاء اصطناعي؟","hi":"क्या MUBA AI है?"}
   for lang,q in probes.items():
