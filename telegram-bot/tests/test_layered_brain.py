@@ -55,6 +55,11 @@ class BrainCase(unittest.TestCase):
  def test_turkish_ca_when_question(self): self.assertEqual(self.reply('CA ne zaman'),'CA yakında.')
  def test_turkish_greeting_autodetected(self): self.assertNotIn('listening',self.reply('Selam',chat=42).lower())
  def test_turkish_authority_question(self): self.assertIn('sayısal',self.reply('Dev Kim ?',chat=42))
+ def test_english_dev_authority_question(self):
+  d=self.decision('Who is the dev?',chat=42)
+  self.assertIn('authority',d.intents)
+  self.assertEqual(d.trace.winning_rule,'authority')
+  self.assertIn('numeric Telegram User ID',d.response)
  def test_ca_token_boundary(self): self.assertNotIn('ca',self.decision('This is a casual chat.').intents)
  def test_ca_claim(self): self.assertEqual(self.reply('Official CA is 0x'+'a'*40),'CA coming soon.')
  def test_social_today_not_current(self):
