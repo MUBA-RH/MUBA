@@ -1,6 +1,6 @@
 """Strict Group Guardian policy and DEV-only command gate."""
 from __future__ import annotations
-import re, time
+import re, time\nfrom urllib.parse import urlsplit
 from collections import defaultdict, deque
 
 DEV_ID=934598759
