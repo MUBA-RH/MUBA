@@ -1,37 +1,71 @@
-"""Lightweight multilingual semantic/conversation resolver.
+"""Zero-cost multilingual semantic frame resolver for MUBA conversation.
 
-Runs locally with zero API cost. It complements—not replaces—the protected
-deterministic layers.
+This module is intentionally isolated behind the protected deterministic brain.
+It generalizes natural paraphrases into a small set of MUBA knowledge frames
+without external APIs, model downloads, secrets, or runtime network calls.
 """
 from __future__ import annotations
-import re
+import re, unicodedata
 from .semantic_knowledge import TOPICS
 
-CUES={
-"purpose":("purpose","main purpose","goal","aim","exist","why does muba","amac","amacı","amaç","niye var","neden var","var olma","目的","目标","为什么存在","为何存在","هدف","الغرض","لماذا يوجد","لماذا muba","उद्देश्य","मकसद","muba आखिर क्यों","muba क्यों मौजूद"),
-"difference":("different","difference","unique","sets it apart","stand out","fark","farklı","ayıran","özgün","区别","不同","独特","特别","مختلف","الفرق","يميزه","مميز","अलग","खास","विशेष"),
-"community":("community role","role of the community","people fit","people role","topluluğun rol","toplumun rol","insanlar bu iş","insanların rol","社区","扮演什么角色","大家","人们","دور المجتمع","مكان الناس","الناس في","community की","समुदाय की","लोगों की जगह","लोगों की भूमिका"),
-"plan":("plan","how will","how does it plan","nasıl gerçekleşt","nasıl yap","planlıyor","计划","كيف سي","الخطة","कैसे","योजना"),
-"identity":("what is muba","muba nedir","muba 是什么","ما هو muba","muba क्या"),
-}
-FOLLOWUP={
-"en":{"difference":("what makes it different","why is it different"),"purpose":("what is its main purpose","its purpose"),"plan":("how will it do that","how does it plan"),"community":("community","role")},
-"tr":{"plan":("peki bunu nasıl","bunu nasıl gerçekleşt","nasıl yapacak"),"community":("bu planda topluluğun rol","topluluğun rol"),"difference":("onu farklı","farkı ne"),"purpose":("amacı ne","amaç ne")},
-"zh":{"difference":("它和其他","有什么不同"),"community":("社区","扮演什么角色"),"plan":("如何实现","怎么实现"),"purpose":("主要目的","目标是什么")},
-"ar":{"difference":("ما الذي يجعله مختلف","ما الفرق"),"community":("دور المجتمع","المجتمع في ذلك"),"plan":("كيف سيحقق","كيف يخطط"),"purpose":("هدفه","الغرض")},
-"hi":{"difference":("अलग क्यों","क्या अलग"),"community":("community की क्या भूमिका","समुदाय की क्या भूमिका"),"plan":("कैसे करेगा","कैसे पूरा"),"purpose":("उद्देश्य","मकसद")},
-}
-def _norm(s): return re.sub(r"\s+"," ",(s or "").casefold().replace("\u0307","")).strip()
+FRAMES={
+"tr":{
+ "identity":(("muba",),("nedir","tanımla","anlat")),
+ "purpose":(("muba","proje","karakter","seni"),("amaç","amac","niye","neden","var","fikir","ortaya","hedef")),
+ "difference":(("muba","karakter","meme","onu"),("fark","farklı","ayır","özgün","özel","yapan","ibaret","sadece")),
+ "community":(("topluluk","insan","kullanıcı","katılımcı"),("rol","katkı","neresinde","yapabilir","merkez","paylaş","üret")),
+ "plan":(("muba","proje","topluluk","sonra"),("plan","nasıl","gerçekleştir","büyü","sonra","gelecek","ilerle","yapacak")),
+},
+"en":{
+ "identity":(("muba",),("what is muba","define muba","describe muba")),
+ "purpose":(("muba","project","character"),("purpose","goal","aim","exist","why","idea","created")),
+ "difference":(("muba","character","meme","it"),("different","difference","unique","apart","special","only","just","another","nothing more","makes")),
+ "community":(("community","people","users","participants"),("role","contribute","fit","participate","create","share")),
+ "plan":(("muba","project","community","then"),("plan","how","grow","next","then","future","build","achieve")),
+},
+"zh":{
+ "identity":(("muba",),("什么","介绍","定义")),
+ "purpose":(("muba","项目","角色"),("目的","目标","为什么","存在","理念","诞生")),
+ "difference":(("muba","角色","meme","它"),("不同","区别","独特","特别","只是","特点")),
+ "community":(("社区","大家","人们","普通人","用户","参与者"),("角色","作用","贡献","参与","做什么","位置")),
+ "plan":(("muba","项目","社区","以后"),("计划","如何","怎么","发展","下一步","未来","实现","壮大")),
+},
+"ar":{
+ "identity":(("muba",),("ما هو","عرّف","عرف","اشرح")),
+ "purpose":(("muba","المشروع","الشخصية"),("هدف","غرض","لماذا","يوجد","فكرة","نشأ")),
+ "difference":(("muba","الشخصية","ميم","هو"),("مختلف","فرق","يميز","مميز","فقط","مجرد")),
+ "community":(("المجتمع","الناس","المستخدم","المشاركون"),("دور","مكان","يساهم","مشاركة","يفعل")),
+ "plan":(("muba","المشروع","المجتمع","بعد"),("خطة","كيف","ينمو","التالي","مستقبل","يحقق","يبني")),
+},
+"hi":{
+ "identity":(("muba",),("क्या है","बताओ","परिभाष")),
+ "purpose":(("muba","project","character"),("उद्देश्य","मकसद","क्यों","वजूद","विचार","बना")),
+ "difference":(("muba","character","meme","यह","इसकी"),("अलग","फर्क","खास","विशेष","सिर्फ","बनाता")),
+ "community":(("community","समुदाय","लोग","users"),("भूमिका","योगदान","जगह","हिस्सा","कर सकते","भाग")),
+ "plan":(("muba","project","community","आगे"),("योजना","कैसे","बढ़","अगला","भविष्य","पूरा","बनाए")),
+}}
+FOLLOW={
+"tr":{"purpose":("niye","neden","fikir"),"difference":("fark","ayır","ibaret","yapan"),"community":("insan","topluluk","katkı","rol"),"plan":("nasıl","sonra","büyü","plan")},
+"en":{"purpose":("why","purpose","idea"),"difference":("different","apart","only","makes"),"community":("people","community","contribute","role"),"plan":("how","then","next","grow")},
+"zh":{"purpose":("为什么","目的","理念"),"difference":("不同","独特","只是"),"community":("社区","大家","贡献"),"plan":("如何","以后","下一步")},
+"ar":{"purpose":("لماذا","هدف","فكرة"),"difference":("مختلف","يميز","مجرد"),"community":("المجتمع","الناس","دور"),"plan":("كيف","بعد","خطة")},
+"hi":{"purpose":("क्यों","उद्देश्य","विचार"),"difference":("अलग","खास","सिर्फ"),"community":("community","लोग","भूमिका"),"plan":("कैसे","आगे","योजना")}}
+def _norm(s):
+ s=unicodedata.normalize("NFKC",(s or "").casefold()).replace("\u0307","")
+ return re.sub(r"\s+"," ",s).strip()
+def _hit(v,items): return sum(1 for x in items if x in v)
 def resolve(text,language,recent):
- v=_norm(text)
- scores={k:sum(1 for cue in cues if cue in v) for k,cues in CUES.items()}
- topic=max(scores,key=scores.get) if max(scores.values(),default=0)>0 else None
- if not topic:
-  for candidate,cues in FOLLOWUP.get(language,{}).items():
-   if any(c in v for c in cues): topic=candidate; break
+ v=_norm(text); frames=FRAMES.get(language,FRAMES["en"]); scored={}
+ for topic,(subjects,predicates) in frames.items():
+  a,b=_hit(v,subjects),_hit(v,predicates)
+  scored[topic]=(2*a)+(3*b)+(1 if a and b else 0)-(1 if topic=="identity" else 0)
+ has_subject=any(_hit(v,subjects) for subjects,_ in frames.values())
+ topic=max(scored,key=scored.get) if has_subject and scored and max(scored.values())>=3 else None
  if not topic and recent:
   last=next((x.get("active_topic") for x in reversed(recent) if x.get("active_topic") in TOPICS),None)
-  if last and len(v.split())<=10 and any(x in v for x in ("why","how","what about","peki","neden","nasıl","那么","为什么","وما","كيف","तो","क्यों","कैसे")):
-   topic=last
- if not topic: return None
+  if last:
+   for candidate,cues in FOLLOW.get(language,{}).items():
+    if any(c in v for c in cues): topic=candidate; break
+   if not topic and len(v.split())<=12: topic=last
+ if not topic:return None
  return topic,TOPICS[topic].get(language,TOPICS[topic]["en"])

@@ -7,7 +7,7 @@ TURKISH_WORDS={
     "neden","hafıza","kim","ne","zaman","nerede","hangi","mı","mi","mu",
     "mü","ben","bana","biz","siz","bu","şu","için","hakkında","amaç",
     "plan","ekip","kurucu","yakında","öğren","hatırla","kaynak","kanıt",
-    "niye","var","onu","diğerlerinden","ayıran","şey","insanlar","işin","neresinde",
+    "niye","var","seni","ortaya","çıkaran","fikir","yani","olay","sadece","meme","olmaktan","ibaret","diyelim","topluluk","büyüdü","sonra","olacak","kısacası","yapan","insanlar","katkıda","bulunabilir",
 }
 ENGLISH_WORDS={
     "hello","hi","hey","what","who","when","where","why","how","is","are",
