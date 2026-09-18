@@ -30,7 +30,7 @@ from muba_brain import (
     set_assistant_language,
     clear_assistant_language,
 )
-from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant
+from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 
 
 logging.basicConfig(
@@ -151,7 +151,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         topic=data.split(":",1)[1]
         await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
     if data.startswith("q:"):
-        i=int(data.split(":",1)[1]); answer=guided_answer(lang,i)
+        i=int(data.split(":",1)[1]); answer=answer_for_question(lang,i)
         await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
 
 
@@ -163,6 +163,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang=get_assistant_language(user_id)
         if not lang:
             await show_language(update); return
+        catalog_index=match_catalog(lang,text)
+        if catalog_index is not None:
+            await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
         if not assistant_relevant(text):
             await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang)); return
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
