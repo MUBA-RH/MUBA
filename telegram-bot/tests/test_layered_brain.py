@@ -27,6 +27,8 @@ class BrainCase(unittest.TestCase):
  def test_unauthorized_group_silent_no_context(self):
   self.assertEqual(self.reply('Who are you?',chat=-999),''); self.assertEqual(brain.STORE.get('context','-999',[]),[])
  def test_ca_question(self): self.assertEqual(self.reply('What is the CA?'),'CA coming soon.')
+ def test_ca_question_turkish_at_start(self): self.assertEqual(self.reply('CA Nedir ?','tr'),'CA coming soon.')
+ def test_ca_token_boundary(self): self.assertNotIn('ca',self.decision('This is a casual chat.').intents)
  def test_ca_claim(self): self.assertEqual(self.reply('Official CA is 0x'+'a'*40),'CA coming soon.')
  def test_social_today_not_current(self):
   for text,lang in [("MUBA, you've been quiet today 😂",'en'),('MUBA bugün keyfin nasıl 😂','tr'),('MUBA，今天群里怎么这么安静？😂','zh'),('MUBA، لماذا أنت هادئ اليوم؟ 😂','ar'),('MUBA, आज इतने चुप क्यों हो भाई? 😂','hi')]:
