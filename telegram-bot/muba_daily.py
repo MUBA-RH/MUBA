@@ -34,10 +34,10 @@ DAILY={
 "telegram":"Telegram الرسمي: @MUBA_RH. راجع الرسائل الرسمية المثبتة للحصول على إعلانات المجتمع الحالية.",
 "updates":"آخر ملخص مؤكد: يدعم MUBA Assistant المحادثة الخاصة الموجهة والطبيعية بخمس لغات. ويحمي MUBA Guardian المجموعة الرئيسية من الروابط غير المصرح بها وCA المزيف والتصيد والاحتيال. لا تُعرض تفاصيل GitHub الداخلية هنا."},
 "hi":{
-"x":"Official X: @MUBA_RH. MUBA की story, community updates और confirmed developments यहाँ share होते हैं।",
-"web":"Official website: muba-rh.github.io/MUBA/ — MUBA का public project home और story space.",
-"telegram":"Official Telegram: @MUBA_RH. Current community announcements के लिए pinned official messages देखें।",
-"updates":"Latest verified build summary: MUBA Assistant private chat में 5 languages में guided और natural conversation support करता है। MUBA Guardian main group को links, fake CA, phishing और scam controls से protect करता है। Internal GitHub details यहाँ expose नहीं किए जाते।"}
+"x":"आधिकारिक X: @MUBA_RH. MUBA की कहानी, सामुदायिक अपडेट और पुष्टि किए गए विकास यहाँ साझा होते हैं।",
+"web":"आधिकारिक वेबसाइट: muba-rh.github.io/MUBA/ — MUBA का सार्वजनिक परियोजना घर और कहानी का स्थान।",
+"telegram":"आधिकारिक Telegram: @MUBA_RH. वर्तमान सामुदायिक घोषणाओं के लिए पिन किए गए आधिकारिक संदेश देखें।",
+"updates":"नवीनतम सत्यापित निर्माण सारांश: MUBA Assistant निजी चैट में 5 भाषाओं में निर्देशित और स्वाभाविक बातचीत का समर्थन करता है। MUBA Guardian मुख्य समूह को अनधिकृत लिंक, नकली CA, फ़िशिंग और धोखाधड़ी नियंत्रण से सुरक्षित रखता है। आंतरिक GitHub विवरण यहाँ प्रदर्शित नहीं किए जाते।"}
 }
 
 def daily_text(lang, section):
