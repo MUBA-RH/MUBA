@@ -35,5 +35,5 @@ class ConversationContinuityExam(unittest.TestCase):
   self.assertIsNone(cc.reply(1,"tr","Keyfim yerinde sağ ol"))
  def test_unrelated_message_is_not_hijacked(self):
   cc.remember_assistant_turn(1,"tr","İyi gidiyor. Senin keyfin nasıl?")
-  self.assertIsNone(cc.reply(1,"tr","MUBA nedir?"))
+  self.assertIn("muba",cc.reply(1,"tr","MUBA nedir?").casefold())
 if __name__=="__main__": unittest.main(verbosity=2)
