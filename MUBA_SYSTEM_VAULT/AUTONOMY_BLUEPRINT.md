@@ -1,28 +1,23 @@
 # MUBA V2 / Autonomy Blueprint
+Implement only after DEV explicitly chooses BUILD MUBA V2 / AUTONOMY.
 
-Do not implement because this document exists. Begin only after DEV explicitly chooses BUILD MUBA V2 / AUTONOMY and authorizes the scoped protocol.
-
-Goal: DEV supplies authoritative facts MUBA cannot independently know. MUBA safely performs routine plan -> create -> validate -> schedule -> publish -> verify -> remember -> continue.
+Goal: DEV supplies authoritative facts MUBA cannot independently know; MUBA safely executes routine plan -> create -> validate -> schedule -> publish -> verify -> remember -> continue.
 
 Build order:
-0. Continuity: preserve BLUE, release manifest, recovery, rollback rehearsal.
-1. Persistent Memory: durable database for truth_records, story_state, jobs, publication_records, media_records, health_events, system_events, daily_snapshots, schema_migrations. Use idempotency keys.
-2. Truth Registry: protected versioned facts with provenance, authorization and effective/expiry times. Creative AI cannot write protected truth.
-3. Core/Orchestrator: deterministic coordinator reading truth/state and creating jobs; does not absorb Guardian/Assistant/Studio internals.
-4. Scheduler/Job Engine: durable jobs, leases/locks, idempotency, attempts, next-attempt and terminal states. Restart cannot lose work; parallel workers cannot duplicate external actions.
-5. Story Engine: persistent narrative state, theme, episode, previous/next hooks, reuse history and constraints.
-6. Media Pipeline: Core request -> Studio -> validator -> accepted media record; bounded retry.
-7. Publisher adapters: independent X/Telegram/future prepare-send-verify adapters with provider IDs. External API access is never assumed permanently available/free.
-8. Watchdog/Health: independent checks; DEGRADED/circuit-open states; DEV notification; never rewrites production.
-9. Reporting: daily machine snapshot plus concise Turkish DEV report.
-10. Shadow: compute without external side effects.
-11. Canary: one narrow real capability, verify, expand gradually.
-12. Blue/Green: promote only after tests, evidence, rollback rehearsal and DEV authorization.
+0 Continuity: preserve BLUE, recovery manifest and rollback.
+1 Persistent Memory: durable DB for truth, story, jobs, publications, media, health, events, daily snapshots and migrations; use idempotency.
+2 Truth Registry: protected authoritative facts with provenance/version/effective lifecycle; creative AI cannot write protected truth.
+3 Core/Orchestrator: deterministic coordinator; does not absorb Guardian/Assistant/Studio internals.
+4 Scheduler/Job Engine: durable jobs, leases/locks, idempotency keys, attempts, next-attempt and terminal states.
+5 Story Engine: persistent narrative state, previous/next hooks, reuse history and constraints.
+6 Media Pipeline: Core -> Studio -> validator -> accepted media record; bounded retries.
+7 Publisher adapters: independent X, Telegram and future adapters implementing prepare/send/verify and storing provider IDs.
+8 Watchdog: independent health checks and circuit state; never rewrites production code.
+9 Reporting: machine daily snapshot plus concise Turkish DEV report.
+10 Shadow: compute without external side effects.
+11 Canary: grant one narrow real capability at a time.
+12 Blue/Green: promote only after tests, shadow/canary evidence, rollback rehearsal and DEV authorization.
 
-Failure engineering: network timeouts, bounded retry/backoff, circuit breakers, idempotent publish/send, durable before/after checkpoints, failed/dead-letter state, safe pause and DEV emergency stop.
+Failure engineering: timeouts, bounded retry/backoff, circuit breakers, idempotency, durable before/after checkpoints, failed/dead-letter jobs, DEV pause/emergency stop.
 
-AI boundary: AI may draft story/posts/humor/visual concepts. Deterministic code owns authority, truth, scheduling, quotas, validation gates, retries, security and release state.
-
-Self-protection: MUBA never autonomously edits/merges production source. Repairs use STABLE -> branch -> test -> PR -> green -> merge -> verify.
-
-Infrastructure choices must be re-verified at implementation time. Do not hard-code a future provider solely because it was discussed earlier.
+AI may draft stories/posts/humor/visual concepts. Deterministic code owns truth, authority, scheduling, quotas, validation, retries, security and release state. Infrastructure/provider choices must be re-verified at implementation time.
