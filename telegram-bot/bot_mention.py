@@ -60,6 +60,8 @@ _STUDIO_OUTPUTS = {}
 _PROCESSED_MESSAGES = OrderedDict()
 _PROCESSED_MESSAGE_TTL = 21600
 _PROCESSED_MESSAGE_MAX = 4096
+_ASSISTANT_CALL_COOLDOWN = 60
+_ASSISTANT_CALLS = {}
 
 
 def _claim_message(update: Update) -> bool:
@@ -280,6 +282,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id))
         return
     if not is_guardian_group(chat.id): return
+    normalized=" ".join(text.upper().split())
+    if normalized in ("#MUBA ASİSTAN","#MUBA ASISTAN"):
+        now=time.monotonic(); last=_ASSISTANT_CALLS.get(chat.id,0.0)
+        if now-last>=_ASSISTANT_CALL_COOLDOWN:
+            _ASSISTANT_CALLS[chat.id]=now
+            username=context.bot.username
+            button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
+            await message.reply_text("MUBA Assistant 🪶\nBuradayım. Ne zaman ihtiyacın olursa Assistant'ı açabilirsin.",reply_markup=button)
+        return
     cmd=authorized_command(chat.id,user_id,text)
     if cmd:
         if cmd in ("#START","#STOP"):
@@ -376,9 +387,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     event=group_event(text)
     if not event: return
     if event=="assistant_redirect":
-        username=context.bot.username
-        button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
-        await message.reply_text("MUBA Assistant can answer that. Open the bot to explore MUBA.",reply_markup=button)
         return
     if event=="fake_ca":
         await message.reply_text("🚨 Fake CA warning. Do not trust unofficial contract addresses.")
