@@ -290,7 +290,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await context.bot.set_chat_permissions(chat.id,ChatPermissions.no_permissions())
                     response="MUBA DEV IS HERE 🎙️"
                 else:
-                    await context.bot.set_chat_permissions(chat.id,ChatPermissions.all_permissions())
+                    await context.bot.set_chat_permissions(chat.id,ChatPermissions(\n                        can_send_messages=True,\n                        can_send_other_messages=True,\n                    ))
                     response="MUBA COMMUNITY 🔥"
                 await message.reply_text(response,disable_web_page_preview=True)
             except Exception:
