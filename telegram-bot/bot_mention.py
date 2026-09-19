@@ -283,13 +283,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if not is_guardian_group(chat.id): return
     normalized=" ".join(text.upper().split())
-    if normalized in ("#MUBA ASİSTAN","#MUBA ASISTAN"):
+    if normalized=="#MUBA ASSISTANT":
         now=time.monotonic(); last=_ASSISTANT_CALLS.get(chat.id,0.0)
         if now-last>=_ASSISTANT_CALL_COOLDOWN:
             _ASSISTANT_CALLS[chat.id]=now
             username=context.bot.username
             button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
-            await message.reply_text("MUBA Assistant 🪶\nBuradayım. Ne zaman ihtiyacın olursa Assistant'ı açabilirsin.",reply_markup=button)
+            await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
         return
     cmd=authorized_command(chat.id,user_id,text)
     if cmd:
