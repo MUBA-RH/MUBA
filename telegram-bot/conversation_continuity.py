@@ -22,7 +22,10 @@ def clear(user_id):
 def remember_assistant_turn(user_id,lang,text):
     if user_id is None: return
     now=time.monotonic()
-    _STATE[user_id]={"lang":lang,"assistant":text or "","at":now}
+    old=_STATE.get(user_id,{})
+    turns=list(old.get("turns",[]))
+    turns.append(("assistant",text or ""))
+    _STATE[user_id]={"lang":lang,"assistant":text or "","at":now,"turns":turns[-8:],"expected_reply":_expected_reply(lang,text)}
     _STATE.move_to_end(user_id)
     while len(_STATE)>_MAX_USERS: _STATE.popitem(last=False)
 
@@ -34,9 +37,9 @@ _WELLBEING_ASK={
 "hi":("कैसे हो","आप कैसे हैं","तुम कैसे हो"),
 }
 _POSITIVE={
-"en":("i m good","im good","i am good","doing great","pretty good","fine thanks","good thanks","great thanks"),
+"en":("good","i m good","im good","i am good","doing great","pretty good","fine","fine thanks","good thanks","great","great thanks"),
 "tr":("iyi","iyiyim","iyi gidiyor","keyfim yerinde","gayet iyiyim","çok iyiyim","şükür iyi","fena değil","sağ ol","teşekkür"),
-"zh":("我很好","挺好的","很好 谢谢","不错","还不错","谢谢"),
+"zh":("很好","我很好","挺好的","很好 谢谢","不错","还不错","谢谢"),
 "ar":("أنا بخير","بخير","تمام","الحمد لله","شكرا","شكرًا"),
 "hi":("मैं ठीक हूँ","मैं अच्छा हूँ","बढ़िया","ठीक हूँ","धन्यवाद","शुक्रिया"),
 }
@@ -63,6 +66,17 @@ _REPLY_NEG={
 }
 
 
+_EXPECTED_WELLBEING={
+"en":("how about you","how are you","how are things with you","how s your day going","what about you"),
+"tr":("senin tarafta nasıl","sen nasılsın","senin keyfin nasıl","sende nasıl gidiyor","sende durumlar nasıl","senden haberler nasıl"),
+"zh":("你呢","你怎么样","你好吗","你最近怎么样"),
+"ar":("وأنت","كيف حالك","كيف الأمور عندك","ماذا عنك"),
+"hi":("तुम कैसे हो","आप कैसे हैं","तुम्हारा क्या हाल","तुम्हारे यहाँ कैसा"),
+}
+def _expected_reply(lang,text):
+    value=_norm(text)
+    return "wellbeing" if any(_norm(p) in value for p in _EXPECTED_WELLBEING.get(lang,())) else None
+
 _MUBA_TOPICS={
 "en":{"identity":("who is muba","what is muba"),"origin":("how did muba emerge","where did muba come from"),"difference":("what makes muba different",),"purpose":("why muba","why does muba exist"),"community":("community role",),"plan":("what comes next for muba",)},
 "tr":{"identity":("muba kim","muba nedir","muba ne"),"origin":("muba nasıl ortaya çıktı","muba nereden çıktı"),"difference":("muba farkı","muba'yı farklı"),"purpose":("neden muba","muba neden var"),"community":("muba topluluk","topluluğun rolü"),"plan":("muba sırada","muba gelecek")},
@@ -85,10 +99,11 @@ def reply(user_id,lang,text):
         clear(user_id); return None
     previous=_norm(state.get("assistant",""))
     current=_norm(text)
+    turns=list(state.get("turns",[])); turns.append(("user",text or "")); state["turns"]=turns[-8:]
     if not previous or not current: return None
     for topic,phrases in _MUBA_TOPICS.get(lang,{}).items():
         if _contains_any(current,phrases): return _muba_answer(lang,topic)
-    if _contains_any(previous,_WELLBEING_ASK.get(lang,())):
+    if state.get("expected_reply")=="wellbeing" or _contains_any(previous,_WELLBEING_ASK.get(lang,())):
         if _contains_any(current,_NEGATIVE.get(lang,())): return _REPLY_NEG[lang]
         if _contains_any(current,_POSITIVE.get(lang,())): return _REPLY_POS[lang]
     return None

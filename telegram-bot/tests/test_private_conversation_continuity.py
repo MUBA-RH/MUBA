@@ -36,4 +36,18 @@ class ConversationContinuityExam(unittest.TestCase):
  def test_unrelated_message_is_not_hijacked(self):
   cc.remember_assistant_turn(1,"tr","İyi gidiyor. Senin keyfin nasıl?")
   self.assertIn("muba",cc.reply(1,"tr","MUBA nedir?").casefold())
+ def test_natural_chat_wellbeing_short_reply_regression(self):
+  cases={
+   "tr":("Burada işler yolunda. Senin tarafta nasıl?","İyi"),
+   "en":("All good here. How are things with you?","Good"),
+   "zh":("我很好。你呢？","很好"),
+   "ar":("أنا بخير. وأنت؟","بخير"),
+   "hi":("मैं ठीक हूँ। तुम कैसे हो?","ठीक हूँ"),
+  }
+  for i,(lang,(assistant,user)) in enumerate(cases.items(),100):
+   cc.remember_assistant_turn(i,lang,assistant)
+   self.assertTrue(cc.reply(i,lang,user),(lang,user))
+ def test_context_keeps_recent_turns_bounded(self):
+  for n in range(12): cc.remember_assistant_turn(500,"tr",f"mesaj {n}")
+  self.assertLessEqual(len(cc._STATE[500]["turns"]),8)
 if __name__=="__main__": unittest.main(verbosity=2)
