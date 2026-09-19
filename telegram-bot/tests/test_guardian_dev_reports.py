@@ -15,4 +15,9 @@ class GuardianDevReportWiring(unittest.TestCase):
   self.assertIn('logger.exception("Guardian DEV private report failed")',s)
   self.assertIn("from guardian import DEV_ID",s)
 
+ def test_report_labels_are_turkish(self):
+  s=(ROOT/"bot_mention.py").read_text()
+  for label in ("MUBA GUARDIAN — DEV RAPORU","Olay:","İşlem:","Kullanıcı ID:","İhlal sayısı:"):
+   self.assertIn(label,s)
+
 if __name__=="__main__": unittest.main()
