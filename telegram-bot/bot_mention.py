@@ -49,6 +49,10 @@ logging.basicConfig(
 
 logger = logging.getLogger("muba")
 
+# Short-lived generated Studio outputs. Keys are random and unguessable;
+# content is intentionally ephemeral and resets with the service.
+_STUDIO_OUTPUTS = {}
+
 # Telegram Bot uses httpx internally. Its INFO request logs include the bot
 # token in the request URL, so keep transport logging at WARNING or above.
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -244,8 +248,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if cmd:
         if cmd in ("#START","#STOP"):
             build_reply(cmd,chat_id=chat.id,language=detect_language(text),user_id=user_id)
-            response="MUBA DEV IS HERE 🎙️" if cmd=="#STOP" else "MUBA COMMUNITY 🔥"
-            await message.reply_text(response,disable_web_page_preview=True)
+            from telegram import ChatPermissions
+            try:
+                if cmd=="#STOP":
+                    await context.bot.set_chat_permissions(chat.id,ChatPermissions.no_permissions())
+                    response="MUBA DEV IS HERE 🎙️"
+                else:
+                    await context.bot.set_chat_permissions(chat.id,ChatPermissions.all_permissions())
+                    response="MUBA COMMUNITY 🔥"
+                await message.reply_text(response,disable_web_page_preview=True)
+            except Exception:
+                logger.exception("Guardian could not change group posting permissions")
+                await message.reply_text("🛡️ Guardian could not change group permissions. Check bot admin permissions.")
             return
         if cmd in ("#GUARDIAN","#STATUS"):
             await message.reply_text(status_text(group_conversation_paused(chat.id))); return
@@ -393,7 +407,29 @@ async def studio_generate_handler(request: web.Request):
         logger.exception("MUBA AI generation failed")
         return web.json_response({"error":"MUBA AI could not create this image. Failed attempts do not count."},status=503)
     consume(uid)
-    return web.Response(body=body,content_type=out_type,headers={"X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid))})
+    import secrets, time
+    key=secrets.token_urlsafe(24)
+    _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time()}
+    output_url=EXTERNAL_URL.rstrip("/")+"/studio/output/"+key
+    return web.Response(body=body,content_type=out_type,headers={
+        "X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid)),
+        "X-MUBA-Output-URL":output_url,
+        "Content-Disposition":'inline; filename="muba-studio.png"',
+    })
+
+async def studio_output_handler(request: web.Request):
+    import time
+    key=request.match_info.get("key","")
+    item=_STUDIO_OUTPUTS.get(key)
+    if not item: return web.Response(status=404,text="Studio output expired.")
+    # Keep generated links temporary instead of creating a permanent public archive.
+    if time.time()-item["created"]>86400:
+        _STUDIO_OUTPUTS.pop(key,None)
+        return web.Response(status=410,text="Studio output expired.")
+    download=request.query.get("download")=="1"
+    headers={"Cache-Control":"private, max-age=3600"}
+    if download: headers["Content-Disposition"]='attachment; filename="muba-studio.png"'
+    return web.Response(body=item["body"],content_type=item["content_type"],headers=headers)
 
 async def studio_render_handler(request: web.Request):
     prompt=clean_prompt(request.query.get("p","")); kind=request.query.get("k","meme")
@@ -524,6 +560,7 @@ async def start_webhook_server():
     )
     app.router.add_get("/studio", studio_page_handler)
     app.router.add_post("/studio/generate", studio_generate_handler)
+    app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
 
     runner = web.AppRunner(app)
