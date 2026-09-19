@@ -325,13 +325,17 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
 async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
     """Best-effort private Guardian report to DEV; never block moderation."""
     try:
-        kind=str(event.get("kind") or "guardian").upper()
-        subkind=str(event.get("subkind") or "").upper()
-        action=str(event.get("action") or "INFO").upper()
+        kind=str(event.get("kind") or "guardian").casefold()
+        subkind=str(event.get("subkind") or "").casefold()
+        action=str(event.get("action") or "info").casefold()
         strike=event.get("strike")
-        lines=["🛡️ MUBA GUARDIAN — DEV REPORT", f"Event: {kind}" + (f" / {subkind}" if subkind else ""), f"Action: {action}"]
-        if user_id is not None: lines.append(f"User ID: {user_id}")
-        if strike is not None: lines.append(f"Strike: {strike}")
+        kind_tr={"security":"Güvenlik","suspicious_link":"Şüpheli bağlantı","flood":"Flood / spam","unauthorized_control":"Yetkisiz komut","guardian":"Guardian"}.get(kind,kind)
+        subkind_tr={"fake_ca":"Sahte / doğrulanmamış CA","phishing":"Phishing","blocked_link":"Engellenen dış bağlantı","credential_theft":"Kimlik bilgisi hırsızlığı"}.get(subkind,subkind)
+        action_tr={"warn":"Uyarı","delete":"Mesaj silindi","mute":"Kullanıcı susturuldu","ban":"Kullanıcı yasaklandı","silent":"Sessiz engelleme","info":"Bilgi"}.get(action,action)
+        event_text=kind_tr + (f" / {subkind_tr}" if subkind_tr else "")
+        lines=["🛡️ MUBA GUARDIAN — DEV RAPORU", f"Olay: {event_text}", f"İşlem: {action_tr}"]
+        if user_id is not None: lines.append(f"Kullanıcı ID: {user_id}")
+        if strike is not None: lines.append(f"İhlal sayısı: {strike}")
         await context.bot.send_message(chat_id=DEV_ID, text="\\n".join(lines))
     except Exception:
         logger.exception("Guardian DEV private report failed")
