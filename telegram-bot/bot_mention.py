@@ -547,7 +547,7 @@ async def start_webhook_server():
 
     application.add_handler(
         MessageHandler(
-            filters.TEXT & ~filters.COMMAND,
+            filters.TEXT,
             handle_message,
         )
     )
