@@ -46,7 +46,7 @@ def ai_endpoint()->str:
 
 def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:
     format_hint={"meme":"cinematic meme image, leave clean space for a short caption","image":"polished cinematic image","sticker":"single expressive sticker subject, simple clean background","emoji":"single expressive emoji-like reaction, centered, simple clean background"}.get(kind,"polished image")
-    instruction=(f"Create a new scene featuring the same MUBA character shown in the reference image. Preserve the recognizable face, huge expressive eyes, tan short fur, tongue, black MUBA cap and black $MUBA hoodie. {format_hint}. User request: {clean_prompt(prompt)}")
+    instruction=(f"Use the reference image as MUBA identity guidance, not as a rigid composition template. Keep MUBA recognizably MUBA through the core facial identity: wide expressive eyes, tan short fur, playful tongue expression, and the characteristic face proportions. Adapt the character naturally to the user's concept, pose, framing, scale, lighting, environment and visual style. Do not force a large centered MUBA portrait, circular avatar framing, black cap, or black $MUBA hoodie unless the user asks for them or they fit the scene naturally. Prefer a softer, more integrated interpretation while preserving MUBA's recognizable identity. The requested concept should lead the composition; MUBA should belong inside the scene rather than dominate it by default. {format_hint}. User request: {clean_prompt(prompt)}")
     return {"prompt":instruction,"input_image":reference_data_uri,"width":1024,"height":1024}
 
 def render_meme(reference_bytes:bytes,prompt:str,kind:str="meme")->bytes:
