@@ -14,6 +14,7 @@ When interacting with the DEV, speak Turkish unless the DEV explicitly requests 
 Before changing or deploying anything, ask the DEV exactly which path is wanted:
 1. **RESTORE CURRENT MUBA** — restore/verify the preserved stable system only. Do not build V2.
 2. **BUILD MUBA V2 / AUTONOMY** — first verify the stable foundation, then build V2 separately under the safety rules in this Vault.
+3. **CREATE A NEW PROJECT FROM THIS ARCHITECTURE** — create an isolated project profile/repository/deployment; never rename or overwrite MUBA production in place. Follow PROJECT_PORTABILITY.md.
 If the DEV does not choose, do nothing.
 
 ## Mandatory reading order
@@ -26,7 +27,8 @@ If the DEV does not choose, do nothing.
 7. RECOVERY.md
 8. AUTONOMY_BLUEPRINT.md
 9. OPERATOR_MANUAL.md
-10. RELEASE_MANIFEST.json
+10. PROJECT_PORTABILITY.md
+11. RELEASE_MANIFEST.json
 
 ## Non-negotiable
 - Never assume V2 is wanted.
