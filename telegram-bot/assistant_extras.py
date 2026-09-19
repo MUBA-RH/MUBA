@@ -10,7 +10,7 @@ LABELS={
 "tr":{"story":"📖 Hikâye Modu","lab":"🎨 İçerik Laboratuvarı","guide":"🧭 Topluluk Rehberi","security":"🔎 Güvenlik Kontrolü","back":"⬅️ Geri"},
 "zh":{"story":"📖 故事模式","lab":"🎨 内容实验室","guide":"🧭 社区指南","security":"🔎 安全检查","back":"⬅️ 返回"},
 "ar":{"story":"📖 وضع القصة","lab":"🎨 مختبر المحتوى","guide":"🧭 دليل المجتمع","security":"🔎 فحص الأمان","back":"⬅️ رجوع"},
-"hi":{"story":"📖 स्टोरी मोड","lab":"🎨 कंटेंट लैब","guide":"🧭 कम्युनिटी गाइड","security":"🔎 सिक्योरिटी चेक","back":"⬅️ वापस"},
+"hi":{"story":"📖 कहानी मोड","lab":"🎨 सामग्री प्रयोगशाला","guide":"🧭 समुदाय मार्गदर्शिका","security":"🔎 सुरक्षा जाँच","back":"⬅️ वापस"},
 }
 
 STORY={
@@ -42,7 +42,7 @@ SECURITY_PROMPT={
 "tr":"Sonraki mesajında bir MUBA linki veya kontrat adresi gönder. Yalnızca kayıtlı resmi MUBA kaynaklarıyla karşılaştıracağım. Burada kullanıcı moderasyonu yapmıyorum.",
 "zh":"下一条消息发送 MUBA 链接或合约地址。我只会与当前登记的官方 MUBA 来源比较。这里不会执行用户管理。",
 "ar":"أرسل رابط MUBA أو عنوان عقد في رسالتك التالية. سأقارنه فقط بمصادر MUBA الرسمية المسجلة حالياً. لا أقوم بإدارة المستخدمين هنا.",
-"hi":"अगले message में MUBA link या contract address भेजें। मैं इसे केवल registered official MUBA sources से compare करूँगा। यहाँ user moderation नहीं होती।",
+"hi":"अगले संदेश में MUBA लिंक या अनुबंध पता भेजें। मैं इसे केवल पंजीकृत आधिकारिक MUBA स्रोतों से मिलाऊँगा। यहाँ उपयोगकर्ता मॉडरेशन नहीं होता।",
 }
 OFFICIAL_HOST_PATH={("muba-rh.github.io","/MUBA"),("x.com","/MUBA_RH"),("t.me","/MUBA_RH")}
 _ADDR=re.compile(r"^(?:0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$")
@@ -62,7 +62,7 @@ def security_check(lang, value):
                 ok=(host,path) in {(h.casefold(),pa) for h,pa in OFFICIAL_HOST_PATH} and not p.username and not p.password
             except ValueError: ok=False
     if ok:
-        return {"en":"✅ Official MUBA source.","tr":"✅ Resmi MUBA kaynağı.","zh":"✅ MUBA 官方来源。","ar":"✅ مصدر MUBA رسمي.","hi":"✅ Official MUBA source."}[lang]
+        return {"en":"✅ Official MUBA source.","tr":"✅ Resmi MUBA kaynağı.","zh":"✅ MUBA 官方来源。","ar":"✅ مصدر MUBA رسمي.","hi":"✅ आधिकारिक MUBA स्रोत।"}[lang]
     if _ADDR.fullmatch(v):
-        return {"en":"⚠️ No official MUBA CA is published yet. This address cannot be verified as official.","tr":"⚠️ Henüz resmi MUBA CA yayımlanmadı. Bu adres resmi olarak doğrulanamaz.","zh":"⚠️ MUBA 官方 CA 尚未发布。此地址无法验证为官方地址。","ar":"⚠️ لم يتم نشر CA رسمي لـ MUBA بعد. لا يمكن التحقق من هذا العنوان كعنوان رسمي.","hi":"⚠️ Official MUBA CA अभी publish नहीं हुआ है। इस address को official verify नहीं किया जा सकता।"}[lang]
-    return {"en":"❌ This is not a registered official MUBA source.","tr":"❌ Bu, kayıtlı resmi bir MUBA kaynağı değil.","zh":"❌ 这不是已登记的 MUBA 官方来源。","ar":"❌ هذا ليس مصدراً رسمياً مسجلاً لـ MUBA.","hi":"❌ यह registered official MUBA source नहीं है।"}[lang]
+        return {"en":"⚠️ No official MUBA CA is published yet. This address cannot be verified as official.","tr":"⚠️ Henüz resmi MUBA CA yayımlanmadı. Bu adres resmi olarak doğrulanamaz.","zh":"⚠️ MUBA 官方 CA 尚未发布。此地址无法验证为官方地址。","ar":"⚠️ لم يتم نشر CA رسمي لـ MUBA بعد. لا يمكن التحقق من هذا العنوان كعنوان رسمي.","hi":"⚠️ आधिकारिक MUBA CA अभी प्रकाशित नहीं हुआ है। इस पते को आधिकारिक रूप से सत्यापित नहीं किया जा सकता।"}[lang]
+    return {"en":"❌ This is not a registered official MUBA source.","tr":"❌ Bu, kayıtlı resmi bir MUBA kaynağı değil.","zh":"❌ 这不是已登记的 MUBA 官方来源。","ar":"❌ هذا ليس مصدراً رسمياً مسجلاً لـ MUBA.","hi":"❌ यह पंजीकृत आधिकारिक MUBA स्रोत नहीं है।"}[lang]
