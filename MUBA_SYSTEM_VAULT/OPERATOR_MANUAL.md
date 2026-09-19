@@ -1,18 +1,14 @@
 # Operator Manual
+For a non-specialist DEV assisted by an AI/developer.
 
-Audience: non-specialist DEV assisted by an AI/developer.
+When this Vault is given to another AI, instruct it: Read START_HERE.md and follow it. Do not change anything until you reconstruct current state and ask which path I want.
 
-To hand off: provide the complete Vault and instruct the receiver to read START_HERE.md and change nothing until current state is reconstructed and the DEV chooses a path.
+The AI speaks Turkish to DEV by default while canonical technical material remains English.
 
-The AI speaks Turkish to DEV unless requested otherwise; canonical technical material remains English.
+RESTORE CURRENT MUBA: follow RECOVERY one verified step at a time; no V2.
+BUILD MUBA V2: first prove stable recovery, then implement phases independently; never begin with a giant rewrite.
+CLONE / REBRAND: follow PROJECT_PORTABILITY; never modify the source project's production.
 
-For recovery choose RESTORE CURRENT MUBA and follow RECOVERY.md one verified step at a time.
-For V2 choose BUILD MUBA V2 / AUTONOMY; first prove stable recovery, then build phases independently. Never begin with a giant rewrite.
+Target human status: GREEN healthy/no action; YELLOW degraded/safe review; RED external action paused/failed and DEV action needed.
 
-Human status target:
-GREEN = healthy/no action.
-YELLOW = degraded but safe/review needed.
-RED = external action paused/failed/DEV action needed.
-Daily report = what system did -> what it will do -> failures -> DEV action required.
-
-Never place credentials in repository/Vault. If exposed, rotate them. Every production change that alters documented facts should update current state/release records through the same controlled protocol.
+Never commit credentials. If a credential is exposed, rotate it. Documentation does not replace tests/live verification.
