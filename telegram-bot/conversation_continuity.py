@@ -13,8 +13,8 @@ _MAX_USERS=2048
 _STATE=OrderedDict()
 
 def _norm(text):
-    value=(text or "").casefold().replace("\\u0307","")
-    return re.sub(r"[^\\w\\s\\u0600-\\u06ff\\u0900-\\u097f\\u4e00-\\u9fff]"," ",value).strip()
+    value=(text or "").casefold().replace("İ".casefold(),"i")
+    return re.sub(r"[^\w\s\u0600-\u06ff\u0900-\u097f\u4e00-\u9fff]"," ",value).strip()
 
 def clear(user_id):
     _STATE.pop(user_id,None)
