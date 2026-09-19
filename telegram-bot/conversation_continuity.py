@@ -61,7 +61,20 @@ _REPLY_NEG={
 "hi":"समझ गया। थोड़ी देर आराम से चलते हैं। 🪶",
 }
 
-def _contains_any(value,phrases):
+
+_MUBA_TOPICS={
+"en":{"identity":("who is muba","what is muba"),"origin":("how did muba emerge","where did muba come from"),"difference":("what makes muba different",),"purpose":("why muba","why does muba exist"),"community":("community role",),"plan":("what comes next for muba",)},
+"tr":{"identity":("muba kim","muba nedir","muba ne"),"origin":("muba nasıl ortaya çıktı","muba nereden çıktı"),"difference":("muba farkı","muba'yı farklı"),"purpose":("neden muba","muba neden var"),"community":("muba topluluk","topluluğun rolü"),"plan":("muba sırada","muba gelecek")},
+"zh":{"identity":("muba 是什么","muba是谁"),"origin":("muba 如何出现","muba 起源"),"difference":("muba 有什么不同",),"purpose":("muba 为什么","muba 目标"),"community":("muba 社区",),"plan":("muba 接下来","muba 未来")},
+"ar":{"identity":("ما هو muba","من هو muba"),"origin":("كيف ظهر muba","نشأة muba"),"difference":("ما الذي يجعل muba مختلف",),"purpose":("لماذا muba","هدف muba"),"community":("مجتمع muba",),"plan":("مستقبل muba",)},
+"hi":{"identity":("muba क्या है","muba कौन है"),"origin":("muba कैसे शुरू","muba शुरुआत"),"difference":("muba को अलग",),"purpose":("muba क्यों","muba उद्देश्य"),"community":("muba समुदाय",),"plan":("muba आगे","muba भविष्य")},
+}
+def _muba_answer(lang,topic):
+    from assistant_mode import QUESTIONS,answer_for_question
+    for i,(t,_) in enumerate(QUESTIONS[lang]):
+        if t==topic:return answer_for_question(lang,i)
+    return None
+\ndef _contains_any(value,phrases):
     return any(_norm(p) in value for p in phrases)
 
 def reply(user_id,lang,text):
