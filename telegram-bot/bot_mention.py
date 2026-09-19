@@ -38,7 +38,7 @@ from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
-from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev
+from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -112,7 +112,7 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
-    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)))])
+    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -360,11 +360,11 @@ async def _studio_reference(request: web.Request):
 async def studio_generate_handler(request: web.Request):
     try: data=await request.json()
     except Exception: return web.json_response({"error":"Invalid request."},status=400)
-    user=validate_init_data(str(data.get("initData","")),TOKEN)
+    user=validate_init_data(str(data.get("initData","")),TOKEN) or validate_studio_token(data.get("uid"),data.get("studioToken"),TOKEN)
     if not user or not user.get("id"): return web.json_response({"error":"Open Studio from Telegram."},status=401)
     uid=int(user["id"]); prompt=clean_prompt(str(data.get("prompt",""))); kind=str(data.get("kind","meme"))
     if not prompt: return web.json_response({"error":"Write something for MUBA."},status=400)
-    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 5/5."},status=429)
+    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 3/3."},status=429)
     if not ai_configured(): return web.json_response({"error":"MUBA AI engine is not configured yet. No quota was used."},status=503)
     try:
         import base64
