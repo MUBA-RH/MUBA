@@ -18,6 +18,12 @@ class StudioAI(unittest.TestCase):
  def test_payload_preserves_muba_identity(self):
   p=muba_studio.ai_payload("on the moon","sticker","data:image/jpeg;base64,abc")
   self.assertIn("same MUBA character",p["prompt"]);self.assertIn("black MUBA cap",p["prompt"]);self.assertIn("input_image",p)
+ def test_workers_ai_transport_is_multipart(self):
+  src=(ROOT/"bot_mention.py").read_text()
+  self.assertIn('aiohttp.FormData()',src)
+  self.assertIn('"input_image_0"',src)
+  self.assertIn('data=form',src)
+  self.assertNotIn('json=ai_payload(prompt,kind,image_data)',src)
  def test_no_guardian_dependency(self):
   self.assertNotIn("guardian",(ROOT/"muba_studio.py").read_text().lower())
 if __name__=="__main__":unittest.main()
