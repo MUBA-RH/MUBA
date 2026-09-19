@@ -69,8 +69,7 @@ def render_meme(reference_bytes:bytes,prompt:str,kind:str="meme")->bytes:
         else: cur=nxt
     if cur: lines.append(cur)
     lines=lines[:3]
-    text="
-".join(lines)
+    text="\\n".join(lines)
     box=draw.multiline_textbbox((0,0),text,font=font,spacing=8,align="center")
     tw=box[2]-box[0]; th=box[3]-box[1]
     ty=size[1]-th-24
