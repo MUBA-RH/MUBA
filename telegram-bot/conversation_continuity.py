@@ -13,7 +13,8 @@ _MAX_USERS=2048
 _STATE=OrderedDict()
 
 def _norm(text):
-    return re.sub(r"[^\w\s\u0600-\u06ff\u0900-\u097f\u4e00-\u9fff]"," ",(text or "").casefold()).strip()
+    value=(text or "").casefold().replace("İ".casefold(),"i")
+    return re.sub(r"[^\w\s\u0600-\u06ff\u0900-\u097f\u4e00-\u9fff]"," ",value).strip()
 
 def clear(user_id):
     _STATE.pop(user_id,None)
@@ -34,7 +35,7 @@ _WELLBEING_ASK={
 }
 _POSITIVE={
 "en":("i m good","im good","i am good","doing great","pretty good","fine thanks","good thanks","great thanks"),
-"tr":("iyiyim","iyi gidiyor","keyfim yerinde","gayet iyiyim","çok iyiyim","şükür iyi","fena değil","sağ ol","teşekkür"),
+"tr":("iyi","iyiyim","iyi gidiyor","keyfim yerinde","gayet iyiyim","çok iyiyim","şükür iyi","fena değil","sağ ol","teşekkür"),
 "zh":("我很好","挺好的","很好 谢谢","不错","还不错","谢谢"),
 "ar":("أنا بخير","بخير","تمام","الحمد لله","شكرا","شكرًا"),
 "hi":("मैं ठीक हूँ","मैं अच्छा हूँ","बढ़िया","ठीक हूँ","धन्यवाद","शुक्रिया"),
@@ -61,6 +62,19 @@ _REPLY_NEG={
 "hi":"समझ गया। थोड़ी देर आराम से चलते हैं। 🪶",
 }
 
+
+_MUBA_TOPICS={
+"en":{"identity":("who is muba","what is muba"),"origin":("how did muba emerge","where did muba come from"),"difference":("what makes muba different",),"purpose":("why muba","why does muba exist"),"community":("community role",),"plan":("what comes next for muba",)},
+"tr":{"identity":("muba kim","muba nedir","muba ne"),"origin":("muba nasıl ortaya çıktı","muba nereden çıktı"),"difference":("muba farkı","muba'yı farklı"),"purpose":("neden muba","muba neden var"),"community":("muba topluluk","topluluğun rolü"),"plan":("muba sırada","muba gelecek")},
+"zh":{"identity":("muba 是什么","muba是谁"),"origin":("muba 如何出现","muba 起源"),"difference":("muba 有什么不同",),"purpose":("muba 为什么","muba 目标"),"community":("muba 社区",),"plan":("muba 接下来","muba 未来")},
+"ar":{"identity":("ما هو muba","من هو muba"),"origin":("كيف ظهر muba","نشأة muba"),"difference":("ما الذي يجعل muba مختلف",),"purpose":("لماذا muba","هدف muba"),"community":("مجتمع muba",),"plan":("مستقبل muba",)},
+"hi":{"identity":("muba क्या है","muba कौन है"),"origin":("muba कैसे शुरू","muba शुरुआत"),"difference":("muba को अलग",),"purpose":("muba क्यों","muba उद्देश्य"),"community":("muba समुदाय",),"plan":("muba आगे","muba भविष्य")},
+}
+def _muba_answer(lang,topic):
+    from assistant_mode import QUESTIONS,answer_for_question
+    for i,(t,_) in enumerate(QUESTIONS[lang]):
+        if t==topic:return answer_for_question(lang,i)
+    return None
 def _contains_any(value,phrases):
     return any(_norm(p) in value for p in phrases)
 
@@ -72,6 +86,8 @@ def reply(user_id,lang,text):
     previous=_norm(state.get("assistant",""))
     current=_norm(text)
     if not previous or not current: return None
+    for topic,phrases in _MUBA_TOPICS.get(lang,{}).items():
+        if _contains_any(current,phrases): return _muba_answer(lang,topic)
     if _contains_any(previous,_WELLBEING_ASK.get(lang,())):
         if _contains_any(current,_NEGATIVE.get(lang,())): return _REPLY_NEG[lang]
         if _contains_any(current,_POSITIVE.get(lang,())): return _REPLY_POS[lang]

@@ -16,6 +16,16 @@ class ConversationContinuityExam(unittest.TestCase):
   for i,(lang,(assistant,user)) in enumerate(cases.items(),1):
    cc.remember_assistant_turn(i,lang,assistant)
    self.assertTrue(cc.reply(i,lang,user),(lang,user))
+ def test_short_positive_reply(self):
+  cc.remember_assistant_turn(1,"tr","İyi gidiyor. Senin keyfin nasıl?")
+  self.assertIn("enerji",cc.reply(1,"tr","İyi").casefold())
+ def test_verified_muba_routing_five_languages(self):
+  cases=[("tr","MUBA kim?"),("en","Who is MUBA?"),("zh","MUBA 是什么？"),("ar","ما هو MUBA؟"),("hi","MUBA क्या है?")]
+  for i,(lang,text) in enumerate(cases,20):
+   cc.remember_assistant_turn(i,lang,"x")
+   answer=cc.reply(i,lang,text)
+   self.assertTrue(answer)
+   self.assertTrue(answer.strip())
  def test_language_isolation(self):
   cc.remember_assistant_turn(1,"tr","İyi gidiyor. Senin keyfin nasıl?")
   self.assertIsNone(cc.reply(1,"en","I'm good, thanks"))
@@ -25,5 +35,5 @@ class ConversationContinuityExam(unittest.TestCase):
   self.assertIsNone(cc.reply(1,"tr","Keyfim yerinde sağ ol"))
  def test_unrelated_message_is_not_hijacked(self):
   cc.remember_assistant_turn(1,"tr","İyi gidiyor. Senin keyfin nasıl?")
-  self.assertIsNone(cc.reply(1,"tr","MUBA nedir?"))
+  self.assertIn("muba",cc.reply(1,"tr","MUBA nedir?").casefold())
 if __name__=="__main__": unittest.main(verbosity=2)
