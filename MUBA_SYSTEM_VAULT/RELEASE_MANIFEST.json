@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "vault_type": "passive-recovery-and-v2-blueprint",
-  "repository": "MUBA-RH/MUBA",
+  "vault_type": "passive-recovery-v2-portability-blueprint",
+  "source_repository": "MUBA-RH/MUBA",
   "pre_vault_stable": {
     "sha": "d09aad85380ac87586e3656f796fc27967d75856",
     "short": "d09aad8",
@@ -13,22 +13,19 @@
     "response_language": "tr",
     "canonical_docs_language": "en"
   },
-  "current_surfaces": [
-    "github-pages-website",
-    "telegram-guardian",
-    "private-assistant",
-    "muba-studio",
-    "layered-local-brain"
+  "entry_paths": [
+    "RESTORE_CURRENT_MUBA",
+    "BUILD_MUBA_V2_AUTONOMY",
+    "CREATE_NEW_PROJECT_FROM_ARCHITECTURE"
   ],
-  "protocol": {
-    "dev_command": "BAŞLA 🔥 MERGE 🟢 STABİL 🔒",
-    "success_phrase": "Tamamlandı. 🔥🟢🔒",
-    "v2_requires_explicit_dev_choice": true
+  "protected_protocol": {
+    "command": "BAŞLA 🔥 MERGE 🟢 STABİL 🔒",
+    "success_phrase": "Tamamlandı. 🔥🟢🔒"
   },
-  "credentials_in_vault": false,
+  "secrets_in_vault": false,
   "notes": [
-    "External provider credentials/settings are intentionally not backed up here.",
-    "Live operational databases are not embedded in Git.",
-    "Repository/provider reality must be re-verified before restoration or V2 work."
+    "External credentials and live provider settings are intentionally excluded.",
+    "The Vault must be removable without changing production runtime.",
+    "Repository and provider reality must be re-verified before restore, V2, or clone work."
   ]
 }
