@@ -14,6 +14,7 @@ When interacting with the DEV, speak Turkish unless the DEV explicitly requests 
 Before changing or deploying anything, ask the DEV exactly which path is wanted:
 1. **RESTORE CURRENT MUBA** — restore/verify the preserved stable system only. Do not build V2.
 2. **BUILD MUBA V2 / AUTONOMY** — first verify the stable foundation, then build V2 separately under the safety rules in this Vault.
+3. **CREATE A NEW PROJECT FROM THIS ARCHITECTURE** — follow PROJECT_PORTABILITY.md and create an isolated project without modifying MUBA. Collect the new project's required Telegram access configuration and X account/user ID during setup. Sensitive values must be configured only in the appropriate provider environment and never stored in the Vault.
 If the DEV does not choose, do nothing.
 
 ## Mandatory reading order
@@ -25,8 +26,9 @@ If the DEV does not choose, do nothing.
 6. CONTINUITY.md
 7. RECOVERY.md
 8. AUTONOMY_BLUEPRINT.md
-9. OPERATOR_MANUAL.md
-10. RELEASE_MANIFEST.json
+9. PROJECT_PORTABILITY.md
+10. OPERATOR_MANUAL.md
+11. RELEASE_MANIFEST.json
 
 ## Non-negotiable
 - Never assume V2 is wanted.
