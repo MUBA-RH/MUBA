@@ -40,6 +40,7 @@ from muba_brain import (
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
+from human_conversation_pack import reply as match_human_conversation
 from conversation_continuity import reply as continuity_reply, remember_assistant_turn, clear as clear_conversation
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
@@ -343,6 +344,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if continuity:
             remember_assistant_turn(user_id,lang,continuity)
             await message.reply_text(continuity,disable_web_page_preview=True); return
+        expanded_human=match_human_conversation(lang,text)
+        if expanded_human:
+            remember_assistant_turn(user_id,lang,expanded_human)
+            await message.reply_text(expanded_human,disable_web_page_preview=True)
+            return
         human_answer=match_human_catalog(lang,text)
         if human_answer:
             remember_assistant_turn(user_id,lang,human_answer)
