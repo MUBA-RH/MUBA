@@ -344,6 +344,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if continuity:
             remember_assistant_turn(user_id,lang,continuity)
             await message.reply_text(continuity,disable_web_page_preview=True); return
+        expanded_human=match_human_conversation(lang,text)
+        if expanded_human:
+            remember_assistant_turn(user_id,lang,expanded_human)
+            await message.reply_text(expanded_human,disable_web_page_preview=True)
+            return
         human_answer=match_human_catalog(lang,text)
         if human_answer:
             remember_assistant_turn(user_id,lang,human_answer)
