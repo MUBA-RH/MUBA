@@ -85,7 +85,9 @@ def reply(user_id,lang,text):
     previous=_norm(state.get("assistant",""))
     current=_norm(text)
     if not previous or not current: return None
-    for topic,phrases in _MUBA_TOPICS.get(lang,{}).items():\n        if _contains_any(current,phrases): return _muba_answer(lang,topic)\n    if _contains_any(previous,_WELLBEING_ASK.get(lang,())):
+    for topic,phrases in _MUBA_TOPICS.get(lang,{}).items():
+        if _contains_any(current,phrases): return _muba_answer(lang,topic)
+    if _contains_any(previous,_WELLBEING_ASK.get(lang,())):
         if _contains_any(current,_NEGATIVE.get(lang,())): return _REPLY_NEG[lang]
         if _contains_any(current,_POSITIVE.get(lang,())): return _REPLY_POS[lang]
     return None
