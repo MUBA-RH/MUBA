@@ -17,7 +17,7 @@ class StudioAI(unittest.TestCase):
    if old2:os.environ["CLOUDFLARE_API_TOKEN"]=old2
  def test_payload_preserves_muba_identity(self):
   p=muba_studio.ai_payload("on the moon","sticker","data:image/jpeg;base64,abc")
-  self.assertIn("same MUBA character",p["prompt"]);self.assertIn("black MUBA cap",p["prompt"]);self.assertIn("input_image",p)
+  self.assertIn("MUBA identity guidance",p["prompt"]);self.assertIn("core facial identity",p["prompt"]);self.assertIn("Do not force a large centered MUBA portrait",p["prompt"]);self.assertIn("concept should lead the composition",p["prompt"]);self.assertIn("input_image",p)
  def test_workers_ai_transport_is_multipart(self):
   src=(ROOT/"bot_mention.py").read_text()
   self.assertIn('aiohttp.FormData()',src)
