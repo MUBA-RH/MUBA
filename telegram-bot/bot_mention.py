@@ -6,6 +6,7 @@ No external AI service or API key is required.
 
 import hashlib
 import logging
+import json
 import os
 
 from aiohttp import web
