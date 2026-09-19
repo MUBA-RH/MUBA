@@ -34,7 +34,7 @@ _WELLBEING_ASK={
 }
 _POSITIVE={
 "en":("i m good","im good","i am good","doing great","pretty good","fine thanks","good thanks","great thanks"),
-"tr":("iyiyim","iyi gidiyor","keyfim yerinde","gayet iyiyim","çok iyiyim","şükür iyi","fena değil","sağ ol","teşekkür"),
+"tr":("iyi","iyiyim","iyi gidiyor","keyfim yerinde","gayet iyiyim","çok iyiyim","şükür iyi","fena değil","sağ ol","teşekkür"),
 "zh":("我很好","挺好的","很好 谢谢","不错","还不错","谢谢"),
 "ar":("أنا بخير","بخير","تمام","الحمد لله","شكرا","شكرًا"),
 "hi":("मैं ठीक हूँ","मैं अच्छा हूँ","बढ़िया","ठीक हूँ","धन्यवाद","शुक्रिया"),
