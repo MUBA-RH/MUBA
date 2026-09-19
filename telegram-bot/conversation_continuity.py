@@ -1,4 +1,18 @@
-"""Short-lived private-chat continuity for MUBA Assistant.
+""
+# Conversational prompts that make a short user reply meaningful.
+# Kept inside this module so no Guardian, menu, or verified knowledge behavior changes.
+_EXPECTED_WELLBEING={
+"tr":("senin tarafta nasıl","sen nasılsın","senin keyfin nasıl","sende nasıl gidiyor","sende durumlar nasıl","senden haberler nasıl"),
+"en":("how about you","how are you","how are things with you","how s your day going","what about you"),
+"zh":("你呢","你怎么样","你好吗","你最近怎么样"),
+"ar":("وأنت","كيف حالك","كيف الأمور عندك","ماذا عنك"),
+"hi":("तुम कैसे हो","आप कैसे हैं","तुम्हारा क्या हाल","तुम्हारे यहाँ कैसा"),
+}
+def _expected_reply(lang,text):
+    value=_norm(text)
+    if _contains_any(value,_EXPECTED_WELLBEING.get(lang,())): return "wellbeing"
+    return None
+"Short-lived private-chat continuity for MUBA Assistant.
 
 This layer handles conversational acknowledgements that depend on the
 Assistant's immediately preceding turn. It is intentionally ephemeral,
@@ -22,7 +36,7 @@ def clear(user_id):
 def remember_assistant_turn(user_id,lang,text):
     if user_id is None: return
     now=time.monotonic()
-    _STATE[user_id]={"lang":lang,"assistant":text or "","at":now}
+    previous=_STATE.get(user_id,{})\n    turns=list(previous.get("turns",[]))\n    turns.append(("assistant",text or ""))\n    _STATE[user_id]={"lang":lang,"assistant":text or "","at":now,"turns":turns[-8:],"expected_reply":_expected_reply(lang,text)}
     _STATE.move_to_end(user_id)
     while len(_STATE)>_MAX_USERS: _STATE.popitem(last=False)
 
