@@ -5,11 +5,13 @@ not fabricated real-world facts. Live/current/personal questions are answered
 with honest boundaries instead of pretending MUBA has a human life.
 """
 from __future__ import annotations
-import hashlib,re
+import hashlib,re,unicodedata
 
 def _norm(text):
     value=(text or "").casefold().replace("İ".casefold(),"i")
-    return " ".join(re.sub(r"[^\w\s\u0600-\u06ff\u0900-\u097f\u4e00-\u9fff]"," ",value).split())
+    # Preserve native-script letters/marks; remove punctuation such as Arabic question marks.
+    value="".join(ch if (ch.isspace() or unicodedata.category(ch)[0] in {"L","N","M"}) else " " for ch in value)
+    return " ".join(value.split())
 
 # intent: (natural phrasings, safe localized reply variants)
 DATA={
