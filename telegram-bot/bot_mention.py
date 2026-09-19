@@ -45,7 +45,7 @@ from conversation_continuity import reply as continuity_reply, remember_assistan
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
-from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
+from guardian import DEV_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
 logging.basicConfig(
@@ -322,6 +322,21 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
     button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
     await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
 
+async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
+    """Best-effort private Guardian report to DEV; never block moderation."""
+    try:
+        kind=str(event.get("kind") or "guardian").upper()
+        subkind=str(event.get("subkind") or "").upper()
+        action=str(event.get("action") or "INFO").upper()
+        strike=event.get("strike")
+        lines=["🛡️ MUBA GUARDIAN — DEV REPORT", f"Event: {kind}" + (f" / {subkind}" if subkind else ""), f"Action: {action}"]
+        if user_id is not None: lines.append(f"User ID: {user_id}")
+        if strike is not None: lines.append(f"Strike: {strike}")
+        await context.bot.send_message(chat_id=DEV_ID, text="\\n".join(lines))
+    except Exception:
+        logger.exception("Guardian DEV private report failed")
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
         logger.info("Ignoring duplicate Telegram message delivery")
@@ -431,10 +446,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         action=guardian_event.get("action")
         if action=="warn":
             await message.reply_text(guardian_event["text"])
+            await _guardian_dev_report(context,guardian_event,user_id)
         elif action=="delete":
             try:
                 await message.delete()
                 await context.bot.send_message(chat.id,guardian_event["text"])
+                await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian link deletion failed")
         elif action in ("mute","ban"):
@@ -457,6 +474,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     await context.bot.ban_chat_member(chat.id,user_id,revoke_messages=True)
                 await context.bot.send_message(chat.id,guardian_event["text"])
+                await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian automatic moderation failed")
         return
