@@ -367,13 +367,22 @@ async def studio_generate_handler(request: web.Request):
     if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 3/3."},status=429)
     if not ai_configured(): return web.json_response({"error":"MUBA AI engine is not configured yet. No quota was used."},status=503)
     try:
-        import base64
+        import base64, aiohttp
         ref=await _studio_reference(request)
-        image_data="data:image/jpeg;base64,"+base64.b64encode(ref).decode("ascii")
-        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"],"Content-Type":"application/json"}
-        async with request.app["http_session"].post(ai_endpoint(),json=ai_payload(prompt,kind,image_data),headers=headers,timeout=90) as response:
+        # FLUX.2 Klein image-to-image expects multipart/form-data and the
+        # reference image under input_image_0 (not a JSON data URI).
+        form=aiohttp.FormData()
+        payload=ai_payload(prompt,kind,"")
+        form.add_field("prompt",payload["prompt"])
+        form.add_field("width",str(payload["width"]))
+        form.add_field("height",str(payload["height"]))
+        form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
-            if response.status != 200: raise RuntimeError("AI request failed")
+            if response.status != 200:
+                logger.error("Workers AI request failed status=%s body=%s",response.status,raw[:1000].decode("utf-8","replace"))
+                raise RuntimeError("AI request failed")
             if response.headers.get("Content-Type","").startswith("image/"): body=raw; out_type=response.headers.get("Content-Type")
             else:
                 payload=json.loads(raw.decode("utf-8")); result=payload.get("result",payload)
