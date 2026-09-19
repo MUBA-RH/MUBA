@@ -254,6 +254,20 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
 
 
+async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    message=update.effective_message; chat=update.effective_chat
+    if not message or not message.text or not chat or chat.type==ChatType.PRIVATE: return
+    if not is_guardian_group(chat.id): return
+    normalized=" ".join(message.text.strip().upper().split())
+    if normalized!="#MUBA ASSISTANT": return
+    now=time.monotonic(); last=_ASSISTANT_CALLS.get(chat.id,0.0)
+    if now-last<_ASSISTANT_CALL_COOLDOWN: return
+    _ASSISTANT_CALLS[chat.id]=now
+    username=context.bot.username
+    button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
+    await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
         logger.info("Ignoring duplicate Telegram message delivery")
@@ -544,6 +558,13 @@ async def start_webhook_server():
     application.add_handler(CommandHandler("ca", ca_command))
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_handler(InlineQueryHandler(inline_studio))
+    application.add_handler(
+        MessageHandler(
+            filters.TEXT & filters.Regex(r"(?i)^#MUBA\s+ASSISTANT\s*$"),
+            assistant_group_call,
+        ),
+        group=-1,
+    )
 
     application.add_handler(
         MessageHandler(
