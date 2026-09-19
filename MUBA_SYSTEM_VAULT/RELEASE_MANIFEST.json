@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "vault_type": "passive-recovery-and-v2-blueprint",
+  "vault_type": "passive-recovery-v2-portability-blueprint",
   "repository": "MUBA-RH/MUBA",
   "pre_vault_stable": {
     "sha": "d09aad85380ac87586e3656f796fc27967d75856",
@@ -29,6 +29,12 @@
   "notes": [
     "External provider credentials/settings are intentionally not backed up here.",
     "Live operational databases are not embedded in Git.",
-    "Repository/provider reality must be re-verified before restoration or V2 work."
+    "Repository/provider reality must be re-verified before restoration or V2 work.",
+    "Project cloning/rebranding requires new project-specific Telegram/X/web/runtime identities and external credentials; credential values remain outside Git."
+  ],
+  "entry_paths": [
+    "RESTORE_CURRENT_MUBA",
+    "BUILD_MUBA_V2_AUTONOMY",
+    "CREATE_NEW_PROJECT_FROM_ARCHITECTURE"
   ]
 }
