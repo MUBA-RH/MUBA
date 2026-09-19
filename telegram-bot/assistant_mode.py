@@ -21,7 +21,7 @@ TEXT={
 "tr":{"choose":"MUBA Assistant'a hoş geldin. Dilini seç:","menu":"MUBA Assistant — bir konu seç veya MUBA hakkında kendi sorunu yaz.","back":"⬅️ Geri","language":"🌐 Dili Değiştir","outside":"Ben MUBA Assistant'ım. MUBA'nın kimliği, kültürü, topluluğu ve resmi bilgileri üzerine çalışıyorum."},
 "zh":{"choose":"欢迎使用 MUBA Assistant。请选择语言：","menu":"MUBA Assistant — 选择一个主题，或直接询问有关 MUBA 的问题。","back":"⬅️ 返回","language":"🌐 更改语言","outside":"我是 MUBA Assistant，只专注于 MUBA 的身份、文化、社区和官方信息。"},
 "ar":{"choose":"مرحباً بك في MUBA Assistant. اختر لغتك:","menu":"MUBA Assistant — اختر موضوعاً أو اسأل سؤالك عن MUBA.","back":"⬅️ رجوع","language":"🌐 تغيير اللغة","outside":"أنا MUBA Assistant. أركز على MUBA وهويته وثقافته ومجتمعه ومعلوماته الرسمية."},
-"hi":{"choose":"MUBA Assistant में आपका स्वागत है। अपनी भाषा चुनें:","menu":"MUBA Assistant — कोई विषय चुनें या MUBA के बारे में अपना सवाल पूछें।","back":"⬅️ वापस","language":"🌐 भाषा बदलें","outside":"मैं MUBA Assistant हूँ। मैं MUBA की identity, culture, community और official information पर केंद्रित हूँ।”"}}
+"hi":{"choose":"MUBA Assistant में आपका स्वागत है। अपनी भाषा चुनें:","menu":"MUBA Assistant — कोई विषय चुनें या MUBA के बारे में अपना सवाल पूछें।","back":"⬅️ वापस","language":"🌐 भाषा बदलें","outside":"मैं MUBA Assistant हूँ। मैं MUBA की पहचान, संस्कृति, समुदाय और आधिकारिक जानकारी पर केंद्रित हूँ।"}}
 
 def guided_answer(lang,index):
  topic,_=QUESTIONS[lang][index]
