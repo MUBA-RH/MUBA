@@ -10,6 +10,8 @@ import json
 import os
 import time
 from collections import OrderedDict
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto
@@ -60,8 +62,10 @@ _STUDIO_OUTPUTS = {}
 _PROCESSED_MESSAGES = OrderedDict()
 _PROCESSED_MESSAGE_TTL = 21600
 _PROCESSED_MESSAGE_MAX = 4096
-_ASSISTANT_CALL_COOLDOWN = 60
+_ASSISTANT_DAILY_LIMIT = 7
+_ASSISTANT_CALL_INTERVAL = 7200
 _ASSISTANT_CALLS = {}
+_ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
 
 
 def _claim_message(update: Update) -> bool:
@@ -255,18 +259,64 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message=update.effective_message; chat=update.effective_chat
-    if not message or not message.text or not chat or chat.type==ChatType.PRIVATE: return
+    message=update.effective_message; chat=update.effective_chat; user=update.effective_user
+    if not message or not message.text or not chat or chat.type==ChatType.PRIVATE or not user: return
     if not is_guardian_group(chat.id): return
     normalized=" ".join(message.text.strip().upper().split())
     if normalized!="#MUBA ASSISTANT": return
-    now=time.monotonic(); last=_ASSISTANT_CALLS.get(chat.id,0.0)
-    if now-last<_ASSISTANT_CALL_COOLDOWN: return
-    _ASSISTANT_CALLS[chat.id]=now
+    if not _claim_message(update): return
+
+    user_id=user.id
+    if not is_dev(user_id):
+        now=datetime.now(_ISTANBUL_TZ)
+        today=now.date().isoformat()
+        state=_ASSISTANT_CALLS.get(user_id)
+        if not state or state["date"]!=today:
+            state={"date":today,"count":0,"last":0.0}
+            _ASSISTANT_CALLS[user_id]=state
+
+        lang=get_assistant_language(user_id)
+        if lang not in LANGS:
+            code=(getattr(user,"language_code",None) or "en").lower()
+            if code.startswith("tr"): lang="tr"
+            elif code.startswith("zh"): lang="zh"
+            elif code.startswith("ar"): lang="ar"
+            elif code.startswith("hi"): lang="hi"
+            else: lang="en"
+
+        limit_text={
+            "en":"You've reached your 7 MUBA Assistant calls for today. Your limit resets tomorrow.",
+            "tr":"Bugünkü 7 MUBA Assistant çağrı hakkınızı kullandınız. Limitiniz yarın yenilenecek.",
+            "zh":"您今天的 7 次 MUBA Assistant 呼叫次数已用完。额度将在明天重置。",
+            "ar":"لقد استخدمت 7 مرات لاستدعاء MUBA Assistant اليوم. سيتم تجديد الحد غدًا.",
+            "hi":"आप आज के 7 MUBA Assistant कॉल पूरे कर चुके हैं। आपकी सीमा कल रीसेट होगी।",
+        }
+        wait_text={
+            "en":"Your next MUBA Assistant call will be available in {time}.",
+            "tr":"Bir sonraki MUBA Assistant çağrınız {time} sonra kullanılabilir.",
+            "zh":"您可以在 {time} 后再次呼叫 MUBA Assistant。",
+            "ar":"يمكنك استدعاء MUBA Assistant مرة أخرى بعد {time}.",
+            "hi":"आप अगली बार MUBA Assistant को {time} बाद बुला सकते हैं।",
+        }
+        if state["count"]>=_ASSISTANT_DAILY_LIMIT:
+            await message.reply_text(limit_text[lang]); return
+        elapsed=time.time()-state["last"] if state["last"] else _ASSISTANT_CALL_INTERVAL
+        if elapsed<_ASSISTANT_CALL_INTERVAL:
+            remaining_seconds=max(1,int(_ASSISTANT_CALL_INTERVAL-elapsed))
+            hours,rem=divmod(remaining_seconds,3600); minutes=(rem+59)//60
+            if minutes==60: hours+=1; minutes=0
+            if lang=="tr": duration=(f"{hours} sa {minutes} dk" if minutes else f"{hours} sa")
+            elif lang=="zh": duration=(f"{hours}小时{minutes}分钟" if minutes else f"{hours}小时")
+            elif lang=="ar": duration=(f"{hours} س {minutes} د" if minutes else f"{hours} س")
+            elif lang=="hi": duration=(f"{hours}घं {minutes}मि" if minutes else f"{hours}घं")
+            else: duration=(f"{hours}h {minutes}m" if minutes else f"{hours}h")
+            await message.reply_text(wait_text[lang].format(time=duration)); return
+        state["count"]+=1
+        state["last"]=time.time()
+
     username=context.bot.username
     button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
     await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
-
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
@@ -296,15 +346,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id))
         return
     if not is_guardian_group(chat.id): return
-    normalized=" ".join(text.upper().split())
-    if normalized=="#MUBA ASSISTANT":
-        now=time.monotonic(); last=_ASSISTANT_CALLS.get(chat.id,0.0)
-        if now-last>=_ASSISTANT_CALL_COOLDOWN:
-            _ASSISTANT_CALLS[chat.id]=now
-            username=context.bot.username
-            button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
-            await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
-        return
     cmd=authorized_command(chat.id,user_id,text)
     if cmd:
         if cmd in ("#START","#STOP"):
