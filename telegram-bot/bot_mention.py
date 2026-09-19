@@ -38,7 +38,7 @@ from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
-from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev
+from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -102,7 +102,7 @@ def should_answer(update: Update) -> bool:
 def language_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"lang:{code}")] for code,label in LANGS.items()])
 
-def menu_keyboard(lang):
+def menu_keyboard(lang,user_id=None):
     labels=TOPIC_LABELS[lang]
     rows=[]
     for topic in ("origin","identity","difference","purpose","community","plan"):
@@ -112,7 +112,7 @@ def menu_keyboard(lang):
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
-    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio"))])
+    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -181,7 +181,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("lang:"):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
-            await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang))
+            await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id))
         return
     lang=get_assistant_language(user_id)
     if not lang:
@@ -189,7 +189,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="language":
         clear_assistant_language(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
-        await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang)); return
+        await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
     if data=="daily":
         await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang)); return
     if data.startswith("daily:"):
@@ -224,20 +224,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not lang:
             await show_language(update); return
         if context.user_data.pop("muba_security_check",False):
-            await message.reply_text(security_check(lang,text),disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
+            await message.reply_text(security_check(lang,text),disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
         catalog_index=match_catalog(lang,text)
         if catalog_index is not None:
-            await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
+            await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
         human_answer=match_human_catalog(lang,text)
         if human_answer:
-            await message.reply_text(human_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
+            await message.reply_text(human_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
         natural_answer=match_natural_chat(lang,text)
         if natural_answer:
-            await message.reply_text(natural_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang)); return
+            await message.reply_text(natural_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
         if not assistant_relevant(text):
-            await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang)); return
+            await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang,user_id)); return
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
-        if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang))
+        if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id))
         return
     if not is_guardian_group(chat.id): return
     cmd=authorized_command(chat.id,user_id,text)
@@ -360,11 +360,11 @@ async def _studio_reference(request: web.Request):
 async def studio_generate_handler(request: web.Request):
     try: data=await request.json()
     except Exception: return web.json_response({"error":"Invalid request."},status=400)
-    user=validate_init_data(str(data.get("initData","")),TOKEN)
+    user=validate_init_data(str(data.get("initData","")),TOKEN) or validate_studio_token(data.get("uid"),data.get("studioToken"),TOKEN)
     if not user or not user.get("id"): return web.json_response({"error":"Open Studio from Telegram."},status=401)
     uid=int(user["id"]); prompt=clean_prompt(str(data.get("prompt",""))); kind=str(data.get("kind","meme"))
     if not prompt: return web.json_response({"error":"Write something for MUBA."},status=400)
-    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 5/5."},status=429)
+    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 3/3."},status=429)
     if not ai_configured(): return web.json_response({"error":"MUBA AI engine is not configured yet. No quota was used."},status=503)
     try:
         import base64
