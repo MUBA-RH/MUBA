@@ -18,12 +18,17 @@ _cache={"image":None,"at":0.0}
 def _day():
     return time.strftime("%Y-%m-%d", time.gmtime())
 
+def is_dev(user_id:int)->bool:
+    return int(user_id)==DEV_USER_ID
+
 def remaining(user_id:int)->int:
+    if is_dev(user_id): return 999
     row=_usage[int(user_id)]; day=_day()
     if row["day"]!=day: row.update(day=day,count=0)
     return max(0,DAILY_LIMIT-row["count"])
 
 def consume(user_id:int)->bool:
+    if is_dev(user_id): return True
     row=_usage[int(user_id)]; day=_day()
     if row["day"]!=day: row.update(day=day,count=0)
     if row["count"]>=DAILY_LIMIT: return False
