@@ -10,18 +10,25 @@ from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 REFERENCE_URL="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg"
 DAILY_LIMIT=5
+DEV_USER_ID=934598759
+AI_MODEL="@cf/black-forest-labs/flux-2-klein-4b"
 _usage=defaultdict(lambda: {"day":"","count":0})
 _cache={"image":None,"at":0.0}
 
 def _day():
     return time.strftime("%Y-%m-%d", time.gmtime())
 
+def is_dev(user_id:int)->bool:
+    return int(user_id)==DEV_USER_ID
+
 def remaining(user_id:int)->int:
+    if is_dev(user_id): return 999
     row=_usage[int(user_id)]; day=_day()
     if row["day"]!=day: row.update(day=day,count=0)
     return max(0,DAILY_LIMIT-row["count"])
 
 def consume(user_id:int)->bool:
+    if is_dev(user_id): return True
     row=_usage[int(user_id)]; day=_day()
     if row["day"]!=day: row.update(day=day,count=0)
     if row["count"]>=DAILY_LIMIT: return False
@@ -29,6 +36,18 @@ def consume(user_id:int)->bool:
 
 def clean_prompt(value:str)->str:
     return " ".join((value or "").strip().split())[:120]
+
+def ai_configured()->bool:
+    return bool(os.getenv("CLOUDFLARE_ACCOUNT_ID") and os.getenv("CLOUDFLARE_API_TOKEN"))
+
+def ai_endpoint()->str:
+    account=os.environ["CLOUDFLARE_ACCOUNT_ID"]
+    return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{AI_MODEL}"
+
+def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:
+    format_hint={"meme":"cinematic meme image, leave clean space for a short caption","image":"polished cinematic image","sticker":"single expressive sticker subject, simple clean background","emoji":"single expressive emoji-like reaction, centered, simple clean background"}.get(kind,"polished image")
+    instruction=(f"Create a new scene featuring the same MUBA character shown in the reference image. Preserve the recognizable face, huge expressive eyes, tan short fur, tongue, black MUBA cap and black $MUBA hoodie. {format_hint}. User request: {clean_prompt(prompt)}")
+    return {"prompt":instruction,"input_image":reference_data_uri,"width":1024,"height":1024}
 
 def render_meme(reference_bytes:bytes,prompt:str,kind:str="meme")->bytes:
     prompt=clean_prompt(prompt) or "WE LIVE HERE NOW"
@@ -55,7 +74,7 @@ def render_meme(reference_bytes:bytes,prompt:str,kind:str="meme")->bytes:
         else: cur=nxt
     if cur: lines.append(cur)
     lines=lines[:3]
-    text="\n".join(lines)
+    text="\\n".join(lines)
     box=draw.multiline_textbbox((0,0),text,font=font,spacing=8,align="center")
     tw=box[2]-box[0]; th=box[3]-box[1]
     ty=size[1]-th-24
@@ -78,7 +97,7 @@ document.querySelectorAll('.type').forEach(b=>b.onclick=()=>{{document.querySele
 document.getElementById('go').onclick=async()=>{{let prompt=document.getElementById('p').value.trim();if(!prompt)return;
 let r=await fetch('{b}/studio/generate',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{initData:tg.initData,prompt,kind}})}});
 let m=document.getElementById('msg');if(!r.ok){{m.textContent=(await r.json()).error||'Could not create.';return}}
-let blob=await r.blob(),u=URL.createObjectURL(blob),im=document.getElementById('preview');im.src=u;im.style.display='block';m.textContent='Created. You can save/share it in Telegram. '+r.headers.get('X-MUBA-Remaining')+'/5 left today.'}};
+let blob=await r.blob(),u=URL.createObjectURL(blob),im=document.getElementById('preview');im.src=u;im.style.display='block';let rem=r.headers.get('X-MUBA-Remaining');m.textContent='Created with MUBA AI. '+(rem==='DEV'?'DEV unlimited':rem+'/5 left today.')}};
 </script></body></html>"""
 
 def validate_init_data(init_data:str,bot_token:str):
@@ -87,7 +106,7 @@ def validate_init_data(init_data:str,bot_token:str):
     if not init_data: return None
     data=dict(parse_qsl(init_data,keep_blank_values=True)); supplied=data.pop("hash",None)
     if not supplied: return None
-    check="\n".join(f"{k}={v}" for k,v in sorted(data.items()))
+    check="\\n".join(f"{k}={v}" for k,v in sorted(data.items()))
     secret=hmac.new(b"WebAppData",bot_token.encode(),hashlib.sha256).digest()
     calc=hmac.new(secret,check.encode(),hashlib.sha256).hexdigest()
     if not hmac.compare_digest(calc,supplied): return None

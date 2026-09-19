@@ -6,6 +6,7 @@ No external AI service or API key is required.
 
 import hashlib
 import logging
+import json
 import os
 
 from aiohttp import web
@@ -37,7 +38,7 @@ from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
-from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data
+from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev
 from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -363,12 +364,27 @@ async def studio_generate_handler(request: web.Request):
     if not user or not user.get("id"): return web.json_response({"error":"Open Studio from Telegram."},status=401)
     uid=int(user["id"]); prompt=clean_prompt(str(data.get("prompt",""))); kind=str(data.get("kind","meme"))
     if not prompt: return web.json_response({"error":"Write something for MUBA."},status=400)
-    if not consume(uid): return web.json_response({"error":"Daily limit reached — 5/5."},status=429)
-    try: body=render_meme(await _studio_reference(request),prompt,kind)
+    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 5/5."},status=429)
+    if not ai_configured(): return web.json_response({"error":"MUBA AI engine is not configured yet. No quota was used."},status=503)
+    try:
+        import base64
+        ref=await _studio_reference(request)
+        image_data="data:image/jpeg;base64,"+base64.b64encode(ref).decode("ascii")
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"],"Content-Type":"application/json"}
+        async with request.app["http_session"].post(ai_endpoint(),json=ai_payload(prompt,kind,image_data),headers=headers,timeout=90) as response:
+            raw=await response.read()
+            if response.status != 200: raise RuntimeError("AI request failed")
+            if response.headers.get("Content-Type","").startswith("image/"): body=raw; out_type=response.headers.get("Content-Type")
+            else:
+                payload=json.loads(raw.decode("utf-8")); result=payload.get("result",payload)
+                encoded=result.get("image") if isinstance(result,dict) else None
+                if not encoded: raise RuntimeError("AI response contained no image")
+                body=base64.b64decode(encoded); out_type="image/png"
     except Exception:
-        logger.exception("Studio render failed")
-        return web.json_response({"error":"Studio render failed."},status=503)
-    return web.Response(body=body,content_type="image/jpeg",headers={"X-MUBA-Remaining":str(remaining(uid))})
+        logger.exception("MUBA AI generation failed")
+        return web.json_response({"error":"MUBA AI could not create this image. Failed attempts do not count."},status=503)
+    consume(uid)
+    return web.Response(body=body,content_type=out_type,headers={"X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid))})
 
 async def studio_render_handler(request: web.Request):
     prompt=clean_prompt(request.query.get("p","")); kind=request.query.get("k","meme")
