@@ -8,6 +8,8 @@ import hashlib
 import logging
 import json
 import os
+import time
+from collections import OrderedDict
 
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto
@@ -52,6 +54,37 @@ logger = logging.getLogger("muba")
 # Short-lived generated Studio outputs. Keys are random and unguessable;
 # content is intentionally ephemeral and resets with the service.
 _STUDIO_OUTPUTS = {}
+
+# Telegram may redeliver the same webhook update/message. Keep a bounded,
+# short-lived set of message identities so one Telegram message is handled once.
+_PROCESSED_MESSAGES = OrderedDict()
+_PROCESSED_MESSAGE_TTL = 21600
+_PROCESSED_MESSAGE_MAX = 4096
+
+
+def _claim_message(update: Update) -> bool:
+    message = update.effective_message
+    chat = update.effective_chat
+    if not message or not chat:
+        return True
+    message_id = getattr(message, "message_id", None)
+    if message_id is None:
+        return True
+    now = time.monotonic()
+    cutoff = now - _PROCESSED_MESSAGE_TTL
+    while _PROCESSED_MESSAGES:
+        _, seen_at = next(iter(_PROCESSED_MESSAGES.items()))
+        if seen_at >= cutoff:
+            break
+        _PROCESSED_MESSAGES.popitem(last=False)
+    key = (chat.id, message_id)
+    if key in _PROCESSED_MESSAGES:
+        return False
+    _PROCESSED_MESSAGES[key] = now
+    _PROCESSED_MESSAGES.move_to_end(key)
+    while len(_PROCESSED_MESSAGES) > _PROCESSED_MESSAGE_MAX:
+        _PROCESSED_MESSAGES.popitem(last=False)
+    return True
 
 # Telegram Bot uses httpx internally. Its INFO request logs include the bot
 # token in the request URL, so keep transport logging at WARNING or above.
@@ -220,6 +253,9 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _claim_message(update):
+        logger.info("Ignoring duplicate Telegram message delivery")
+        return
     message=update.effective_message; chat=update.effective_chat
     if not message or not message.text or not chat: return
     text=message.text.strip(); user=update.effective_user; user_id=user.id if user else None
