@@ -13,6 +13,6 @@ class GuardianDevReportWiring(unittest.TestCase):
  def test_report_failure_is_best_effort(self):
   s=(ROOT/"bot_mention.py").read_text()
   self.assertIn('logger.exception("Guardian DEV private report failed")',s)
-  self.assertIn("from guardian import DEV_ID",s)
+  self.assertIn("from guardian import DEV_ID",s)\n\n def test_report_labels_are_turkish(self):\n  s=(ROOT/"bot_mention.py").read_text()\n  for label in ("MUBA GUARDIAN — DEV RAPORU","Olay:","İşlem:","Kullanıcı ID:","İhlal sayısı:"):\n   self.assertIn(label,s)
 
 if __name__=="__main__": unittest.main()
