@@ -95,10 +95,20 @@ def studio_html(base_url:str)->str:
 const tg=window.Telegram.WebApp;tg.ready();tg.expand();let kind='meme';
 document.querySelectorAll('.type').forEach(b=>b.onclick=()=>{{document.querySelectorAll('.type').forEach(x=>x.classList.remove('on'));b.classList.add('on');kind=b.dataset.k}});
 document.getElementById('go').onclick=async()=>{{let prompt=document.getElementById('p').value.trim();if(!prompt)return;
-let r=await fetch('{b}/studio/generate',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{initData:tg.initData,prompt,kind}})}});
+let r=await fetch('{b}/studio/generate',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{initData:tg.initData,uid:new URLSearchParams(location.search).get('uid'),studioToken:new URLSearchParams(location.search).get('st'),prompt,kind}})}});
 let m=document.getElementById('msg');if(!r.ok){{m.textContent=(await r.json()).error||'Could not create.';return}}
 let blob=await r.blob(),u=URL.createObjectURL(blob),im=document.getElementById('preview');im.src=u;im.style.display='block';let rem=r.headers.get('X-MUBA-Remaining');m.textContent='Created with MUBA AI. '+(rem==='DEV'?'DEV unlimited':rem+'/3 left today.')}};
 </script></body></html>"""
+
+def studio_token(user_id:int,bot_token:str)->str:
+    return hashlib.sha256(("studio:"+str(int(user_id))+":"+bot_token).encode()).hexdigest()
+
+def validate_studio_token(user_id,token:str,bot_token:str):
+    import hmac
+    try: uid=int(user_id)
+    except (TypeError,ValueError): return None
+    expected=studio_token(uid,bot_token)
+    return {"id":uid} if token and hmac.compare_digest(expected,str(token)) else None
 
 def validate_init_data(init_data:str,bot_token:str):
     from urllib.parse import parse_qsl
