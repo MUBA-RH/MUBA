@@ -40,6 +40,7 @@ from muba_brain import (
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
+from conversation_continuity import reply as continuity_reply, remember_assistant_turn, clear as clear_conversation
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
@@ -203,6 +204,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat=update.effective_chat
     if not chat or chat.type!=ChatType.PRIVATE: return
     clear_assistant_language(update.effective_user.id)
+    clear_conversation(update.effective_user.id)
     await show_language(update)
 
 async def ca_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -224,13 +226,14 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("lang:"):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
+            clear_conversation(user_id)
             await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id))
         return
     lang=get_assistant_language(user_id)
     if not lang:
         await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="language":
-        clear_assistant_language(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
+        clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
     if data=="daily":
@@ -333,17 +336,29 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await message.reply_text(security_check(lang,text),disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
         catalog_index=match_catalog(lang,text)
         if catalog_index is not None:
-            await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
+            response=answer_for_question(lang,catalog_index)
+            remember_assistant_turn(user_id,lang,response)
+            await message.reply_text(response,disable_web_page_preview=True); return
+        continuity=continuity_reply(user_id,lang,text)
+        if continuity:
+            remember_assistant_turn(user_id,lang,continuity)
+            await message.reply_text(continuity,disable_web_page_preview=True); return
         human_answer=match_human_catalog(lang,text)
         if human_answer:
-            await message.reply_text(human_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
+            remember_assistant_turn(user_id,lang,human_answer)
+            await message.reply_text(human_answer,disable_web_page_preview=True); return
         natural_answer=match_natural_chat(lang,text)
         if natural_answer:
-            await message.reply_text(natural_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
+            remember_assistant_turn(user_id,lang,natural_answer)
+            await message.reply_text(natural_answer,disable_web_page_preview=True); return
         if not assistant_relevant(text):
-            await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang,user_id)); return
+            response=TEXT[lang]["outside"]
+            remember_assistant_turn(user_id,lang,response)
+            await message.reply_text(response); return
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
-        if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id))
+        if response:
+            remember_assistant_turn(user_id,lang,response)
+            await message.reply_text(response,disable_web_page_preview=True)
         return
     if not is_guardian_group(chat.id): return
     cmd=authorized_command(chat.id,user_id,text)
