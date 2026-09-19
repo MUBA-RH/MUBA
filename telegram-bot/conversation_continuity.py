@@ -74,7 +74,7 @@ def _muba_answer(lang,topic):
     for i,(t,_) in enumerate(QUESTIONS[lang]):
         if t==topic:return answer_for_question(lang,i)
     return None
-\ndef _contains_any(value,phrases):
+def _contains_any(value,phrases):
     return any(_norm(p) in value for p in phrases)
 
 def reply(user_id,lang,text):
