@@ -144,6 +144,27 @@ def should_answer(update: Update) -> bool:
     return bool(group_event(text))
 
 
+GUARDIAN_REPORT_LANGS=dict(LANGS)
+_GUARDIAN_REPORT_LANGUAGE=None
+
+GUARDIAN_REPORT_TEXT={
+    "en":{"title":"🛡️ MUBA GUARDIAN — DEV REPORT","event":"Event","action":"Action","user":"User ID","strike":"Strike","detail":"Detail","choose":"🛡️ Guardian Report Language\nChoose the language for private DEV reports.","saved":"Guardian report language: English"},
+    "tr":{"title":"🛡️ MUBA GUARDIAN — DEV RAPORU","event":"Olay","action":"İşlem","user":"Kullanıcı ID","strike":"İhlal sayısı","detail":"Detay","choose":"🛡️ Guardian Rapor Dili\nÖzel DEV raporlarının dilini seçin.","saved":"Guardian rapor dili: Türkçe"},
+    "zh":{"title":"🛡️ MUBA GUARDIAN — DEV 报告","event":"事件","action":"操作","user":"用户 ID","strike":"违规次数","detail":"详情","choose":"🛡️ Guardian 报告语言\n选择私人 DEV 报告的语言。","saved":"Guardian 报告语言：中文"},
+    "ar":{"title":"🛡️ MUBA GUARDIAN — تقرير DEV","event":"الحدث","action":"الإجراء","user":"معرّف المستخدم","strike":"عدد المخالفات","detail":"التفاصيل","choose":"🛡️ لغة تقارير Guardian\nاختر لغة تقارير DEV الخاصة.","saved":"لغة تقارير Guardian: العربية"},
+    "hi":{"title":"🛡️ MUBA GUARDIAN — DEV रिपोर्ट","event":"घटना","action":"कार्रवाई","user":"यूज़र ID","strike":"उल्लंघन संख्या","detail":"विवरण","choose":"🛡️ Guardian रिपोर्ट भाषा\nनिजी DEV रिपोर्ट की भाषा चुनें।","saved":"Guardian रिपोर्ट भाषा: हिन्दी"},
+}
+GUARDIAN_EVENT_LABELS={
+    "en":{"security":"Security","suspicious_link":"Suspicious link","flood":"Flood / spam","unauthorized_control":"Unauthorized command","guardian":"Guardian","management":"Guardian management","moderation":"Manual moderation","runtime":"Guardian runtime","fake_ca":"Fake / unverified CA","phishing":"Phishing","blocked_link":"Blocked external link","credential_theft":"Credential theft","warn":"Warning","delete":"Message deleted","mute":"User muted","unmute":"User unmuted","ban":"User banned","unban":"User unbanned","silent":"Silent block","info":"Information","start":"Guardian started","stop":"Guardian stopped","lockdown":"Lockdown enabled","normal":"Normal mode enabled","status":"Status viewed","help":"Help viewed","failed":"Action failed"},
+    "tr":{"security":"Güvenlik","suspicious_link":"Şüpheli bağlantı","flood":"Flood / spam","unauthorized_control":"Yetkisiz komut","guardian":"Guardian","management":"Guardian yönetimi","moderation":"Manuel moderasyon","runtime":"Guardian çalışma durumu","fake_ca":"Sahte / doğrulanmamış CA","phishing":"Phishing","blocked_link":"Engellenen dış bağlantı","credential_theft":"Kimlik bilgisi hırsızlığı","warn":"Uyarı","delete":"Mesaj silindi","mute":"Kullanıcı susturuldu","unmute":"Kullanıcının susturması kaldırıldı","ban":"Kullanıcı yasaklandı","unban":"Kullanıcı yasağı kaldırıldı","silent":"Sessiz engelleme","info":"Bilgi","start":"Guardian başlatıldı","stop":"Guardian durduruldu","lockdown":"Lockdown modu açıldı","normal":"Normal moda geçildi","status":"Durum görüntülendi","help":"Yardım görüntülendi","failed":"İşlem başarısız"},
+    "zh":{"security":"安全","suspicious_link":"可疑链接","flood":"刷屏 / 垃圾信息","unauthorized_control":"未授权命令","guardian":"Guardian","management":"Guardian 管理","moderation":"手动管理","runtime":"Guardian 运行状态","fake_ca":"虚假 / 未验证 CA","phishing":"网络钓鱼","blocked_link":"已拦截外部链接","credential_theft":"凭证窃取","warn":"警告","delete":"消息已删除","mute":"用户已禁言","unmute":"用户已解除禁言","ban":"用户已封禁","unban":"用户已解除封禁","silent":"静默拦截","info":"信息","start":"Guardian 已启动","stop":"Guardian 已停止","lockdown":"已启用 Lockdown","normal":"已启用正常模式","status":"已查看状态","help":"已查看帮助","failed":"操作失败"},
+    "ar":{"security":"الأمان","suspicious_link":"رابط مشبوه","flood":"إغراق / سبام","unauthorized_control":"أمر غير مصرح","guardian":"Guardian","management":"إدارة Guardian","moderation":"إشراف يدوي","runtime":"حالة تشغيل Guardian","fake_ca":"CA مزيف / غير موثّق","phishing":"تصيد احتيالي","blocked_link":"رابط خارجي محظور","credential_theft":"سرقة بيانات الاعتماد","warn":"تحذير","delete":"تم حذف الرسالة","mute":"تم كتم المستخدم","unmute":"تم إلغاء كتم المستخدم","ban":"تم حظر المستخدم","unban":"تم إلغاء حظر المستخدم","silent":"حظر صامت","info":"معلومات","start":"تم تشغيل Guardian","stop":"تم إيقاف Guardian","lockdown":"تم تفعيل Lockdown","normal":"تم تفعيل الوضع العادي","status":"تم عرض الحالة","help":"تم عرض المساعدة","failed":"فشل الإجراء"},
+    "hi":{"security":"सुरक्षा","suspicious_link":"संदिग्ध लिंक","flood":"फ्लड / स्पैम","unauthorized_control":"अनधिकृत कमांड","guardian":"Guardian","management":"Guardian प्रबंधन","moderation":"मैनुअल मॉडरेशन","runtime":"Guardian रनटाइम","fake_ca":"नकली / अप्रमाणित CA","phishing":"फ़िशिंग","blocked_link":"ब्लॉक किया गया बाहरी लिंक","credential_theft":"क्रेडेंशियल चोरी","warn":"चेतावनी","delete":"संदेश हटाया गया","mute":"यूज़र म्यूट किया गया","unmute":"यूज़र अनम्यूट किया गया","ban":"यूज़र बैन किया गया","unban":"यूज़र अनबैन किया गया","silent":"साइलेंट ब्लॉक","info":"जानकारी","start":"Guardian शुरू हुआ","stop":"Guardian रोका गया","lockdown":"Lockdown चालू","normal":"सामान्य मोड चालू","status":"स्थिति देखी गई","help":"सहायता देखी गई","failed":"कार्रवाई विफल"},
+}
+
+def guardian_report_language_keyboard():
+    return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"guardian_lang:{code}")] for code,label in GUARDIAN_REPORT_LANGS.items()])
+
 def language_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"lang:{code}")] for code,label in LANGS.items()])
 
@@ -224,6 +245,14 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not q: return
     await q.answer()
     user_id=q.from_user.id; data=q.data or ""
+    if data.startswith("guardian_lang:"):
+        if not is_dev(user_id): return
+        lang=data.split(":",1)[1]
+        if lang in GUARDIAN_REPORT_LANGS:
+            global _GUARDIAN_REPORT_LANGUAGE
+            _GUARDIAN_REPORT_LANGUAGE=lang
+            await q.edit_message_text(GUARDIAN_REPORT_TEXT[lang]["saved"])
+        return
     if data.startswith("lang:"):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
@@ -323,22 +352,28 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
     await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
 
 async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
-    """Best-effort private Guardian report to DEV; never block moderation."""
+    """Best-effort localized private Guardian report to DEV; never block moderation."""
     try:
+        global _GUARDIAN_REPORT_LANGUAGE
+        if _GUARDIAN_REPORT_LANGUAGE not in GUARDIAN_REPORT_LANGS:
+            await context.bot.send_message(chat_id=DEV_ID,text=GUARDIAN_REPORT_TEXT["en"]["choose"],reply_markup=guardian_report_language_keyboard())
+            return
+        lang=_GUARDIAN_REPORT_LANGUAGE
+        ui=GUARDIAN_REPORT_TEXT[lang]
+        labels=GUARDIAN_EVENT_LABELS[lang]
         kind=str(event.get("kind") or "guardian").casefold()
         subkind=str(event.get("subkind") or "").casefold()
         action=str(event.get("action") or "info").casefold()
+        event_text=labels.get(kind,kind)
+        if subkind:
+            event_text += " / "+labels.get(subkind,subkind)
+        lines=[ui["title"],f'{ui["event"]}: {event_text}',f'{ui["action"]}: {labels.get(action,action)}']
+        if user_id is not None: lines.append(f'{ui["user"]}: {user_id}')
         strike=event.get("strike")
-        kind_tr={"security":"Güvenlik","suspicious_link":"Şüpheli bağlantı","flood":"Flood / spam","unauthorized_control":"Yetkisiz komut","guardian":"Guardian","management":"Guardian yönetimi","moderation":"Manuel moderasyon","runtime":"Guardian çalışma durumu"}.get(kind,kind)
-        subkind_tr={"fake_ca":"Sahte / doğrulanmamış CA","phishing":"Phishing","blocked_link":"Engellenen dış bağlantı","credential_theft":"Kimlik bilgisi hırsızlığı"}.get(subkind,subkind)
-        action_tr={"warn":"Uyarı","delete":"Mesaj silindi","mute":"Kullanıcı susturuldu","unmute":"Kullanıcının susturması kaldırıldı","ban":"Kullanıcı yasaklandı","unban":"Kullanıcı yasağı kaldırıldı","silent":"Sessiz engelleme","info":"Bilgi","start":"Guardian başlatıldı","stop":"Guardian durduruldu","lockdown":"Lockdown modu açıldı","normal":"Normal moda geçildi","status":"Durum görüntülendi","help":"Yardım görüntülendi","security":"Güvenlik durumu görüntülendi","failed":"İşlem başarısız"}.get(action,action)
-        event_text=kind_tr + (f" / {subkind_tr}" if subkind_tr else "")
-        lines=["🛡️ MUBA GUARDIAN — DEV RAPORU", f"Olay: {event_text}", f"İşlem: {action_tr}"]
-        if user_id is not None: lines.append(f"Kullanıcı ID: {user_id}")
-        if strike is not None: lines.append(f"İhlal sayısı: {strike}")
+        if strike is not None: lines.append(f'{ui["strike"]}: {strike}')
         detail=event.get("detail")
-        if detail: lines.append(f"Detay: {detail}")
-        await context.bot.send_message(chat_id=DEV_ID, text="\\n".join(lines))
+        if detail: lines.append(f'{ui["detail"]}: {detail}')
+        await context.bot.send_message(chat_id=DEV_ID,text="\\n".join(lines))
     except Exception:
         logger.exception("Guardian DEV private report failed")
 
