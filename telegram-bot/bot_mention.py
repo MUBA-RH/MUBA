@@ -44,6 +44,7 @@ from human_conversation_pack import reply as match_human_conversation
 from conversation_continuity import reply as continuity_reply, remember_assistant_turn, clear as clear_conversation
 from muba_daily import DAILY_LABELS, daily_text
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
+from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from guardian import DEV_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -170,7 +171,7 @@ def language_keyboard():
 
 def menu_keyboard(lang,user_id=None):
     labels=TOPIC_LABELS[lang]
-    rows=[]
+    rows=[[InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")]]
     for topic in ("origin","identity","difference","purpose","community","plan"):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")])
@@ -181,6 +182,25 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
+
+def transparency_keyboard(lang,page):
+    nav=TRANSPARENCY_NAV[lang]
+    total=len(TRANSPARENCY_PAGES[lang])
+    rows=[]
+    pager=[]
+    if page>0:
+        pager.append(InlineKeyboardButton(nav["prev"],callback_data=f"transparency:{page-1}"))
+    if page+1<total:
+        pager.append(InlineKeyboardButton(nav["next"],callback_data=f"transparency:{page+1}"))
+    if pager:
+        rows.append(pager)
+    rows.append([InlineKeyboardButton(nav["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
+def transparency_text(lang,page):
+    pages=TRANSPARENCY_PAGES[lang]
+    page=max(0,min(page,len(pages)-1))
+    return f'{pages[page]}\n\n{TRANSPARENCY_NAV[lang]["page"]} {page+1}/{len(pages)}'
 
 def daily_keyboard(lang):
     labels=DAILY_LABELS[lang]
@@ -266,6 +286,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+    if data.startswith("transparency:"):
+        raw=data.split(":",1)[1]
+        page=int(raw) if raw.isdigit() else 0
+        page=max(0,min(page,len(TRANSPARENCY_PAGES[lang])-1))
+        await q.edit_message_text(transparency_text(lang,page),reply_markup=transparency_keyboard(lang,page),disable_web_page_preview=True); return
     if data=="daily":
         await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang)); return
     if data.startswith("daily:"):
