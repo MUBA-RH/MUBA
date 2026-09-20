@@ -12,8 +12,15 @@ class DevMtprotoTranslatorTests(unittest.TestCase):
         self.assertIn('to_lang="en"',SRC)
     def test_user_session_send(self):
         self.assertIn("client.send_message(peer,translated)",SRC)
+    def test_chat_mode_removes_repeated_bot_prefix(self):
+        self.assertIn("async def chat_mode(peer)",SRC)
+        self.assertIn('argv[0]=="chat"',SRC)
+        self.assertIn('await client.send_message(entity,translated)',SRC)
+        self.assertIn("/quit",SRC)
+    def test_local_secret_file_fallback(self):
+        self.assertIn("~/muba_dev_session.secret",SRC)
     def test_no_secret_literals(self):
-        self.assertNotIn("api_hash = \"",SRC.lower())
+        self.assertNotIn('api_hash = "',SRC.lower())
         self.assertNotIn("934598759",SRC)
     def test_parses(self):
         ast.parse(SRC)
