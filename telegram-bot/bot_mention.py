@@ -439,7 +439,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
         except Exception:
             logger.exception("Guardian moderation action failed")
-            await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")\n            await _guardian_dev_report(context,{"kind":"runtime","subkind":"moderation","action":"failed","detail":"Manuel Guardian işlemi tamamlanamadı."},user_id)
+            await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
+            await _guardian_dev_report(context,{"kind":"runtime","subkind":"moderation","action":"failed","detail":"Manuel Guardian işlemi tamamlanamadı."},user_id)
             return
     if is_control_attempt(text):
         try:
