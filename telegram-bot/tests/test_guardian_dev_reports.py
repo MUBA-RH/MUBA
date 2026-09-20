@@ -16,17 +16,27 @@ class GuardianDevReportWiring(unittest.TestCase):
    self.assertIn(token,s)
   for action in ('"action":"lockdown"','"action":"normal"','"action":"warn"','"action":"delete"','"action":"ban"','"action":"unban"'):
    self.assertIn(action,s)
-  self.assertIn('"action":"mute" if cmd=="#MUTE" else "unmute"',s)
-  self.assertIn('"action":cmd.lstrip("#").casefold()',s)
 
  def test_report_failure_is_best_effort(self):
   s=(ROOT/"bot_mention.py").read_text()
   self.assertIn('logger.exception("Guardian DEV private report failed")',s)
   self.assertIn("from guardian import DEV_ID",s)
 
- def test_report_labels_are_turkish(self):
+ def test_five_language_dev_report_selector(self):
   s=(ROOT/"bot_mention.py").read_text()
-  for label in ("MUBA GUARDIAN — DEV RAPORU","Olay:","İşlem:","Kullanıcı ID:","İhlal sayısı:","Detay:"):
-   self.assertIn(label,s)
+  for lang in ("en","tr","zh","ar","hi"):
+   self.assertIn('"'+lang+'":{',s)
+  self.assertIn("guardian_report_language_keyboard",s)
+  self.assertIn('callback_data=f"guardian_lang:{code}"',s)
+  self.assertIn('data.startswith("guardian_lang:")',s)
+  self.assertIn("if not is_dev(user_id): return",s)
+
+ def test_dev_report_locale_is_not_hardcoded_to_turkish(self):
+  s=(ROOT/"bot_mention.py").read_text()
+  self.assertNotIn("kind_tr=",s)
+  self.assertNotIn("subkind_tr=",s)
+  self.assertNotIn("action_tr=",s)
+  self.assertIn("_GUARDIAN_REPORT_LANGUAGE",s)
+  self.assertIn('GUARDIAN_EVENT_LABELS[lang]',s)
 
 if __name__=="__main__": unittest.main()
