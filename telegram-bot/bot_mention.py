@@ -362,10 +362,11 @@ async def dev_inline_translator(update: Update, context: ContextTypes.DEFAULT_TY
         if query:
             await query.answer([],cache_time=1,is_personal=True)
         return
-    raw=" ".join((query.query or "").strip().split())
-    if not raw.casefold().startswith("tr "):
-        return
-    source=raw[3:].strip()[:2000]
+    # DEV UX: typing @MUBA_RH_AI_Bot <Turkish text> in any chat is
+    # already Telegram inline mode. Translate the query directly so DEV only
+    # needs to tap the returned English result. No "tr " prefix is required.
+    # Non-DEV users are rejected above and retain the existing Studio path.
+    source=" ".join((query.query or "").strip().split())[:2000]
     if not source:
         return
     translated=await _translate_tr_to_en(source)
@@ -681,7 +682,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def inline_studio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.inline_query
     if not q or not q.from_user: return
-    if is_dev(q.from_user.id) and (q.query or "").strip().casefold().startswith("tr "): return
+    if is_dev(q.from_user.id): return
     prompt=clean_prompt(q.query)
     if not prompt: return
     from urllib.parse import urlencode
