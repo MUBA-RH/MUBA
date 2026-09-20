@@ -31,12 +31,6 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install exact Android packages
-        shell: bash
-        run: |
-          yes | sdkmanager --licenses >/dev/null
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018"
-
       - name: Validate required private inputs
         shell: bash
         run: |
@@ -48,6 +42,8 @@ jobs:
 
       - name: Stage pinned Telegram source and MUBA helpers
         shell: bash
+        env:
+          MUBA_V3_SKIP_HOST_SDK_CHECK: '1'
         run: |
           chmod +x android-v3/stage_supported_build.sh
           android-v3/stage_supported_build.sh "$RUNNER_TEMP/Telegram"
@@ -58,18 +54,20 @@ jobs:
           chmod +x android-v3/apply_v3_patch.sh
           android-v3/apply_v3_patch.sh "$RUNNER_TEMP/Telegram"
 
-      - name: Compile standalone APK
+      - name: Build with Telegram official Docker toolchain
         shell: bash
-        working-directory: ${{ runner.temp }}/Telegram
         run: |
-          ./gradlew --no-daemon --stacktrace :TMessagesProj_AppStandalone:assembleAfatStandalone
+          set -euo pipefail
+          cd "$RUNNER_TEMP/Telegram"
+          docker build -t muba-v3-telegram .
+          docker run --rm -v "$RUNNER_TEMP/Telegram:/home/source" muba-v3-telegram
 
       - name: Collect APK
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/v3-apk"
-          find "$RUNNER_TEMP/Telegram/TMessagesProj_AppStandalone/build/outputs/apk" -type f -name '*.apk' -print -exec cp {} "$GITHUB_WORKSPACE/v3-apk/" \;
+          find "$RUNNER_TEMP/Telegram/TMessagesProj/build/outputs/apk" -type f -name '*.apk' -print -exec cp {} "$GITHUB_WORKSPACE/v3-apk/" \;
           test -n "$(find "$GITHUB_WORKSPACE/v3-apk" -type f -name '*.apk' -print -quit)"
 
       - name: Upload MUBA V3 APK
