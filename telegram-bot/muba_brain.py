@@ -79,6 +79,21 @@ def set_assistant_language(user_id,language):
 def clear_assistant_language(user_id):
  STORE.set('assistant_language',str(user_id),None)
 
+def get_guardian_report_language():
+ return STORE.get('guardian_report_settings','language',None)
+def set_guardian_report_language(language):
+ if language not in SUPPORTED_LANGUAGES: return False
+ STORE.set('guardian_report_settings','language',language); return True
+def append_guardian_violation(record):
+ history=STORE.get('guardian_violation_history','all',[])
+ history.append(dict(record or {}))
+ STORE.set('guardian_violation_history','all',history)
+ return len(history)-1
+def guardian_violation_history(category=None):
+ history=STORE.get('guardian_violation_history','all',[])
+ if not category: return history
+ return [item for item in history if item.get('category')==category]
+
 def reset_runtime_state():
  global STORE,CORE
  STORE=MemoryRepository(); CORE=MubaCore(STORE)
