@@ -355,11 +355,12 @@ async def dev_inline_translator(update: Update, context: ContextTypes.DEFAULT_TY
         if query:
             await query.answer([],cache_time=1,is_personal=True)
         return
-    source=" ".join((query.query or "").strip().split())
-    if not source:
-        await query.answer([],cache_time=1,is_personal=True)
+    raw=" ".join((query.query or "").strip().split())
+    if not raw.casefold().startswith("tr "):
         return
-    source=source[:2000]
+    source=raw[3:].strip()[:2000]
+    if not source:
+        return
     translated=await _translate_tr_to_en(source)
     if not translated:
         await query.answer([],cache_time=1,is_personal=True)
@@ -673,6 +674,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def inline_studio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.inline_query
     if not q or not q.from_user: return
+    if is_dev(q.from_user.id) and (q.query or "").strip().casefold().startswith("tr "): return
     prompt=clean_prompt(q.query)
     if not prompt: return
     from urllib.parse import urlencode
