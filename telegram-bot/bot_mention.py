@@ -291,6 +291,21 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
 
 
+async def guardian_slash_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Translate Telegram-native /guardian commands to the existing locked # command path."""
+    message=update.effective_message
+    chat=update.effective_chat
+    user=update.effective_user
+    if not message or not chat or not user or not is_guardian_group(chat.id):
+        return
+    raw=(message.text or "").strip()
+    first,*rest=raw.split(maxsplit=1)
+    name=first.split("@",1)[0].lstrip("/").upper()
+    mapped="#"+name
+    message.text=mapped+((" "+rest[0]) if rest else "")
+    await handle_message(update,context)
+
+
 async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message=update.effective_message; chat=update.effective_chat; user=update.effective_user
     if not message or not message.text or not chat or chat.type==ChatType.PRIVATE or not user: return
@@ -718,6 +733,8 @@ async def start_webhook_server():
 
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("ca", ca_command))
+    for guardian_name in ("start","stop","status","guardian","security","lockdown","normal","warn","mute","unmute","ban","unban","delete","help"):
+        application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
