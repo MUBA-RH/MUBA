@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - feature/v3-final-apk-build
+      - 'fix/v3-*'
 
 permissions:
   contents: read
