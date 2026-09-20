@@ -15,7 +15,16 @@ from pathlib import Path
 import re, sys
 
 root = Path(sys.argv[1])
-dialog_id, api_id, api_hash = sys.argv[2:5]
+bot_api_dialog_id, api_id, api_hash = sys.argv[2:5]
+# GitHub secret uses the Bot API supergroup/channel form (-100...).
+# Telegram Android internally addresses a channel dialog as -channel_id.
+# Convert once at build time so the runtime gate compares like-for-like IDs.
+bot_api_dialog_id_int = int(bot_api_dialog_id)
+if bot_api_dialog_id_int <= -1000000000001:
+    channel_id = -bot_api_dialog_id_int - 1000000000000
+    dialog_id = str(-channel_id)
+else:
+    dialog_id = bot_api_dialog_id
 buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
 composer = root / "TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java"
 
@@ -69,4 +78,4 @@ src = src.replace(anchor, hook, 1)
 composer.write_text(src)
 PY
 
-echo "MUBA V3 composer hook and private build inputs applied."
+echo "MUBA V3 composer hook and private build inputs applied (Bot API dialog id normalized for Telegram Android runtime)."
