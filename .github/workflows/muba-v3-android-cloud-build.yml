@@ -2,6 +2,12 @@ name: MUBA V3 Android Cloud Build
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - feature/v3-final-apk-build
 
 permissions:
   contents: read
@@ -9,7 +15,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       MUBA_V3_UPSTREAM_COMMIT: 9552e5541e1274b9557c9832b204dbfcaf44b3dc
       MUBA_OFFICIAL_DIALOG_ID: ${{ secrets.MUBA_OFFICIAL_DIALOG_ID }}
@@ -25,15 +31,6 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Android SDK 36 and NDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install exact Android packages
-        shell: bash
-        run: |
-          yes | sdkmanager --licenses >/dev/null
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018"
-
       - name: Validate required private inputs
         shell: bash
         run: |
@@ -45,13 +42,38 @@ jobs:
 
       - name: Stage pinned Telegram source and MUBA helpers
         shell: bash
+        env:
+          MUBA_V3_SKIP_HOST_SDK_CHECK: '1'
         run: |
           chmod +x android-v3/stage_supported_build.sh
           android-v3/stage_supported_build.sh "$RUNNER_TEMP/Telegram"
 
-      - name: Stop before unsafe/incomplete APK publication
+      - name: Apply MUBA V3 composer hook and private API inputs
         shell: bash
         run: |
-          echo "::notice::Cloud host, SDK/NDK, pinned Telegram source and V3 helpers are ready."
-          echo "::notice::APK publication remains fail-closed until the composer hook and private upstream BuildVars/signing/Firebase inputs are integrated."
-          exit 0
+          chmod +x android-v3/apply_v3_patch.sh
+          android-v3/apply_v3_patch.sh "$RUNNER_TEMP/Telegram"
+
+      - name: Build with Telegram official Docker toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/Telegram"
+          docker build -t muba-v3-telegram .
+          docker run --rm -v "$RUNNER_TEMP/Telegram:/home/source" muba-v3-telegram
+
+      - name: Collect APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/v3-apk"
+          find "$RUNNER_TEMP/Telegram/TMessagesProj/build/outputs/apk" -type f -name '*.apk' -print -exec cp {} "$GITHUB_WORKSPACE/v3-apk/" \;
+          test -n "$(find "$GITHUB_WORKSPACE/v3-apk" -type f -name '*.apk' -print -quit)"
+
+      - name: Upload MUBA V3 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MUBA-V3-Android-APK
+          path: v3-apk/*.apk
+          if-no-files-found: error
+          retention-days: 7
