@@ -4,9 +4,10 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 SRC=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
 
 class DevInlineTranslatorTests(unittest.TestCase):
- def test_dev_only_and_prefix_gate_exist(self):
+ def test_dev_only_and_direct_query_mode_exist(self):
   self.assertIn("not is_dev(query.from_user.id)",SRC)
-  self.assertIn('startswith("tr ")',SRC)
+  self.assertIn('source=" ".join((query.query or "").strip().split())[:2000]',SRC)
+  self.assertNotIn('startswith("tr ")',SRC)
  def test_cloudflare_translation_model_isolated(self):
   self.assertIn("@cf/meta/m2m100-1.2b",SRC)
   self.assertIn('"source_lang":"tr"',SRC)
