@@ -2,6 +2,9 @@ name: MUBA V3 Android Cloud Build
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - feature/v3-final-apk-build
