@@ -31,9 +31,6 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Android SDK 36 and NDK
-        uses: android-actions/setup-android@v3
-
       - name: Install exact Android packages
         shell: bash
         run: |
