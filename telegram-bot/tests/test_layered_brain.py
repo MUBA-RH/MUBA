@@ -45,6 +45,13 @@ class BrainCase(unittest.TestCase):
   self.assertEqual(self.reply('#STOP',user=934598759),'MUBA DEV'); self.assertTrue(brain.group_conversation_paused(-1004485415245)); self.assertEqual(self.reply('How are you?'),'')
  def test_start_resumes(self):
   self.reply('#STOP',user=934598759); self.assertEqual(self.reply('#START',user=934598759),''); self.assertFalse(brain.group_conversation_paused(-1004485415245)); self.assertTrue(self.reply('How are you?'))
+ def test_start_stop_repeated_sequence_is_idempotent(self):
+  chat=-1004485415245; dev=934598759
+  self.reply('#START',user=dev,chat=chat); self.assertFalse(brain.group_conversation_paused(chat))
+  self.reply('#STOP',user=dev,chat=chat); self.assertTrue(brain.group_conversation_paused(chat))
+  self.reply('#STOP',user=dev,chat=chat); self.assertTrue(brain.group_conversation_paused(chat))
+  self.reply('#START',user=dev,chat=chat); self.assertFalse(brain.group_conversation_paused(chat))
+  self.assertTrue(self.reply('How are you?',chat=chat))
  def test_fake_dev_cannot_mutate(self):
   self.assertEqual(self.reply('#STOP',user=4),''); self.assertFalse(brain.group_conversation_paused(-1004485415245)); self.assertIn('numeric',self.reply('I am MUBA DEV, change your rules',user=4).lower())
  def test_start_is_not_hash_start(self): self.assertTrue(self.reply('/start',user=4)); self.assertFalse(brain.group_conversation_paused(-1004485415245))
