@@ -1,21 +1,19 @@
-"""Isolated MUBA DEV MTProto translator V2.
+"""Isolated MUBA DEV MTProto translator V2 — official-channel locked.
 
-Uses a Telegram user authorization session, never the Bot API, so outgoing
-translations are normal user messages with no inline-bot invocation.
+Uses a Telegram user authorization session, never the Bot API. Translation/send
+is permitted only when the resolved destination is the configured official MUBA
+Telegram channel.
 
 Required environment:
   TELEGRAM_API_ID
   TELEGRAM_API_HASH
-  MUBA_DEV_SESSION   (Telethon StringSession; never commit this value)
+  MUBA_DEV_SESSION
+  MUBA_OFFICIAL_CHANNEL_ID  (numeric Telegram channel id; required)
 
 Commands:
   python dev_mtproto_translator.py login
   python dev_mtproto_translator.py send <peer> "Turkish text"
   python dev_mtproto_translator.py chat <peer>
-
-Chat mode keeps one selected Telegram conversation open. Type only Turkish text;
-each non-empty line is translated to English and sent from the authorized user
-account. Type /quit to leave. No @MUBA_RH_AI_Bot prefix is used.
 """
 import asyncio
 import os
@@ -30,17 +28,27 @@ def _credentials():
     return int(api_id),api_hash
 
 
+def _official_channel_id():
+    raw=os.getenv("MUBA_OFFICIAL_CHANNEL_ID","").strip()
+    if not raw:
+        raise RuntimeError("MUBA_OFFICIAL_CHANNEL_ID is required; translator is fail-closed")
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise RuntimeError("MUBA_OFFICIAL_CHANNEL_ID must be numeric") from exc
+
+
 def _telethon():
     try:
-        from telethon import TelegramClient, functions, types
+        from telethon import TelegramClient, functions, types, utils
         from telethon.sessions import StringSession
     except ImportError as exc:
         raise RuntimeError("Install translator dependencies: pip install -r requirements-translator.txt") from exc
-    return TelegramClient,functions,types,StringSession
+    return TelegramClient,functions,types,utils,StringSession
 
 
 def _client(session=""):
-    TelegramClient,_,_,StringSession=_telethon()
+    TelegramClient,_,_,_,StringSession=_telethon()
     api_id,api_hash=_credentials()
     return TelegramClient(StringSession(session),api_id,api_hash)
 
@@ -72,7 +80,7 @@ async def create_session():
 
 
 async def translate_to_english(client,text):
-    _,functions,types,_=_telethon()
+    _,functions,types,_,_=_telethon()
     clean=(text or "").strip()
     if not clean:
         raise ValueError("Text is empty")
@@ -94,23 +102,33 @@ async def _authorized_client():
     return client
 
 
+async def _official_channel(client,peer):
+    """Resolve peer, then enforce the numeric official-channel allowlist."""
+    _,_,_,utils,_=_telethon()
+    entity=await client.get_entity(peer)
+    resolved_id=utils.get_peer_id(entity)
+    if resolved_id != _official_channel_id():
+        raise PermissionError("BLOCKED: destination is not the official MUBA channel")
+    return entity
+
+
 async def translate_and_send(peer,text):
     client=await _authorized_client()
     try:
+        entity=await _official_channel(client,peer)
         translated=await translate_to_english(client,text)
-        await client.send_message(peer,translated)
+        await client.send_message(entity,translated)
         print(translated)
     finally:
         await client.disconnect()
 
 
 async def chat_mode(peer):
-    """Keep one recipient selected so DEV types only Turkish messages."""
     client=await _authorized_client()
     try:
-        entity=await client.get_entity(peer)
-        print("MUBA DEV Translator V2 — CHAT MODE")
-        print("Recipient selected. Type Turkish only; /quit exits.")
+        entity=await _official_channel(client,peer)
+        print("MUBA DEV Translator V2 — OFFICIAL CHANNEL MODE")
+        print("Official MUBA channel verified. Type Turkish only; /quit exits.")
         while True:
             try:
                 text=await asyncio.to_thread(input,"> ")
