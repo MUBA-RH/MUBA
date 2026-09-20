@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - feature/v3-final-apk-build
+      - 'fix/v3-*'
 
 permissions:
   contents: read
@@ -15,7 +16,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
     env:
       MUBA_V3_UPSTREAM_COMMIT: 9552e5541e1274b9557c9832b204dbfcaf44b3dc
       MUBA_OFFICIAL_DIALOG_ID: ${{ secrets.MUBA_OFFICIAL_DIALOG_ID }}
@@ -54,21 +55,49 @@ jobs:
           chmod +x android-v3/apply_v3_patch.sh
           android-v3/apply_v3_patch.sh "$RUNNER_TEMP/Telegram"
 
-      - name: Build with Telegram official Docker toolchain
+      - name: Verify V3 target gate before expensive build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/Telegram" <<'PY'
+          from pathlib import Path
+          import os, sys
+          root = Path(sys.argv[1])
+          src = (root / "TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java").read_text()
+          raw = int(os.environ["MUBA_OFFICIAL_DIALOG_ID"])
+          expected = -(-raw - 1_000_000_000_000) if raw <= -1_000_000_000_001 else raw
+          if "MubaDevSendPipeline.prepare(" not in src:
+              raise SystemExit("V3 composer hook missing")
+          if f"{expected}L" not in src:
+              raise SystemExit("Normalized Android dialog gate missing")
+          if raw != expected and f"{raw}L" in src:
+              raise SystemExit("Raw Bot API dialog id leaked into runtime gate")
+          print("V3 preflight passed: composer hook present and dialog gate normalized.")
+          PY
+
+      - name: Build standalone APK with Telegram official Docker toolchain
         shell: bash
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/Telegram"
           docker build -t muba-v3-telegram .
-          docker run --rm -v "$RUNNER_TEMP/Telegram:/home/source" muba-v3-telegram
+          docker run --rm -v "$RUNNER_TEMP/Telegram:/home/source" muba-v3-telegram bash -lc '
+            set -euo pipefail
+            cp -R /home/source/. /home/gradle
+            cd /home/gradle
+            gradle --parallel :TMessagesProj_AppStandalone:assembleAfatStandalone --stacktrace
+            mkdir -p /home/source/TMessagesProj/build/outputs/apk/afat/standalone
+            cp /home/gradle/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/app.apk /home/source/TMessagesProj/build/outputs/apk/afat/standalone/app.apk
+          '
 
-      - name: Collect APK
+      - name: Collect exact standalone APK
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/v3-apk"
-          find "$RUNNER_TEMP/Telegram/TMessagesProj/build/outputs/apk" -type f -name '*.apk' -print -exec cp {} "$GITHUB_WORKSPACE/v3-apk/" \;
-          test -n "$(find "$GITHUB_WORKSPACE/v3-apk" -type f -name '*.apk' -print -quit)"
+          src="$RUNNER_TEMP/Telegram/TMessagesProj/build/outputs/apk/afat/standalone/app.apk"
+          test -f "$src"
+          cp "$src" "$GITHUB_WORKSPACE/v3-apk/MUBA-V3.apk"
 
       - name: Upload MUBA V3 APK
         uses: actions/upload-artifact@v4
