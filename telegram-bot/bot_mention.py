@@ -36,6 +36,10 @@ from muba_brain import (
     set_assistant_language,
     clear_assistant_language,
     group_conversation_paused,
+    get_guardian_report_language,
+    set_guardian_report_language,
+    append_guardian_violation,
+    guardian_violation_history,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
@@ -50,7 +54,7 @@ from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANS
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
-from guardian import DEV_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
+from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
 logging.basicConfig(
@@ -150,7 +154,7 @@ def should_answer(update: Update) -> bool:
 
 
 GUARDIAN_REPORT_LANGS=dict(LANGS)
-_GUARDIAN_REPORT_LANGUAGE=None
+_GUARDIAN_REPORT_LANGUAGE_PROMPTED=False
 
 GUARDIAN_REPORT_TEXT={
     "en":{"title":"🛡️ MUBA GUARDIAN — DEV REPORT","event":"Event","action":"Action","user":"User ID","strike":"Strike","detail":"Detail","choose":"🛡️ Guardian Report Language\nChoose the language for private DEV reports.","saved":"Guardian report language: English"},
@@ -167,8 +171,70 @@ GUARDIAN_EVENT_LABELS={
     "hi":{"security":"सुरक्षा","suspicious_link":"संदिग्ध लिंक","flood":"फ्लड / स्पैम","unauthorized_control":"अनधिकृत कमांड","guardian":"Guardian","management":"Guardian प्रबंधन","moderation":"मैनुअल मॉडरेशन","runtime":"Guardian रनटाइम","fake_ca":"नकली / अप्रमाणित CA","phishing":"फ़िशिंग","blocked_link":"ब्लॉक किया गया बाहरी लिंक","credential_theft":"क्रेडेंशियल चोरी","warn":"चेतावनी","delete":"संदेश हटाया गया","mute":"यूज़र म्यूट किया गया","unmute":"यूज़र अनम्यूट किया गया","ban":"यूज़र बैन किया गया","unban":"यूज़र अनबैन किया गया","silent":"साइलेंट ब्लॉक","info":"जानकारी","start":"Guardian शुरू हुआ","stop":"Guardian रोका गया","lockdown":"Lockdown चालू","normal":"सामान्य मोड चालू","status":"स्थिति देखी गई","help":"सहायता देखी गई","failed":"कार्रवाई विफल"},
 }
 
+GUARDIAN_HISTORY_UI={
+    "en":{"title":"📚 Guardian Violation History","history":"📚 Violation History","empty":"No recorded violations.","user_name":"User","user_id":"User ID","violation":"Violation","action":"Action","strike":"Strike","time":"Time","back":"⬅️ Categories"},
+    "tr":{"title":"📚 Guardian İhlal Geçmişi","history":"📚 İhlal Geçmişi","empty":"Kayıtlı ihlal yok.","user_name":"Kullanıcı","user_id":"Kullanıcı ID","violation":"İhlal","action":"İşlem","strike":"İhlal sayısı","time":"Zaman","back":"⬅️ Kategoriler"},
+    "zh":{"title":"📚 Guardian 违规记录","history":"📚 违规记录","empty":"暂无违规记录。","user_name":"用户","user_id":"用户 ID","violation":"违规","action":"操作","strike":"违规次数","time":"时间","back":"⬅️ 分类"},
+    "ar":{"title":"📚 سجل مخالفات Guardian","history":"📚 سجل المخالفات","empty":"لا توجد مخالفات مسجلة.","user_name":"المستخدم","user_id":"معرّف المستخدم","violation":"المخالفة","action":"الإجراء","strike":"عدد المخالفات","time":"الوقت","back":"⬅️ الفئات"},
+    "hi":{"title":"📚 Guardian उल्लंघन इतिहास","history":"📚 उल्लंघन इतिहास","empty":"कोई दर्ज उल्लंघन नहीं।","user_name":"यूज़र","user_id":"यूज़र ID","violation":"उल्लंघन","action":"कार्रवाई","strike":"उल्लंघन संख्या","time":"समय","back":"⬅️ श्रेणियाँ"},
+}
+
 def guardian_report_language_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"guardian_lang:{code}")] for code,label in GUARDIAN_REPORT_LANGS.items()])
+
+def _guardian_violation_category(event):
+    subkind=str(event.get("subkind") or "").casefold()
+    kind=str(event.get("kind") or "security").casefold()
+    return subkind or kind
+
+def _guardian_is_violation(event):
+    return str(event.get("kind") or "").casefold() in {"security","suspicious_link","flood","unauthorized_control"}
+
+def guardian_history_keyboard(lang,category=None,index=0):
+    ui=GUARDIAN_HISTORY_UI[lang]
+    labels=GUARDIAN_EVENT_LABELS[lang]
+    if category is None:
+        history=guardian_violation_history()
+        counts={}
+        for item in history:
+            key=item.get("category") or "security"
+            counts[key]=counts.get(key,0)+1
+        rows=[[InlineKeyboardButton(f"{labels.get(key,key)} ({count})",callback_data=f"guardian_history:{key}:0")] for key,count in sorted(counts.items())]
+        if not rows:
+            rows=[[InlineKeyboardButton(ui["empty"],callback_data="guardian_history:noop")]]
+        return InlineKeyboardMarkup(rows)
+    items=guardian_violation_history(category)
+    if not items:
+        return InlineKeyboardMarkup([[InlineKeyboardButton(ui["back"],callback_data="guardian_history")]])
+    index=max(0,min(index,len(items)-1))
+    pager=[]
+    if index>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"guardian_history:{category}:{index-1}"))
+    if index+1<len(items):
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"guardian_history:{category}:{index+1}"))
+    rows=[pager] if pager else []
+    rows.append([InlineKeyboardButton(ui["back"],callback_data="guardian_history")])
+    return InlineKeyboardMarkup(rows)
+
+def guardian_history_text(lang,category,index):
+    ui=GUARDIAN_HISTORY_UI[lang]
+    labels=GUARDIAN_EVENT_LABELS[lang]
+    items=guardian_violation_history(category)
+    if not items:
+        return ui["empty"],0,0
+    index=max(0,min(index,len(items)-1))
+    item=items[index]
+    lines=[
+        ui["title"],
+        f'{ui["violation"]}: {labels.get(item.get("category"),item.get("category"))}',
+        f'{ui["action"]}: {labels.get(item.get("action"),item.get("action"))}',
+        f'{ui["user_name"]}: {item.get("user_name") or "-"}',
+        f'{ui["user_id"]}: {item.get("user_id") or "-"}',
+    ]
+    if item.get("strike") is not None:
+        lines.append(f'{ui["strike"]}: {item.get("strike")}')
+    lines.append(f'{ui["time"]}: {item.get("time") or "-"}')
+    return "\n".join(lines)+f"\n\n{index+1}/{len(items)}",index,len(items)
 
 def language_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"lang:{code}")] for code,label in LANGS.items()])
@@ -322,11 +388,27 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("guardian_lang:"):
         if not is_dev(user_id): return
         lang=data.split(":",1)[1]
-        if lang in GUARDIAN_REPORT_LANGS:
-            global _GUARDIAN_REPORT_LANGUAGE
-            _GUARDIAN_REPORT_LANGUAGE=lang
-            await q.edit_message_text(GUARDIAN_REPORT_TEXT[lang]["saved"])
+        if lang in GUARDIAN_REPORT_LANGS and set_guardian_report_language(lang):
+            global _GUARDIAN_REPORT_LANGUAGE_PROMPTED
+            _GUARDIAN_REPORT_LANGUAGE_PROMPTED=False
+            await q.edit_message_text(
+                GUARDIAN_REPORT_TEXT[lang]["saved"],
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(GUARDIAN_HISTORY_UI[lang]["history"],callback_data="guardian_history")]])
+            )
         return
+    if data=="guardian_history":
+        if not is_dev(user_id): return
+        lang=get_guardian_report_language() or "en"
+        await q.edit_message_text(GUARDIAN_HISTORY_UI[lang]["title"],reply_markup=guardian_history_keyboard(lang)); return
+    if data.startswith("guardian_history:"):
+        if not is_dev(user_id): return
+        parts=data.split(":")
+        if len(parts)!=3 or parts[1]=="noop": return
+        category=parts[1]; raw=parts[2]
+        index=int(raw) if raw.isdigit() else 0
+        lang=get_guardian_report_language() or "en"
+        body,index,total=guardian_history_text(lang,category,index)
+        await q.edit_message_text(body,reply_markup=guardian_history_keyboard(lang,category,index)); return
     if data.startswith("lang:"):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
@@ -533,29 +615,69 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
 async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
     """Best-effort localized private Guardian report to DEV; never block moderation."""
     try:
-        global _GUARDIAN_REPORT_LANGUAGE
-        if _GUARDIAN_REPORT_LANGUAGE not in GUARDIAN_REPORT_LANGS:
-            await context.bot.send_message(chat_id=DEV_ID,text=GUARDIAN_REPORT_TEXT["en"]["choose"],reply_markup=guardian_report_language_keyboard())
-            return
-        lang=_GUARDIAN_REPORT_LANGUAGE
-        ui=GUARDIAN_REPORT_TEXT[lang]
-        labels=GUARDIAN_EVENT_LABELS[lang]
+        global _GUARDIAN_REPORT_LANGUAGE_PROMPTED
         kind=str(event.get("kind") or "guardian").casefold()
         subkind=str(event.get("subkind") or "").casefold()
         action=str(event.get("action") or "info").casefold()
+
+        # Successful DEV management/manual actions are intentionally not private-report events.
+        if kind in {"management","moderation"}:
+            return
+
+        user_name="-"
+        if user_id is not None:
+            try:
+                member=await context.bot.get_chat_member(GROUP_ID,user_id)
+                tg_user=member.user
+                user_name=("@"+tg_user.username) if tg_user.username else (tg_user.full_name or "-")
+            except Exception:
+                logger.info("Guardian could not resolve user display name for %s",user_id)
+
+        if _guardian_is_violation(event):
+            category=_guardian_violation_category(event)
+            append_guardian_violation({
+                "category":category,
+                "kind":kind,
+                "subkind":subkind,
+                "action":action,
+                "user_id":user_id,
+                "user_name":user_name,
+                "strike":event.get("strike"),
+                "detail":event.get("detail"),
+                "time":datetime.now(_ISTANBUL_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            })
+
+        lang=get_guardian_report_language()
+        if lang not in GUARDIAN_REPORT_LANGS:
+            if not _GUARDIAN_REPORT_LANGUAGE_PROMPTED:
+                _GUARDIAN_REPORT_LANGUAGE_PROMPTED=True
+                await context.bot.send_message(
+                    chat_id=DEV_ID,
+                    text=GUARDIAN_REPORT_TEXT["en"]["choose"],
+                    reply_markup=guardian_report_language_keyboard(),
+                )
+            return
+
+        ui=GUARDIAN_REPORT_TEXT[lang]
+        labels=GUARDIAN_EVENT_LABELS[lang]
+        history_ui=GUARDIAN_HISTORY_UI[lang]
         event_text=labels.get(kind,kind)
         if subkind:
             event_text += " / "+labels.get(subkind,subkind)
         lines=[ui["title"],f'{ui["event"]}: {event_text}',f'{ui["action"]}: {labels.get(action,action)}']
-        if user_id is not None: lines.append(f'{ui["user"]}: {user_id}')
+        if user_id is not None:
+            lines.append(f'{history_ui["user_name"]}: {user_name}')
+            lines.append(f'{ui["user"]}: {user_id}')
         strike=event.get("strike")
         if strike is not None: lines.append(f'{ui["strike"]}: {strike}')
         detail=event.get("detail")
         if detail: lines.append(f'{ui["detail"]}: {detail}')
-        await context.bot.send_message(chat_id=DEV_ID,text="\\n".join(lines))
+        markup=None
+        if _guardian_is_violation(event):
+            markup=InlineKeyboardMarkup([[InlineKeyboardButton(history_ui["history"],callback_data="guardian_history")]])
+        await context.bot.send_message(chat_id=DEV_ID,text="\n".join(lines),reply_markup=markup)
     except Exception:
         logger.exception("Guardian DEV private report failed")
-
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
@@ -615,7 +737,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await context.bot.set_chat_permissions(chat.id,ChatPermissions(can_send_messages=True, can_send_other_messages=False, can_send_photos=False, can_send_videos=False, can_send_video_notes=False, can_send_voice_notes=False, can_send_audios=False, can_send_documents=False, can_send_polls=False, can_add_web_page_previews=False, can_invite_users=True, can_pin_messages=False, can_change_info=False, can_manage_topics=False), use_independent_chat_permissions=True)
                     response="MUBA COMMUNITY 🔥"
                 await message.reply_text(response,disable_web_page_preview=True)
-                await _guardian_dev_report(context,{"kind":"management","subkind":cmd.lstrip("#").casefold(),"action":cmd.lstrip("#").casefold()},user_id)
             except Exception:
                 logger.exception("Guardian could not change group posting permissions")
                 await message.reply_text("🛡️ Guardian could not change group permissions. Check bot admin permissions.")
@@ -623,25 +744,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
         if cmd in ("#GUARDIAN","#STATUS"):
             await message.reply_text(status_text(group_conversation_paused(chat.id)))
-            await _guardian_dev_report(context,{"kind":"management","subkind":cmd.lstrip("#").casefold(),"action":"status"},user_id)
             return
         if cmd=="#HELP":
             await message.reply_text(help_text())
-            await _guardian_dev_report(context,{"kind":"management","subkind":"help","action":"help"},user_id)
             return
         if cmd=="#SECURITY":
             await message.reply_text(security_text(group_conversation_paused(chat.id)))
-            await _guardian_dev_report(context,{"kind":"management","subkind":"security","action":"security"},user_id)
             return
         if cmd=="#LOCKDOWN":
             set_lockdown(True)
             await message.reply_text("🛡️ GUARDIAN — LOCKDOWN")
-            await _guardian_dev_report(context,{"kind":"management","subkind":"lockdown","action":"lockdown"},user_id)
             return
         if cmd=="#NORMAL":
             set_lockdown(False)
             await message.reply_text("🛡️ GUARDIAN — NORMAL")
-            await _guardian_dev_report(context,{"kind":"management","subkind":"normal","action":"normal"},user_id)
             return
         target=message.reply_to_message
         try:
@@ -649,12 +765,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if target:
                     await target.delete()
                     await message.reply_text("🛡️ Deleted.")
-                    await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"delete"},target.from_user.id if target.from_user else None)
                 return
             if cmd=="#WARN":
                 if target and target.from_user:
                     await message.reply_text("⚠️ GUARDIAN warning for "+target.from_user.mention_html(),parse_mode="HTML")
-                    await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"warn"},target.from_user.id)
                 return
             if cmd in ("#MUTE","#UNMUTE","#BAN"):
                 if not target or not target.from_user:
@@ -667,13 +781,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if cmd=="#BAN":
                     await context.bot.ban_chat_member(chat.id,tid)
                     await message.reply_text("🛡️ User banned.")
-                    await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"ban"},tid)
                     return
                 from telegram import ChatPermissions
                 perms=ChatPermissions.no_permissions() if cmd=="#MUTE" else ChatPermissions.all_permissions()
                 await context.bot.restrict_chat_member(chat.id,tid,permissions=perms)
                 await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted."))
-                await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"mute" if cmd=="#MUTE" else "unmute"},tid)
                 return
             if cmd=="#UNBAN":
                 arg=command_arg(text)
@@ -681,7 +793,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     tid=int(arg)
                     await context.bot.unban_chat_member(chat.id,tid)
                     await message.reply_text("🛡️ User unbanned.")
-                    await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"unban"},tid)
                 else:
                     await message.reply_text("Use: #UNBAN <user_id>")
                 return
