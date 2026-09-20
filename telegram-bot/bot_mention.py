@@ -329,13 +329,13 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         subkind=str(event.get("subkind") or "").casefold()
         action=str(event.get("action") or "info").casefold()
         strike=event.get("strike")
-        kind_tr={"security":"Güvenlik","suspicious_link":"Şüpheli bağlantı","flood":"Flood / spam","unauthorized_control":"Yetkisiz komut","guardian":"Guardian"}.get(kind,kind)
+        kind_tr={"security":"Güvenlik","suspicious_link":"Şüpheli bağlantı","flood":"Flood / spam","unauthorized_control":"Yetkisiz komut","guardian":"Guardian","management":"Guardian yönetimi","moderation":"Manuel moderasyon","runtime":"Guardian çalışma durumu"}.get(kind,kind)
         subkind_tr={"fake_ca":"Sahte / doğrulanmamış CA","phishing":"Phishing","blocked_link":"Engellenen dış bağlantı","credential_theft":"Kimlik bilgisi hırsızlığı"}.get(subkind,subkind)
-        action_tr={"warn":"Uyarı","delete":"Mesaj silindi","mute":"Kullanıcı susturuldu","ban":"Kullanıcı yasaklandı","silent":"Sessiz engelleme","info":"Bilgi"}.get(action,action)
+        action_tr={"warn":"Uyarı","delete":"Mesaj silindi","mute":"Kullanıcı susturuldu","unmute":"Kullanıcının susturması kaldırıldı","ban":"Kullanıcı yasaklandı","unban":"Kullanıcı yasağı kaldırıldı","silent":"Sessiz engelleme","info":"Bilgi","start":"Guardian başlatıldı","stop":"Guardian durduruldu","lockdown":"Lockdown modu açıldı","normal":"Normal moda geçildi","status":"Durum görüntülendi","help":"Yardım görüntülendi","security":"Güvenlik durumu görüntülendi","failed":"İşlem başarısız"}.get(action,action)
         event_text=kind_tr + (f" / {subkind_tr}" if subkind_tr else "")
         lines=["🛡️ MUBA GUARDIAN — DEV RAPORU", f"Olay: {event_text}", f"İşlem: {action_tr}"]
         if user_id is not None: lines.append(f"Kullanıcı ID: {user_id}")
-        if strike is not None: lines.append(f"İhlal sayısı: {strike}")
+        if strike is not None: lines.append(f"İhlal sayısı: {strike}")\n        detail=event.get("detail")\n        if detail: lines.append(f"Detay: {detail}")
         await context.bot.send_message(chat_id=DEV_ID, text="\\n".join(lines))
     except Exception:
         logger.exception("Guardian DEV private report failed")
@@ -416,28 +416,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target=message.reply_to_message
         try:
             if cmd=="#DELETE":
-                if target: await target.delete(); await message.reply_text("🛡️ Deleted.")
+                if target: await target.delete(); await message.reply_text("🛡️ Deleted."); await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"delete"},target.from_user.id if target.from_user else None)
                 return
             if cmd=="#WARN":
-                if target and target.from_user: await message.reply_text("⚠️ GUARDIAN warning for "+(target.from_user.mention_html()),parse_mode="HTML")
+                if target and target.from_user: await message.reply_text("⚠️ GUARDIAN warning for "+(target.from_user.mention_html()),parse_mode="HTML"); await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"warn"},target.from_user.id)
                 return
             if cmd in ("#MUTE","#UNMUTE","#BAN"):
                 if not target or not target.from_user: await message.reply_text("Reply to a user's message with "+cmd+"."); return
                 tid=target.from_user.id
                 if is_dev(tid): await message.reply_text("🛡️ DEV is protected."); return
-                if cmd=="#BAN": await context.bot.ban_chat_member(chat.id,tid); await message.reply_text("🛡️ User banned."); return
+                if cmd=="#BAN": await context.bot.ban_chat_member(chat.id,tid); await message.reply_text("🛡️ User banned."); await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"ban"},tid); return
                 from telegram import ChatPermissions
                 perms=ChatPermissions.no_permissions() if cmd=="#MUTE" else ChatPermissions.all_permissions()
                 await context.bot.restrict_chat_member(chat.id,tid,permissions=perms)
-                await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted.")); return
+                await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted.")); await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"mute" if cmd=="#MUTE" else "unmute"},tid); return
             if cmd=="#UNBAN":
                 arg=command_arg(text)
-                if arg.lstrip("-").isdigit(): await context.bot.unban_chat_member(chat.id,int(arg)); await message.reply_text("🛡️ User unbanned.")
+                if arg.lstrip("-").isdigit(): await context.bot.unban_chat_member(chat.id,int(arg)); await message.reply_text("🛡️ User unbanned."); await _guardian_dev_report(context,{"kind":"moderation","subkind":"manual","action":"unban"},int(arg))
                 else: await message.reply_text("Use: #UNBAN <user_id>")
                 return
         except Exception:
             logger.exception("Guardian moderation action failed")
-            await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
+            await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")\n            await _guardian_dev_report(context,{"kind":"runtime","subkind":"moderation","action":"failed","detail":"Manuel Guardian işlemi tamamlanamadı."},user_id)
             return
     if is_control_attempt(text):
         try:
