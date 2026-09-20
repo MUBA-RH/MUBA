@@ -110,6 +110,15 @@ class BrainCase(unittest.TestCase):
  def test_self_test(self): self.assertTrue(brain.brain_self_test()['ok'])
  def test_bot_does_not_reply_to_itself(self):
   d=self.decision('Who are you?',user=8661249663); self.assertEqual(d.response,''); self.assertEqual(d.trace.winning_rule,'self_message')
+ def test_guardian_report_state_and_history(self):
+  self.assertTrue(brain.set_guardian_report_language('tr'))
+  self.assertEqual(brain.get_guardian_report_language(),'tr')
+  brain.append_guardian_violation({'category':'fake_ca','user_id':11})
+  brain.append_guardian_violation({'category':'flood','user_id':12})
+  brain.append_guardian_violation({'category':'fake_ca','user_id':13})
+  self.assertEqual(len(brain.guardian_violation_history()),3)
+  self.assertEqual([x['user_id'] for x in brain.guardian_violation_history('fake_ca')],[11,13])
+  self.assertFalse(brain.set_guardian_report_language('xx'))
  def test_master_operational_compatibility_api(self):
   spec=brain.master_brain_specification(); self.assertEqual(len(spec['specialist_layers']),23); self.assertFalse(spec['external_generative_ai'])
   self.assertTrue(brain.master_health()['ok']); self.assertTrue(brain.master_is_founder(934598759)); self.assertTrue(brain.master_is_muba_bot(8661249663))
