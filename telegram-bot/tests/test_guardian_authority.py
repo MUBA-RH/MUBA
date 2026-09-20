@@ -21,7 +21,10 @@ class GuardianAuthorityExam(unittest.TestCase):
   self.assertEqual(command_arg("#UNBAN 123"),"123")
  def test_status_modes(self):
   self.assertIn("ACTIVE",status_text(False)); self.assertIn("PAUSED",status_text(True))
+  self.assertIn("Runtime protection: ON",security_text(False))
+  self.assertIn("Runtime protection: OFF",security_text(True))
   set_lockdown(True); self.assertIn("LOCKDOWN",status_text(False)); self.assertTrue(lockdown_enabled())
+  self.assertIn("Configured mode: LOCKDOWN",security_text(True))
  def test_fake_ca_security(self):
   e=inspect_message(-1004485415245,10,"official ca 0x"+"a"*40,now=1); self.assertEqual(e["kind"],"security")
  def test_suspicious_link(self):
@@ -39,5 +42,15 @@ class GuardianAuthorityExam(unittest.TestCase):
  def test_help_lists_controls(self):
   h=help_text()
   for cmd in COMMANDS: self.assertIn(cmd,h)
+ def test_transport_pause_gate_precedes_runtime_protection(self):
+  src=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+  gate="if group_conversation_paused(chat.id):\n        return"
+  self.assertIn(gate,src)
+  handle=src.index("async def handle_message")
+  gate_pos=src.index(gate,handle)
+  control_pos=src.index("if is_control_attempt(text):",gate_pos)
+  inspect_pos=src.index("guardian_event=inspect_message",gate_pos)
+  self.assertLess(gate_pos,control_pos)
+  self.assertLess(gate_pos,inspect_pos)
 
 if __name__=="__main__": unittest.main(verbosity=2)

@@ -630,7 +630,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await _guardian_dev_report(context,{"kind":"management","subkind":"help","action":"help"},user_id)
             return
         if cmd=="#SECURITY":
-            await message.reply_text(security_text())
+            await message.reply_text(security_text(group_conversation_paused(chat.id)))
             await _guardian_dev_report(context,{"kind":"management","subkind":"security","action":"security"},user_id)
             return
         if cmd=="#LOCKDOWN":
@@ -690,6 +690,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
             await _guardian_dev_report(context,{"kind":"runtime","subkind":"moderation","action":"failed","detail":"Manuel Guardian işlemi tamamlanamadı."},user_id)
             return
+    # #STOP pauses the full Guardian runtime after DEV command handling.
+    # #START remains available because authorized DEV commands are processed above.
+    if group_conversation_paused(chat.id):
+        return
     if is_control_attempt(text):
         try:
             await message.delete()
