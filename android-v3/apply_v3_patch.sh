@@ -27,6 +27,7 @@ else:
     dialog_id = bot_api_dialog_id
 buildvars = root / "TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java"
 composer = root / "TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java"
+translate_controller = root / "TMessagesProj/src/main/java/org/telegram/messenger/TranslateController.java"
 
 bv = buildvars.read_text()
 bv2, n1 = re.subn(r'public static int APP_ID = \d+;', f'public static int APP_ID = {api_id};', bv, count=1)
@@ -76,6 +77,38 @@ if anchor not in src:
     raise SystemExit("composer text-send anchor missing")
 src = src.replace(anchor, hook, 1)
 composer.write_text(src)
+
+tc = translate_controller.read_text()
+tc_anchor = """        if (!isTranslatable(messageObject)) {
+            return;
+        }
+
+        if (!isTranslatingDialog(dialogId)) {
+"""
+tc_hook = f"""        if (!isTranslatable(messageObject)) {{
+            return;
+        }}
+
+        // MUBA V3: preserve Telegram's native whole-chat translation entry point
+        // for the exact MUBA dialog. Premium/translation availability and the
+        // server-side hidden flag are still respected; other dialogs are untouched.
+        if (dialogId == {dialog_id}L
+                && isFeatureAvailable(dialogId)
+                && !isTranslateDialogHidden(dialogId)
+                && !translatableDialogs.contains(dialogId)) {{
+            translatableDialogs.add(dialogId);
+            detectedDialogLanguage.put(dialogId, "en");
+            AndroidUtilities.runOnUIThread(() ->
+                    NotificationCenter.getInstance(currentAccount)
+                            .postNotificationName(NotificationCenter.dialogIsTranslatable, dialogId), 50);
+        }}
+
+        if (!isTranslatingDialog(dialogId)) {{
+"""
+if tc_anchor not in tc:
+    raise SystemExit("TranslateController translatable anchor missing")
+tc = tc.replace(tc_anchor, tc_hook, 1)
+translate_controller.write_text(tc)
 PY
 
-echo "MUBA V3 composer hook and private build inputs applied (Bot API dialog id normalized for Telegram Android runtime)."
+echo "MUBA V3 composer hook, native chat-translation compatibility patch, and private build inputs applied."
