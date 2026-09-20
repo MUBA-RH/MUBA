@@ -54,8 +54,10 @@ def help_text():
 #UNBAN <user_id> — unban numeric user ID
 #DELETE — delete replied message
 #HELP — this list"""
-def security_text():
- return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nFake CA: 1st=MUTE / 2nd=BAN\nExternal links: DELETE\nFlood detection: ON\nDEV-only control: ON"
+def security_text(paused=False):
+ if paused:
+  return "🛡️ Security: PAUSED\nRuntime protection: OFF until #START\nConfigured mode: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nDEV-only control: ON"
+ return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nRuntime protection: ON\nFake CA: 1st=MUTE / 2nd=BAN\nExternal links: DELETE\nFlood detection: ON\nDEV-only control: ON"
 
 def _clean_url(raw):
  value=(raw or "").rstrip(".,!?;:)]}>'\"")
