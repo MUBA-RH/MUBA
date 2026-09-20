@@ -14,7 +14,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from aiohttp import web
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent, CopyTextButton
 from telegram.constants import ChatType
 from telegram.ext import (
     Application,
@@ -42,8 +42,8 @@ from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from human_conversation_pack import reply as match_human_conversation
 from conversation_continuity import reply as continuity_reply, remember_assistant_turn, clear as clear_conversation
-from muba_daily import DAILY_LABELS, daily_text
-from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
+from muba_daily import DAILY_LABELS, daily_text, DEVLOG_LABELS, DEVLOG, devlog_page
+from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check, TOPIC_PROGRESS, GUIDE_SECTIONS, SHARE_LABELS, SHARE_TWEETS
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 
@@ -180,10 +180,10 @@ def menu_keyboard(lang,user_id=None):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
-    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
     rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
+    rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
     rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
@@ -214,28 +214,77 @@ def daily_keyboard(lang):
         [InlineKeyboardButton(labels["web"],callback_data="daily:web")],
         [InlineKeyboardButton(labels["telegram"],callback_data="daily:telegram")],
         [InlineKeyboardButton(labels["updates"],callback_data="daily:updates")],
+        [InlineKeyboardButton(DEVLOG_LABELS[lang]["log"],callback_data="devlog")],
         [InlineKeyboardButton(labels["back"],callback_data="menu")],
     ])
+
+def devlog_keyboard(lang,category=None,index=0):
+    labels=DEVLOG_LABELS[lang]
+    if category not in ("new","updates","fixed"):
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton(labels["new"],callback_data="devlog:new:0")],
+            [InlineKeyboardButton(labels["updates"],callback_data="devlog:updates:0")],
+            [InlineKeyboardButton(labels["fixed"],callback_data="devlog:fixed:0")],
+            [InlineKeyboardButton(labels["back"],callback_data="daily")],
+        ])
+    total=len(DEVLOG[lang][category])
+    pager=[]
+    if index>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"devlog:{category}:{index-1}"))
+    if index+1<total:
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"devlog:{category}:{index+1}"))
+    rows=[pager] if pager else []
+    rows.append([InlineKeyboardButton(labels["back"],callback_data="devlog")])
+    return InlineKeyboardMarkup(rows)
+
+def story_keyboard(lang,page):
+    total=len(STORY[lang])
+    pager=[]
+    if page>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"story:{page-1}"))
+    if page+1<total:
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"story:{page+1}"))
+    rows=[pager] if pager else []
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
 
 def extra_keyboard(lang,mode):
     labels=EXTRA_LABELS[lang]
     if mode=="story":
-        rows=[[InlineKeyboardButton(f"📖 {i+1}/5",callback_data=f"story:{i}")] for i in range(5)]
-    elif mode=="lab":
+        return story_keyboard(lang,0)
+    if mode=="lab":
         rows=[
             [InlineKeyboardButton("😂 Meme",callback_data="lab:meme")],
             [InlineKeyboardButton("✍️ Tweet",callback_data="lab:tweet")],
             [InlineKeyboardButton("🖼️ Visual 16:9",callback_data="lab:visual")],
         ]
     elif mode=="guide":
-        rows=[[InlineKeyboardButton(f"🧭 {i+1}/4",callback_data=f"guide:{i}")] for i in range(4)]
+        rows=[[InlineKeyboardButton(label,callback_data=f"guide:{i}")] for i,(label,_) in enumerate(GUIDE_SECTIONS[lang])]
     else:
         rows=[]
     rows.append([InlineKeyboardButton(labels["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
+def share_keyboard(lang,index=None):
+    labels=SHARE_LABELS[lang]
+    if index is None:
+        rows=[[InlineKeyboardButton(labels["tweets"],callback_data="share:tweet:0")]]
+    else:
+        total=len(SHARE_TWEETS[lang])
+        pager=[]
+        if index>0:
+            pager.append(InlineKeyboardButton("⬅️",callback_data=f"share:tweet:{index-1}"))
+        if index+1<total:
+            pager.append(InlineKeyboardButton("➡️",callback_data=f"share:tweet:{index+1}"))
+        rows=[pager] if pager else []
+        rows.append([InlineKeyboardButton("📋 COPY",copy_text=CopyTextButton(text=SHARE_TWEETS[lang][index]))])
+    rows.append([InlineKeyboardButton(labels["back"],callback_data="menu" if index is None else "share")])
+    return InlineKeyboardMarkup(rows)
+
 def topic_keyboard(lang,topic):
     rows=[]
+    for i,(label,_) in enumerate(TOPIC_PROGRESS.get(lang,{}).get(topic,[])):
+        rows.append([InlineKeyboardButton(label,callback_data=f"topicx:{topic}:{i}")])
     for i,(t,q) in enumerate(QUESTIONS[lang]):
         if t==topic: rows.append([InlineKeyboardButton(q,callback_data=f"q:{i}")])
     rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
@@ -303,18 +352,42 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("daily:"):
         section=data.split(":",1)[1]
         await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang),disable_web_page_preview=True); return
+    if data=="devlog":
+        await q.edit_message_text(DEVLOG_LABELS[lang]["log"],reply_markup=devlog_keyboard(lang)); return
+    if data.startswith("devlog:"):
+        _,category,raw=data.split(":",2)
+        index=int(raw) if raw.isdigit() else 0
+        body,index,total=devlog_page(lang,category,index)
+        await q.edit_message_text(f"{body}\n\n{index+1}/{total}",reply_markup=devlog_keyboard(lang,category,index)); return
     if data.startswith("extra:"):
         mode=data.split(":",1)[1]
         if mode=="security":
             context.user_data["muba_security_check"]=True
             await q.edit_message_text(SECURITY_PROMPT[lang],reply_markup=extra_keyboard(lang,"security")); return
+        if mode=="story":
+            await q.edit_message_text(STORY[lang][0],reply_markup=story_keyboard(lang,0)); return
         await q.edit_message_text(EXTRA_LABELS[lang][mode],reply_markup=extra_keyboard(lang,mode)); return
     if data.startswith("story:"):
-        i=int(data.split(":",1)[1]); await q.edit_message_text(STORY[lang][i],reply_markup=extra_keyboard(lang,"story")); return
+        i=int(data.split(":",1)[1]); i=max(0,min(i,len(STORY[lang])-1))
+        await q.edit_message_text(STORY[lang][i],reply_markup=story_keyboard(lang,i)); return
     if data.startswith("lab:"):
         kind=data.split(":",1)[1]; await q.edit_message_text(LAB[lang][kind],reply_markup=extra_keyboard(lang,"lab")); return
     if data.startswith("guide:"):
-        i=int(data.split(":",1)[1]); await q.edit_message_text(GUIDE[lang][i],reply_markup=extra_keyboard(lang,"guide")); return
+        i=int(data.split(":",1)[1]); items=GUIDE_SECTIONS[lang]; i=max(0,min(i,len(items)-1))
+        await q.edit_message_text(items[i][1],reply_markup=extra_keyboard(lang,"guide")); return
+    if data=="share":
+        await q.edit_message_text(SHARE_LABELS[lang]["menu"],reply_markup=share_keyboard(lang)); return
+    if data.startswith("share:tweet:"):
+        raw=data.rsplit(":",1)[1]; i=int(raw) if raw.isdigit() else 0
+        i=max(0,min(i,len(SHARE_TWEETS[lang])-1))
+        await q.edit_message_text(SHARE_TWEETS[lang][i],reply_markup=share_keyboard(lang,i)); return
+    if data.startswith("topicx:"):
+        _,topic,raw=data.split(":",2)
+        i=int(raw) if raw.isdigit() else 0
+        items=TOPIC_PROGRESS.get(lang,{}).get(topic,[])
+        if items:
+            i=max(0,min(i,len(items)-1))
+            await q.edit_message_text(items[i][1],reply_markup=topic_keyboard(lang,topic)); return
     if data.startswith("topic:"):
         topic=data.split(":",1)[1]
         await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
