@@ -39,4 +39,11 @@ class GuardianDevReportWiring(unittest.TestCase):
   self.assertIn("_GUARDIAN_REPORT_LANGUAGE",s)
   self.assertIn('GUARDIAN_EVENT_LABELS[lang]',s)
 
+ def test_guardian_has_telegram_native_command_fallback(self):
+  s=(ROOT/"bot_mention.py").read_text()
+  self.assertIn("async def guardian_slash_command",s)
+  self.assertIn('mapped="#"+name',s)
+  self.assertIn('CommandHandler(guardian_name, guardian_slash_command)',s)
+  self.assertIn('"status","guardian","security","lockdown","normal"',s)
+
 if __name__=="__main__": unittest.main()
