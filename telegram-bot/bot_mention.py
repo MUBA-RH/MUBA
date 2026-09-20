@@ -14,7 +14,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from aiohttp import web
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent
 from telegram.constants import ChatType
 from telegram.ext import (
     Application,
@@ -314,6 +314,64 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data.startswith("q:"):
         i=int(data.split(":",1)[1]); answer=answer_for_question(lang,i)
         await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
+
+
+async def _translate_tr_to_en(text):
+    """Translate Turkish to English through the already configured Cloudflare Workers AI account."""
+    account=os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    token=os.getenv("CLOUDFLARE_API_TOKEN")
+    if not account or not token:
+        return None
+    url=f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/@cf/meta/m2m100-1.2b"
+    payload={"text":text,"source_lang":"tr","target_lang":"en"}
+    headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url,json=payload,headers=headers,timeout=aiohttp.ClientTimeout(total=20)) as response:
+                if response.status!=200:
+                    return None
+                data=await response.json()
+        result=data.get("result")
+        if isinstance(result,dict):
+            translated=result.get("translated_text") or result.get("translation")
+            if translated:
+                return str(translated).strip()
+        if isinstance(result,list) and result:
+            item=result[0]
+            if isinstance(item,dict):
+                translated=item.get("translated_text") or item.get("translation")
+                if translated:
+                    return str(translated).strip()
+    except Exception:
+        logger.exception("DEV inline translation failed")
+    return None
+
+
+async def dev_inline_translator(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """DEV-only Turkish→English inline translator; sends the selected result as the invoking user."""
+    query=update.inline_query
+    if not query or not is_dev(query.from_user.id):
+        if query:
+            await query.answer([],cache_time=1,is_personal=True)
+        return
+    raw=" ".join((query.query or "").strip().split())
+    if not raw.casefold().startswith("tr "):
+        return
+    source=raw[3:].strip()[:2000]
+    if not source:
+        return
+    translated=await _translate_tr_to_en(source)
+    if not translated:
+        await query.answer([],cache_time=1,is_personal=True)
+        return
+    result=InlineQueryResultArticle(
+        id=hashlib.sha256((source+"\0"+translated).encode()).hexdigest()[:32],
+        title="🇬🇧 "+translated[:120],
+        description="MUBA DEV Translator — Turkish → English",
+        input_message_content=InputTextMessageContent(message_text=translated),
+    )
+    await query.answer([result],cache_time=1,is_personal=True)
 
 
 async def guardian_slash_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -616,6 +674,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def inline_studio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.inline_query
     if not q or not q.from_user: return
+    if is_dev(q.from_user.id) and (q.query or "").strip().casefold().startswith("tr "): return
     prompt=clean_prompt(q.query)
     if not prompt: return
     from urllib.parse import urlencode
@@ -761,6 +820,7 @@ async def start_webhook_server():
     for guardian_name in ("start","stop","status","guardian","security","lockdown","normal","warn","mute","unmute","ban","unban","delete","help"):
         application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
     application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
         MessageHandler(
