@@ -1,19 +1,21 @@
 """Isolated MUBA DEV MTProto translator V2.
 
-This module deliberately does not import or modify the production Bot API runtime.
-It uses a Telegram *user* authorization session so a translated message is sent by
-that user account, not via an inline bot.
+Uses a Telegram user authorization session, never the Bot API, so outgoing
+translations are normal user messages with no inline-bot invocation.
 
 Required environment:
   TELEGRAM_API_ID
   TELEGRAM_API_HASH
   MUBA_DEV_SESSION   (Telethon StringSession; never commit this value)
 
-Interactive first-time session creation:
+Commands:
   python dev_mtproto_translator.py login
-
-Manual send:
   python dev_mtproto_translator.py send <peer> "Turkish text"
+  python dev_mtproto_translator.py chat <peer>
+
+Chat mode keeps one selected Telegram conversation open. Type only Turkish text;
+each non-empty line is translated to English and sent from the authorized user
+account. Type /quit to leave. No @MUBA_RH_AI_Bot prefix is used.
 """
 import asyncio
 import os
@@ -43,8 +45,22 @@ def _client(session=""):
     return TelegramClient(StringSession(session),api_id,api_hash)
 
 
+def _session():
+    session=os.getenv("MUBA_DEV_SESSION","").strip()
+    if session:
+        return session
+    secret_path=os.path.expanduser("~/muba_dev_session.secret")
+    try:
+        with open(secret_path,"r",encoding="utf-8") as handle:
+            session=handle.read().strip()
+    except OSError:
+        session=""
+    if not session:
+        raise RuntimeError("MUBA_DEV_SESSION is required; run the login command first")
+    return session
+
+
 async def create_session():
-    """Interactive Telegram user authorization; prints the session once for secret storage."""
     client=_client()
     await client.start()
     session=client.session.save()
@@ -56,9 +72,8 @@ async def create_session():
 
 
 async def translate_to_english(client,text):
-    """Use Telegram's user-only messages.translateText method."""
     _,functions,types,_=_telethon()
-    clean=" ".join((text or "").strip().split())
+    clean=(text or "").strip()
     if not clean:
         raise ValueError("Text is empty")
     result=await client(functions.messages.TranslateTextRequest(
@@ -70,19 +85,47 @@ async def translate_to_english(client,text):
     return result.result[0].text
 
 
-async def translate_and_send(peer,text):
-    """Translate Turkish input to English and send from the authorized user account."""
-    session=os.getenv("MUBA_DEV_SESSION","").strip()
-    if not session:
-        raise RuntimeError("MUBA_DEV_SESSION is required; run the login command first")
-    client=_client(session)
+async def _authorized_client():
+    client=_client(_session())
     await client.connect()
+    if not await client.is_user_authorized():
+        await client.disconnect()
+        raise RuntimeError("MUBA_DEV_SESSION is not authorized")
+    return client
+
+
+async def translate_and_send(peer,text):
+    client=await _authorized_client()
     try:
-        if not await client.is_user_authorized():
-            raise RuntimeError("MUBA_DEV_SESSION is not authorized")
         translated=await translate_to_english(client,text)
         await client.send_message(peer,translated)
         print(translated)
+    finally:
+        await client.disconnect()
+
+
+async def chat_mode(peer):
+    """Keep one recipient selected so DEV types only Turkish messages."""
+    client=await _authorized_client()
+    try:
+        entity=await client.get_entity(peer)
+        print("MUBA DEV Translator V2 — CHAT MODE")
+        print("Recipient selected. Type Turkish only; /quit exits.")
+        while True:
+            try:
+                text=await asyncio.to_thread(input,"> ")
+            except (EOFError,KeyboardInterrupt):
+                break
+            if text.strip().lower() in {"/quit","/exit"}:
+                break
+            if not text.strip():
+                continue
+            try:
+                translated=await translate_to_english(client,text)
+                await client.send_message(entity,translated)
+                print(f"✓ {translated}")
+            except Exception as exc:
+                print(f"✗ NOT SENT: {exc}")
     finally:
         await client.disconnect()
 
@@ -93,7 +136,9 @@ def main(argv=None):
         asyncio.run(create_session()); return
     if len(argv)==3 and argv[0]=="send":
         asyncio.run(translate_and_send(argv[1],argv[2])); return
-    raise SystemExit('Usage: dev_mtproto_translator.py login | send <peer> "Turkish text"')
+    if len(argv)==2 and argv[0]=="chat":
+        asyncio.run(chat_mode(argv[1])); return
+    raise SystemExit('Usage: dev_mtproto_translator.py login | send <peer> "Turkish text" | chat <peer>')
 
 
 if __name__=="__main__":
