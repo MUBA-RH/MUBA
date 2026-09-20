@@ -2,13 +2,14 @@ from __future__ import annotations
 import pathlib,sys,unittest
 ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from assistant_mode import LANGS
-from assistant_extras import LABELS,STORY,LAB,GUIDE,SECURITY_PROMPT,security_check
+from assistant_extras import LABELS,STORY,LAB,GUIDE,GUIDE_SECTIONS,TOPIC_PROGRESS,SHARE_TWEETS,SECURITY_PROMPT,security_check
 
 class AssistantExtrasExam(unittest.TestCase):
  def test_all_modes_cover_five_languages(self):
   for lang in LANGS:
-   self.assertIn(lang,LABELS); self.assertEqual(len(STORY[lang]),5); self.assertEqual(len(GUIDE[lang]),4)
-   self.assertEqual(set(LAB[lang]),{"meme","tweet","visual"}); self.assertTrue(SECURITY_PROMPT[lang])
+   self.assertIn(lang,LABELS); self.assertGreaterEqual(len(STORY[lang]),8); self.assertEqual(len(GUIDE[lang]),4)
+   self.assertGreaterEqual(len(GUIDE_SECTIONS[lang]),6); self.assertEqual(set(TOPIC_PROGRESS[lang]),{"origin","identity","difference","purpose","community","plan"})
+   self.assertGreaterEqual(len(SHARE_TWEETS[lang]),4); self.assertEqual(set(LAB[lang]),{"meme","tweet","visual"}); self.assertTrue(SECURITY_PROMPT[lang])
  def test_official_sources(self):
   for lang in LANGS:
    self.assertIn("✅",security_check(lang,"https://x.com/MUBA_RH"))
