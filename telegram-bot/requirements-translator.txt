@@ -1,0 +1,3 @@
+# Optional dependencies for the isolated DEV MTProto translator V2.
+# Not installed by the production MUBA bot unless explicitly requested.
+Telethon>=1.42,<2
