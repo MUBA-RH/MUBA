@@ -497,6 +497,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian link deletion failed")
+                await _guardian_dev_report(context,{"kind":"runtime","subkind":"link_deletion","action":"failed","detail":"Guardian bağlantı silme işlemi tamamlanamadı."},user_id)
         elif action in ("mute","ban"):
             try:
                 # Always moderate the numeric Telegram ID attached to this exact message.
@@ -504,6 +505,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 member=await context.bot.get_chat_member(chat.id,user_id)
                 if getattr(member,"status",None) in ("administrator","creator","owner") or is_dev(user_id):
                     logger.warning("Guardian skipped automatic moderation for protected/admin user %s",user_id)
+                    await _guardian_dev_report(context,{"kind":"security","subkind":"protected_user","action":"info","detail":"Otomatik moderasyon korunan/admin kullanıcı için uygulanmadı."},user_id)
                     return
                 await message.delete()
                 if action=="mute":
@@ -520,6 +522,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian automatic moderation failed")
+                await _guardian_dev_report(context,{"kind":"runtime","subkind":"automatic_moderation","action":"failed","detail":"Otomatik Guardian moderasyonu tamamlanamadı."},user_id)
         return
     event=group_event(text)
     if not event: return
@@ -527,6 +530,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if event=="fake_ca":
         await message.reply_text("🚨 Fake CA warning. Do not trust unofficial contract addresses.")
+        await _guardian_dev_report(context,{"kind":"security","subkind":"fake_ca","action":"warn"},user_id)
         return
     if event=="ca":
         await message.reply_text("Soon."); return
