@@ -64,6 +64,7 @@ jobs:
           import os, sys
           root = Path(sys.argv[1])
           src = (root / "TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java").read_text()
+          translate_src = (root / "TMessagesProj/src/main/java/org/telegram/messenger/TranslateController.java").read_text()
           raw = int(os.environ["MUBA_OFFICIAL_DIALOG_ID"])
           expected = -(-raw - 1_000_000_000_000) if raw <= -1_000_000_000_001 else raw
           if "MubaDevSendPipeline.prepare(" not in src:
@@ -72,7 +73,14 @@ jobs:
               raise SystemExit("Normalized Android dialog gate missing")
           if raw != expected and f"{raw}L" in src:
               raise SystemExit("Raw Bot API dialog id leaked into runtime gate")
-          print("V3 preflight passed: composer hook present and dialog gate normalized.")
+          marker = "MUBA V3: preserve Telegram's native whole-chat translation entry point"
+          if marker not in translate_src:
+              raise SystemExit("Native whole-chat translation compatibility patch missing")
+          if f"{expected}L" not in translate_src:
+              raise SystemExit("Native chat-translation patch is not scoped to normalized MUBA dialog")
+          if 'detectedDialogLanguage.put(dialogId, "en")' not in translate_src:
+              raise SystemExit("MUBA dialog source-language hint missing")
+          print("V3 preflight passed: outgoing composer gate and native whole-chat translation compatibility are present.")
           PY
 
       - name: Build standalone APK with Telegram official Docker toolchain
