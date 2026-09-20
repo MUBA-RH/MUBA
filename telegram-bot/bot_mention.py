@@ -335,7 +335,9 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         event_text=kind_tr + (f" / {subkind_tr}" if subkind_tr else "")
         lines=["🛡️ MUBA GUARDIAN — DEV RAPORU", f"Olay: {event_text}", f"İşlem: {action_tr}"]
         if user_id is not None: lines.append(f"Kullanıcı ID: {user_id}")
-        if strike is not None: lines.append(f"İhlal sayısı: {strike}")\n        detail=event.get("detail")\n        if detail: lines.append(f"Detay: {detail}")
+        if strike is not None: lines.append(f"İhlal sayısı: {strike}")
+        detail=event.get("detail")
+        if detail: lines.append(f"Detay: {detail}")
         await context.bot.send_message(chat_id=DEV_ID, text="\\n".join(lines))
     except Exception:
         logger.exception("Guardian DEV private report failed")
