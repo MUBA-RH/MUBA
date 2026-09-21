@@ -1,84 +1,114 @@
 # Current Stable MUBA System
 
 ## Stable recovery anchor
-Repository: MUBA-RH/MUBA
-Stable main SHA captured by this Vault: `602ebffe23de7373e7ee513af33dea219fe6deba`
-Default production branch: main
+Repository: MUBA-RH/MUBA  
+Stable main SHA captured by this Vault: `cbdd3ddab1bce4d6deebebb2c77f4f9a7ed4cd33`  
+Default production branch: `main`
 
-This Vault branch was refreshed from that stable source tree and then received passive documentation only.
+This Vault branch contains the source snapshot through PR #103 plus passive recovery/continuity documentation. Vault remains outside the production runtime.
 
 ## Current production surfaces
 
 ### Website
-Root `index.html` is the GitHub Pages website. Official MUBA links include X, Telegram and the GitHub Pages website. Website code is part of the snapshot.
+Root `index.html` is the GitHub Pages website. It is a living MUBA hub containing:
+- public MUBA identity and knowledge;
+- Development Log;
+- Web Studio;
+- MUBA Gallery;
+- MUBA TWT;
+- official X and Telegram links.
+
+The website Development Log reads the canonical `muba_history.json` timeline.
 
 ### Telegram Bot API runtime
 Primary integration: `telegram-bot/bot_mention.py`.
-The bot is webhook-based. Guardian, Assistant, Studio and the layered MUBA brain are wired through this runtime.
+
+The webhook runtime wires Guardian, private Assistant, Studio, Gallery, MUBA Updates and the layered local brain.
 
 ### Private MUBA Assistant
-The private Assistant supports:
-- English
-- Turkish
-- Chinese
-- Arabic
-- Hindi
+Supports English, Turkish, Chinese, Arabic and Hindi.
 
-Current content includes identity/origin/difference/purpose/community/future guidance, Story Mode, MUBA Daily, Community Guide, Security Check, Studio access, CREATE → SHARE examples and other MUBA-specific natural interaction.
+Current content includes identity/origin/difference/purpose/community/future guidance, Story Mode, MUBA Daily, Community Guide, Security Check, Studio access, CREATE → SHARE and MUBA Updates.
 
-PR #91 added:
-- paged Story Mode with previous/next navigation;
-- distinct present-day topic context;
-- expanded Community Guide;
-- categorized development log;
-- Studio-adjacent CREATE → SHARE content and copy actions;
-- five-language parity for the new surfaces.
+MUBA Updates uses the same canonical history source as the website and Daily. Per-user seen-state controls NEW / UPDATED / IMPROVED / FIXED badges.
 
 ### Guardian
-Guardian is the main-group security and management layer. Numeric DEV authority and the authorized main-group boundary are deterministic.
+Guardian remains the main-group security and management layer with deterministic DEV authority and group boundary.
 
-PR #92 synchronized START/STOP runtime behavior:
-- #STOP sets the protected brain/group state to paused and Guardian non-command security/moderation processing stops;
-- #START resumes protection;
-- repeated START/STOP state transitions are tested;
-- #SECURITY reports runtime protection ON/OFF consistently.
-
-PR #93 improved DEV reporting:
-- successful DEV management/manual actions do not create private report noise;
-- real violations can include Telegram username/display name and numeric user ID;
-- violation categories are stored in MUBA state;
-- report language is stored in MUBA state;
-- duplicate language-selection prompts are suppressed;
-- violation history is browsable by category with previous/next controls.
-
-Important persistence boundary: MUBA state defaults to in-memory storage unless `MUBA_MEMORY_FILE` is configured. Therefore any history stored through the state repository is durable across restarts only when a persistent repository path/storage is actually configured and verified.
+Current behavior includes:
+- START/STOP runtime synchronization;
+- fake/unverified CA, suspicious link, phishing/scam and flood controls;
+- categorized violation history;
+- private DEV reporting;
+- report language state;
+- successful routine DEV controls remaining quiet.
 
 ### MUBA Studio
-Studio remains the creation/media surface. It is not an authority source for CA, identity, DEV authority or security truth.
+Studio creates Meme, Image, Sticker and Reaction visuals through Web and Telegram surfaces.
+
+Current rules:
+- original MUBA identity guidance is preserved;
+- visible text is disabled by default unless explicitly requested;
+- Meme / Image / Sticker / Reaction use distinct quality guidance;
+- public Web Studio has isolated daily quota controls;
+- Telegram Studio remains available.
+
+### MUBA Gallery
+`telegram-bot/muba_gallery.py` is the shared archive layer for successful Web Studio and Telegram Studio creations.
+
+Public metadata does not store Telegram IDs, usernames or raw prompts.
+
+Visibility states:
+- `public`
+- `hidden`
+- `rejected`
+
+Only DEV can change Gallery visibility through the private Assistant moderation controls. Hidden/rejected records remain preserved but are not publicly listed or served.
+
+### Canonical MUBA History
+`muba_history.json` is the single append-only user-facing development timeline.
+
+Consumers:
+- Website Development Log;
+- Assistant MUBA Updates;
+- MUBA Daily Development Log / Updates.
+
+The Continuity CI gate fails user-facing PRs that omit a new history record and rejects silent rewriting/removal of established history entries.
+
+### Runtime state / persistence
+`telegram-bot/muba_brain.py` uses:
+1. explicit `MUBA_MEMORY_FILE`;
+2. a state file beside configured `MUBA_GALLERY_DIR`;
+3. mounted Render `/var/data` when detected;
+4. in-memory fallback.
+
+`/health/state` exposes only persistence/backend booleans, not filesystem paths.
+
+Persistent storage must still be verified in the live deployment; source support alone does not prove provider disk configuration.
 
 ### Layered brain
-`muba_brain.py` is the stable adapter.
-`muba_core/` owns deterministic coordination and decision logic.
-`layers/` contains specialist policy/semantic layers.
+`muba_brain.py` is the stable adapter.  
+`muba_core/` owns deterministic coordination and decision logic.  
+`layers/` contains specialist policy/semantic layers.  
 `state/` contains repository abstractions.
 
-### DEV translation systems
-The repository contains:
-- the earlier DEV MTProto translator path;
-- the isolated Android V3 translation path.
+### DEV translation / Android V3
+Earlier MTProto translator and isolated Android V3 translation paths remain separate from Guardian and Assistant.
 
-These are DEV workflow tools, not replacements for Guardian or Assistant.
-
-### Android V3
-`android-v3/` and related docs/workflows preserve the Android user-client translation architecture. GitHub Actions can build the standalone APK without placing secrets in source.
+Android V3 build architecture and cloud build workflow remain preserved. No API hash, session, phone, 2FA, signing secret or bot credential belongs in Vault.
 
 ### CI
-`.github/workflows/telegram-bot-tests.yml` protects the Telegram runtime.
-`.github/workflows/muba-v3-android-cloud-build.yml` builds/validates the isolated Android V3 client path.
+Current quality surfaces include:
+- `.github/workflows/telegram-bot-tests.yml`;
+- `.github/workflows/muba-continuity-gate.yml`;
+- `.github/workflows/muba-web-smoke.yml`;
+- `.github/workflows/muba-v3-android-cloud-build.yml`.
+
+Runtime dependencies are pinned to the known-green package versions captured by PR #103.
 
 ## Operational limitations
-- External provider credentials/settings are not stored in Vault.
-- Some runtime state is memory-only unless persistent storage is configured.
+- Provider credentials/settings are not stored in Vault.
+- Persistent runtime behavior depends on provider storage actually being mounted/configured.
 - External APIs may fail independently.
 - A Git snapshot cannot recreate account ownership or provider secrets.
-- Repository state and live provider state must both be verified during recovery.
+- GitHub branch protection/rulesets require repository administration and must be verified independently.

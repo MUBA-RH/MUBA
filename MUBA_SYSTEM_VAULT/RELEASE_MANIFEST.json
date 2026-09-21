@@ -1,24 +1,30 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "vault_type": "passive-full-system-source-recovery-continuity-portability",
   "repository": "MUBA-RH/MUBA",
   "snapshot_date": "2026-09-21",
   "stable_main": {
-    "sha": "602ebffe23de7373e7ee513af33dea219fe6deba",
+    "sha": "cbdd3ddab1bce4d6deebebb2c77f4f9a7ed4cd33",
     "branch": "main"
   },
   "vault": {
     "runtime_dependency": false,
     "production_branch": false,
     "intended_base_branch": "vault/system-vault-final",
-    "refresh_branch": "vault/system-vault-refresh-20260921"
+    "refresh_branch": "vault/system-vault-refresh-continuity-20260921"
   },
   "operator_interface": {
     "default_dev_language": "tr",
     "default_dev_locale": "tr-TR",
     "canonical_code_language": "en",
     "canonical_technical_docs_language": "en",
-    "product_languages": ["en", "tr", "zh", "ar", "hi"]
+    "product_languages": [
+      "en",
+      "tr",
+      "zh",
+      "ar",
+      "hi"
+    ]
   },
   "current_surfaces": [
     "github-pages-website",
@@ -26,11 +32,30 @@
     "telegram-guardian",
     "private-muba-assistant",
     "muba-studio",
+    "muba-gallery",
+    "canonical-muba-history",
+    "muba-continuity-ci",
     "layered-local-brain",
     "dev-mtproto-translator",
     "muba-android-v3-apk-build"
   ],
-  "important_prs": [79, 80, 89, 90, 91, 92, 93],
+  "important_prs": [
+    79,
+    80,
+    89,
+    90,
+    91,
+    92,
+    93,
+    96,
+    97,
+    98,
+    99,
+    100,
+    101,
+    102,
+    103
+  ],
   "android_build_evidence": {
     "workflow_run": 18,
     "result": "success",
@@ -39,7 +64,8 @@
   },
   "protocol": {
     "dev_command": "BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒",
-    "v2_requires_explicit_dev_choice": true
+    "v2_requires_explicit_dev_choice": true,
+    "user_facing_change_requires_history_entry": true
   },
   "credentials_in_vault": false,
   "entry_paths": [
@@ -51,6 +77,8 @@
     "Vault is passive and isolated from production runtime.",
     "The source snapshot is derived from the stable main SHA above.",
     "Secrets and provider ownership are intentionally external.",
-    "Runtime state durability must be verified; default in-memory state is not disaster-recovery storage."
+    "Runtime state automatically uses configured persistent storage when available; live persistence must still be verified through deployment state.",
+    "muba_history.json is the canonical append-only user-facing development timeline.",
+    "GitHub branch protection administration is external to this Vault and must be verified separately."
   ]
 }

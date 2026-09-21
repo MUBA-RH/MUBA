@@ -4,27 +4,30 @@
 Use when DEV wants the preserved current MUBA, not V2.
 
 Recovery anchor captured by this Vault:
-`602ebffe23de7373e7ee513af33dea219fe6deba`
+`cbdd3ddab1bce4d6deebebb2c77f4f9a7ed4cd33`
 
 Steps:
 1. Do not activate V2.
 2. Verify GitHub access and external provider ownership.
 3. Create recovery work from the exact stable anchor/snapshot.
 4. Restore required environment/secrets from DEV-controlled provider secret stores; never copy secrets from documentation.
-5. Run Telegram production tests.
-6. Verify website independently.
-7. Verify webhook/bot runtime independently.
-8. Live-test Guardian state/authority.
-9. Live-test private Assistant.
-10. Verify Studio only if its provider configuration is available.
-11. Rebuild Android V3 separately only if DEV needs it; Android V3 is not required for Bot API recovery.
-12. Declare STABLE only after evidence.
+5. Install the pinned Telegram runtime dependencies.
+6. Run Telegram production regression tests.
+7. Run MUBA Continuity and Web Smoke checks.
+8. Verify GitHub Pages independently.
+9. Verify webhook/bot runtime independently.
+10. Verify `/health/state` and confirm whether state/Gallery storage is truly persistent.
+11. Live-test Guardian state/authority.
+12. Live-test private Assistant, MUBA Updates and MUBA Daily.
+13. Live-test Studio and Gallery; verify hidden/rejected Gallery items are not publicly served.
+14. Rebuild Android V3 separately only if DEV needs it; Android V3 is not required for Bot API recovery.
+15. Declare STABLE only after evidence.
 
 ## Path B — Build/Test V2
-Keep current MUBA BLUE intact. Build candidate separately. No automatic promotion.
+Keep current MUBA intact. Build candidate separately. No automatic promotion.
 
 ## Android V3 recovery
-Use android-v3 source and GitHub workflow with securely supplied GitHub Actions secrets. Never reuse or expose production bot credentials.
+Use `android-v3/` source and GitHub workflow with securely supplied GitHub Actions secrets. Never reuse or expose production bot credentials.
 
 ## Rollback
 If a new release fails, restore authority/routing to the last verified stable main state. Do not stack speculative patches on failing production.
@@ -37,6 +40,7 @@ The Vault cannot recreate:
 - API hashes;
 - signing keys;
 - 2FA credentials;
-- external billing/subscriptions.
+- external billing/subscriptions;
+- GitHub branch-protection administration.
 
 Those remain DEV-controlled.

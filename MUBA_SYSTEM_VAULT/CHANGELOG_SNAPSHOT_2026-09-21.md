@@ -13,24 +13,59 @@ Restricted V2 DEV translation to the official MUBA Telegram channel numeric ID a
 Corrected Android V3 dialog-ID comparison.
 
 ### PR #90 — Native whole-chat translation preservation
-Kept Telegram's native whole-chat translation entry point available in the exact MUBA dialog while preserving the outgoing translate-before-send behavior and normal behavior in other dialogs.
+Kept Telegram's native whole-chat translation entry point available in the exact MUBA dialog while preserving outgoing translate-before-send behavior.
 
 ### GitHub Android build
 Workflow run #18 completed successfully and produced artifact `MUBA-V3-Android-APK`.
 
-## Assistant
+## Assistant / Guardian
 ### PR #91 — Assistant content evolution
-Added paged Story Mode, distinct topic context, expanded Community Guide, persistent-category development-log UI, and CREATE → SHARE content/copy actions across five languages.
+Added paged Story Mode, distinct topic context, expanded Community Guide, Development Log and CREATE → SHARE across five languages.
 
-## Guardian
-### PR #92 — START/STOP protection synchronization
+### PR #92 — START/STOP synchronization
 Aligned Guardian PAUSED/ACTIVE state with actual runtime protection and added repeated transition regression coverage.
 
 ### PR #93 — Violation history / quieter DEV reports
-Stopped successful DEV management/manual actions from generating report noise. Added richer violation identity details, categorized violation history, report-language state and duplicate language-prompt suppression.
+Added categorized violation history, report-language state and quieter successful DEV controls.
+
+## Website / Studio
+### PR #96 — Living MUBA website hub
+Rebuilt the website into a living hub with dynamic knowledge, Development Log, Studio and MUBA TWT.
+
+### PR #97 — Hero cleanup
+Removed the mobile-heavy hero pillar cards.
+
+### PR #98 — Direct Web Studio
+Added protected direct Web Studio generation and same-page preview/download/TWT handoff.
+
+### PR #99 / #100 — Web Studio production fixes
+Corrected the Render service URL and backend startup import so Web Studio worked live.
+
+### PR #101 — Text-free Studio default
+Made Meme, Image, Sticker and Reaction outputs text-free unless visible writing is explicitly requested.
+
+## Gallery / Update history
+### PR #102 — MUBA Gallery and Assistant Updates
+Added the shared Web/Telegram Gallery archive, manually scrollable public Gallery, short labels, format/source metadata, stronger Studio format guidance and central Assistant update/badge UI.
+
+## Continuity
+### PR #103 — MUBA Continuity
+Added:
+- canonical append-only `muba_history.json`;
+- shared Website / Assistant / Daily history consumption;
+- Continuity CI gate for future user-facing changes;
+- Web Smoke CI;
+- persistence-aware runtime state selection;
+- DEV-only Gallery public/hidden/rejected moderation;
+- exact dependency pinning from the known-green CI baseline;
+- README, continuity standard and stable release/rollback documentation;
+- broader runtime compile/regression coverage.
+
+Superseded old PRs/issues were closed while preserving their history. Backup and Vault branches were not deleted.
 
 ## Snapshot result
-Stable main SHA after PR #93:
-`602ebffe23de7373e7ee513af33dea219fe6deba`
+Stable production main SHA after PR #103:
 
-This Vault refresh was branched from that exact SHA.
+`cbdd3ddab1bce4d6deebebb2c77f4f9a7ed4cd33`
+
+This Vault source snapshot includes that exact stable main state and remains passive/isolated from production.
