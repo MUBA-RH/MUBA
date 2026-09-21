@@ -25,9 +25,7 @@
       "areas": [
         "assistant",
         "daily",
-        "web",
-        "gallery",
-        "guardian"
+        "web"
       ],
       "title": {
         "en": "MUBA Continuity unified the project history",
@@ -42,6 +40,53 @@
         "zh": "Website Development Log、Assistant Updates 与 MUBA Daily 现在读取同一个只追加历史源，并为未来面向用户的变更加入连续性检查。",
         "ar": "أصبح Website Development Log وAssistant Updates وMUBA Daily يقرؤون من مصدر تاريخ واحد لا تُحذف سجلاته، مع فحوص استمرارية للتغييرات المستقبلية التي تمس المستخدم.",
         "hi": "Website Development Log, Assistant Updates और MUBA Daily अब एक ही append-only history source पढ़ते हैं, और future user-facing changes के लिए continuity checks जोड़े गए हैं।"
+      }
+    },
+    {
+      "id": "20260921-gallery-moderation",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "gallery",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA Gallery gained DEV moderation",
+        "tr": "MUBA Galeri'ye DEV moderasyonu eklendi",
+        "zh": "MUBA Gallery 新增 DEV 管理",
+        "ar": "أضيفت إدارة DEV إلى MUBA Gallery",
+        "hi": "MUBA Gallery में DEV moderation जोड़ा गया"
+      },
+      "text": {
+        "en": "Gallery creations can now be kept public, hidden or rejected by DEV without deleting the archive record.",
+        "tr": "Galeri üretimleri artık arşiv kaydı silinmeden DEV tarafından yayında, gizli veya reddedilmiş durumda tutulabiliyor.",
+        "zh": "Gallery 作品现在可由 DEV 设为公开、隐藏或拒绝，同时保留归档记录。",
+        "ar": "يمكن لـ DEV الآن إبقاء أعمال Gallery عامة أو مخفية أو مرفوضة دون حذف سجل الأرشيف.",
+        "hi": "Gallery creations अब archive record हटाए बिना DEV द्वारा public, hidden या rejected रखी जा सकती हैं।"
+      }
+    },
+    {
+      "id": "20260921-state-continuity",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "guardian",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA runtime state became persistence-aware",
+        "tr": "MUBA çalışma durumu kalıcı depolama farkındalığı kazandı",
+        "zh": "MUBA 运行状态支持持久化存储识别",
+        "ar": "أصبحت حالة تشغيل MUBA واعية بالتخزين الدائم",
+        "hi": "MUBA runtime state persistence-aware हुआ"
+      },
+      "text": {
+        "en": "When persistent storage is available, Assistant read-state and Guardian history can now use it automatically instead of relying only on memory.",
+        "tr": "Kalıcı depolama mevcut olduğunda Assistant okundu durumu ve Guardian geçmişi artık yalnız belleğe bağlı kalmadan bunu otomatik kullanabiliyor.",
+        "zh": "当持久化存储可用时，Assistant 已读状态和 Guardian 历史现在会自动使用它，而不再只依赖内存。",
+        "ar": "عند توفر تخزين دائم يمكن الآن لحالة القراءة في Assistant وسجل Guardian استخدامه تلقائياً بدلاً من الاعتماد على الذاكرة فقط.",
+        "hi": "Persistent storage उपलब्ध होने पर Assistant read-state और Guardian history अब केवल memory पर निर्भर रहने के बजाय उसे automatically इस्तेमाल कर सकते हैं।"
       }
     },
     {
