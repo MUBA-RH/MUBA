@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MUBA — a character, a meme, a community. Explore the living MUBA story, development log, MUBA Studio and community tools." />
   <meta name="theme-color" content="#07040f" />
+  <meta name="muba-studio-api" content="https://muba.onrender.com" />
   <title>MUBA — WE LIVE HERE NOW</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -423,6 +424,44 @@
     }
     .creator-type.active { color: #fff; border-color: var(--pink); background: rgba(217,70,239,.1); }
     .creator-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+    .studio-generate-status {
+      margin-top: 14px;
+      color: var(--muted);
+      min-height: 22px;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+    .studio-generate-status.busy { color: var(--gold); }
+    .studio-generate-status.error { color: #fca5a5; }
+    .studio-generate-status.ok { color: var(--success); }
+    .studio-preview {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(0,0,0,.22);
+      padding: 14px;
+    }
+    .studio-preview[hidden] { display: none; }
+    .studio-preview img {
+      display: block;
+      width: 100%;
+      max-height: 620px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: #05030a;
+    }
+    .studio-preview-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 12px;
+    }
+    .studio-preview-meta {
+      color: var(--muted);
+      font-size: .84rem;
+      margin-top: 10px;
+      line-height: 1.45;
+    }
 
     .tweet-lab { margin-top: 20px; padding: 26px; }
     .tweet-card {
@@ -620,7 +659,7 @@
         <div class="section-head">
           <div class="eyebrow">CREATE · REMIX · SHARE</div>
           <h2 class="section-title">MUBA <span>Studio</span></h2>
-          <p class="section-copy">Turn MUBA into content. The secure creator stays inside the existing Telegram MUBA Studio; the website becomes its public gateway and sharing desk.</p>
+          <p class="section-copy">Turn MUBA into content directly on the website. Create here, see the result here, then copy, download or move into MUBA TWT. Telegram Studio stays available for anyone who wants to continue there.</p>
         </div>
 
         <div class="studio-grid">
@@ -629,7 +668,7 @@
               <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
               <div>
                 <h3>MUBA Studio</h3>
-                <p>Create MUBA memes, images, stickers and reactions using the existing Studio experience.</p>
+                <p>Create MUBA memes, images, stickers and reactions on the web or continue with the Telegram Studio experience.</p>
               </div>
             </div>
             <div class="studio-flow">
@@ -638,25 +677,37 @@
               <div class="flow-step">CHOOSE TWT</div>
               <div class="flow-step">SHARE</div>
             </div>
-            <a class="btn btn-primary" href="https://t.me/MUBA_RH_AI_Bot?start=assistant" target="_blank" rel="noopener">Open MUBA Studio in Telegram</a>
-            <p class="studio-note">Open MUBA Assistant and choose <strong>MUBA Studio</strong>. The creator remains Telegram-authenticated so Studio security is not weakened by the public website.</p>
+            <a class="btn btn-primary" href="#web-studio">Create on Web</a>
+            <p class="studio-note">Web Studio gives visitors a limited public creation path. Telegram Studio remains available as the authenticated MUBA creator experience.</p>
           </div>
 
-          <div class="prompt-box card">
-            <h3>Prepare your MUBA idea</h3>
-            <p>Write a concept here, copy it, then use the same idea inside MUBA Studio.</p>
+          <div class="prompt-box card" id="web-studio">
+            <h3>Create MUBA on the web</h3>
+            <p>Write your idea, choose a format and create it here. Public Web Studio limit: 3 successful creations per day.</p>
             <textarea id="studio-prompt" maxlength="120" placeholder="Example: MUBA walks into a neon city while the timeline melts behind him."></textarea>
             <div class="creator-types" id="creator-types">
-              <button class="creator-type active" type="button" data-kind="Meme">Meme</button>
-              <button class="creator-type" type="button" data-kind="Image">Image</button>
-              <button class="creator-type" type="button" data-kind="Sticker">Sticker</button>
-              <button class="creator-type" type="button" data-kind="Reaction">Reaction</button>
+              <button class="creator-type active" type="button" data-kind="meme">Meme</button>
+              <button class="creator-type" type="button" data-kind="image">Image</button>
+              <button class="creator-type" type="button" data-kind="sticker">Sticker</button>
+              <button class="creator-type" type="button" data-kind="emoji">Reaction</button>
             </div>
             <div class="creator-actions">
+              <button class="btn btn-primary" type="button" id="create-web">CREATE</button>
               <button class="btn btn-secondary" type="button" id="copy-concept">Copy concept</button>
-              <a class="btn btn-soft" href="https://t.me/MUBA_RH_AI_Bot?start=assistant" target="_blank" rel="noopener">Continue in Studio</a>
+              <button class="btn btn-soft" type="button" id="clear-studio">Clear</button>
+              <a class="btn btn-soft" href="https://t.me/MUBA_RH_AI_Bot?start=assistant" target="_blank" rel="noopener">Open Telegram Studio</a>
             </div>
             <div class="status-text" id="concept-status" aria-live="polite"></div>
+            <div class="studio-generate-status" id="studio-generate-status" aria-live="polite"></div>
+            <div class="studio-preview" id="studio-preview" hidden>
+              <img id="studio-result-img" alt="Generated MUBA Studio creation" />
+              <div class="studio-preview-tools">
+                <a class="btn btn-primary" id="download-image" href="#" download="MUBA-Studio.png">Download</a>
+                <button class="btn btn-secondary" type="button" id="use-twt">Use in MUBA TWT</button>
+                <button class="btn btn-soft" type="button" id="create-another">Create another</button>
+              </div>
+              <p class="studio-preview-meta" id="studio-preview-meta"></p>
+            </div>
           </div>
         </div>
 
@@ -722,7 +773,7 @@
         {
           date: "SEP 2026",
           title: "MUBA Studio moved closer to the community",
-          text: "MUBA Studio now sits inside the wider MUBA experience: create a visual in Telegram, choose a MUBA voice on the web, copy it and share it."
+          text: "MUBA Studio now creates directly on the website as well as through Telegram. Visitors can generate a visual, see it on the page, move into MUBA TWT, copy it and share it."
         },
         {
           date: "SEP 2026",
@@ -934,8 +985,8 @@
         intro: "The creation side of MUBA.",
         items: [
           ["What Studio does", "MUBA Studio lets the community turn ideas into MUBA content such as memes, images, stickers and reactions."],
-          ["Why Studio lives in Telegram", "The creator uses the existing Telegram-authenticated Studio flow so user validation and generation controls stay protected rather than exposing private credentials on a public page."],
-          ["Website + Studio", "The website becomes the Studio gateway and sharing desk: prepare an idea here, create it in Telegram, then return to MUBA TWT for a matching voice and sharing flow."]
+          ["Two Studio paths", "Web Studio offers a limited public creation path without exposing generation credentials. Telegram Studio remains the authenticated MUBA creator experience for users who want to continue there."],
+          ["Website + Studio", "The website can now create and preview MUBA visuals directly. From the result, users can download the image, move into MUBA TWT or continue inside Telegram Studio."]
         ]
       },
       {
@@ -1130,7 +1181,27 @@
     document.getElementById("copy-tweet").addEventListener("click", () => copyText(currentTweetWithTags(), "tweet-status", "MUBA TWT copied."));
     document.getElementById("copy-tags").addEventListener("click", () => copyText(shareTags, "tweet-status", "MUBA tags copied."));
 
-    let creatorKind = "Meme";
+    const studioApiBase = (document.querySelector('meta[name="muba-studio-api"]')?.content || "").replace(/\/$/, "");
+    let creatorKind = "meme";
+    let studioObjectUrl = "";
+
+    function setStudioStatus(text, state = "") {
+      const el = document.getElementById("studio-generate-status");
+      el.textContent = text;
+      el.className = "studio-generate-status" + (state ? " " + state : "");
+    }
+
+    function resetStudioPreview() {
+      if (studioObjectUrl) {
+        URL.revokeObjectURL(studioObjectUrl);
+        studioObjectUrl = "";
+      }
+      document.getElementById("studio-preview").hidden = true;
+      document.getElementById("studio-result-img").removeAttribute("src");
+      document.getElementById("download-image").href = "#";
+      document.getElementById("studio-preview-meta").textContent = "";
+    }
+
     document.querySelectorAll(".creator-type").forEach(button => {
       button.addEventListener("click", () => {
         document.querySelectorAll(".creator-type").forEach(item => item.classList.remove("active"));
@@ -1145,7 +1216,79 @@
         document.getElementById("concept-status").textContent = "Write a MUBA idea first.";
         return;
       }
-      copyText(creatorKind + ": " + prompt, "concept-status", "MUBA Studio concept copied.");
+      copyText(creatorKind.toUpperCase() + ": " + prompt, "concept-status", "MUBA Studio concept copied.");
+    });
+
+    document.getElementById("clear-studio").addEventListener("click", () => {
+      document.getElementById("studio-prompt").value = "";
+      document.getElementById("concept-status").textContent = "";
+      setStudioStatus("");
+      resetStudioPreview();
+    });
+
+    document.getElementById("create-web").addEventListener("click", async () => {
+      const prompt = document.getElementById("studio-prompt").value.trim();
+      const button = document.getElementById("create-web");
+      if (!prompt) {
+        setStudioStatus("Write a MUBA idea first.", "error");
+        return;
+      }
+      if (!studioApiBase) {
+        setStudioStatus("Web Studio is not configured.", "error");
+        return;
+      }
+
+      resetStudioPreview();
+      button.disabled = true;
+      button.textContent = "CREATING…";
+      setStudioStatus("MUBA Studio is creating your image…", "busy");
+
+      try {
+        const response = await fetch(studioApiBase + "/studio/web-generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, kind: creatorKind })
+        });
+
+        if (!response.ok) {
+          let message = "MUBA Studio could not create this image.";
+          try {
+            const payload = await response.json();
+            if (payload && payload.error) message = payload.error;
+          } catch (_) {}
+          throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        studioObjectUrl = URL.createObjectURL(blob);
+        document.getElementById("studio-result-img").src = studioObjectUrl;
+        document.getElementById("download-image").href = studioObjectUrl;
+        document.getElementById("studio-preview").hidden = false;
+        const remaining = response.headers.get("X-MUBA-Remaining");
+        document.getElementById("studio-preview-meta").textContent =
+          "Created with MUBA Studio." + (remaining !== null ? " " + remaining + "/3 web creations left today." : "");
+        setStudioStatus("Created. Your MUBA visual is ready.", "ok");
+      } catch (error) {
+        const message = error && error.message ? error.message : "Web Studio is unavailable right now.";
+        setStudioStatus(message + " You can still use Telegram Studio.", "error");
+      } finally {
+        button.disabled = false;
+        button.textContent = "CREATE";
+      }
+    });
+
+    document.getElementById("use-twt").addEventListener("click", () => {
+      tweetCategory = "create";
+      tweetIndex = 0;
+      renderTweetTabs();
+      renderTweet();
+      document.getElementById("twt").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    document.getElementById("create-another").addEventListener("click", () => {
+      resetStudioPreview();
+      setStudioStatus("");
+      document.getElementById("studio-prompt").focus();
     });
 
     const menuButton = document.getElementById("menu-btn");
