@@ -216,24 +216,6 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes spin-rev { to { transform: rotate(-360deg); } }
 
-    .pillars {
-      display: grid;
-      grid-template-columns: repeat(3,1fr);
-      gap: 14px;
-      margin-top: -26px;
-      padding-bottom: 40px;
-    }
-    .pillar { padding: 22px; }
-    .pillar small {
-      display: block;
-      color: var(--pink);
-      font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-    .pillar strong { font-family: 'Space Grotesk', sans-serif; font-size: 1.22rem; }
-
     .devlog-panel { padding: 26px; }
     .dev-tabs, .topic-tabs, .tweet-tabs {
       display: flex;
@@ -533,7 +515,7 @@
       .hero { grid-template-columns: 1fr; text-align: center; gap: 34px; }
       .hero-actions { justify-content: center; }
       .hero .eyebrow { margin-inline: auto; }
-      .pillars, .knowledge-intro, .studio-grid { grid-template-columns: 1fr; }
+      .knowledge-intro, .studio-grid { grid-template-columns: 1fr; }
       .studio-flow, .creator-types { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 560px) {
@@ -541,7 +523,6 @@
       .section { padding: 68px 0; }
       .hero { padding-top: 42px; }
       .hero h1 { font-size: clamp(3.45rem, 22vw, 5.2rem); }
-      .pillars { grid-template-columns: 1fr; margin-top: 0; }
       .devlog-panel, .knowledge-shell, .studio-card, .prompt-box, .tweet-lab { padding: 18px; }
       .official { grid-template-columns: 1fr; }
       .studio-identity { grid-template-columns: 72px 1fr; }
@@ -594,11 +575,6 @@
         </div>
       </section>
 
-      <section class="pillars" aria-label="MUBA pillars">
-        <div class="pillar card"><small>01</small><strong>Character</strong></div>
-        <div class="pillar card"><small>02</small><strong>Culture</strong></div>
-        <div class="pillar card"><small>03</small><strong>Community</strong></div>
-      </section>
     </div>
 
     <section class="section" id="development">
