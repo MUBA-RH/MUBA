@@ -79,6 +79,12 @@ def set_assistant_language(user_id,language):
 def clear_assistant_language(user_id):
  STORE.set('assistant_language',str(user_id),None)
 
+def get_assistant_update_seen(user_id,area):
+ return STORE.get('assistant_update_seen',str(user_id)+':'+str(area),None)
+def mark_assistant_update_seen(user_id,area,update_id):
+ STORE.set('assistant_update_seen',str(user_id)+':'+str(area),update_id)
+ return True
+
 def get_guardian_report_language():
  return STORE.get('guardian_report_settings','language',None)
 def set_guardian_report_language(language):
