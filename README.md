@@ -41,7 +41,7 @@ Production baseline is `main`.
 
 Development follows:
 
-**BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒**
+**START 🔥 MERGE 🟢 PROTECT SYSTEM 🛡️ STABLE 🔒**
 
 Meaning: isolate the requested work, preserve the current stable system, test, merge only when green, validate after merge and retain rollback/recovery capability.
 
