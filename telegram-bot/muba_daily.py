@@ -58,23 +58,31 @@ DEVLOG_LABELS={
 DEVLOG={
 "en":{
 "new":[
+"2026-09-21 — MUBA Gallery added as a shared archive for Web Studio and Telegram Studio creations.",
+"2026-09-21 — Assistant gained a central MUBA Updates flow with per-area NEW/UPDATED/IMPROVED badges.",
 "2026-09-21 — Story Mode expanded into a chronological, transparent journey with previous/next navigation.",
 "2026-09-21 — CREATE → SHARE added under MUBA Studio with share-ready MUBA-native post examples and copy actions."],
 "updates":[
+"2026-09-21 — MUBA Studio formats were separated more clearly: Meme, Image, Sticker and Reaction now use distinct visual guidance.",
 "2026-09-21 — Origin, Identity, Difference, Purpose, Community and Future received distinct present-day context without collapsing their responsibilities into one another.",
 "2026-09-21 — Community Guide expanded into clear destinations so members can choose where to go based on what they want to learn or do."],
 "fixed":[
+"2026-09-21 — Studio defaults were refined so visible text appears only when explicitly requested.",
 "2026-09-21 — Repetitive explanations were separated by topic: roots, identity evolution, practical difference, system purpose, community utility and future value now have different scopes.",
 "2026-09-21 — Development history is now preserved as an append-only user-facing log instead of a single replaceable summary."]
 },
 "tr":{
 "new":[
+"2026-09-21 — Web Studio ve Telegram Studio üretimleri için ortak arşiv olarak MUBA Galeri eklendi.",
+"2026-09-21 — Assistant içine merkezi MUBA Yenilikleri akışı ve bölüm bazlı YENİ/GÜNCELLENDİ/İYİLEŞTİRİLDİ işaretleri eklendi.",
 "2026-09-21 — Hikâye Modu kronolojik ve şeffaf bir yolculuk olarak genişletildi; önceki/sonraki gezinme eklendi.",
 "2026-09-21 — MUBA Studio altına ÜRET → PAYLAŞ eklendi; MUBA diline uygun paylaşmaya hazır TWT örnekleri ve kopyalama işlemleri eklendi."],
 "updates":[
+"2026-09-21 — MUBA Studio formatları daha net ayrıldı: Meme, Image, Sticker ve Reaction artık farklı görsel yönlendirmeler kullanıyor.",
 "2026-09-21 — Köken, Kimlik, Farkı, Amaç, Topluluk ve Gelecek bölümlerine birbirinin görevini tekrar etmeyen bugünkü durum katmanları eklendi.",
 "2026-09-21 — Topluluk Rehberi, üyenin merak ettiği konuya göre doğru bölüme yönlendiren daha açık bir yapıya genişletildi."],
 "fixed":[
+"2026-09-21 — Studio varsayılanı, yalnız açıkça istendiğinde görünür yazı üretecek şekilde iyileştirildi.",
 "2026-09-21 — Tekrarlayan anlatımlar konu bazında ayrıldı: kökler, kimlik gelişimi, pratik fark, sistem amacı, topluluk faydası ve gelecek değeri artık ayrı kapsamda.",
 "2026-09-21 — Geliştirme geçmişi tek bir değiştirilebilir özet yerine geçmişi koruyan kalıcı günlük yapısına dönüştürüldü."]
 },
