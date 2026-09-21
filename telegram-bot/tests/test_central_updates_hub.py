@@ -43,6 +43,10 @@ class CentralUpdatesHubTests(unittest.TestCase):
         self.assertIn('if data.startswith("updates_area:")',BOT)
         self.assertIn('def _legacy_area_global_index',BOT)
 
+    def test_seen_state_is_advanced_only_by_central_updates(self):
+        self.assertEqual(BOT.count("mark_assistant_update_seen("),1)
+        self.assertIn("def _mark_central_update_seen",BOT)
+
 
 if __name__=="__main__":
     unittest.main(verbosity=2)
