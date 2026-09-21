@@ -10,6 +10,18 @@ TOPIC_LABELS={
 "zh":{"origin":"🌱 起源","identity":"👤 身份","difference":"✨ 独特之处","purpose":"🎯 目标","community":"👥 社区","plan":"🧭 未来"},
 "ar":{"origin":"🌱 النشأة","identity":"👤 الهوية","difference":"✨ الاختلاف","purpose":"🎯 الهدف","community":"👥 المجتمع","plan":"🧭 المستقبل"},
 "hi":{"origin":"🌱 शुरुआत","identity":"👤 पहचान","difference":"✨ अंतर","purpose":"🎯 उद्देश्य","community":"👥 समुदाय","plan":"🧭 भविष्य"}}
+CATEGORY_LABELS={
+"en":{"discover":"🌱 Discover MUBA","understand":"🎯 Understand MUBA","world":"🌍 MUBA World"},
+"tr":{"discover":"🌱 MUBA'yı Tanı","understand":"🎯 MUBA'yı Anla","world":"🌍 MUBA Dünyası"},
+"zh":{"discover":"🌱 认识 MUBA","understand":"🎯 理解 MUBA","world":"🌍 MUBA 世界"},
+"ar":{"discover":"🌱 تعرّف على MUBA","understand":"🎯 افهم MUBA","world":"🌍 عالم MUBA"},
+"hi":{"discover":"🌱 MUBA को जानें","understand":"🎯 MUBA को समझें","world":"🌍 MUBA की दुनिया"}}
+CATEGORY_TOPICS={
+"discover":("origin","identity"),
+"understand":("difference","purpose"),
+"world":("community","plan")}
+TOPIC_CATEGORY={topic:category for category,topics in CATEGORY_TOPICS.items() for topic in topics}
+
 QUESTIONS={
 "en":[("origin","How did MUBA emerge?"),("origin","Was MUBA built from a prewritten story?"),("identity","What is MUBA?"),("identity","How would MUBA describe itself?"),("difference","What makes MUBA different?"),("difference","Is MUBA a copy of another meme character?"),("purpose","Why does MUBA exist?"),("purpose","What is MUBA trying to build?"),("community","What role does the community play?"),("community","How can people participate?"),("plan","What comes next for MUBA?"),("plan","How does MUBA plan to grow?")],
 "tr":[("origin","MUBA nasıl ortaya çıktı?"),("origin","MUBA önceden yazılmış bir hikâyeden mi doğdu?"),("identity","MUBA nedir?"),("identity","MUBA kendini nasıl tanımlar?"),("difference","MUBA'yı farklı yapan nedir?"),("difference","MUBA başka bir meme karakterinin kopyası mı?"),("purpose","MUBA neden var?"),("purpose","MUBA ne inşa etmeye çalışıyor?"),("community","Topluluğun rolü nedir?"),("community","İnsanlar nasıl katılabilir?"),("plan","MUBA için sırada ne var?"),("plan","MUBA nasıl büyümeyi planlıyor?")],
