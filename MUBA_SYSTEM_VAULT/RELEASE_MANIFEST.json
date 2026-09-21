@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "vault_type": "passive-full-system-source-recovery-continuity-portability",
   "repository": "MUBA-RH/MUBA",
   "snapshot_date": "2026-09-21",
@@ -54,7 +54,9 @@
     100,
     101,
     102,
-    103
+    103,
+    107,
+    108
   ],
   "android_build_evidence": {
     "workflow_run": 18,
@@ -66,7 +68,8 @@
     "dev_command": "BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒",
     "v2_requires_explicit_dev_choice": true,
     "user_facing_change_requires_history_entry": true,
-    "auto_vault_sync_after_green_main": true
+    "auto_vault_sync_after_green_main": true,
+    "new_project_permission_gate_required": true
   },
   "credentials_in_vault": false,
   "entry_paths": [
@@ -81,7 +84,8 @@
     "Runtime state automatically uses configured persistent storage when available; live persistence must still be verified through deployment state.",
     "muba_history.json is the canonical append-only user-facing development timeline.",
     "GitHub branch protection administration is external to this Vault and must be verified separately.",
-    "Vault source and export automatically refresh only after the auto-sync workflow passes runtime, web and history validation."
+    "Vault source and export automatically refresh only after the auto-sync workflow passes runtime, web and history validation.",
+    "MUBA source is publicly inspectable but protected reuse is permission-required; the supported new-project Vault path must fail closed without an approved grant."
   ],
   "automation": {
     "enabled": true,
@@ -92,5 +96,19 @@
     "source_run_id": "35627691128",
     "production_writeback": false,
     "v2_auto_activation": false
+  },
+  "rights_and_permission": {
+    "model": "source-available-permission-required",
+    "license_file": "LICENSE.md",
+    "permission_model_doc": "docs/MUBA_PERMISSION_MODEL.md",
+    "authorization_registry": "muba_authorizations.json",
+    "permission_template": "MUBA_PERMISSION_TEMPLATE.json",
+    "permission_gate": "scripts/muba_permission_gate.py",
+    "vault_notice": "MUBA_SYSTEM_VAULT/PERMISSION_REQUIRED.md",
+    "new_project_entry": "MUBA_SYSTEM_VAULT/CREATE_NEW_PROJECT_FROM_ARCHITECTURE.md",
+    "new_project_default_decision": "deny",
+    "prior_written_dev_authorization_required": true,
+    "official_muba_restore_requires_new_project_grant": false,
+    "private_signing_key_in_repository_or_vault": false
   }
 }
