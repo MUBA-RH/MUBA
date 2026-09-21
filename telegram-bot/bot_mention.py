@@ -588,7 +588,18 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
     if data=="updates_center":
-        await q.edit_message_text(UPDATE_LABELS[lang]["center"],reply_markup=updates_center_keyboard(lang,user_id)); return
+        body,index,total=updates_center_text(lang,user_id,0)
+        await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
+    if data.startswith("updates_global:"):
+        raw=data.split(":",1)[1]
+        index=int(raw) if raw.isdigit() else 0
+        body,index,total=updates_center_text(lang,user_id,index)
+        await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
+    if data.startswith("updates_jump:"):
+        area=data.split(":",1)[1]
+        index=_latest_area_global_index(lang,area)
+        body,index,total=updates_center_text(lang,user_id,index)
+        await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
     if data=="gallery_admin":
         if not is_dev(user_id): return
         await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["title"],reply_markup=gallery_admin_keyboard(lang)); return
