@@ -44,7 +44,7 @@ from muba_brain import (
     mark_assistant_update_seen,
     state_storage_status,
 )
-from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
+from assistant_mode import LANGS, TOPIC_LABELS, CATEGORY_LABELS, CATEGORY_TOPICS, TOPIC_CATEGORY, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
 from human_conversation_pack import reply as match_human_conversation
@@ -307,12 +307,12 @@ def _legacy_area_global_index(lang,area,area_index):
 
 def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
-    labels=TOPIC_LABELS[lang]
+    labels=CATEGORY_LABELS[lang]
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
     rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
-    for topic in ("origin","identity","difference","purpose","community","plan"):
-        rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
+    for category in ("discover","understand","world"):
+        rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
@@ -539,14 +539,20 @@ def share_keyboard(lang,index=None):
     rows.append([InlineKeyboardButton(labels["back"],callback_data="menu" if index is None else "share")])
     return InlineKeyboardMarkup(rows)
 
-def topic_keyboard(lang,topic):
+def category_keyboard(lang,category):
+    topics=CATEGORY_TOPICS[category]
     rows=[]
-    for i,(label,_) in enumerate(TOPIC_PROGRESS.get(lang,{}).get(topic,[])):
-        rows.append([InlineKeyboardButton(label,callback_data=f"topicx:{topic}:{i}")])
-    for i,(t,q) in enumerate(QUESTIONS[lang]):
-        if t==topic: rows.append([InlineKeyboardButton(q,callback_data=f"q:{i}")])
+    for topic in topics:
+        for i,(label,_) in enumerate(TOPIC_PROGRESS.get(lang,{}).get(topic,[])):
+            rows.append([InlineKeyboardButton(label,callback_data=f"topicx:{topic}:{i}")])
+    for i,(topic,question) in enumerate(QUESTIONS[lang]):
+        if topic in topics:
+            rows.append([InlineKeyboardButton(question,callback_data=f"q:{i}")])
     rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
+
+def topic_keyboard(lang,topic):
+    return category_keyboard(lang,TOPIC_CATEGORY[topic])
 
 async def show_language(update):
     msg=update.effective_message
@@ -703,9 +709,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if items:
             i=max(0,min(i,len(items)-1))
             await q.edit_message_text(items[i][1],reply_markup=topic_keyboard(lang,topic)); return
+    if data.startswith("category:"):
+        category=data.split(":",1)[1]
+        if category in CATEGORY_TOPICS:
+            await q.edit_message_text(CATEGORY_LABELS[lang][category],reply_markup=category_keyboard(lang,category)); return
     if data.startswith("topic:"):
         topic=data.split(":",1)[1]
-        await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
+        await q.edit_message_text(CATEGORY_LABELS[lang][TOPIC_CATEGORY[topic]],reply_markup=topic_keyboard(lang,topic)); return
     if data.startswith("q:"):
         i=int(data.split(":",1)[1]); answer=answer_for_question(lang,i)
         await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
