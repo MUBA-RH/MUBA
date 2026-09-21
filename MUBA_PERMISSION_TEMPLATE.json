@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "grant_id": "REPLACE_WITH_APPROVED_GRANT_ID",
+  "project_name": "REPLACE_WITH_AUTHORIZED_PROJECT_NAME",
+  "grantee": "REPLACE_WITH_AUTHORIZED_GRANTEE",
+  "scope": [
+    "create-new-project-from-architecture"
+  ],
+  "issued_at": "YYYY-MM-DD",
+  "expires_at": null,
+  "issuer": "MUBA Developer",
+  "approval_reference": "REPLACE_WITH_WRITTEN_APPROVAL_REFERENCE"
+}
