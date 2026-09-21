@@ -68,6 +68,13 @@ logger = logging.getLogger("muba")
 # content is intentionally ephemeral and resets with the service.
 _STUDIO_OUTPUTS = {}
 
+# Public website Studio access is isolated from Telegram-authenticated Studio.
+# The public endpoint is limited per client/day and only allows the official
+# GitHub Pages origin. Successful generations consume quota; failures do not.
+_WEB_STUDIO_USAGE = defaultdict(lambda: {"day":"","count":0})
+_WEB_STUDIO_DAILY_LIMIT = 3
+_WEB_STUDIO_ALLOWED_ORIGIN = "https://muba-rh.github.io"
+
 # Telegram may redeliver the same webhook update/message. Keep a bounded,
 # short-lived set of message identities so one Telegram message is handled once.
 _PROCESSED_MESSAGES = OrderedDict()
@@ -932,6 +939,104 @@ async def studio_generate_handler(request: web.Request):
         "Content-Disposition":'inline; filename="muba-studio.png"',
     })
 
+def _web_studio_client_key(request: web.Request) -> str:
+    forwarded=(request.headers.get("X-Forwarded-For") or "").split(",",1)[0].strip()
+    return forwarded or request.headers.get("CF-Connecting-IP") or request.remote or "unknown"
+
+def _web_studio_remaining(client_key: str) -> int:
+    row=_WEB_STUDIO_USAGE[client_key]; day=time.strftime("%Y-%m-%d",time.gmtime())
+    if row["day"]!=day: row.update(day=day,count=0)
+    return max(0,_WEB_STUDIO_DAILY_LIMIT-row["count"])
+
+def _web_studio_consume(client_key: str) -> None:
+    row=_WEB_STUDIO_USAGE[client_key]; day=time.strftime("%Y-%m-%d",time.gmtime())
+    if row["day"]!=day: row.update(day=day,count=0)
+    row["count"]+=1
+
+def _web_studio_cors_headers(origin: str) -> dict:
+    if origin!=_WEB_STUDIO_ALLOWED_ORIGIN: return {}
+    return {
+        "Access-Control-Allow-Origin":origin,
+        "Access-Control-Allow-Methods":"POST, OPTIONS",
+        "Access-Control-Allow-Headers":"Content-Type",
+        "Access-Control-Expose-Headers":"X-MUBA-Remaining, X-MUBA-Output-URL",
+        "Vary":"Origin",
+    }
+
+def _web_studio_json(origin: str, payload: dict, status: int):
+    return web.json_response(payload,status=status,headers=_web_studio_cors_headers(origin))
+
+async def studio_web_options_handler(request: web.Request):
+    origin=request.headers.get("Origin","")
+    if origin!=_WEB_STUDIO_ALLOWED_ORIGIN:
+        return web.Response(status=403)
+    return web.Response(status=204,headers=_web_studio_cors_headers(origin))
+
+async def studio_web_generate_handler(request: web.Request):
+    """Public GitHub Pages Studio endpoint with isolated rate limiting."""
+    origin=request.headers.get("Origin","")
+    if origin!=_WEB_STUDIO_ALLOWED_ORIGIN:
+        return web.json_response({"error":"Website origin not allowed."},status=403)
+    try:
+        data=await request.json()
+    except Exception:
+        return _web_studio_json(origin,{"error":"Invalid request."},400)
+
+    prompt=clean_prompt(str(data.get("prompt","")))
+    kind=str(data.get("kind","image")).strip().casefold()
+    if kind=="reaction": kind="emoji"
+    if kind not in {"meme","image","sticker","emoji"}:
+        return _web_studio_json(origin,{"error":"Invalid Studio type."},400)
+    if not prompt:
+        return _web_studio_json(origin,{"error":"Write something for MUBA."},400)
+
+    client_key=_web_studio_client_key(request)
+    if _web_studio_remaining(client_key)<=0:
+        return _web_studio_json(origin,{"error":"Daily web limit reached — 3/3."},429)
+    if not ai_configured():
+        return _web_studio_json(origin,{"error":"MUBA AI engine is not configured yet. No quota was used."},503)
+
+    try:
+        import base64, aiohttp
+        ref=await _studio_reference(request)
+        form=aiohttp.FormData()
+        payload=ai_payload(prompt,kind,"")
+        form.add_field("prompt",payload["prompt"])
+        form.add_field("width",str(payload["width"]))
+        form.add_field("height",str(payload["height"]))
+        form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+            raw=await response.read()
+            if response.status!=200:
+                logger.error("Public Studio AI request failed status=%s body=%s",response.status,raw[:1000].decode("utf-8","replace"))
+                raise RuntimeError("AI request failed")
+            if response.headers.get("Content-Type","").startswith("image/"):
+                body=raw; out_type=response.headers.get("Content-Type")
+            else:
+                response_payload=json.loads(raw.decode("utf-8"))
+                result=response_payload.get("result",response_payload)
+                encoded=result.get("image") if isinstance(result,dict) else None
+                if not encoded: raise RuntimeError("AI response contained no image")
+                body=base64.b64decode(encoded); out_type="image/png"
+    except Exception:
+        logger.exception("Public MUBA Studio generation failed")
+        return _web_studio_json(origin,{"error":"MUBA Studio could not create this image. Failed attempts do not count."},503)
+
+    _web_studio_consume(client_key)
+    import secrets
+    key=secrets.token_urlsafe(24)
+    _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time()}
+    output_url=EXTERNAL_URL.rstrip("/")+"/studio/output/"+key
+    headers=_web_studio_cors_headers(origin)
+    headers.update({
+        "X-MUBA-Remaining":str(_web_studio_remaining(client_key)),
+        "X-MUBA-Output-URL":output_url,
+        "Content-Disposition":'inline; filename="muba-studio.png"',
+        "Cache-Control":"no-store",
+    })
+    return web.Response(body=body,content_type=out_type,headers=headers)
+
 async def studio_output_handler(request: web.Request):
     import time
     key=request.match_info.get("key","")
@@ -1085,6 +1190,8 @@ async def start_webhook_server():
     )
     app.router.add_get("/studio", studio_page_handler)
     app.router.add_post("/studio/generate", studio_generate_handler)
+    app.router.add_options("/studio/web-generate", studio_web_options_handler)
+    app.router.add_post("/studio/web-generate", studio_web_generate_handler)
     app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
 
