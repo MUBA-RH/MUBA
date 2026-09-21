@@ -78,6 +78,8 @@ MUBA System Vault is intentionally passive and isolated from production. It exis
 
 After every `main` update, **MUBA Vault Auto Sync** independently runs the pinned Telegram regression suite, public website smoke check and canonical History validation. Only after those checks pass does it synchronize the passive `vault/system-vault-final` snapshot, update its stable-main metadata and create a new ZIP + SHA256 artifact. A failed validation leaves the previous Vault snapshot untouched.
 
+Restoring the official MUBA system remains a recovery path. Creating or adapting a **different project** from the MUBA Vault/architecture is a protected reuse path: it requires prior written authorization from the MUBA Developer and must pass the deny-by-default permission gate.
+
 Secrets are not stored in the repository or Vault.
 
 ## Security
@@ -94,6 +96,19 @@ Do not commit:
 
 Runtime dependency versions are pinned from a known-green CI baseline so deployments do not silently move to new package versions.
 
-## License
+## License / source availability
 
-No software license is currently declared in this repository. Public source visibility and an open-source reuse license are not the same thing. If reuse/distribution rights are intended, the DEV should choose and add an explicit license.
+**MUBA is publicly viewable, not freely reusable.**
+
+This repository is **source-available and permission-required**. Public access is provided for transparency, review and continuity; it does not grant permission to deploy, reproduce, adapt, rebrand, redistribute, commercialize, port, or use the MUBA implementation, Vault, or original project-specific architectural arrangement in another project.
+
+Prior written authorization from the **MUBA Founder / Developer** is required for protected reuse.
+
+The supported Vault new-project path is **deny-by-default**. A permission document must match an active SHA-256 approval fingerprint recorded in the official `muba_authorizations.json` registry; otherwise installation must stop.
+
+Third-party libraries, platforms, APIs and assets remain subject to their own licenses and rights.
+
+See:
+- `LICENSE.md` — MUBA Source-Available License v1.0;
+- `docs/MUBA_PERMISSION_MODEL.md` — authorization model and supported Vault gate;
+- `MUBA_PERMISSION_TEMPLATE.json` — permission grant template.

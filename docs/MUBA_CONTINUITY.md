@@ -43,8 +43,14 @@ Gallery visibility states:
 ## GitHub limitation
 Branch protection/rulesets require repository administration access. The connected GitHub App used by automated maintenance does not expose administration mutations. Continuity CI checks are therefore installed in-repository; repository-level required-check enforcement must be enabled through GitHub administration when available.
 
-## License
-Do not select a software license implicitly. License choice changes third-party reuse rights and remains a DEV decision.
+## License and protected reuse
+`LICENSE.md` is the canonical MUBA source-availability notice.
+
+MUBA is publicly viewable but reuse is permission-required. Changes to the license, authorization registry, permission template, permission gate or permission-model documentation are treated as user-facing continuity changes and must add a new `muba_history.json` record.
+
+The official new-project Vault path is deny-by-default. A valid permission document must match an active SHA-256 approval fingerprint in the official authorization registry. MUBA's own restore path is not a third-party reuse path.
+
+Third-party components continue under their own licenses and ownership.
 
 ## Automatic Vault refresh
 Every push to `main` starts `MUBA Vault Auto Sync`.

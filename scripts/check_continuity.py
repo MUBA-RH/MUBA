@@ -43,6 +43,15 @@ def changed_files(base):
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 def is_user_facing(path):
+    protected_policy_paths={
+        "LICENSE.md",
+        "muba_authorizations.json",
+        "MUBA_PERMISSION_TEMPLATE.json",
+        "scripts/muba_permission_gate.py",
+        "docs/MUBA_PERMISSION_MODEL.md",
+    }
+    if path in protected_policy_paths:
+        return True
     if path=="index.html" or path.startswith("android-v3/"):
         return True
     if not path.startswith("telegram-bot/"):

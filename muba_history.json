@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260921-permission-model",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "web"
+      ],
+      "title": {
+        "en": "MUBA source reuse became permission-required",
+        "tr": "MUBA kaynak kullanımı izin zorunlu hale geldi",
+        "zh": "MUBA 源码复用改为必须授权",
+        "ar": "أصبح إعادة استخدام مصدر MUBA يتطلب إذناً",
+        "hi": "MUBA source reuse के लिए अनुमति अनिवार्य हुई"
+      },
+      "text": {
+        "en": "The public repository is now explicitly source-available rather than freely reusable. Protected Vault/new-project reuse requires prior written DEV authorization and a deny-by-default SHA-256 approval check.",
+        "tr": "Halka açık repository artık açıkça serbest kullanım değil, source-available olarak tanımlandı. Vault/yeni proje kullanımında önceden yazılı DEV izni ve varsayılanı reddet olan SHA-256 onay kontrolü zorunlu.",
+        "zh": "公开仓库现明确为 source-available，并非自由复用。通过 Vault/架构创建其他项目时，必须事先获得 DEV 书面授权并通过默认拒绝的 SHA-256 审批校验。",
+        "ar": "أصبح المستودع العام موضحاً كمصدر متاح للعرض وليس للاستخدام الحر. يتطلب استخدام Vault أو البنية لمشروع آخر إذناً كتابياً مسبقاً من DEV وفحص موافقة SHA-256 افتراضه الرفض.",
+        "hi": "Public repository अब free reuse के बजाय स्पष्ट रूप से source-available है। Vault/architecture से नया project बनाने के लिए पहले लिखित DEV अनुमति और deny-by-default SHA-256 approval check अनिवार्य है।"
+      }
+    },
+    {
       "id": "20260921-vault-auto-sync",
       "date": "2026-09-21",
       "type": "improved",
