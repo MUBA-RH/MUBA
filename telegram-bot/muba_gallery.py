@@ -26,6 +26,7 @@ _LOCK=threading.RLock()
 _ID_RE=re.compile(r"^[a-f0-9]{24}$")
 _ALLOWED_KINDS={"meme","image","sticker","emoji"}
 _ALLOWED_TYPES={"image/png":".png","image/jpeg":".jpg","image/webp":".webp"}
+_ALLOWED_VISIBILITY={"public","hidden","rejected"}
 
 def _storage_root():
     configured=os.getenv("MUBA_GALLERY_DIR","").strip()
@@ -111,32 +112,14 @@ def archive_creation(image_bytes,content_type,prompt,kind,source):
             "created_at":stamp,
             "content_type":content_type,
             "file":image_path.name,
+            "visibility":"public",
         }
         tmp_meta=meta_path.with_suffix(".json.tmp")
         tmp_meta.write_text(json.dumps(record,ensure_ascii=False,sort_keys=True),encoding="utf-8")
         os.replace(tmp_meta,meta_path)
         return dict(record)
 
-def list_gallery(limit=60,kind=None):
-    root,_=_storage_root()
-    meta=root/"meta"
-    if not meta.exists():
-        return []
-    wanted=_normalize_kind(kind) if kind else None
-    rows=[]
-    with _LOCK:
-        for path in meta.glob("*.json"):
-            try:
-                item=json.loads(path.read_text(encoding="utf-8"))
-            except (OSError,ValueError):
-                continue
-            if wanted and item.get("kind")!=wanted:
-                continue
-            rows.append(item)
-    rows.sort(key=lambda item:item.get("created_at",""),reverse=True)
-    return rows[:max(1,min(int(limit or 60),120))]
-
-def read_gallery_image(item_id):
+def _read_meta(item_id):
     if not _ID_RE.fullmatch(str(item_id or "")):
         return None
     root,_=_storage_root()
@@ -145,7 +128,65 @@ def read_gallery_image(item_id):
         return None
     try:
         item=json.loads(meta_path.read_text(encoding="utf-8"))
+        if "visibility" not in item:
+            item["visibility"]="public"
+        return item
+    except (OSError,ValueError):
+        return None
+
+def get_gallery_item(item_id):
+    item=_read_meta(item_id)
+    return dict(item) if item else None
+
+def set_gallery_visibility(item_id,visibility):
+    visibility=str(visibility or "").casefold()
+    if visibility not in _ALLOWED_VISIBILITY:
+        raise ValueError("invalid gallery visibility")
+    root,_=_storage_root()
+    meta_path=root/"meta"/(str(item_id)+".json")
+    with _LOCK:
+        item=_read_meta(item_id)
+        if not item:
+            return None
+        item["visibility"]=visibility
+        tmp_meta=meta_path.with_suffix(".json.tmp")
+        tmp_meta.write_text(json.dumps(item,ensure_ascii=False,sort_keys=True),encoding="utf-8")
+        os.replace(tmp_meta,meta_path)
+        return dict(item)
+
+def list_gallery(limit=60,kind=None,visibility="public"):
+    root,_=_storage_root()
+    meta=root/"meta"
+    if not meta.exists():
+        return []
+    wanted=_normalize_kind(kind) if kind else None
+    if visibility is not None and visibility not in _ALLOWED_VISIBILITY:
+        raise ValueError("invalid gallery visibility")
+    rows=[]
+    with _LOCK:
+        for path in meta.glob("*.json"):
+            try:
+                item=json.loads(path.read_text(encoding="utf-8"))
+            except (OSError,ValueError):
+                continue
+            item.setdefault("visibility","public")
+            if wanted and item.get("kind")!=wanted:
+                continue
+            if visibility is not None and item.get("visibility")!=visibility:
+                continue
+            rows.append(item)
+    rows.sort(key=lambda item:item.get("created_at",""),reverse=True)
+    return rows[:max(1,min(int(limit or 60),120))]
+
+def read_gallery_image(item_id,include_nonpublic=False):
+    item=_read_meta(item_id)
+    if not item:
+        return None
+    if not include_nonpublic and item.get("visibility","public")!="public":
+        return None
+    root,_=_storage_root()
+    try:
         image_path=root/"images"/item["file"]
         return image_path.read_bytes(),item["content_type"]
-    except (OSError,ValueError,KeyError):
+    except (OSError,KeyError):
         return None
