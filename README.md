@@ -64,13 +64,15 @@ GitHub Actions run Telegram/runtime tests, the MUBA Continuity Gate and website 
 
 ## Persistence
 
-Runtime state automatically prefers:
+Gallery production storage supports a private **Cloudflare R2** backend so Studio creations survive Render restarts and redeploys even when the web service runs without a persistent disk. When R2 credentials are configured, Gallery uses R2 as its durable archive and does not silently downgrade to temporary local storage.
+
+Runtime state separately prefers:
 1. explicit `MUBA_MEMORY_FILE`;
 2. persistent storage associated with `MUBA_GALLERY_DIR`;
 3. an existing Render `/var/data` persistent-disk mount;
 4. safe in-memory fallback.
 
-`/health/state` reports whether runtime state and Gallery storage are currently backed by a persistent path without exposing filesystem paths.
+`/health/state` reports persistence plus the non-secret Gallery backend label without exposing credentials or filesystem paths.
 
 ## Recovery / Vault
 
