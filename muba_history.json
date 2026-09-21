@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "policy": {
+    "append_only": true,
+    "required_for_user_facing_changes": true,
+    "languages": [
+      "en",
+      "tr",
+      "zh",
+      "ar",
+      "hi"
+    ],
+    "types": [
+      "new",
+      "updated",
+      "improved",
+      "fixed"
+    ]
+  },
+  "entries": [
+    {
+      "id": "20260921-continuity",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "daily",
+        "web",
+        "gallery",
+        "guardian"
+      ],
+      "title": {
+        "en": "MUBA Continuity unified the project history",
+        "tr": "MUBA Continuity proje geçmişini tekleştirdi",
+        "zh": "MUBA Continuity 统一了项目历史",
+        "ar": "وحّد MUBA Continuity تاريخ المشروع",
+        "hi": "MUBA Continuity ने project history को एक किया"
+      },
+      "text": {
+        "en": "Website Development Log, Assistant Updates and MUBA Daily now read the same append-only history source, with continuity checks for future user-facing changes.",
+        "tr": "Website Development Log, Assistant Yenilikleri ve MUBA Daily artık aynı silinmeyen geçmiş kaynağını kullanıyor; gelecekteki kullanıcıya dokunan değişiklikler için süreklilik kontrolleri eklendi.",
+        "zh": "Website Development Log、Assistant Updates 与 MUBA Daily 现在读取同一个只追加历史源，并为未来面向用户的变更加入连续性检查。",
+        "ar": "أصبح Website Development Log وAssistant Updates وMUBA Daily يقرؤون من مصدر تاريخ واحد لا تُحذف سجلاته، مع فحوص استمرارية للتغييرات المستقبلية التي تمس المستخدم.",
+        "hi": "Website Development Log, Assistant Updates और MUBA Daily अब एक ही append-only history source पढ़ते हैं, और future user-facing changes के लिए continuity checks जोड़े गए हैं।"
+      }
+    },
+    {
+      "id": "20260921-gallery",
+      "date": "2026-09-21",
+      "type": "new",
+      "areas": [
+        "gallery",
+        "studio",
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA Gallery became the community visual archive",
+        "tr": "MUBA Galeri topluluk görsel arşivi oldu",
+        "zh": "MUBA Gallery 成为社区视觉档案",
+        "ar": "أصبحت MUBA Gallery أرشيف المجتمع البصري",
+        "hi": "MUBA Gallery community visual archive बना"
+      },
+      "text": {
+        "en": "Successful creations from Web Studio and Telegram Studio now flow into one shared MUBA Gallery with format, source and short visual labels.",
+        "tr": "Web Studio ve Telegram Studio'da başarıyla üretilen görseller artık format, kaynak ve kısa görsel etiketleriyle ortak MUBA Galeri'ye akıyor.",
+        "zh": "Web Studio 与 Telegram Studio 成功生成的作品现在统一进入 MUBA Gallery，并显示格式、来源和简短视觉标签。",
+        "ar": "تنتقل الآن الإبداعات الناجحة من Web Studio وTelegram Studio إلى MUBA Gallery مشتركة مع النوع والمصدر ووصف بصري قصير.",
+        "hi": "Web Studio और Telegram Studio की successful creations अब format, source और short visual labels के साथ shared MUBA Gallery में आती हैं।"
+      }
+    },
+    {
+      "id": "20260921-studio-quality",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "studio"
+      ],
+      "title": {
+        "en": "Studio formats became more distinct",
+        "tr": "Studio formatları daha net ayrıldı",
+        "zh": "Studio 各格式更加清晰区分",
+        "ar": "أصبحت أنماط Studio أكثر تميزاً",
+        "hi": "Studio formats अधिक स्पष्ट हुए"
+      },
+      "text": {
+        "en": "Meme, Image, Sticker and Reaction now use distinct visual guidance, with stronger realistic emotion direction for MUBA reactions.",
+        "tr": "Meme, Image, Sticker ve Reaction artık farklı görsel yönlendirmeler kullanıyor; MUBA reaksiyonlarında daha güçlü ve gerçekçi duygu yönlendirmesi var.",
+        "zh": "Meme、Image、Sticker 与 Reaction 现在使用不同的视觉指导，并强化 MUBA reaction 的真实情绪表达。",
+        "ar": "تستخدم Meme وImage وSticker وReaction الآن توجيهاً بصرياً مختلفاً مع تعبيرات أكثر واقعية في ردود MUBA.",
+        "hi": "Meme, Image, Sticker और Reaction अब distinct visual guidance इस्तेमाल करते हैं, और MUBA reactions में realistic emotion direction मजबूत है।"
+      }
+    },
+    {
+      "id": "20260921-textless",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "studio"
+      ],
+      "title": {
+        "en": "Studio became text-free by default",
+        "tr": "Studio varsayılan olarak yazısız oldu",
+        "zh": "Studio 默认无文字",
+        "ar": "أصبح Studio بلا نص افتراضياً",
+        "hi": "Studio default रूप से text-free हुआ"
+      },
+      "text": {
+        "en": "Studio creates text-free visuals by default and allows visible writing only when explicitly requested.",
+        "tr": "Studio varsayılan olarak yazısız görsel üretiyor; görünür yazı yalnız açıkça istendiğinde ekleniyor.",
+        "zh": "Studio 默认生成无文字视觉，仅在用户明确要求时加入可见文字。",
+        "ar": "ينشئ Studio صوراً بلا نص افتراضياً ولا يضيف كتابة مرئية إلا بطلب صريح.",
+        "hi": "Studio default रूप से text-free visuals बनाता है; visible writing केवल explicit request पर आती है।"
+      }
+    },
+    {
+      "id": "20260921-web-studio",
+      "date": "2026-09-21",
+      "type": "new",
+      "areas": [
+        "studio",
+        "web"
+      ],
+      "title": {
+        "en": "Direct Web Studio went live",
+        "tr": "Doğrudan Web Studio yayına girdi",
+        "zh": "Direct Web Studio 上线",
+        "ar": "تم إطلاق Web Studio المباشر",
+        "hi": "Direct Web Studio live हुआ"
+      },
+      "text": {
+        "en": "The website gained direct Studio generation, preview, download and MUBA TWT handoff.",
+        "tr": "Web sitesine doğrudan Studio üretimi, önizleme, indirme ve MUBA TWT'ye geçiş eklendi.",
+        "zh": "网站新增直接 Studio 生成、预览、下载以及进入 MUBA TWT 的流程。",
+        "ar": "أضيف إلى الموقع إنشاء Studio المباشر والمعاينة والتنزيل والانتقال إلى MUBA TWT.",
+        "hi": "Website में direct Studio generation, preview, download और MUBA TWT handoff जोड़ा गया।"
+      }
+    },
+    {
+      "id": "20260921-living-web",
+      "date": "2026-09-21",
+      "type": "updated",
+      "areas": [
+        "web"
+      ],
+      "title": {
+        "en": "The website became a living MUBA hub",
+        "tr": "Web sitesi yaşayan MUBA merkezine dönüştü",
+        "zh": "网站成为动态 MUBA 中心",
+        "ar": "أصبح الموقع مركز MUBA حيّاً",
+        "hi": "Website living MUBA hub बना"
+      },
+      "text": {
+        "en": "The fixed information page evolved into a development log, expandable knowledge hub, Studio gateway and MUBA TWT sharing desk.",
+        "tr": "Sabit bilgi sayfası; Development Log, genişleyebilir Knowledge Hub, Studio geçidi ve MUBA TWT paylaşım alanına dönüştü.",
+        "zh": "固定信息页面升级为开发日志、可扩展知识中心、Studio 入口和 MUBA TWT 分享区域。",
+        "ar": "تحولت صفحة المعلومات الثابتة إلى سجل تطوير ومركز معرفة قابل للتوسع وبوابة Studio ومساحة مشاركة MUBA TWT.",
+        "hi": "Fixed information page Development Log, expandable Knowledge Hub, Studio gateway और MUBA TWT sharing desk में विकसित हुई।"
+      }
+    },
+    {
+      "id": "20260921-assistant-content",
+      "date": "2026-09-21",
+      "type": "new",
+      "areas": [
+        "assistant",
+        "daily"
+      ],
+      "title": {
+        "en": "MUBA Assistant became a deeper MUBA space",
+        "tr": "MUBA Assistant daha derin bir MUBA alanına dönüştü",
+        "zh": "MUBA Assistant 成为更深入的 MUBA 空间",
+        "ar": "أصبح MUBA Assistant مساحة أعمق لـ MUBA",
+        "hi": "MUBA Assistant एक deeper MUBA space बना"
+      },
+      "text": {
+        "en": "Story Mode, Community Guide, topic context, Development Log and CREATE → SHARE expanded the private Assistant beyond simple question-and-answer.",
+        "tr": "Story Mode, Community Guide, konu bağlamı, Development Log ve ÜRET → PAYLAŞ; özel Assistant'ı basit soru-cevap yapısının ötesine taşıdı.",
+        "zh": "Story Mode、Community Guide、主题上下文、Development Log 与 CREATE → SHARE 让私聊 Assistant 超越简单问答。",
+        "ar": "وسّعت Story Mode وCommunity Guide وسياق الموضوع وDevelopment Log وCREATE → SHARE دور Assistant الخاص إلى ما بعد السؤال والجواب.",
+        "hi": "Story Mode, Community Guide, topic context, Development Log और CREATE → SHARE ने private Assistant को simple Q&A से आगे बढ़ाया।"
+      }
+    },
+    {
+      "id": "20260921-guardian-history",
+      "date": "2026-09-21",
+      "type": "updated",
+      "areas": [
+        "guardian",
+        "telegram"
+      ],
+      "title": {
+        "en": "Guardian gained violation history",
+        "tr": "Guardian ihlal geçmişi kazandı",
+        "zh": "Guardian 新增违规历史",
+        "ar": "حصل Guardian على سجل مخالفات",
+        "hi": "Guardian को violation history मिली"
+      },
+      "text": {
+        "en": "Real community violations can be recorded and reviewed by category while ordinary successful DEV controls stay quiet.",
+        "tr": "Gerçek topluluk ihlalleri kategori bazında kaydedilip incelenebiliyor; başarılı normal DEV işlemleri sessiz kalıyor.",
+        "zh": "真实社区违规可按类别记录和查看，正常成功的 DEV 控制保持安静。",
+        "ar": "يمكن تسجيل مخالفات المجتمع الحقيقية ومراجعتها حسب الفئة بينما تبقى أوامر DEV العادية الناجحة هادئة.",
+        "hi": "Real community violations category के हिसाब से record/review हो सकते हैं, जबकि successful normal DEV controls silent रहते हैं।"
+      }
+    },
+    {
+      "id": "20260921-guardian-start-stop",
+      "date": "2026-09-21",
+      "type": "fixed",
+      "areas": [
+        "guardian",
+        "telegram"
+      ],
+      "title": {
+        "en": "Guardian START / STOP behavior synchronized",
+        "tr": "Guardian START / STOP davranışı senkronlandı",
+        "zh": "Guardian START / STOP 行为已同步",
+        "ar": "تمت مزامنة سلوك Guardian START / STOP",
+        "hi": "Guardian START / STOP behavior synchronized हुआ"
+      },
+      "text": {
+        "en": "PAUSED now means runtime protection is actually paused, and START restores protection while DEV controls remain available.",
+        "tr": "PAUSED artık çalışma korumasının gerçekten durduğu anlamına geliyor; START korumayı geri getirirken DEV kontrolleri kullanılabilir kalıyor.",
+        "zh": "PAUSED 现在真正暂停运行时保护，START 会恢复保护，同时 DEV 控制仍可使用。",
+        "ar": "أصبح PAUSED يوقف الحماية فعلياً ويعيد START الحماية مع بقاء أوامر DEV متاحة.",
+        "hi": "PAUSED अब runtime protection को सच में रोकता है और START protection वापस लाता है, जबकि DEV controls available रहते हैं।"
+      }
+    }
+  ]
+}
