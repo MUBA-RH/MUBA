@@ -15,9 +15,9 @@ import muba_updates
 
 class CentralUpdatesHubTests(unittest.TestCase):
     def test_canonical_history_contains_centralization_record(self):
-        self.assertTrue(any(item["id"]=="20260922-central-updates" for item in muba_history.UPDATES))
+        item=next(item for item in muba_history.UPDATES if item["id"]=="20260922-central-updates")
         self.assertEqual(
-            set(muba_history.UPDATES[0]["areas"]),
+            set(item["areas"]),
             {"assistant","daily","telegram"},
         )
 
