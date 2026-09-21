@@ -31,7 +31,9 @@ Creates MUBA Meme, Image, Sticker and Reaction visuals. Web Studio and Telegram 
 Successful Studio creations can enter the shared Gallery archive. Public Gallery metadata contains the image label, format, source and creation time—not usernames, Telegram IDs or raw prompts. DEV moderation supports public, hidden and rejected states.
 
 ### MUBA History
-`muba_history.json` is the canonical append-only record of verified user-facing MUBA developments. Website Development Log, Assistant Updates and MUBA Daily read from this shared history.
+`muba_history.json` is the canonical append-only record of verified user-facing MUBA developments.
+
+**MUBA Updates** in the private Assistant is the single user-facing ecosystem change center: every canonical change appears there once, related units show badges that resolve to the same history record, and MUBA Daily does not maintain a duplicate general update feed. Website Development Log and MUBA Daily Development Log continue to provide public/technical historical views from the same canonical source.
 
 A user-facing code change must add a new History entry. CI fails when that rule is broken or when an established history record is silently rewritten.
 

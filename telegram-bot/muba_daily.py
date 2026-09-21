@@ -5,11 +5,11 @@ Live-source adapters can replace these snapshots later without changing Guardian
 """
 
 DAILY_LABELS={
-"en":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 Website","telegram":"📌 Telegram","updates":"🛠 Updates","back":"⬅️ Back"},
-"tr":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 Web Sitesi","telegram":"📌 Telegram","updates":"🛠 Güncellemeler","back":"⬅️ Geri"},
-"zh":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 网站","telegram":"📌 Telegram","updates":"🛠 更新","back":"⬅️ 返回"},
-"ar":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 الموقع","telegram":"📌 Telegram","updates":"🛠 التحديثات","back":"⬅️ رجوع"},
-"hi":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 वेबसाइट","telegram":"📌 Telegram","updates":"🛠 अपडेट्स","back":"⬅️ वापस"},
+"en":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 Website","telegram":"📌 Telegram","updates":"🔔 MUBA Updates","back":"⬅️ Back"},
+"tr":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 Web Sitesi","telegram":"📌 Telegram","updates":"🔔 MUBA Yenilikleri","back":"⬅️ Geri"},
+"zh":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 网站","telegram":"📌 Telegram","updates":"🔔 MUBA 更新","back":"⬅️ 返回"},
+"ar":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 الموقع","telegram":"📌 Telegram","updates":"🔔 تحديثات MUBA","back":"⬅️ رجوع"},
+"hi":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 वेबसाइट","telegram":"📌 Telegram","updates":"🔔 MUBA Updates","back":"⬅️ वापस"},
 }
 
 DAILY={
@@ -42,11 +42,6 @@ DAILY={
 
 def daily_text(lang, section):
     lang=lang if lang in DAILY else "en"
-    if section=="updates":
-        from muba_history import entries as _history_entries
-        rows=_history_entries(lang)[:3]
-        if rows:
-            return "\n\n".join(f'{item["date"]} — {item["text"]}' for item in rows)
     return DAILY[lang].get(section, DAILY[lang]["updates"])
 
 
