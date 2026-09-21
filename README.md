@@ -33,7 +33,7 @@ Successful Studio creations can enter the shared Gallery archive. Public Gallery
 ### MUBA History
 `muba_history.json` is the canonical append-only record of verified user-facing MUBA developments. Website Development Log, Assistant Updates and MUBA Daily read from this shared history.
 
-A user-facing code change must add a new History entry. CI checks this rule and prevents existing history records from being silently rewritten.
+A user-facing code change must add a new History entry. CI fails when that rule is broken or when an established history record is silently rewritten.
 
 ## Stability model
 
