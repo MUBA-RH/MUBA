@@ -45,3 +45,20 @@ Branch protection/rulesets require repository administration access. The connect
 
 ## License
 Do not select a software license implicitly. License choice changes third-party reuse rights and remains a DEV decision.
+
+## Automatic Vault refresh
+Every push to `main` starts `MUBA Vault Auto Sync`.
+
+The workflow does **not** immediately copy production. It first:
+1. installs the pinned runtime dependencies;
+2. compiles the production runtime modules;
+3. runs the complete Telegram regression suite;
+4. runs the public website smoke checker;
+5. validates the canonical MUBA History schema.
+
+Only a green run may synchronize `main` into `vault/system-vault-final`.
+
+Vault-specific recovery material under `MUBA_SYSTEM_VAULT/` and the standalone export workflow are protected from source synchronization. The workflow updates the stable-main recovery SHA and automatic snapshot log, commits only to the passive Vault branch, and then creates a fresh ZIP plus SHA256 artifact in the same run.
+
+A failed validation does not update the Vault. The workflow never writes back to `main` and never auto-activates V2/autonomy.
+

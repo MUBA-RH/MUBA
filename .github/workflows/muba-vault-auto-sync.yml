@@ -1,0 +1,194 @@
+name: MUBA Vault Auto Sync
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: muba-vault-auto-sync
+  cancel-in-progress: true
+
+jobs:
+  validate-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout stable main candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          path: main-src
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned runtime dependencies
+        run: python -m pip install -r main-src/telegram-bot/requirements.txt
+
+      - name: Compile production runtime
+        working-directory: main-src/telegram-bot
+        run: python -m py_compile bot_mention.py muba_studio.py muba_gallery.py muba_history.py muba_updates.py muba_daily.py muba_brain.py
+
+      - name: Run Telegram regression suite
+        working-directory: main-src/telegram-bot
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate public website
+        run: python main-src/scripts/check_web.py
+
+      - name: Validate canonical MUBA history schema
+        working-directory: main-src
+        run: python scripts/check_continuity.py
+
+      - name: Checkout passive Vault
+        uses: actions/checkout@v4
+        with:
+          ref: vault/system-vault-final
+          fetch-depth: 0
+          path: vault-work
+
+      - name: Synchronize stable main into passive Vault
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude 'MUBA_SYSTEM_VAULT/' \
+            --exclude '.github/workflows/export-muba-full-vault.yml' \
+            main-src/ vault-work/
+
+      - name: Update Vault recovery metadata
+        env:
+          STABLE_SHA: ${{ github.sha }}
+          SOURCE_RUN_ID: ${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import re
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root=Path("vault-work")
+          vault=root/"MUBA_SYSTEM_VAULT"
+          sha=os.environ["STABLE_SHA"]
+          now=datetime.now(timezone.utc)
+          date=now.date().isoformat()
+          stamp=now.isoformat().replace("+00:00","Z")
+
+          manifest_path=vault/"RELEASE_MANIFEST.json"
+          manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["snapshot_date"]=date
+          manifest.setdefault("stable_main",{})["sha"]=sha
+          manifest["stable_main"]["branch"]="main"
+          manifest.setdefault("vault",{})["refresh_branch"]="automatic-main-sync"
+          manifest["automation"]={
+              "enabled":True,
+              "mode":"green-main-auto-sync",
+              "source_workflow":"MUBA Vault Auto Sync",
+              "last_synced_main_sha":sha,
+              "last_synced_at":stamp,
+              "source_run_id":os.environ["SOURCE_RUN_ID"],
+              "production_writeback":False,
+              "v2_auto_activation":False,
+          }
+          manifest.setdefault("protocol",{})["auto_vault_sync_after_green_main"]=True
+          note="Vault source and export automatically refresh only after the auto-sync workflow passes runtime, web and history validation."
+          notes=manifest.setdefault("notes",[])
+          if note not in notes:
+              notes.append(note)
+          manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+
+          current=vault/"CURRENT_SYSTEM.md"
+          if current.exists():
+              text=current.read_text(encoding="utf-8")
+              text=re.sub(
+                  r"(Stable main SHA captured by this Vault:\s*\x60)[0-9a-f]{40}(\x60)",
+                  rf"\g<1>{sha}\2",
+                  text,
+                  count=1,
+              )
+              current.write_text(text,encoding="utf-8")
+
+          recovery=vault/"RECOVERY.md"
+          if recovery.exists():
+              text=recovery.read_text(encoding="utf-8")
+              text=re.sub(
+                  r"(Recovery anchor captured by this Vault:\s*\n\x60)[0-9a-f]{40}(\x60)",
+                  rf"\g<1>{sha}\2",
+                  text,
+                  count=1,
+              )
+              recovery.write_text(text,encoding="utf-8")
+
+          log=vault/"AUTO_SNAPSHOT_LOG.md"
+          old=log.read_text(encoding="utf-8") if log.exists() else "# MUBA Vault Automatic Snapshot Log\n\n"
+          if sha not in old:
+              old += f"## {stamp}\n- Stable main: \x60{sha}\x60\n- Validation: Telegram regressions + Web Smoke + canonical History schema passed.\n- Production writeback: disabled.\n- V2 auto-activation: disabled.\n\n"
+              log.write_text(old,encoding="utf-8")
+          PY
+
+      - name: Commit passive Vault snapshot
+        id: vault_commit
+        env:
+          STABLE_SHA: ${{ github.sha }}
+        working-directory: vault-work
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "MUBA Vault Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Vault is already synchronized."
+            exit 0
+          fi
+          git commit -m "Vault auto-sync: stable main ${STABLE_SHA:0:8}"
+          git push origin HEAD:vault/system-vault-final
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "vault_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Build verified Vault export
+        id: vault_export
+        env:
+          STABLE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          snapshot_date="$(date -u +%Y-%m-%d)"
+          short_sha="${STABLE_SHA:0:8}"
+          root="MUBA_FULL_SYSTEM_VAULT_${snapshot_date}_${short_sha}"
+          archive="${root}.zip"
+          checksum="${root}_SHA256.txt"
+          mkdir -p "$root"
+          rsync -a --exclude '.git' vault-work/ "$root/"
+          printf '%s\n' "Vault branch: vault/system-vault-final" > "$root/VAULT_EXPORT_INFO.txt"
+          printf '%s\n' "Stable main: $STABLE_SHA" >> "$root/VAULT_EXPORT_INFO.txt"
+          printf '%s\n' "Auto-sync validation: passed" >> "$root/VAULT_EXPORT_INFO.txt"
+          printf '%s\n' "This package is passive and has no runtime dependency." >> "$root/VAULT_EXPORT_INFO.txt"
+          zip -qr "$archive" "$root"
+          sha256sum "$archive" > "$checksum"
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          echo "checksum=$checksum" >> "$GITHUB_OUTPUT"
+          echo "artifact=MUBA-FULL-SYSTEM-VAULT-${snapshot_date}-${short_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified Vault export
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.vault_export.outputs.artifact }}
+          path: |
+            ${{ steps.vault_export.outputs.archive }}
+            ${{ steps.vault_export.outputs.checksum }}
+          if-no-files-found: error
+          retention-days: 30
