@@ -18,6 +18,29 @@ class StudioAI(unittest.TestCase):
  def test_payload_preserves_muba_identity(self):
   p=muba_studio.ai_payload("on the moon","sticker","data:image/jpeg;base64,abc")
   self.assertIn("MUBA identity guidance",p["prompt"]);self.assertIn("core facial identity",p["prompt"]);self.assertIn("Do not force a large centered MUBA portrait",p["prompt"]);self.assertIn("concept should lead the composition",p["prompt"]);self.assertIn("input_image",p)
+ def test_all_four_formats_are_textless_by_default(self):
+  self.assertFalse(muba_studio.wants_visible_text("MUBA denizde olsun"))
+  for kind in ("meme","image","sticker","emoji"):
+   p=muba_studio.ai_payload("MUBA denizde olsun",kind,"data:image/jpeg;base64,abc")
+   self.assertIn("ABSOLUTELY NO visible words",p["prompt"])
+   self.assertIn("Do not write MUBA on a cap",p["prompt"])
+   self.assertNotIn("leave clean space for a short caption",p["prompt"])
+ def test_explicit_visible_text_request_is_allowed(self):
+  samples=(
+   "MUBA denizde olsun, üstüne 'WE LIVE HERE NOW' yaz",
+   "Write HELLO on the image",
+   "加上文字 MUBA",
+   "اكتب MUBA على الصورة",
+   "चित्र पर MUBA लिखो",
+  )
+  for prompt in samples:
+   self.assertTrue(muba_studio.wants_visible_text(prompt),prompt)
+   payload=muba_studio.ai_payload(prompt,"image","data:image/jpeg;base64,abc")
+   self.assertIn("user explicitly requested visible writing",payload["prompt"])
+   self.assertIn("Do not invent extra captions",payload["prompt"])
+ def test_plain_identity_words_do_not_enable_text(self):
+  for prompt in ("MUBA at the beach","MUBA wearing a black cap","MUBA in a cinematic city"):
+   self.assertFalse(muba_studio.wants_visible_text(prompt),prompt)
  def test_workers_ai_transport_is_multipart(self):
   src=(ROOT/"bot_mention.py").read_text()
   self.assertIn('aiohttp.FormData()',src)
