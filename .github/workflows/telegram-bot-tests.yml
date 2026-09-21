@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'telegram-bot/**'
+      - 'muba_history.json'
+      - 'muba_history.json'
       - '.github/workflows/telegram-bot-tests.yml'
   push:
     branches: [main]
