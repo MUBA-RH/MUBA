@@ -864,64 +864,35 @@
   </footer>
 
   <script>
-    const devLog = {
-      new: [
-        {
-          date: "SEP 2026",
-          title: "MUBA Gallery became the community visual archive",
-          text: "Successful creations from Web Studio and Telegram Studio now flow into one manually scrollable MUBA Gallery with format, source and short visual labels."
-        },
-        {
-          date: "SEP 2026",
-          title: "MUBA Studio moved closer to the community",
-          text: "MUBA Studio now creates directly on the website as well as through Telegram. Visitors can generate a visual, see it on the page, move into MUBA TWT, copy it and share it."
-        },
-        {
-          date: "SEP 2026",
-          title: "MUBA Assistant became a deeper MUBA space",
-          text: "Story Mode, Community Guide, current-topic context, Daily and CREATE → SHARE flows expanded the private Assistant beyond simple question-and-answer."
-        },
-        {
-          date: "SEP 2026",
-          title: "Guardian gained browsable violation history",
-          text: "Real community violations can be recorded and reviewed by category while ordinary successful DEV controls stay quiet."
-        }
-      ],
-      updates: [
-        {
-          date: "SEP 2026",
-          title: "Guardian START / STOP behavior synchronized",
-          text: "PAUSED now means runtime protection is actually paused, and START brings protection back. DEV controls remain available while Guardian is paused."
-        },
-        {
-          date: "SEP 2026",
-          title: "MUBA knowledge became more current",
-          text: "Origin, identity, difference, purpose, community and future context were expanded so MUBA can describe what exists today without pretending the story was written in advance."
-        },
-        {
-          date: "SEP 2026",
-          title: "The website became a living MUBA hub",
-          text: "The old fixed information page evolved into a development log, expandable knowledge hub, Studio gateway and MUBA TWT sharing desk."
-        }
-      ],
-      refined: [
-        {
-          date: "SEP 2026",
-          title: "Guardian reports became quieter and more useful",
-          text: "Successful DEV management actions no longer create unnecessary private report noise. Reports focus on actual security events and user violations."
-        },
-        {
-          date: "SEP 2026",
-          title: "Five-language Assistant consistency improved",
-          text: "MUBA Assistant keeps English, Turkish, Chinese, Arabic and Hindi interaction separated so the response follows the user's selected or detected language."
-        },
-        {
-          date: "SEP 2026",
-          title: "CREATE → SHARE became a clearer loop",
-          text: "MUBA content creation is now connected to ready-to-share MUBA writing, copy actions and community participation instead of ending at the generated image."
-        }
-      ]
-    };
+    let devLog = { new: [], updates: [], refined: [] };
+
+    async function loadDevelopmentHistory() {
+      try {
+        const response = await fetch("./muba_history.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("History unavailable");
+        const payload = await response.json();
+        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        const next = { new: [], updates: [], refined: [] };
+        entries.forEach(item => {
+          const category = item.type === "new" ? "new" : (item.type === "updated" ? "updates" : "refined");
+          const title = item.title && (item.title.en || Object.values(item.title)[0]);
+          const text = item.text && (item.text.en || Object.values(item.text)[0]);
+          if (!title || !text || !item.date) return;
+          next[category].push({ date: item.date, title, text });
+        });
+        devLog = next;
+      } catch (_) {
+        devLog = {
+          new: [{ date: "LIVE", title: "MUBA history is temporarily unavailable", text: "The public timeline could not be loaded. MUBA's live tools remain available." }],
+          updates: [],
+          refined: []
+        };
+      }
+      devCategory = devLog[devCategory]?.length ? devCategory : (devLog.new.length ? "new" : (devLog.updates.length ? "updates" : "refined"));
+      devIndex = 0;
+      renderDevTabs();
+      renderDevEntry();
+    }
 
     const devLabels = { new: "NEW", updates: "UPDATES", refined: "REFINED" };
     let devCategory = "new";
@@ -943,16 +914,27 @@
     }
 
     function renderDevEntry() {
-      const entries = devLog[devCategory];
+      const entries = devLog[devCategory] || [];
+      if (!entries.length) {
+        document.getElementById("dev-entry").innerHTML = '<div class="dev-meta">' + devLabels[devCategory] + '</div><h3>No entries yet.</h3><p>Verified changes will appear here when they happen.</p>';
+        document.getElementById("dev-count").textContent = "0 / 0";
+        document.getElementById("dev-prev").disabled = true;
+        document.getElementById("dev-next").disabled = true;
+        return;
+      }
       devIndex = Math.max(0, Math.min(devIndex, entries.length - 1));
       const item = entries[devIndex];
       document.getElementById("dev-entry").innerHTML =
         '<div class="dev-meta">' + devLabels[devCategory] + ' · ' + item.date + '</div>' +
-        '<h3>' + item.title + '</h3>' +
-        '<p>' + item.text + '</p>';
+        '<h3>' + escapeDevText(item.title) + '</h3>' +
+        '<p>' + escapeDevText(item.text) + '</p>';
       document.getElementById("dev-count").textContent = (devIndex + 1) + " / " + entries.length;
       document.getElementById("dev-prev").disabled = devIndex === 0;
       document.getElementById("dev-next").disabled = devIndex === entries.length - 1;
+    }
+
+    function escapeDevText(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[char]));
     }
 
     const knowledge = [
@@ -1454,8 +1436,7 @@
       menuButton.setAttribute("aria-expanded", "false");
     }));
 
-    renderDevTabs();
-    renderDevEntry();
+    loadDevelopmentHistory();
     renderTopicTabs();
     renderTopicPanel();
     renderTweetTabs();
