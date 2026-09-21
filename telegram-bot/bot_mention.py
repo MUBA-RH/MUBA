@@ -307,12 +307,12 @@ def _legacy_area_global_index(lang,area,area_index):
 
 def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
-    labels=TOPIC_LABELS[lang]
+    labels=CATEGORY_LABELS[lang]
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
     rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
-    for topic in ("origin","identity","difference","purpose","community","plan"):
-        rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
+    for category in ("discover","understand","world"):
+        rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
