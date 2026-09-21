@@ -44,9 +44,12 @@ class CentralUpdatesHubTests(unittest.TestCase):
         self.assertIn('callback_data=f"updates_area:{area}:{index-1}"',BOT)
         self.assertIn('callback_data=f"updates_area:{area}:{index+1}"',BOT)
 
-    def test_seen_state_is_advanced_only_by_central_updates(self):
-        self.assertEqual(BOT.count("mark_assistant_update_seen("),1)
+    def test_unit_latest_notice_marks_only_that_unit_seen(self):
+        self.assertEqual(BOT.count("mark_assistant_update_seen("),2)
         self.assertIn("def _mark_central_update_seen",BOT)
+        self.assertIn("latest=latest_update_id(area)",BOT)
+        self.assertIn('if latest and item.get("id")==latest:',BOT)
+        self.assertIn("mark_assistant_update_seen(user_id,area,latest)",BOT)
 
 
 if __name__=="__main__":
