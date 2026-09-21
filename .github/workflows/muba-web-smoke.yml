@@ -1,0 +1,23 @@
+name: MUBA Web Smoke
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'muba_history.json'
+      - 'scripts/check_web.py'
+      - '.github/workflows/muba-web-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'muba_history.json'
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate public website
+        run: python scripts/check_web.py

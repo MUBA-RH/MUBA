@@ -42,6 +42,7 @@ from muba_brain import (
     guardian_violation_history,
     get_assistant_update_seen,
     mark_assistant_update_seen,
+    state_storage_status,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
@@ -56,7 +57,7 @@ from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANS
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
-from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status
+from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -279,6 +280,8 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
     rows.append([InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
     rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")])
+    if is_dev(user_id):
+        rows.append([InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")])
     rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
     rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
@@ -301,7 +304,7 @@ def updates_area_text(lang,user_id,area,index):
         latest=latest_update_id(area)
         if latest: mark_assistant_update_seen(user_id,area,latest)
     kind_label=UPDATE_LABELS[lang].get(item["type"],item["type"].upper())
-    return f'{kind_label} · {item["date"]}\n{item["text"]}\n\n{index+1}/{len(rows)}',index,len(rows)
+    return f'{kind_label} · {item["date"]}\n{item["title_text"]}\n\n{item["text"]}\n\n{index+1}/{len(rows)}',index,len(rows)
 
 def updates_area_keyboard(lang,user_id,area,index):
     rows_data=update_entries(lang,area)
@@ -314,6 +317,50 @@ def updates_area_keyboard(lang,user_id,area,index):
         rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["open_gallery"],url="https://muba-rh.github.io/MUBA/#gallery")])
     rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="updates_center")])
     return InlineKeyboardMarkup(rows)
+
+GALLERY_ADMIN_LABELS={
+"en":{"menu":"🛠 Gallery Moderation","title":"🛠 MUBA Gallery Moderation","empty":"No Gallery items.","public":"PUBLIC","hidden":"HIDDEN","rejected":"REJECTED","back":"⬅️ Back","saved":"Gallery status updated."},
+"tr":{"menu":"🛠 Galeri Moderasyonu","title":"🛠 MUBA Galeri Moderasyonu","empty":"Galeri kaydı yok.","public":"YAYINDA","hidden":"GİZLİ","rejected":"REDDEDİLDİ","back":"⬅️ Geri","saved":"Galeri durumu güncellendi."},
+"zh":{"menu":"🛠 Gallery 管理","title":"🛠 MUBA Gallery 管理","empty":"暂无 Gallery 项目。","public":"公开","hidden":"隐藏","rejected":"拒绝","back":"⬅️ 返回","saved":"Gallery 状态已更新。"},
+"ar":{"menu":"🛠 إدارة Gallery","title":"🛠 إدارة MUBA Gallery","empty":"لا توجد عناصر في Gallery.","public":"عام","hidden":"مخفي","rejected":"مرفوض","back":"⬅️ رجوع","saved":"تم تحديث حالة Gallery."},
+"hi":{"menu":"🛠 Gallery Moderation","title":"🛠 MUBA Gallery Moderation","empty":"Gallery items नहीं हैं।","public":"PUBLIC","hidden":"HIDDEN","rejected":"REJECTED","back":"⬅️ वापस","saved":"Gallery status updated."},
+}
+
+def gallery_admin_keyboard(lang):
+    labels=GALLERY_ADMIN_LABELS[lang]
+    items=list_gallery(limit=10,visibility=None)
+    rows=[]
+    for item in items:
+        state=item.get("visibility","public")
+        marker={"public":"●","hidden":"◐","rejected":"×"}.get(state,"?")
+        label=(item.get("label") or "MUBA")[:32]
+        rows.append([InlineKeyboardButton(f"{marker} {label}",callback_data=f'gallery_admin_item:{item["id"]}')])
+    if not rows:
+        rows.append([InlineKeyboardButton(labels["empty"],callback_data="gallery_admin_noop")])
+    rows.append([InlineKeyboardButton(labels["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
+def gallery_admin_item_text(lang,item):
+    labels=GALLERY_ADMIN_LABELS[lang]
+    status=item.get("visibility","public")
+    return (
+        f'{labels["title"]}\n\n'
+        f'{item.get("label") or "MUBA"}\n'
+        f'{str(item.get("kind") or "image").upper()} · {str(item.get("source") or "web").upper()}\n'
+        f'Status: {labels.get(status,status.upper())}\n'
+        f'{item.get("created_at") or ""}'
+    )
+
+def gallery_admin_item_keyboard(lang,item_id):
+    labels=GALLERY_ADMIN_LABELS[lang]
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(labels["public"],callback_data=f"gallery_set:{item_id}:public"),
+            InlineKeyboardButton(labels["hidden"],callback_data=f"gallery_set:{item_id}:hidden"),
+        ],
+        [InlineKeyboardButton(labels["rejected"],callback_data=f"gallery_set:{item_id}:rejected")],
+        [InlineKeyboardButton(labels["back"],callback_data="gallery_admin")],
+    ])
 
 def transparency_keyboard(lang,page):
     nav=TRANSPARENCY_NAV[lang]
@@ -486,6 +533,26 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
     if data=="updates_center":
         await q.edit_message_text(UPDATE_LABELS[lang]["center"],reply_markup=updates_center_keyboard(lang,user_id)); return
+    if data=="gallery_admin":
+        if not is_dev(user_id): return
+        await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["title"],reply_markup=gallery_admin_keyboard(lang)); return
+    if data.startswith("gallery_admin_item:"):
+        if not is_dev(user_id): return
+        item_id=data.split(":",1)[1]
+        item=get_gallery_item(item_id)
+        if not item:
+            await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["empty"],reply_markup=gallery_admin_keyboard(lang)); return
+        await q.edit_message_text(gallery_admin_item_text(lang,item),reply_markup=gallery_admin_item_keyboard(lang,item_id)); return
+    if data.startswith("gallery_set:"):
+        if not is_dev(user_id): return
+        _,item_id,visibility=data.split(":",2)
+        try:
+            item=set_gallery_visibility(item_id,visibility)
+        except ValueError:
+            item=None
+        if not item:
+            await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["empty"],reply_markup=gallery_admin_keyboard(lang)); return
+        await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["saved"]+"\n\n"+gallery_admin_item_text(lang,item),reply_markup=gallery_admin_item_keyboard(lang,item_id)); return
     if data.startswith("updates_area:"):
         _,area,raw=data.split(":",2)
         index=int(raw) if raw.isdigit() else 0
@@ -1182,6 +1249,14 @@ async def health_handler(request: web.Request):
         content_type="text/plain",
     )
 
+async def state_health_handler(request: web.Request):
+    state=state_storage_status()
+    gallery=storage_status()
+    return web.json_response({
+        "state":{"persistent":state["persistent"],"backend":state["backend"]},
+        "gallery":{"persistent":gallery["persistent"],"writable":gallery["writable"]},
+    })
+
 
 async def webhook_handler(
     request: web.Request,
@@ -1288,6 +1363,10 @@ async def start_webhook_server():
     app.router.add_get(
         "/health",
         health_handler,
+    )
+    app.router.add_get(
+        "/health/state",
+        state_health_handler,
     )
 
     app.router.add_post(
