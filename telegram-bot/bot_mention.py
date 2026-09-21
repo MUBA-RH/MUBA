@@ -262,7 +262,7 @@ def _any_unseen_updates(user_id):
 def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     labels=TOPIC_LABELS[lang]
-    updates_label=UPDATE_LABELS[lang]["center"]+(" · NEW" if _any_unseen_updates(user_id) else "")
+    updates_label=UPDATE_LABELS[lang]["center"]+(" · "+UPDATE_LABELS[lang]["new"] if _any_unseen_updates(user_id) else "")
     rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
     rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
     for topic in ("origin","identity","difference","purpose","community","plan"):
