@@ -13,17 +13,32 @@ The archive stores only:
 It does **not** store Telegram numeric IDs, usernames, or raw user prompts.
 
 ## Durable storage
-The preferred production configuration is:
 
-`MUBA_GALLERY_DIR=/var/data/muba-gallery`
+### Production: Cloudflare R2
+The preferred production backend is the private Cloudflare R2 bucket `muba-gallery`.
 
-where `/var/data` is a Render persistent disk mount.
+Required runtime configuration:
 
-If `MUBA_GALLERY_DIR` is not configured but `MUBA_MEMORY_FILE` points to persistent storage, Gallery automatically uses a sibling `muba-gallery` directory.
+- `MUBA_R2_ACCESS_KEY_ID`
+- `MUBA_R2_SECRET_ACCESS_KEY`
+- `MUBA_R2_BUCKET=muba-gallery`
+- account ID from `MUBA_R2_ACCOUNT_ID`, or the existing `CLOUDFLARE_ACCOUNT_ID`
 
-If neither durable path is configured, Gallery falls back to the host temporary directory. That fallback keeps Gallery functional but is not a disaster-recovery archive and may be lost on redeploy/replacement.
+When all R2 values are present, Gallery stores generated image objects and its persistent archive index in R2. The R2 bucket can remain private: the public website continues to receive images through the MUBA backend's `/gallery/image/<id>` route.
 
-The public `GET /gallery` response exposes `persistent` and `writable` booleans so production durability can be verified without exposing filesystem paths.
+When R2 is configured, an R2 error does **not** silently fall back to temporary local storage. Studio generation may still succeed, but archival failure is logged separately. This prevents temporary storage from being mistaken for a durable archive.
+
+### Local fallback
+When R2 is not configured, the previous storage order remains available:
+
+1. `MUBA_GALLERY_DIR`;
+2. a sibling `muba-gallery` directory beside `MUBA_MEMORY_FILE`;
+3. a mounted Render `/var/data` persistent disk;
+4. host temporary storage as a last-resort compatibility fallback.
+
+The temporary fallback is not durable and may be lost on redeploy/replacement.
+
+The public `GET /gallery` response and `/health/state` expose `persistent`, `writable` and a non-secret `backend` label so production durability can be verified without exposing credentials or filesystem paths.
 
 ## Public API
 - `GET /gallery?limit=80`
