@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "policy": "permission-required",
+  "default_decision": "deny",
+  "official_repository": "MUBA-RH/MUBA",
+  "issuer": "MUBA Developer",
+  "protected_scope": "create-new-project-from-architecture",
+  "authorized_grants": [],
+  "notes": [
+    "Public source visibility is not reuse authorization.",
+    "A grant must be explicitly approved in the official MUBA repository before the supported Vault new-project path can continue.",
+    "The official MUBA restore path is not a third-party new-project grant.",
+    "No secret signing key is stored in this repository."
+  ]
+}
