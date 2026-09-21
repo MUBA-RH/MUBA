@@ -444,7 +444,7 @@ def daily_keyboard(lang,user_id=None):
         [InlineKeyboardButton(labels["x"],callback_data="daily:x")],
         [InlineKeyboardButton(labels["web"]+_update_badge(lang,user_id,"web"),callback_data="daily:web")],
         [InlineKeyboardButton(labels["telegram"]+_update_badge(lang,user_id,"telegram"),callback_data="daily:telegram")],
-        [InlineKeyboardButton(labels["updates"]+_update_badge(lang,user_id,"daily"),callback_data="daily:updates")],
+        [InlineKeyboardButton(labels["updates"]+_global_update_badge(lang,user_id),callback_data="updates_center")],
         [InlineKeyboardButton(DEVLOG_LABELS[lang]["log"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
         [InlineKeyboardButton(labels["back"],callback_data="menu")],
     ])
@@ -636,7 +636,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang,user_id)); return
     if data.startswith("daily:"):
         section=data.split(":",1)[1]
-        area={"web":"web","telegram":"telegram","updates":"daily"}.get(section)
+        if section=="updates":
+            body,index,total=updates_center_text(lang,user_id,0)
+            await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
+        area={"web":"web","telegram":"telegram"}.get(section)
         if area:
             latest=latest_update_id(area)
             if latest: mark_assistant_update_seen(user_id,area,latest)
