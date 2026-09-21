@@ -41,3 +41,14 @@ A Gallery write failure must never make a successful Studio generation fail. It 
 
 ## Privacy
 Do not add user IDs, usernames, raw prompts, IP addresses or authentication data to Gallery metadata.
+
+
+## Moderation state
+Every new Gallery record starts as `public`.
+
+DEV may change a record to:
+- `public` — listed and publicly served;
+- `hidden` — retained in the archive but removed from public listing and image serving;
+- `rejected` — retained as a moderation decision and not publicly listed or served.
+
+Moderation changes only archive visibility. They do not add user identity data and do not delete the underlying historical record.
