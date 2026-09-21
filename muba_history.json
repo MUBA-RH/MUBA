@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260922-assistant-three-pillars",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA Assistant knowledge menu simplified to three pillars",
+        "tr": "MUBA Assistant bilgi menüsü üç ana başlığa sadeleştirildi",
+        "zh": "MUBA Assistant 知识菜单精简为三个主分类",
+        "ar": "تم تبسيط قائمة معرفة MUBA Assistant إلى ثلاثة محاور",
+        "hi": "MUBA Assistant knowledge menu को तीन मुख्य हिस्सों में सरल किया गया"
+      },
+      "text": {
+        "en": "The six separate Origin, Identity, Difference, Purpose, Community and Future entries are now organized under Discover MUBA, Understand MUBA and MUBA World. Existing questions and answers are preserved inside their related pillar, keeping the knowledge layer intact while making the main menu shorter and clearer.",
+        "tr": "Köken, Kimlik, Farkı, Amaç, Topluluk ve Gelecek olarak ayrı duran altı giriş artık MUBA'yı Tanı, MUBA'yı Anla ve MUBA Dünyası altında düzenleniyor. Mevcut soru ve cevaplar ilgili başlıklarının içinde korunarak bilgi katmanı kaybolmadan ana menü daha kısa ve net hale getirildi.",
+        "zh": "原先分开的起源、身份、差异、目标、社区和未来六个入口现归入“认识 MUBA”“理解 MUBA”和“MUBA 世界”。现有问答按相关主题完整保留，在不损失知识层的前提下让主菜单更简洁清晰。",
+        "ar": "تم تنظيم المداخل الستة المنفصلة: النشأة والهوية والاختلاف والهدف والمجتمع والمستقبل، تحت ثلاثة محاور: تعرّف على MUBA، افهم MUBA، وعالم MUBA. تم الحفاظ على الأسئلة والأجوبة الحالية داخل محاورها المناسبة مع جعل القائمة الرئيسية أقصر وأوضح.",
+        "hi": "अलग-अलग Origin, Identity, Difference, Purpose, Community और Future entries अब Discover MUBA, Understand MUBA और MUBA World के अंदर व्यवस्थित हैं। मौजूदा सवाल-जवाब संबंधित pillar में सुरक्षित हैं, इसलिए knowledge layer बरकरार रहते हुए main menu छोटा और साफ हुआ।"
+      }
+    },
+    {
       "id": "20260922-unit-update-scoping",
       "date": "2026-09-22",
       "type": "improved",
