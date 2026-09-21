@@ -2,7 +2,7 @@ from __future__ import annotations
 import pathlib,sys,unittest
 ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 import muba_brain as brain
-from assistant_mode import LANGS,QUESTIONS,group_event,assistant_relevant,guided_answer,answer_for_question,match_catalog
+from assistant_mode import LANGS,QUESTIONS,CATEGORY_LABELS,CATEGORY_TOPICS,TOPIC_CATEGORY,group_event,assistant_relevant,guided_answer,answer_for_question,match_catalog
 
 class AssistantModeExam(unittest.TestCase):
  def setUp(self): brain.reset_runtime_state()
@@ -15,6 +15,14 @@ class AssistantModeExam(unittest.TestCase):
    self.assertEqual(len(QUESTIONS[lang]),24)
    self.assertEqual({t for t,_ in QUESTIONS[lang]},expected)
    for i in range(24): self.assertTrue(answer_for_question(lang,i))
+ def test_three_pillars_cover_every_legacy_topic_once(self):
+  self.assertEqual(tuple(CATEGORY_TOPICS),("discover","understand","world"))
+  flattened=[topic for topics in CATEGORY_TOPICS.values() for topic in topics]
+  self.assertEqual(flattened,['origin','identity','difference','purpose','community','plan'])
+  self.assertEqual(len(flattened),len(set(flattened)))
+  for lang in LANGS:
+   self.assertEqual(set(CATEGORY_LABELS[lang]),set(CATEGORY_TOPICS))
+  for topic in flattened: self.assertIn(topic,TOPIC_CATEGORY)
  def test_group_is_silent_for_normal_chat(self):
   for text in ['Akşam maç kaçta?','Bitcoin ne olur?','hello guys','Bugün yemek ne yiyelim?','What is the weather?']:
    self.assertIsNone(group_event(text),text)
