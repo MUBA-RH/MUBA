@@ -41,6 +41,14 @@ class StudioAI(unittest.TestCase):
  def test_plain_identity_words_do_not_enable_text(self):
   for prompt in ("MUBA at the beach","MUBA wearing a black cap","MUBA in a cinematic city"):
    self.assertFalse(muba_studio.wants_visible_text(prompt),prompt)
+ def test_format_quality_guidance_is_distinct(self):
+  prompts={kind:muba_studio.ai_payload("MUBA scene",kind,"data:image/jpeg;base64,abc")["prompt"] for kind in ("meme","image","sticker","emoji")}
+  self.assertIn("realistic meme scene",prompts["meme"])
+  self.assertIn("high-fidelity cinematic MUBA image",prompts["image"])
+  self.assertIn("crisp readable silhouette",prompts["sticker"])
+  self.assertIn("high-fidelity MUBA reaction icon",prompts["emoji"])
+  self.assertIn("laughing, crying, heart-eyes, angry, surprised, sleepy or in-love",prompts["emoji"])
+  self.assertIn("Do not turn MUBA into a generic yellow emoji",prompts["emoji"])
  def test_workers_ai_transport_is_multipart(self):
   src=(ROOT/"bot_mention.py").read_text()
   self.assertIn('aiohttp.FormData()',src)
