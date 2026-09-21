@@ -87,17 +87,17 @@ DEVLOG={
 "2026-09-21 — Geliştirme geçmişi tek bir değiştirilebilir özet yerine geçmişi koruyan kalıcı günlük yapısına dönüştürüldü."]
 },
 "zh":{
-"new":["2026-09-21 — 故事模式扩展为透明的时间线旅程，并加入上一页/下一页导航。","2026-09-21 — MUBA Studio 下新增“创作 → 分享”，提供符合 MUBA 风格的可分享帖子与复制操作。"],
-"updates":["2026-09-21 — 起源、身份、独特之处、目标、社区与未来加入各自独立的当前状态内容，避免职责重复。","2026-09-21 — 社区指南扩展为按成员想了解或想做的事情进行明确引导。"],
-"fixed":["2026-09-21 — 重复说明按主题拆分：根基、身份演变、实际差异、系统目标、社区价值与未来价值各自独立。","2026-09-21 — 开发历史改为保留旧记录的持续日志，不再只是可被替换的单一摘要。"]},
+"new":["2026-09-21 — 新增 MUBA Gallery，统一归档 Web Studio 与 Telegram Studio 的作品。","2026-09-21 — Assistant 新增中央 MUBA 更新流，并在相关区域显示新增/更新/改进标记。","2026-09-21 — 故事模式扩展为透明的时间线旅程，并加入上一页/下一页导航。","2026-09-21 — MUBA Studio 下新增“创作 → 分享”，提供符合 MUBA 风格的可分享帖子与复制操作。"],
+"updates":["2026-09-21 — MUBA Studio 的 Meme、Image、Sticker 与 Reaction 现在使用更明确区分的视觉生成指导。","2026-09-21 — 起源、身份、独特之处、目标、社区与未来加入各自独立的当前状态内容，避免职责重复。","2026-09-21 — 社区指南扩展为按成员想了解或想做的事情进行明确引导。"],
+"fixed":["2026-09-21 — Studio 默认生成无可见文字，只有明确要求文字时才允许加入。","2026-09-21 — 重复说明按主题拆分：根基、身份演变、实际差异、系统目标、社区价值与未来价值各自独立。","2026-09-21 — 开发历史改为保留旧记录的持续日志，不再只是可被替换的单一摘要。"]},
 "ar":{
-"new":["2026-09-21 — تم توسيع وضع القصة إلى رحلة زمنية شفافة مع أزرار السابق/التالي.","2026-09-21 — تمت إضافة «أنشئ → شارك» أسفل MUBA Studio مع منشورات جاهزة بروح MUBA وخيارات نسخ."],
-"updates":["2026-09-21 — تمت إضافة سياق حالي منفصل للنشأة والهوية والاختلاف والهدف والمجتمع والمستقبل دون تكرار نفس الدور.","2026-09-21 — تم توسيع دليل المجتمع ليوجه العضو إلى القسم الصحيح حسب ما يريد معرفته أو فعله."],
-"fixed":["2026-09-21 — تم فصل الشروحات المتكررة حسب الموضوع: الجذور وتطور الهوية والاختلاف العملي وهدف النظام وفائدة المجتمع وقيمة المستقبل.","2026-09-21 — أصبح تاريخ التطوير سجلاً مستمراً يحتفظ بالماضي بدلاً من ملخص واحد قابل للاستبدال."]},
+"new":["2026-09-21 — تمت إضافة MUBA Gallery كأرشيف مشترك لإبداعات Web Studio وTelegram Studio.","2026-09-21 — تمت إضافة مركز تحديثات MUBA مع علامات جديد/محدّث/محسّن للأقسام ذات الصلة.","2026-09-21 — تم توسيع وضع القصة إلى رحلة زمنية شفافة مع أزرار السابق/التالي.","2026-09-21 — تمت إضافة «أنشئ → شارك» أسفل MUBA Studio مع منشورات جاهزة بروح MUBA وخيارات نسخ."],
+"updates":["2026-09-21 — أصبحت أنماط Meme وImage وSticker وReaction في MUBA Studio أكثر تميزاً من خلال توجيه بصري خاص بكل نوع.","2026-09-21 — تمت إضافة سياق حالي منفصل للنشأة والهوية والاختلاف والهدف والمجتمع والمستقبل دون تكرار نفس الدور.","2026-09-21 — تم توسيع دليل المجتمع ليوجه العضو إلى القسم الصحيح حسب ما يريد معرفته أو فعله."],
+"fixed":["2026-09-21 — تم تحسين Studio ليكون بلا نص مرئي افتراضياً، ولا يسمح بالكتابة إلا بطلب صريح.","2026-09-21 — تم فصل الشروحات المتكررة حسب الموضوع: الجذور وتطور الهوية والاختلاف العملي وهدف النظام وفائدة المجتمع وقيمة المستقبل.","2026-09-21 — أصبح تاريخ التطوير سجلاً مستمراً يحتفظ بالماضي بدلاً من ملخص واحد قابل للاستبدال."]},
 "hi":{
-"new":["2026-09-21 — Story Mode को transparent chronological journey बनाया गया और previous/next navigation जोड़ी गई।","2026-09-21 — MUBA Studio के नीचे CREATE → SHARE जोड़ा गया, MUBA-native share-ready posts और copy actions के साथ।"],
-"updates":["2026-09-21 — Origin, Identity, Difference, Purpose, Community और Future में अलग-अलग present-day context जोड़ा गया ताकि roles repeat न हों।","2026-09-21 — Community Guide को user की जरूरत के अनुसार सही section तक पहुँचाने के लिए expand किया गया।"],
-"fixed":["2026-09-21 — Repetitive explanations को topic scope में अलग किया गया: roots, identity evolution, practical difference, system purpose, community utility और future value।","2026-09-21 — Development history अब replaceable summary नहीं, past preserve करने वाला append-only log है।"]}
+"new":["2026-09-21 — Web Studio और Telegram Studio creations के shared archive के रूप में MUBA Gallery जोड़ी गई।","2026-09-21 — Assistant में central MUBA Updates flow और संबंधित sections पर NEW/UPDATED/IMPROVED badges जोड़े गए।","2026-09-21 — Story Mode को transparent chronological journey बनाया गया और previous/next navigation जोड़ी गई।","2026-09-21 — MUBA Studio के नीचे CREATE → SHARE जोड़ा गया, MUBA-native share-ready posts और copy actions के साथ।"],
+"updates":["2026-09-21 — MUBA Studio के Meme, Image, Sticker और Reaction formats को अलग visual guidance के साथ अधिक स्पष्ट किया गया।","2026-09-21 — Origin, Identity, Difference, Purpose, Community और Future में अलग-अलग present-day context जोड़ा गया ताकि roles repeat न हों।","2026-09-21 — Community Guide को user की जरूरत के अनुसार सही section तक पहुँचाने के लिए expand किया गया।"],
+"fixed":["2026-09-21 — Studio default को text-free बनाया गया; visible writing केवल explicit request पर आती है।","2026-09-21 — Repetitive explanations को topic scope में अलग किया गया: roots, identity evolution, practical difference, system purpose, community utility और future value।","2026-09-21 — Development history अब replaceable summary नहीं, past preserve करने वाला append-only log है।"]}
 }
 
 def devlog_page(lang, category, index):
