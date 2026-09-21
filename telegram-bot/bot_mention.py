@@ -14,7 +14,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from aiohttp import web
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent, CopyTextButton
 from telegram.constants import ChatType
 from telegram.ext import (
     Application,
@@ -36,14 +36,25 @@ from muba_brain import (
     set_assistant_language,
     clear_assistant_language,
     group_conversation_paused,
+    get_guardian_report_language,
+    set_guardian_report_language,
+    append_guardian_violation,
+    guardian_violation_history,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
 from natural_chat import match as match_natural_chat
-from muba_daily import DAILY_LABELS, daily_text
-from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check
+from human_conversation_pack import reply as match_human_conversation
+from conversation_continuity import reply as continuity_reply, remember_assistant_turn, clear as clear_conversation
+from muba_daily import DAILY_LABELS, daily_text, DEVLOG_LABELS, DEVLOG, devlog_page
+from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check, TOPIC_PROGRESS, GUIDE_SECTIONS, SHARE_LABELS, SHARE_TWEETS
+from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
+from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
+
+for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
+    TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
-from guardian import authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
+from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
 logging.basicConfig(
@@ -142,22 +153,125 @@ def should_answer(update: Update) -> bool:
     return bool(group_event(text))
 
 
+GUARDIAN_REPORT_LANGS=dict(LANGS)
+_GUARDIAN_REPORT_LANGUAGE_PROMPTED=False
+
+GUARDIAN_REPORT_TEXT={
+    "en":{"title":"🛡️ MUBA GUARDIAN — DEV REPORT","event":"Event","action":"Action","user":"User ID","strike":"Strike","detail":"Detail","choose":"🛡️ Guardian Report Language\nChoose the language for private DEV reports.","saved":"Guardian report language: English"},
+    "tr":{"title":"🛡️ MUBA GUARDIAN — DEV RAPORU","event":"Olay","action":"İşlem","user":"Kullanıcı ID","strike":"İhlal sayısı","detail":"Detay","choose":"🛡️ Guardian Rapor Dili\nÖzel DEV raporlarının dilini seçin.","saved":"Guardian rapor dili: Türkçe"},
+    "zh":{"title":"🛡️ MUBA GUARDIAN — DEV 报告","event":"事件","action":"操作","user":"用户 ID","strike":"违规次数","detail":"详情","choose":"🛡️ Guardian 报告语言\n选择私人 DEV 报告的语言。","saved":"Guardian 报告语言：中文"},
+    "ar":{"title":"🛡️ MUBA GUARDIAN — تقرير DEV","event":"الحدث","action":"الإجراء","user":"معرّف المستخدم","strike":"عدد المخالفات","detail":"التفاصيل","choose":"🛡️ لغة تقارير Guardian\nاختر لغة تقارير DEV الخاصة.","saved":"لغة تقارير Guardian: العربية"},
+    "hi":{"title":"🛡️ MUBA GUARDIAN — DEV रिपोर्ट","event":"घटना","action":"कार्रवाई","user":"यूज़र ID","strike":"उल्लंघन संख्या","detail":"विवरण","choose":"🛡️ Guardian रिपोर्ट भाषा\nनिजी DEV रिपोर्ट की भाषा चुनें।","saved":"Guardian रिपोर्ट भाषा: हिन्दी"},
+}
+GUARDIAN_EVENT_LABELS={
+    "en":{"security":"Security","suspicious_link":"Suspicious link","flood":"Flood / spam","unauthorized_control":"Unauthorized command","guardian":"Guardian","management":"Guardian management","moderation":"Manual moderation","runtime":"Guardian runtime","fake_ca":"Fake / unverified CA","phishing":"Phishing","blocked_link":"Blocked external link","credential_theft":"Credential theft","warn":"Warning","delete":"Message deleted","mute":"User muted","unmute":"User unmuted","ban":"User banned","unban":"User unbanned","silent":"Silent block","info":"Information","start":"Guardian started","stop":"Guardian stopped","lockdown":"Lockdown enabled","normal":"Normal mode enabled","status":"Status viewed","help":"Help viewed","failed":"Action failed"},
+    "tr":{"security":"Güvenlik","suspicious_link":"Şüpheli bağlantı","flood":"Flood / spam","unauthorized_control":"Yetkisiz komut","guardian":"Guardian","management":"Guardian yönetimi","moderation":"Manuel moderasyon","runtime":"Guardian çalışma durumu","fake_ca":"Sahte / doğrulanmamış CA","phishing":"Phishing","blocked_link":"Engellenen dış bağlantı","credential_theft":"Kimlik bilgisi hırsızlığı","warn":"Uyarı","delete":"Mesaj silindi","mute":"Kullanıcı susturuldu","unmute":"Kullanıcının susturması kaldırıldı","ban":"Kullanıcı yasaklandı","unban":"Kullanıcı yasağı kaldırıldı","silent":"Sessiz engelleme","info":"Bilgi","start":"Guardian başlatıldı","stop":"Guardian durduruldu","lockdown":"Lockdown modu açıldı","normal":"Normal moda geçildi","status":"Durum görüntülendi","help":"Yardım görüntülendi","failed":"İşlem başarısız"},
+    "zh":{"security":"安全","suspicious_link":"可疑链接","flood":"刷屏 / 垃圾信息","unauthorized_control":"未授权命令","guardian":"Guardian","management":"Guardian 管理","moderation":"手动管理","runtime":"Guardian 运行状态","fake_ca":"虚假 / 未验证 CA","phishing":"网络钓鱼","blocked_link":"已拦截外部链接","credential_theft":"凭证窃取","warn":"警告","delete":"消息已删除","mute":"用户已禁言","unmute":"用户已解除禁言","ban":"用户已封禁","unban":"用户已解除封禁","silent":"静默拦截","info":"信息","start":"Guardian 已启动","stop":"Guardian 已停止","lockdown":"已启用 Lockdown","normal":"已启用正常模式","status":"已查看状态","help":"已查看帮助","failed":"操作失败"},
+    "ar":{"security":"الأمان","suspicious_link":"رابط مشبوه","flood":"إغراق / سبام","unauthorized_control":"أمر غير مصرح","guardian":"Guardian","management":"إدارة Guardian","moderation":"إشراف يدوي","runtime":"حالة تشغيل Guardian","fake_ca":"CA مزيف / غير موثّق","phishing":"تصيد احتيالي","blocked_link":"رابط خارجي محظور","credential_theft":"سرقة بيانات الاعتماد","warn":"تحذير","delete":"تم حذف الرسالة","mute":"تم كتم المستخدم","unmute":"تم إلغاء كتم المستخدم","ban":"تم حظر المستخدم","unban":"تم إلغاء حظر المستخدم","silent":"حظر صامت","info":"معلومات","start":"تم تشغيل Guardian","stop":"تم إيقاف Guardian","lockdown":"تم تفعيل Lockdown","normal":"تم تفعيل الوضع العادي","status":"تم عرض الحالة","help":"تم عرض المساعدة","failed":"فشل الإجراء"},
+    "hi":{"security":"सुरक्षा","suspicious_link":"संदिग्ध लिंक","flood":"फ्लड / स्पैम","unauthorized_control":"अनधिकृत कमांड","guardian":"Guardian","management":"Guardian प्रबंधन","moderation":"मैनुअल मॉडरेशन","runtime":"Guardian रनटाइम","fake_ca":"नकली / अप्रमाणित CA","phishing":"फ़िशिंग","blocked_link":"ब्लॉक किया गया बाहरी लिंक","credential_theft":"क्रेडेंशियल चोरी","warn":"चेतावनी","delete":"संदेश हटाया गया","mute":"यूज़र म्यूट किया गया","unmute":"यूज़र अनम्यूट किया गया","ban":"यूज़र बैन किया गया","unban":"यूज़र अनबैन किया गया","silent":"साइलेंट ब्लॉक","info":"जानकारी","start":"Guardian शुरू हुआ","stop":"Guardian रोका गया","lockdown":"Lockdown चालू","normal":"सामान्य मोड चालू","status":"स्थिति देखी गई","help":"सहायता देखी गई","failed":"कार्रवाई विफल"},
+}
+
+GUARDIAN_HISTORY_UI={
+    "en":{"title":"📚 Guardian Violation History","history":"📚 Violation History","empty":"No recorded violations.","user_name":"User","user_id":"User ID","violation":"Violation","action":"Action","strike":"Strike","time":"Time","back":"⬅️ Categories"},
+    "tr":{"title":"📚 Guardian İhlal Geçmişi","history":"📚 İhlal Geçmişi","empty":"Kayıtlı ihlal yok.","user_name":"Kullanıcı","user_id":"Kullanıcı ID","violation":"İhlal","action":"İşlem","strike":"İhlal sayısı","time":"Zaman","back":"⬅️ Kategoriler"},
+    "zh":{"title":"📚 Guardian 违规记录","history":"📚 违规记录","empty":"暂无违规记录。","user_name":"用户","user_id":"用户 ID","violation":"违规","action":"操作","strike":"违规次数","time":"时间","back":"⬅️ 分类"},
+    "ar":{"title":"📚 سجل مخالفات Guardian","history":"📚 سجل المخالفات","empty":"لا توجد مخالفات مسجلة.","user_name":"المستخدم","user_id":"معرّف المستخدم","violation":"المخالفة","action":"الإجراء","strike":"عدد المخالفات","time":"الوقت","back":"⬅️ الفئات"},
+    "hi":{"title":"📚 Guardian उल्लंघन इतिहास","history":"📚 उल्लंघन इतिहास","empty":"कोई दर्ज उल्लंघन नहीं।","user_name":"यूज़र","user_id":"यूज़र ID","violation":"उल्लंघन","action":"कार्रवाई","strike":"उल्लंघन संख्या","time":"समय","back":"⬅️ श्रेणियाँ"},
+}
+
+def guardian_report_language_keyboard():
+    return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"guardian_lang:{code}")] for code,label in GUARDIAN_REPORT_LANGS.items()])
+
+def _guardian_violation_category(event):
+    subkind=str(event.get("subkind") or "").casefold()
+    kind=str(event.get("kind") or "security").casefold()
+    return subkind or kind
+
+def _guardian_is_violation(event):
+    return str(event.get("kind") or "").casefold() in {"security","suspicious_link","flood","unauthorized_control"}
+
+def guardian_history_keyboard(lang,category=None,index=0):
+    ui=GUARDIAN_HISTORY_UI[lang]
+    labels=GUARDIAN_EVENT_LABELS[lang]
+    if category is None:
+        history=guardian_violation_history()
+        counts={}
+        for item in history:
+            key=item.get("category") or "security"
+            counts[key]=counts.get(key,0)+1
+        rows=[[InlineKeyboardButton(f"{labels.get(key,key)} ({count})",callback_data=f"guardian_history:{key}:0")] for key,count in sorted(counts.items())]
+        if not rows:
+            rows=[[InlineKeyboardButton(ui["empty"],callback_data="guardian_history:noop")]]
+        return InlineKeyboardMarkup(rows)
+    items=guardian_violation_history(category)
+    if not items:
+        return InlineKeyboardMarkup([[InlineKeyboardButton(ui["back"],callback_data="guardian_history")]])
+    index=max(0,min(index,len(items)-1))
+    pager=[]
+    if index>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"guardian_history:{category}:{index-1}"))
+    if index+1<len(items):
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"guardian_history:{category}:{index+1}"))
+    rows=[pager] if pager else []
+    rows.append([InlineKeyboardButton(ui["back"],callback_data="guardian_history")])
+    return InlineKeyboardMarkup(rows)
+
+def guardian_history_text(lang,category,index):
+    ui=GUARDIAN_HISTORY_UI[lang]
+    labels=GUARDIAN_EVENT_LABELS[lang]
+    items=guardian_violation_history(category)
+    if not items:
+        return ui["empty"],0,0
+    index=max(0,min(index,len(items)-1))
+    item=items[index]
+    lines=[
+        ui["title"],
+        f'{ui["violation"]}: {labels.get(item.get("category"),item.get("category"))}',
+        f'{ui["action"]}: {labels.get(item.get("action"),item.get("action"))}',
+        f'{ui["user_name"]}: {item.get("user_name") or "-"}',
+        f'{ui["user_id"]}: {item.get("user_id") or "-"}',
+    ]
+    if item.get("strike") is not None:
+        lines.append(f'{ui["strike"]}: {item.get("strike")}')
+    lines.append(f'{ui["time"]}: {item.get("time") or "-"}')
+    return "\n".join(lines)+f"\n\n{index+1}/{len(items)}",index,len(items)
+
 def language_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"lang:{code}")] for code,label in LANGS.items()])
 
 def menu_keyboard(lang,user_id=None):
     labels=TOPIC_LABELS[lang]
-    rows=[]
+    rows=[[InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")]]
     for topic in ("origin","identity","difference","purpose","community","plan"):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
-    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["lab"],callback_data="extra:lab")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
     rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
+    rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
+    rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
+
+def transparency_keyboard(lang,page):
+    nav=TRANSPARENCY_NAV[lang]
+    total=len(TRANSPARENCY_PAGES[lang])
+    rows=[]
+    pager=[]
+    if page>0:
+        pager.append(InlineKeyboardButton(nav["prev"],callback_data=f"transparency:{page-1}"))
+    if page+1<total:
+        pager.append(InlineKeyboardButton(nav["next"],callback_data=f"transparency:{page+1}"))
+    if pager:
+        rows.append(pager)
+    rows.append([InlineKeyboardButton(nav["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
+def transparency_text(lang,page):
+    pages=TRANSPARENCY_PAGES[lang]
+    page=max(0,min(page,len(pages)-1))
+    return f'{pages[page]}\n\n{TRANSPARENCY_NAV[lang]["page"]} {page+1}/{len(pages)}'
 
 def daily_keyboard(lang):
     labels=DAILY_LABELS[lang]
@@ -166,28 +280,77 @@ def daily_keyboard(lang):
         [InlineKeyboardButton(labels["web"],callback_data="daily:web")],
         [InlineKeyboardButton(labels["telegram"],callback_data="daily:telegram")],
         [InlineKeyboardButton(labels["updates"],callback_data="daily:updates")],
+        [InlineKeyboardButton(DEVLOG_LABELS[lang]["log"],callback_data="devlog")],
         [InlineKeyboardButton(labels["back"],callback_data="menu")],
     ])
+
+def devlog_keyboard(lang,category=None,index=0):
+    labels=DEVLOG_LABELS[lang]
+    if category not in ("new","updates","fixed"):
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton(labels["new"],callback_data="devlog:new:0")],
+            [InlineKeyboardButton(labels["updates"],callback_data="devlog:updates:0")],
+            [InlineKeyboardButton(labels["fixed"],callback_data="devlog:fixed:0")],
+            [InlineKeyboardButton(labels["back"],callback_data="daily")],
+        ])
+    total=len(DEVLOG[lang][category])
+    pager=[]
+    if index>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"devlog:{category}:{index-1}"))
+    if index+1<total:
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"devlog:{category}:{index+1}"))
+    rows=[pager] if pager else []
+    rows.append([InlineKeyboardButton(labels["back"],callback_data="devlog")])
+    return InlineKeyboardMarkup(rows)
+
+def story_keyboard(lang,page):
+    total=len(STORY[lang])
+    pager=[]
+    if page>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"story:{page-1}"))
+    if page+1<total:
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"story:{page+1}"))
+    rows=[pager] if pager else []
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
 
 def extra_keyboard(lang,mode):
     labels=EXTRA_LABELS[lang]
     if mode=="story":
-        rows=[[InlineKeyboardButton(f"📖 {i+1}/5",callback_data=f"story:{i}")] for i in range(5)]
-    elif mode=="lab":
+        return story_keyboard(lang,0)
+    if mode=="lab":
         rows=[
             [InlineKeyboardButton("😂 Meme",callback_data="lab:meme")],
             [InlineKeyboardButton("✍️ Tweet",callback_data="lab:tweet")],
             [InlineKeyboardButton("🖼️ Visual 16:9",callback_data="lab:visual")],
         ]
     elif mode=="guide":
-        rows=[[InlineKeyboardButton(f"🧭 {i+1}/4",callback_data=f"guide:{i}")] for i in range(4)]
+        rows=[[InlineKeyboardButton(label,callback_data=f"guide:{i}")] for i,(label,_) in enumerate(GUIDE_SECTIONS[lang])]
     else:
         rows=[]
     rows.append([InlineKeyboardButton(labels["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
+def share_keyboard(lang,index=None):
+    labels=SHARE_LABELS[lang]
+    if index is None:
+        rows=[[InlineKeyboardButton(labels["tweets"],callback_data="share:tweet:0")]]
+    else:
+        total=len(SHARE_TWEETS[lang])
+        pager=[]
+        if index>0:
+            pager.append(InlineKeyboardButton("⬅️",callback_data=f"share:tweet:{index-1}"))
+        if index+1<total:
+            pager.append(InlineKeyboardButton("➡️",callback_data=f"share:tweet:{index+1}"))
+        rows=[pager] if pager else []
+        rows.append([InlineKeyboardButton("📋 COPY",copy_text=CopyTextButton(text=SHARE_TWEETS[lang][index]))])
+    rows.append([InlineKeyboardButton(labels["back"],callback_data="menu" if index is None else "share")])
+    return InlineKeyboardMarkup(rows)
+
 def topic_keyboard(lang,topic):
     rows=[]
+    for i,(label,_) in enumerate(TOPIC_PROGRESS.get(lang,{}).get(topic,[])):
+        rows.append([InlineKeyboardButton(label,callback_data=f"topicx:{topic}:{i}")])
     for i,(t,q) in enumerate(QUESTIONS[lang]):
         if t==topic: rows.append([InlineKeyboardButton(q,callback_data=f"q:{i}")])
     rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
@@ -203,6 +366,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat=update.effective_chat
     if not chat or chat.type!=ChatType.PRIVATE: return
     clear_assistant_language(update.effective_user.id)
+    clear_conversation(update.effective_user.id)
     await show_language(update)
 
 async def ca_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -221,41 +385,171 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not q: return
     await q.answer()
     user_id=q.from_user.id; data=q.data or ""
+    if data.startswith("guardian_lang:"):
+        if not is_dev(user_id): return
+        lang=data.split(":",1)[1]
+        if lang in GUARDIAN_REPORT_LANGS and set_guardian_report_language(lang):
+            global _GUARDIAN_REPORT_LANGUAGE_PROMPTED
+            _GUARDIAN_REPORT_LANGUAGE_PROMPTED=False
+            await q.edit_message_text(
+                GUARDIAN_REPORT_TEXT[lang]["saved"],
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(GUARDIAN_HISTORY_UI[lang]["history"],callback_data="guardian_history")]])
+            )
+        return
+    if data=="guardian_history":
+        if not is_dev(user_id): return
+        lang=get_guardian_report_language() or "en"
+        await q.edit_message_text(GUARDIAN_HISTORY_UI[lang]["title"],reply_markup=guardian_history_keyboard(lang)); return
+    if data.startswith("guardian_history:"):
+        if not is_dev(user_id): return
+        parts=data.split(":")
+        if len(parts)!=3 or parts[1]=="noop": return
+        category=parts[1]; raw=parts[2]
+        index=int(raw) if raw.isdigit() else 0
+        lang=get_guardian_report_language() or "en"
+        body,index,total=guardian_history_text(lang,category,index)
+        await q.edit_message_text(body,reply_markup=guardian_history_keyboard(lang,category,index)); return
     if data.startswith("lang:"):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
+            clear_conversation(user_id)
             await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id))
         return
     lang=get_assistant_language(user_id)
     if not lang:
         await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="language":
-        clear_assistant_language(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
+        clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+    if data.startswith("transparency:"):
+        raw=data.split(":",1)[1]
+        page=int(raw) if raw.isdigit() else 0
+        page=max(0,min(page,len(TRANSPARENCY_PAGES[lang])-1))
+        await q.edit_message_text(transparency_text(lang,page),reply_markup=transparency_keyboard(lang,page),disable_web_page_preview=True); return
+    if data=="translator_note":
+        await q.edit_message_text(TRANSLATOR_NOTE_TEXT[lang],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")]]),disable_web_page_preview=True); return
     if data=="daily":
         await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang)); return
     if data.startswith("daily:"):
         section=data.split(":",1)[1]
         await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang),disable_web_page_preview=True); return
+    if data=="devlog":
+        await q.edit_message_text(DEVLOG_LABELS[lang]["log"],reply_markup=devlog_keyboard(lang)); return
+    if data.startswith("devlog:"):
+        _,category,raw=data.split(":",2)
+        index=int(raw) if raw.isdigit() else 0
+        body,index,total=devlog_page(lang,category,index)
+        await q.edit_message_text(f"{body}\n\n{index+1}/{total}",reply_markup=devlog_keyboard(lang,category,index)); return
     if data.startswith("extra:"):
         mode=data.split(":",1)[1]
         if mode=="security":
             context.user_data["muba_security_check"]=True
             await q.edit_message_text(SECURITY_PROMPT[lang],reply_markup=extra_keyboard(lang,"security")); return
+        if mode=="story":
+            await q.edit_message_text(STORY[lang][0],reply_markup=story_keyboard(lang,0)); return
         await q.edit_message_text(EXTRA_LABELS[lang][mode],reply_markup=extra_keyboard(lang,mode)); return
     if data.startswith("story:"):
-        i=int(data.split(":",1)[1]); await q.edit_message_text(STORY[lang][i],reply_markup=extra_keyboard(lang,"story")); return
+        i=int(data.split(":",1)[1]); i=max(0,min(i,len(STORY[lang])-1))
+        await q.edit_message_text(STORY[lang][i],reply_markup=story_keyboard(lang,i)); return
     if data.startswith("lab:"):
         kind=data.split(":",1)[1]; await q.edit_message_text(LAB[lang][kind],reply_markup=extra_keyboard(lang,"lab")); return
     if data.startswith("guide:"):
-        i=int(data.split(":",1)[1]); await q.edit_message_text(GUIDE[lang][i],reply_markup=extra_keyboard(lang,"guide")); return
+        i=int(data.split(":",1)[1]); items=GUIDE_SECTIONS[lang]; i=max(0,min(i,len(items)-1))
+        await q.edit_message_text(items[i][1],reply_markup=extra_keyboard(lang,"guide")); return
+    if data=="share":
+        await q.edit_message_text(SHARE_LABELS[lang]["menu"],reply_markup=share_keyboard(lang)); return
+    if data.startswith("share:tweet:"):
+        raw=data.rsplit(":",1)[1]; i=int(raw) if raw.isdigit() else 0
+        i=max(0,min(i,len(SHARE_TWEETS[lang])-1))
+        await q.edit_message_text(SHARE_TWEETS[lang][i],reply_markup=share_keyboard(lang,i)); return
+    if data.startswith("topicx:"):
+        _,topic,raw=data.split(":",2)
+        i=int(raw) if raw.isdigit() else 0
+        items=TOPIC_PROGRESS.get(lang,{}).get(topic,[])
+        if items:
+            i=max(0,min(i,len(items)-1))
+            await q.edit_message_text(items[i][1],reply_markup=topic_keyboard(lang,topic)); return
     if data.startswith("topic:"):
         topic=data.split(":",1)[1]
         await q.edit_message_text(TOPIC_LABELS[lang][topic],reply_markup=topic_keyboard(lang,topic)); return
     if data.startswith("q:"):
         i=int(data.split(":",1)[1]); answer=answer_for_question(lang,i)
         await q.edit_message_text(answer,reply_markup=topic_keyboard(lang,QUESTIONS[lang][i][0]))
+
+
+async def _translate_tr_to_en(text):
+    """Translate Turkish to English through the already configured Cloudflare Workers AI account."""
+    account=os.getenv("CLOUDFLARE_ACCOUNT_ID")
+    token=os.getenv("CLOUDFLARE_API_TOKEN")
+    if not account or not token:
+        return None
+    url=f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/@cf/meta/m2m100-1.2b"
+    payload={"text":text,"source_lang":"tr","target_lang":"en"}
+    headers={"Authorization":f"Bearer {token}","Content-Type":"application/json"}
+    try:
+        import aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url,json=payload,headers=headers,timeout=aiohttp.ClientTimeout(total=20)) as response:
+                if response.status!=200:
+                    return None
+                data=await response.json()
+        result=data.get("result")
+        if isinstance(result,dict):
+            translated=result.get("translated_text") or result.get("translation")
+            if translated:
+                return str(translated).strip()
+        if isinstance(result,list) and result:
+            item=result[0]
+            if isinstance(item,dict):
+                translated=item.get("translated_text") or item.get("translation")
+                if translated:
+                    return str(translated).strip()
+    except Exception:
+        logger.exception("DEV inline translation failed")
+    return None
+
+
+async def dev_inline_translator(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """DEV-only Turkish→English inline translator; sends the selected result as the invoking user."""
+    query=update.inline_query
+    if not query or not is_dev(query.from_user.id):
+        if query:
+            await query.answer([],cache_time=1,is_personal=True)
+        return
+    # DEV UX: typing @MUBA_RH_AI_Bot <Turkish text> in any chat is
+    # already Telegram inline mode. Translate the query directly so DEV only
+    # needs to tap the returned English result. No "tr " prefix is required.
+    # Non-DEV users are rejected above and retain the existing Studio path.
+    source=" ".join((query.query or "").strip().split())[:2000]
+    if not source:
+        return
+    translated=await _translate_tr_to_en(source)
+    if not translated:
+        await query.answer([],cache_time=1,is_personal=True)
+        return
+    result=InlineQueryResultArticle(
+        id=hashlib.sha256((source+"\0"+translated).encode()).hexdigest()[:32],
+        title="🇬🇧 "+translated[:120],
+        description="MUBA DEV Translator — Turkish → English",
+        input_message_content=InputTextMessageContent(message_text=translated),
+    )
+    await query.answer([result],cache_time=1,is_personal=True)
+
+
+async def guardian_slash_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Translate Telegram-native /guardian commands to the existing locked # command path."""
+    message=update.effective_message
+    chat=update.effective_chat
+    user=update.effective_user
+    if not message or not chat or not user or not is_guardian_group(chat.id):
+        return
+    raw=(message.text or "").strip()
+    first,*rest=raw.split(maxsplit=1)
+    name=first.split("@",1)[0].lstrip("/").upper()
+    mapped="#"+name
+    message.text=mapped+((" "+rest[0]) if rest else "")
+    await handle_message(update,context)
 
 
 async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -318,6 +612,73 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
     button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
     await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
 
+async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
+    """Best-effort localized private Guardian report to DEV; never block moderation."""
+    try:
+        global _GUARDIAN_REPORT_LANGUAGE_PROMPTED
+        kind=str(event.get("kind") or "guardian").casefold()
+        subkind=str(event.get("subkind") or "").casefold()
+        action=str(event.get("action") or "info").casefold()
+
+        # Successful DEV management/manual actions are intentionally not private-report events.
+        if kind in {"management","moderation"}:
+            return
+
+        user_name="-"
+        if user_id is not None:
+            try:
+                member=await context.bot.get_chat_member(GROUP_ID,user_id)
+                tg_user=member.user
+                user_name=("@"+tg_user.username) if tg_user.username else (tg_user.full_name or "-")
+            except Exception:
+                logger.info("Guardian could not resolve user display name for %s",user_id)
+
+        if _guardian_is_violation(event):
+            category=_guardian_violation_category(event)
+            append_guardian_violation({
+                "category":category,
+                "kind":kind,
+                "subkind":subkind,
+                "action":action,
+                "user_id":user_id,
+                "user_name":user_name,
+                "strike":event.get("strike"),
+                "detail":event.get("detail"),
+                "time":datetime.now(_ISTANBUL_TZ).strftime("%Y-%m-%d %H:%M:%S"),
+            })
+
+        lang=get_guardian_report_language()
+        if lang not in GUARDIAN_REPORT_LANGS:
+            if not _GUARDIAN_REPORT_LANGUAGE_PROMPTED:
+                _GUARDIAN_REPORT_LANGUAGE_PROMPTED=True
+                await context.bot.send_message(
+                    chat_id=DEV_ID,
+                    text=GUARDIAN_REPORT_TEXT["en"]["choose"],
+                    reply_markup=guardian_report_language_keyboard(),
+                )
+            return
+
+        ui=GUARDIAN_REPORT_TEXT[lang]
+        labels=GUARDIAN_EVENT_LABELS[lang]
+        history_ui=GUARDIAN_HISTORY_UI[lang]
+        event_text=labels.get(kind,kind)
+        if subkind:
+            event_text += " / "+labels.get(subkind,subkind)
+        lines=[ui["title"],f'{ui["event"]}: {event_text}',f'{ui["action"]}: {labels.get(action,action)}']
+        if user_id is not None:
+            lines.append(f'{history_ui["user_name"]}: {user_name}')
+            lines.append(f'{ui["user"]}: {user_id}')
+        strike=event.get("strike")
+        if strike is not None: lines.append(f'{ui["strike"]}: {strike}')
+        detail=event.get("detail")
+        if detail: lines.append(f'{ui["detail"]}: {detail}')
+        markup=None
+        if _guardian_is_violation(event):
+            markup=InlineKeyboardMarkup([[InlineKeyboardButton(history_ui["history"],callback_data="guardian_history")]])
+        await context.bot.send_message(chat_id=DEV_ID,text="\n".join(lines),reply_markup=markup)
+    except Exception:
+        logger.exception("Guardian DEV private report failed")
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
         logger.info("Ignoring duplicate Telegram message delivery")
@@ -333,17 +694,34 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await message.reply_text(security_check(lang,text),disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
         catalog_index=match_catalog(lang,text)
         if catalog_index is not None:
-            await message.reply_text(answer_for_question(lang,catalog_index),disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
+            response=answer_for_question(lang,catalog_index)
+            remember_assistant_turn(user_id,lang,response)
+            await message.reply_text(response,disable_web_page_preview=True); return
+        continuity=continuity_reply(user_id,lang,text)
+        if continuity:
+            remember_assistant_turn(user_id,lang,continuity)
+            await message.reply_text(continuity,disable_web_page_preview=True); return
+        expanded_human=match_human_conversation(lang,text)
+        if expanded_human:
+            remember_assistant_turn(user_id,lang,expanded_human)
+            await message.reply_text(expanded_human,disable_web_page_preview=True)
+            return
         human_answer=match_human_catalog(lang,text)
         if human_answer:
-            await message.reply_text(human_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
+            remember_assistant_turn(user_id,lang,human_answer)
+            await message.reply_text(human_answer,disable_web_page_preview=True); return
         natural_answer=match_natural_chat(lang,text)
         if natural_answer:
-            await message.reply_text(natural_answer,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id)); return
+            remember_assistant_turn(user_id,lang,natural_answer)
+            await message.reply_text(natural_answer,disable_web_page_preview=True); return
         if not assistant_relevant(text):
-            await message.reply_text(TEXT[lang]["outside"],reply_markup=menu_keyboard(lang,user_id)); return
+            response=TEXT[lang]["outside"]
+            remember_assistant_turn(user_id,lang,response)
+            await message.reply_text(response); return
         response=build_reply(text,chat_id=chat.id,language=lang,user_id=user_id)
-        if response: await message.reply_text(response,disable_web_page_preview=True,reply_markup=menu_keyboard(lang,user_id))
+        if response:
+            remember_assistant_turn(user_id,lang,response)
+            await message.reply_text(response,disable_web_page_preview=True)
         return
     if not is_guardian_group(chat.id): return
     cmd=authorized_command(chat.id,user_id,text)
@@ -362,60 +740,93 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception:
                 logger.exception("Guardian could not change group posting permissions")
                 await message.reply_text("🛡️ Guardian could not change group permissions. Check bot admin permissions.")
+                await _guardian_dev_report(context,{"kind":"runtime","subkind":cmd.lstrip("#").casefold(),"action":"failed","detail":"Grup izinleri değiştirilemedi."},user_id)
             return
         if cmd in ("#GUARDIAN","#STATUS"):
-            await message.reply_text(status_text(group_conversation_paused(chat.id))); return
+            await message.reply_text(status_text(group_conversation_paused(chat.id)))
+            return
         if cmd=="#HELP":
-            await message.reply_text(help_text()); return
+            await message.reply_text(help_text())
+            return
         if cmd=="#SECURITY":
-            await message.reply_text(security_text()); return
+            await message.reply_text(security_text(group_conversation_paused(chat.id)))
+            return
         if cmd=="#LOCKDOWN":
-            set_lockdown(True); await message.reply_text("🛡️ GUARDIAN — LOCKDOWN"); return
+            set_lockdown(True)
+            await message.reply_text("🛡️ GUARDIAN — LOCKDOWN")
+            return
         if cmd=="#NORMAL":
-            set_lockdown(False); await message.reply_text("🛡️ GUARDIAN — NORMAL"); return
+            set_lockdown(False)
+            await message.reply_text("🛡️ GUARDIAN — NORMAL")
+            return
         target=message.reply_to_message
         try:
             if cmd=="#DELETE":
-                if target: await target.delete(); await message.reply_text("🛡️ Deleted.")
+                if target:
+                    await target.delete()
+                    await message.reply_text("🛡️ Deleted.")
                 return
             if cmd=="#WARN":
-                if target and target.from_user: await message.reply_text("⚠️ GUARDIAN warning for "+(target.from_user.mention_html()),parse_mode="HTML")
+                if target and target.from_user:
+                    await message.reply_text("⚠️ GUARDIAN warning for "+target.from_user.mention_html(),parse_mode="HTML")
                 return
             if cmd in ("#MUTE","#UNMUTE","#BAN"):
-                if not target or not target.from_user: await message.reply_text("Reply to a user's message with "+cmd+"."); return
+                if not target or not target.from_user:
+                    await message.reply_text("Reply to a user's message with "+cmd+".")
+                    return
                 tid=target.from_user.id
-                if is_dev(tid): await message.reply_text("🛡️ DEV is protected."); return
-                if cmd=="#BAN": await context.bot.ban_chat_member(chat.id,tid); await message.reply_text("🛡️ User banned."); return
+                if is_dev(tid):
+                    await message.reply_text("🛡️ DEV is protected.")
+                    return
+                if cmd=="#BAN":
+                    await context.bot.ban_chat_member(chat.id,tid)
+                    await message.reply_text("🛡️ User banned.")
+                    return
                 from telegram import ChatPermissions
                 perms=ChatPermissions.no_permissions() if cmd=="#MUTE" else ChatPermissions.all_permissions()
                 await context.bot.restrict_chat_member(chat.id,tid,permissions=perms)
-                await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted.")); return
+                await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted."))
+                return
             if cmd=="#UNBAN":
                 arg=command_arg(text)
-                if arg.lstrip("-").isdigit(): await context.bot.unban_chat_member(chat.id,int(arg)); await message.reply_text("🛡️ User unbanned.")
-                else: await message.reply_text("Use: #UNBAN <user_id>")
+                if arg.lstrip("-").isdigit():
+                    tid=int(arg)
+                    await context.bot.unban_chat_member(chat.id,tid)
+                    await message.reply_text("🛡️ User unbanned.")
+                else:
+                    await message.reply_text("Use: #UNBAN <user_id>")
                 return
         except Exception:
             logger.exception("Guardian moderation action failed")
             await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
+            await _guardian_dev_report(context,{"kind":"runtime","subkind":"moderation","action":"failed","detail":"Manuel Guardian işlemi tamamlanamadı."},user_id)
             return
+    # #STOP pauses the full Guardian runtime after DEV command handling.
+    # #START remains available because authorized DEV commands are processed above.
+    if group_conversation_paused(chat.id):
+        return
     if is_control_attempt(text):
         try:
             await message.delete()
+            await _guardian_dev_report(context,{"kind":"unauthorized_control","subkind":"command","action":"delete","detail":"Yetkisiz Guardian komut girişimi silindi."},user_id)
         except Exception:
             logger.exception("Guardian could not delete unauthorized control message")
+            await _guardian_dev_report(context,{"kind":"runtime","subkind":"unauthorized_control","action":"failed","detail":"Yetkisiz komut mesajı silinemedi."},user_id)
         return
     guardian_event=inspect_message(chat.id,user_id,text)
     if guardian_event:
         action=guardian_event.get("action")
         if action=="warn":
             await message.reply_text(guardian_event["text"])
+            await _guardian_dev_report(context,guardian_event,user_id)
         elif action=="delete":
             try:
                 await message.delete()
                 await context.bot.send_message(chat.id,guardian_event["text"])
+                await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian link deletion failed")
+                await _guardian_dev_report(context,{"kind":"runtime","subkind":"link_deletion","action":"failed","detail":"Guardian bağlantı silme işlemi tamamlanamadı."},user_id)
         elif action in ("mute","ban"):
             try:
                 # Always moderate the numeric Telegram ID attached to this exact message.
@@ -423,6 +834,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 member=await context.bot.get_chat_member(chat.id,user_id)
                 if getattr(member,"status",None) in ("administrator","creator","owner") or is_dev(user_id):
                     logger.warning("Guardian skipped automatic moderation for protected/admin user %s",user_id)
+                    await _guardian_dev_report(context,{"kind":"security","subkind":"protected_user","action":"info","detail":"Otomatik moderasyon korunan/admin kullanıcı için uygulanmadı."},user_id)
                     return
                 await message.delete()
                 if action=="mute":
@@ -436,8 +848,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     await context.bot.ban_chat_member(chat.id,user_id,revoke_messages=True)
                 await context.bot.send_message(chat.id,guardian_event["text"])
+                await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian automatic moderation failed")
+                await _guardian_dev_report(context,{"kind":"runtime","subkind":"automatic_moderation","action":"failed","detail":"Otomatik Guardian moderasyonu tamamlanamadı."},user_id)
         return
     event=group_event(text)
     if not event: return
@@ -445,6 +859,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if event=="fake_ca":
         await message.reply_text("🚨 Fake CA warning. Do not trust unofficial contract addresses.")
+        await _guardian_dev_report(context,{"kind":"security","subkind":"fake_ca","action":"warn"},user_id)
         return
     if event=="ca":
         await message.reply_text("Soon."); return
@@ -455,6 +870,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def inline_studio(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q=update.inline_query
     if not q or not q.from_user: return
+    if is_dev(q.from_user.id): return
     prompt=clean_prompt(q.query)
     if not prompt: return
     from urllib.parse import urlencode
@@ -597,7 +1013,10 @@ async def start_webhook_server():
 
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("ca", ca_command))
+    for guardian_name in ("start","stop","status","guardian","security","lockdown","normal","warn","mute","unmute","ban","unban","delete","help"):
+        application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
     application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
         MessageHandler(

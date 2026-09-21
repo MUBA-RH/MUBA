@@ -1,0 +1,116 @@
+name: MUBA V3 Android Cloud Build
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - feature/v3-final-apk-build
+      - 'fix/v3-*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      MUBA_V3_UPSTREAM_COMMIT: 9552e5541e1274b9557c9832b204dbfcaf44b3dc
+      MUBA_OFFICIAL_DIALOG_ID: ${{ secrets.MUBA_OFFICIAL_DIALOG_ID }}
+      TELEGRAM_API_ID: ${{ secrets.MUBA_V3_TELEGRAM_API_ID }}
+      TELEGRAM_API_HASH: ${{ secrets.MUBA_V3_TELEGRAM_API_HASH }}
+    steps:
+      - name: Checkout MUBA
+        uses: actions/checkout@v6
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Validate required private inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in MUBA_OFFICIAL_DIALOG_ID TELEGRAM_API_ID TELEGRAM_API_HASH; do
+            test -n "${!name:-}" || { echo "::error::Missing required GitHub Actions secret: $name"; exit 2; }
+            echo "::add-mask::${!name}"
+          done
+
+      - name: Stage pinned Telegram source and MUBA helpers
+        shell: bash
+        env:
+          MUBA_V3_SKIP_HOST_SDK_CHECK: '1'
+        run: |
+          chmod +x android-v3/stage_supported_build.sh
+          android-v3/stage_supported_build.sh "$RUNNER_TEMP/Telegram"
+
+      - name: Apply MUBA V3 composer hook and private API inputs
+        shell: bash
+        run: |
+          chmod +x android-v3/apply_v3_patch.sh
+          android-v3/apply_v3_patch.sh "$RUNNER_TEMP/Telegram"
+
+      - name: Verify V3 target gate before expensive build
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/Telegram" <<'PY'
+          from pathlib import Path
+          import os, sys
+          root = Path(sys.argv[1])
+          src = (root / "TMessagesProj/src/main/java/org/telegram/ui/Components/ChatActivityEnterView.java").read_text()
+          translate_src = (root / "TMessagesProj/src/main/java/org/telegram/messenger/TranslateController.java").read_text()
+          raw = int(os.environ["MUBA_OFFICIAL_DIALOG_ID"])
+          expected = -(-raw - 1_000_000_000_000) if raw <= -1_000_000_000_001 else raw
+          if "MubaDevSendPipeline.prepare(" not in src:
+              raise SystemExit("V3 composer hook missing")
+          if f"{expected}L" not in src:
+              raise SystemExit("Normalized Android dialog gate missing")
+          if raw != expected and f"{raw}L" in src:
+              raise SystemExit("Raw Bot API dialog id leaked into runtime gate")
+          marker = "MUBA V3: preserve Telegram's native whole-chat translation entry point"
+          if marker not in translate_src:
+              raise SystemExit("Native whole-chat translation compatibility patch missing")
+          if f"{expected}L" not in translate_src:
+              raise SystemExit("Native chat-translation patch is not scoped to normalized MUBA dialog")
+          if 'detectedDialogLanguage.put(dialogId, "en")' not in translate_src:
+              raise SystemExit("MUBA dialog source-language hint missing")
+          print("V3 preflight passed: outgoing composer gate and native whole-chat translation compatibility are present.")
+          PY
+
+      - name: Build standalone APK with Telegram official Docker toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/Telegram"
+          docker build -t muba-v3-telegram .
+          docker run --rm -v "$RUNNER_TEMP/Telegram:/home/source" muba-v3-telegram bash -lc '
+            set -euo pipefail
+            cp -R /home/source/. /home/gradle
+            cd /home/gradle
+            gradle --parallel :TMessagesProj_AppStandalone:assembleAfatStandalone --stacktrace
+            mkdir -p /home/source/TMessagesProj/build/outputs/apk/afat/standalone
+            cp /home/gradle/TMessagesProj_AppStandalone/build/outputs/apk/afat/standalone/app.apk /home/source/TMessagesProj/build/outputs/apk/afat/standalone/app.apk
+          '
+
+      - name: Collect exact standalone APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/v3-apk"
+          src="$RUNNER_TEMP/Telegram/TMessagesProj/build/outputs/apk/afat/standalone/app.apk"
+          test -f "$src"
+          cp "$src" "$GITHUB_WORKSPACE/v3-apk/MUBA-V3.apk"
+
+      - name: Upload MUBA V3 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MUBA-V3-Android-APK
+          path: v3-apk/*.apk
+          if-no-files-found: error
+          retention-days: 7

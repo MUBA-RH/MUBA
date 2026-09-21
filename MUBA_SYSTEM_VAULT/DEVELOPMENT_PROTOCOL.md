@@ -1,12 +1,37 @@
-# Development Protocol
+# MUBA Development Protocol
 
-DEV command: BAŞLA 🔥 MERGE 🟢 STABİL 🔒
+Permanent DEV command:
+BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒
 
-Mandatory flow:
-CURRENT STABLE -> verify repository reality -> isolated branch from exact stable SHA -> requested scope only -> compile/static checks -> relevant unit/integration/regression tests -> PR -> CI GREEN -> merge with expected head SHA -> deployment/live verification when applicable -> record new stable/recovery state -> NEW STABLE.
+## Mandatory flow
+CURRENT STABLE
+-> verify GitHub repository reality
+-> isolate requested work on a branch from the exact stable SHA
+-> preserve unrelated working behavior
+-> make the smallest required change
+-> compile/static validation
+-> unit/integration/regression tests
+-> pull request
+-> CI GREEN
+-> merge with expected head SHA when possible
+-> verify resulting main/runtime when applicable
+-> record new stable state
+-> STABLE
 
-Never merge red, cancelled, pending, unknown or unverified CI.
+## Rules
+- Never merge red/failed unknown work.
+- Do not claim live success without evidence.
+- Do not opportunistically refactor unrelated modules.
+- Do not silently activate V2.
+- Do not modify production directly for normal development.
+- Preserve original working behavior and rollback.
+- Use GitHub as the canonical source/development record.
+- Vault updates target the Vault branch, not production main.
 
-Successful closure must be exactly: Tamamlandı. 🔥🟢🔒
+## Scope discipline
+If the request concerns Assistant, do not alter Guardian unless required.
+If the request concerns Guardian reports, do not redesign Assistant.
+If the request concerns Android V3, do not inject it into Bot API runtime.
 
-Do not claim an external live state unless actually observed. Preserve original working baselines. Before edits inspect the full affected integration chain, including handler ordering, Guardian, group filters, Assistant, cooldown/dedup, webhook, runtime and tests. No opportunistic refactor during scoped maintenance. If behavior breaks, rollback instead of stacking speculative production patches.
+## Current stable captured by this Vault
+`602ebffe23de7373e7ee513af33dea219fe6deba`

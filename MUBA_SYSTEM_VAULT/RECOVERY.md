@@ -1,21 +1,42 @@
-# Recovery Runbook
+# MUBA Recovery Runbook
 
-## Restore Current MUBA
-If DEV selects RESTORE CURRENT MUBA:
-1. Do not build V2.
-2. Verify ownership/access to GitHub and required external provider accounts.
-3. Verify anchor commit d09aad85380ac87586e3656f796fc27967d75856.
-4. Inspect RELEASE_MANIFEST.json and files at that exact commit.
-5. Restore/deploy from that immutable commit or a branch created from it; do not redesign during recovery.
-6. Recreate required environment configuration from the operator's secure provider/secret store. Never commit credentials.
-7. Run repository CI/tests.
-8. Verify website independently.
-9. Verify Telegram webhook/runtime independently.
-10. Live-test Guardian, private Assistant, group #MUBA ASSISTANT and Studio as applicable.
-11. Provider changes are handled only through a new branch/test/PR protocol while preserving the anchor.
-12. Declare restored stable only after verification.
+## Path A — Restore Current MUBA
+Use when DEV wants the preserved current MUBA, not V2.
 
-## V2 rollback
-Keep BLUE deployable while GREEN is developed. Remove GREEN external-action authority first, return routing/scheduling/publishing authority to BLUE, then verify BLUE health. Migrations remain backward-compatible until rollback is retired. No destructive production-state migration without tested backup/restore.
+Recovery anchor captured by this Vault:
+`602ebffe23de7373e7ee513af33dea219fe6deba`
 
-This Vault preserves code references, architecture and procedure. It cannot contain provider credentials or guarantee future third-party compatibility. Real disaster-recovery testing is mandatory.
+Steps:
+1. Do not activate V2.
+2. Verify GitHub access and external provider ownership.
+3. Create recovery work from the exact stable anchor/snapshot.
+4. Restore required environment/secrets from DEV-controlled provider secret stores; never copy secrets from documentation.
+5. Run Telegram production tests.
+6. Verify website independently.
+7. Verify webhook/bot runtime independently.
+8. Live-test Guardian state/authority.
+9. Live-test private Assistant.
+10. Verify Studio only if its provider configuration is available.
+11. Rebuild Android V3 separately only if DEV needs it; Android V3 is not required for Bot API recovery.
+12. Declare STABLE only after evidence.
+
+## Path B — Build/Test V2
+Keep current MUBA BLUE intact. Build candidate separately. No automatic promotion.
+
+## Android V3 recovery
+Use android-v3 source and GitHub workflow with securely supplied GitHub Actions secrets. Never reuse or expose production bot credentials.
+
+## Rollback
+If a new release fails, restore authority/routing to the last verified stable main state. Do not stack speculative patches on failing production.
+
+## External limits
+The Vault cannot recreate:
+- provider account ownership;
+- bot tokens;
+- Telegram user sessions;
+- API hashes;
+- signing keys;
+- 2FA credentials;
+- external billing/subscriptions.
+
+Those remain DEV-controlled.

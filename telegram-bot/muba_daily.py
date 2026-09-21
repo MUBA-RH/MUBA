@@ -34,12 +34,67 @@ DAILY={
 "telegram":"Telegram الرسمي: @MUBA_RH. راجع الرسائل الرسمية المثبتة للحصول على إعلانات المجتمع الحالية.",
 "updates":"آخر ملخص مؤكد: يدعم MUBA Assistant المحادثة الخاصة الموجهة والطبيعية بخمس لغات. ويحمي MUBA Guardian المجموعة الرئيسية من الروابط غير المصرح بها وCA المزيف والتصيد والاحتيال. لا تُعرض تفاصيل GitHub الداخلية هنا."},
 "hi":{
-"x":"Official X: @MUBA_RH. MUBA की story, community updates और confirmed developments यहाँ share होते हैं।",
-"web":"Official website: muba-rh.github.io/MUBA/ — MUBA का public project home और story space.",
-"telegram":"Official Telegram: @MUBA_RH. Current community announcements के लिए pinned official messages देखें।",
-"updates":"Latest verified build summary: MUBA Assistant private chat में 5 languages में guided और natural conversation support करता है। MUBA Guardian main group को links, fake CA, phishing और scam controls से protect करता है। Internal GitHub details यहाँ expose नहीं किए जाते।"}
+"x":"आधिकारिक X: @MUBA_RH. MUBA की कहानी, सामुदायिक अपडेट और पुष्टि किए गए विकास यहाँ साझा होते हैं।",
+"web":"आधिकारिक वेबसाइट: muba-rh.github.io/MUBA/ — MUBA का सार्वजनिक परियोजना घर और कहानी का स्थान।",
+"telegram":"आधिकारिक Telegram: @MUBA_RH. वर्तमान सामुदायिक घोषणाओं के लिए पिन किए गए आधिकारिक संदेश देखें।",
+"updates":"नवीनतम सत्यापित निर्माण सारांश: MUBA Assistant निजी चैट में 5 भाषाओं में निर्देशित और स्वाभाविक बातचीत का समर्थन करता है। MUBA Guardian मुख्य समूह को अनधिकृत लिंक, नकली CA, फ़िशिंग और धोखाधड़ी नियंत्रण से सुरक्षित रखता है। आंतरिक GitHub विवरण यहाँ प्रदर्शित नहीं किए जाते।"}
 }
 
 def daily_text(lang, section):
     lang=lang if lang in DAILY else "en"
     return DAILY[lang].get(section, DAILY[lang]["updates"])
+
+
+# Persistent user-facing development log. Keep old entries; append new verified
+# changes instead of replacing history.
+DEVLOG_LABELS={
+"en":{"log":"📜 Development Log","new":"✨ New","updates":"🛠 Updated","fixed":"🧩 Refined","back":"⬅️ Back"},
+"tr":{"log":"📜 Geliştirme Günlüğü","new":"✨ Yenilikler","updates":"🛠 Güncellemeler","fixed":"🧩 Düzenlenenler","back":"⬅️ Geri"},
+"zh":{"log":"📜 开发日志","new":"✨ 新增","updates":"🛠 更新","fixed":"🧩 调整","back":"⬅️ 返回"},
+"ar":{"log":"📜 سجل التطوير","new":"✨ جديد","updates":"🛠 تحديثات","fixed":"🧩 تحسينات","back":"⬅️ رجوع"},
+"hi":{"log":"📜 Development Log","new":"✨ नया","updates":"🛠 अपडेट","fixed":"🧩 सुधार","back":"⬅️ वापस"}
+}
+
+DEVLOG={
+"en":{
+"new":[
+"2026-09-21 — Story Mode expanded into a chronological, transparent journey with previous/next navigation.",
+"2026-09-21 — CREATE → SHARE added under MUBA Studio with share-ready MUBA-native post examples and copy actions."],
+"updates":[
+"2026-09-21 — Origin, Identity, Difference, Purpose, Community and Future received distinct present-day context without collapsing their responsibilities into one another.",
+"2026-09-21 — Community Guide expanded into clear destinations so members can choose where to go based on what they want to learn or do."],
+"fixed":[
+"2026-09-21 — Repetitive explanations were separated by topic: roots, identity evolution, practical difference, system purpose, community utility and future value now have different scopes.",
+"2026-09-21 — Development history is now preserved as an append-only user-facing log instead of a single replaceable summary."]
+},
+"tr":{
+"new":[
+"2026-09-21 — Hikâye Modu kronolojik ve şeffaf bir yolculuk olarak genişletildi; önceki/sonraki gezinme eklendi.",
+"2026-09-21 — MUBA Studio altına ÜRET → PAYLAŞ eklendi; MUBA diline uygun paylaşmaya hazır TWT örnekleri ve kopyalama işlemleri eklendi."],
+"updates":[
+"2026-09-21 — Köken, Kimlik, Farkı, Amaç, Topluluk ve Gelecek bölümlerine birbirinin görevini tekrar etmeyen bugünkü durum katmanları eklendi.",
+"2026-09-21 — Topluluk Rehberi, üyenin merak ettiği konuya göre doğru bölüme yönlendiren daha açık bir yapıya genişletildi."],
+"fixed":[
+"2026-09-21 — Tekrarlayan anlatımlar konu bazında ayrıldı: kökler, kimlik gelişimi, pratik fark, sistem amacı, topluluk faydası ve gelecek değeri artık ayrı kapsamda.",
+"2026-09-21 — Geliştirme geçmişi tek bir değiştirilebilir özet yerine geçmişi koruyan kalıcı günlük yapısına dönüştürüldü."]
+},
+"zh":{
+"new":["2026-09-21 — 故事模式扩展为透明的时间线旅程，并加入上一页/下一页导航。","2026-09-21 — MUBA Studio 下新增“创作 → 分享”，提供符合 MUBA 风格的可分享帖子与复制操作。"],
+"updates":["2026-09-21 — 起源、身份、独特之处、目标、社区与未来加入各自独立的当前状态内容，避免职责重复。","2026-09-21 — 社区指南扩展为按成员想了解或想做的事情进行明确引导。"],
+"fixed":["2026-09-21 — 重复说明按主题拆分：根基、身份演变、实际差异、系统目标、社区价值与未来价值各自独立。","2026-09-21 — 开发历史改为保留旧记录的持续日志，不再只是可被替换的单一摘要。"]},
+"ar":{
+"new":["2026-09-21 — تم توسيع وضع القصة إلى رحلة زمنية شفافة مع أزرار السابق/التالي.","2026-09-21 — تمت إضافة «أنشئ → شارك» أسفل MUBA Studio مع منشورات جاهزة بروح MUBA وخيارات نسخ."],
+"updates":["2026-09-21 — تمت إضافة سياق حالي منفصل للنشأة والهوية والاختلاف والهدف والمجتمع والمستقبل دون تكرار نفس الدور.","2026-09-21 — تم توسيع دليل المجتمع ليوجه العضو إلى القسم الصحيح حسب ما يريد معرفته أو فعله."],
+"fixed":["2026-09-21 — تم فصل الشروحات المتكررة حسب الموضوع: الجذور وتطور الهوية والاختلاف العملي وهدف النظام وفائدة المجتمع وقيمة المستقبل.","2026-09-21 — أصبح تاريخ التطوير سجلاً مستمراً يحتفظ بالماضي بدلاً من ملخص واحد قابل للاستبدال."]},
+"hi":{
+"new":["2026-09-21 — Story Mode को transparent chronological journey बनाया गया और previous/next navigation जोड़ी गई।","2026-09-21 — MUBA Studio के नीचे CREATE → SHARE जोड़ा गया, MUBA-native share-ready posts और copy actions के साथ।"],
+"updates":["2026-09-21 — Origin, Identity, Difference, Purpose, Community और Future में अलग-अलग present-day context जोड़ा गया ताकि roles repeat न हों।","2026-09-21 — Community Guide को user की जरूरत के अनुसार सही section तक पहुँचाने के लिए expand किया गया।"],
+"fixed":["2026-09-21 — Repetitive explanations को topic scope में अलग किया गया: roots, identity evolution, practical difference, system purpose, community utility और future value।","2026-09-21 — Development history अब replaceable summary नहीं, past preserve करने वाला append-only log है।"]}
+}
+
+def devlog_page(lang, category, index):
+    lang=lang if lang in DEVLOG else "en"
+    category=category if category in DEVLOG[lang] else "updates"
+    rows=DEVLOG[lang][category]
+    index=max(0,min(index,len(rows)-1))
+    return rows[index], index, len(rows)

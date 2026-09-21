@@ -1,23 +1,35 @@
-# Architecture and Safety Boundaries
+# MUBA Architecture and Safety Boundaries
 
-Current: GitHub Pages serves index.html. The Telegram runtime integrates Guardian, private Assistant, Studio and the local layered MUBA brain.
+## Current architecture
+Public website -> GitHub Pages.
 
-Future Autonomy is an orchestration plane above stable modules, not a rewrite.
+Telegram Bot API runtime -> bot_mention.py -> Guardian + private Assistant + Studio + layered local MUBA brain.
 
-Target:
-DEV -> Truth Registry -> MUBA Core/Orchestrator -> Persistent Memory / Story Engine / Scheduler+Job Engine / Studio+Validator / Publisher adapters.
-An independent Watchdog/Health plane observes the system.
+DEV translator path -> separate MTProto tooling.
 
-Safety invariants:
-1. Stable production remains runnable while V2 is built.
-2. Vault documentation is never a runtime dependency.
-3. Creative AI is never authoritative for CA, listing time, official links, partnership status, DEV authority or security policy.
-4. External actions use state machines: PLANNED -> PREPARED -> VALIDATED -> QUEUED -> SENT -> VERIFIED, or FAILED.
-5. Provider acknowledgement is required where possible; do not infer success.
-6. Failures are isolated by component.
-7. Retries are bounded with backoff and circuit breakers.
-8. Watchdog is independent of the decision engine.
-9. Production code never self-modifies or self-merges.
-10. Credentials stay outside source control.
+Android V3 -> isolated Telegram Android user client fork/patch path for translate-before-send in the authorized official MUBA dialog.
 
-Blue/Green: BLUE is verified production. GREEN is V2 candidate. GREEN gains external authority only after tests, shadow, canary, health checks and explicit promotion. BLUE remains recoverable until rollback is exercised.
+Vault -> passive branch only; never runtime.
+
+## Authority hierarchy
+1. DEV numeric authority.
+2. Deterministic security/truth rules.
+3. Verified official project facts.
+4. Product interaction/content layers.
+5. Creative generation.
+
+Creative systems never override DEV authority, CA truth, official links or security policy.
+
+## Failure isolation
+A failure in Android V3 must not stop the Bot API bot.
+A Studio failure must not disable Guardian.
+An Assistant content update must not weaken Guardian.
+A Vault update must not change production.
+A V2 experiment must not replace BLUE/current stable MUBA.
+
+## Future V2 / Autonomy
+Future autonomy is an orchestration plane above stable modules, not permission to rewrite them automatically.
+
+BLUE = current verified production.
+GREEN = isolated candidate.
+Promotion requires tests, evidence and explicit DEV authorization.

@@ -1,40 +1,56 @@
 {
-  "schema_version": 1,
-  "vault_type": "passive-recovery-v2-portability-blueprint",
+  "schema_version": 2,
+  "vault_type": "passive-full-system-source-recovery-continuity-portability",
   "repository": "MUBA-RH/MUBA",
-  "pre_vault_stable": {
-    "sha": "d09aad85380ac87586e3656f796fc27967d75856",
-    "short": "d09aad8",
+  "snapshot_date": "2026-09-21",
+  "stable_main": {
+    "sha": "602ebffe23de7373e7ee513af33dea219fe6deba",
     "branch": "main"
   },
-  "runtime_dependency": false,
+  "vault": {
+    "runtime_dependency": false,
+    "production_branch": false,
+    "intended_base_branch": "vault/system-vault-final",
+    "refresh_branch": "vault/system-vault-refresh-20260921"
+  },
   "operator_interface": {
-    "locale": "tr-TR",
-    "response_language": "tr",
-    "canonical_docs_language": "en"
+    "default_dev_language": "tr",
+    "default_dev_locale": "tr-TR",
+    "canonical_code_language": "en",
+    "canonical_technical_docs_language": "en",
+    "product_languages": ["en", "tr", "zh", "ar", "hi"]
   },
   "current_surfaces": [
     "github-pages-website",
+    "telegram-bot-api-webhook",
     "telegram-guardian",
-    "private-assistant",
+    "private-muba-assistant",
     "muba-studio",
-    "layered-local-brain"
+    "layered-local-brain",
+    "dev-mtproto-translator",
+    "muba-android-v3-apk-build"
   ],
+  "important_prs": [79, 80, 89, 90, 91, 92, 93],
+  "android_build_evidence": {
+    "workflow_run": 18,
+    "result": "success",
+    "artifact_name": "MUBA-V3-Android-APK",
+    "artifact_sha256": "c69e3edbeb422c4376a66d495c0aeeb60dd022081a678f5a73896b6dc8048971"
+  },
   "protocol": {
-    "dev_command": "BAŞLA 🔥 MERGE 🟢 STABİL 🔒",
-    "success_phrase": "Tamamlandı. 🔥🟢🔒",
+    "dev_command": "BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒",
     "v2_requires_explicit_dev_choice": true
   },
   "credentials_in_vault": false,
-  "notes": [
-    "External provider credentials/settings are intentionally not backed up here.",
-    "Live operational databases are not embedded in Git.",
-    "Repository/provider reality must be re-verified before restoration or V2 work.",
-    "Project cloning/rebranding requires new project-specific Telegram/X/web/runtime identities and external credentials; credential values remain outside Git."
-  ],
   "entry_paths": [
     "RESTORE_CURRENT_MUBA",
     "BUILD_MUBA_V2_AUTONOMY",
     "CREATE_NEW_PROJECT_FROM_ARCHITECTURE"
+  ],
+  "notes": [
+    "Vault is passive and isolated from production runtime.",
+    "The source snapshot is derived from the stable main SHA above.",
+    "Secrets and provider ownership are intentionally external.",
+    "Runtime state durability must be verified; default in-memory state is not disaster-recovery storage."
   ]
 }

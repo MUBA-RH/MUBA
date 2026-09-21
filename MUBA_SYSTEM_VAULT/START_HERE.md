@@ -1,46 +1,53 @@
 # MUBA System Vault — START HERE
 
-Status: PASSIVE RECOVERY AND DESIGN PACKAGE. It is not a runtime dependency.
+Status: PASSIVE, ISOLATED RECOVERY / CONTINUITY / HANDOVER PACKAGE.
+
+This Vault is intentionally kept outside the production runtime. It exists to preserve MUBA, explain MUBA, recover MUBA, and hand MUBA to another competent AI/developer if necessary. Nothing under MUBA_SYSTEM_VAULT may be imported by production code or required for normal operation.
 
 ## Operator interface
-```ini
-operator_interface.locale=tr-TR
-operator_interface.response_language=tr
-operator_interface.technical_terms=preserve
-```
-When interacting with the DEV, speak Turkish unless the DEV explicitly requests another language. Keep canonical technical documentation and code in English.
+- Speak Turkish to the DEV by default unless the DEV asks for another language.
+- Preserve canonical code, identifiers, comments, commit messages, schemas and technical documentation in English.
+- User-facing product text may remain multilingual where the product requires it.
 
 ## First decision — mandatory
-Before changing or deploying anything, ask the DEV exactly which path is wanted:
-1. **RESTORE CURRENT MUBA** — restore/verify the preserved stable system only. Do not build V2.
-2. **BUILD MUBA V2 / AUTONOMY** — first verify the stable foundation, then build V2 separately under the safety rules in this Vault.
-3. **CREATE A NEW PROJECT FROM THIS ARCHITECTURE** — create an isolated project profile/repository/deployment; never rename or overwrite MUBA production in place. Follow PROJECT_PORTABILITY.md.
-If the DEV does not choose, do nothing.
+Before restoration or future architecture work, ask the DEV to choose exactly one path:
+1. RESTORE CURRENT MUBA
+2. BUILD / TEST MUBA V2 OR AUTONOMY IN ISOLATION
+3. CREATE A NEW PROJECT FROM THIS ARCHITECTURE
+
+If the DEV does not choose a path, do not activate, migrate or replace anything.
 
 ## Mandatory reading order
 1. START_HERE.md
-2. CURRENT_SYSTEM.md
-3. MODULE_REGISTRY.md
-4. ARCHITECTURE.md
-5. DEVELOPMENT_PROTOCOL.md
-6. CONTINUITY.md
-7. RECOVERY.md
-8. AUTONOMY_BLUEPRINT.md
-9. OPERATOR_MANUAL.md
-10. PROJECT_PORTABILITY.md
-11. RELEASE_MANIFEST.json
+2. VAULT_SCOPE.md
+3. PROJECT_IDENTITY.md
+4. CURRENT_SYSTEM.md
+5. TELEGRAM_SYSTEM.md
+6. ANDROID_V3_APK.md
+7. CODE_LANGUAGE_STANDARD.md
+8. MODULE_REGISTRY.md
+9. ARCHITECTURE.md
+10. DEVELOPMENT_PROTOCOL.md
+11. CONTINUITY.md
+12. RECOVERY.md
+13. OPERATOR_MANUAL.md
+14. PROJECT_PORTABILITY.md
+15. AUTONOMY_BLUEPRINT.md
+16. CHANGELOG_SNAPSHOT_2026-09-21.md
+17. RELEASE_MANIFEST.json
 
 ## Non-negotiable
-- Never assume V2 is wanted.
-- Never modify production directly.
-- Never replace a working module merely because another architecture is preferred.
-- Establish the actual repository/deployment state before any change.
-- Stable production must remain available during development, failure, repair, and maintenance.
-- New development is isolated. No red/unknown CI merge.
-- A rollback path must exist before migration.
-- Guardian, Assistant, Studio, website and unrelated services must survive unrelated work.
-- Never store secrets in this Vault.
-- Repository reality outranks stale documentation. If they conflict, stop, verify, then update the Vault through the normal protocol.
+- Current stable MUBA is the production baseline.
+- Vault is passive and isolated.
+- V2 never activates automatically.
+- Never replace working production merely because a newer design exists.
+- Never put credentials or secrets in Git/Vault.
+- Verify repository reality before acting.
+- Preserve rollback before migration.
+- GitHub is the canonical development/source-control location for this package.
 - The DEV is final authority.
 
-This package is designed to be portable to another competent AI/developer. The receiver must guide a non-specialist DEV one verified step at a time.
+## Permanent operating command
+BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒
+
+Meaning: start the requested scoped change, work in isolation, preserve the current stable system, test, validate, merge only when green, verify, and keep the resulting production stable.

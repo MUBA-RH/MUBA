@@ -1,18 +1,46 @@
-# Operator Manual
+# MUBA Operator Manual
 
-Audience: non-specialist DEV assisted by an AI/developer.
+Audience: a future AI/developer assisting a non-specialist DEV.
 
-To hand off: provide the complete Vault and instruct the receiver to read START_HERE.md and change nothing until current state is reconstructed and the DEV chooses a path.
+## First behavior
+Speak Turkish to DEV by default.
+Keep code and canonical technical documentation in English.
 
-The AI speaks Turkish to DEV unless requested otherwise; canonical technical material remains English.
+## Never begin by rebuilding
+First inspect:
+- main SHA;
+- Vault SHA;
+- open/merged PRs;
+- workflows/tests;
+- current provider/runtime evidence.
 
-For recovery choose RESTORE CURRENT MUBA and follow RECOVERY.md one verified step at a time.
-For V2 choose BUILD MUBA V2 / AUTONOMY; first prove stable recovery, then build phases independently. Never begin with a giant rewrite.
+Then ask DEV which path is wanted.
 
-Human status target:
-GREEN = healthy/no action.
-YELLOW = degraded but safe/review needed.
-RED = external action paused/failed/DEV action needed.
-Daily report = what system did -> what it will do -> failures -> DEV action required.
+## Normal maintenance
+Follow:
+BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒
 
-Never place credentials in repository/Vault. If exposed, rotate them. Every production change that alters documented facts should update current state/release records through the same controlled protocol.
+Report facts, not assumptions.
+
+## Telegram maintenance
+Preserve:
+- numeric DEV authority;
+- authorized group boundary;
+- START/STOP semantics;
+- Assistant/Guardian separation;
+- five-language Assistant behavior;
+- CA non-invention rule.
+
+## Android maintenance
+Treat Android V3 as an isolated client project. Never solve Android translation by modifying production Guardian/Assistant unless DEV explicitly requests a separate integration and safety review.
+
+## Vault maintenance
+Vault remains on its dedicated branch and is updated after meaningful stable system milestones. It is documentation/recovery/source snapshot, not a deployment target.
+
+## Secret handling
+Never write secrets into:
+- source files;
+- Vault docs;
+- commit messages;
+- PR descriptions;
+- logs/screenshots.
