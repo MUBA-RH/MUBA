@@ -318,7 +318,7 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")])
     rows.append([InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
-    rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_jump:gallery")])
+    rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")])
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")])
     rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
@@ -365,14 +365,42 @@ def updates_center_keyboard(lang,user_id,index=0):
     return InlineKeyboardMarkup(rows)
 
 def updates_area_text(lang,user_id,area,index):
-    # Backward compatibility for buttons/messages created before the central
-    # MUBA Updates feed. Old area pages now resolve to the same canonical item.
-    global_index=_legacy_area_global_index(lang,area,index)
-    return updates_center_text(lang,user_id,global_index)
+    # Unit views stay local. The central MUBA Updates feed remains the only
+    # combined timeline for every canonical project update.
+    rows=update_entries(lang,area)
+    if not rows:
+        return AREA_LABELS[lang].get(area,area),0,0
+    index=max(0,min(index,len(rows)-1))
+    item=rows[index]
+    latest=latest_update_id(area)
+    if latest and latest==item.get("id"):
+        mark_assistant_update_seen(user_id,area,latest)
+    kind_label=UPDATE_LABELS[lang].get(item["type"],item["type"].upper())
+    body=(
+        f'{AREA_LABELS[lang].get(area,area)}\n\n'
+        f'{kind_label} · {item["date"]}\n'
+        f'{item["title_text"]}\n\n'
+        f'{item["text"]}\n\n'
+        f'{index+1}/{len(rows)}'
+    )
+    return body,index,len(rows)
 
 def updates_area_keyboard(lang,user_id,area,index):
-    global_index=_legacy_area_global_index(lang,area,index)
-    return updates_center_keyboard(lang,user_id,global_index)
+    rows_data=update_entries(lang,area)
+    total=len(rows_data)
+    if not total:
+        return InlineKeyboardMarkup([[InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="menu")]])
+    index=max(0,min(index,total-1))
+    pager=[]
+    if index>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"updates_area:{area}:{index-1}"))
+    if index+1<total:
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"updates_area:{area}:{index+1}"))
+    rows=[pager] if pager else []
+    if area=="gallery":
+        rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["open_gallery"],url="https://muba-rh.github.io/MUBA/#gallery")])
+    rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
 
 GALLERY_ADMIN_LABELS={
 "en":{"menu":"🛠 Gallery Moderation","title":"🛠 MUBA Gallery Moderation","empty":"No Gallery items.","public":"PUBLIC","hidden":"HIDDEN","rejected":"REJECTED","back":"⬅️ Back","saved":"Gallery status updated."},
