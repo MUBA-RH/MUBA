@@ -30,8 +30,8 @@ class CentralUpdatesHubTests(unittest.TestCase):
     def test_assistant_has_global_pager_and_area_jump(self):
         self.assertIn('callback_data=f"updates_global:{index-1}"',BOT)
         self.assertIn('callback_data=f"updates_global:{index+1}"',BOT)
-        self.assertIn('callback_data="updates_jump:gallery"',BOT)
-        self.assertIn('if data.startswith("updates_jump:")',BOT)
+        self.assertIn('callback_data="updates_area:gallery:0"',BOT)
+        self.assertIn('if data.startswith("updates_area:")',BOT)
         self.assertIn('UPDATE_LABELS[lang]["related"]',BOT)
 
     def test_daily_routes_updates_to_central_feed(self):
@@ -39,9 +39,10 @@ class CentralUpdatesHubTests(unittest.TestCase):
         self.assertIn('if section=="updates":',BOT)
         self.assertNotIn('from muba_history import entries as _history_entries',DAILY)
 
-    def test_legacy_area_callbacks_remain_compatible(self):
-        self.assertIn('if data.startswith("updates_area:")',BOT)
-        self.assertIn('def _legacy_area_global_index',BOT)
+    def test_unit_update_views_are_area_scoped(self):
+        self.assertIn('rows=update_entries(lang,area)',BOT)
+        self.assertIn('callback_data=f"updates_area:{area}:{index-1}"',BOT)
+        self.assertIn('callback_data=f"updates_area:{area}:{index+1}"',BOT)
 
     def test_seen_state_is_advanced_only_by_central_updates(self):
         self.assertEqual(BOT.count("mark_assistant_update_seen("),1)
