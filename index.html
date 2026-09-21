@@ -3,589 +3,1192 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ROBINHOOD + FLAP + UNISWAP : $MUBA</title>
+  <meta name="description" content="MUBA — a character, a meme, a community. Explore the living MUBA story, development log, MUBA Studio and community tools." />
+  <meta name="theme-color" content="#07040f" />
+  <title>MUBA — WE LIVE HERE NOW</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #07040f;
+      --bg-soft: #0d0717;
+      --card: rgba(20, 12, 33, .78);
+      --card-strong: #120a1f;
       --purple: #b026ff;
-      --purple-soft: #d946ef;
+      --purple-2: #7c3aed;
+      --pink: #d946ef;
       --gold: #f5c542;
-      --text: #f4f0ff;
+      --text: #f7f2ff;
       --muted: #b8a8d4;
+      --line: rgba(176, 38, 255, .22);
+      --line-strong: rgba(217, 70, 239, .45);
+      --success: #86efac;
+      --radius: 20px;
+      --shadow: 0 20px 60px rgba(0,0,0,.34);
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: 'Outfit', system-ui, sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(176,38,255,.12), transparent 32%),
+        radial-gradient(circle at 88% 18%, rgba(245,197,66,.07), transparent 26%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
     }
-    .glow-orb {
-      position: fixed;
-      width: 520px;
-      height: 520px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(176,38,255,.28), transparent 70%);
-      filter: blur(40px);
-      pointer-events: none;
-      z-index: 0;
-    }
-    .orb-1 { top: -180px; left: -120px; }
-    .orb-2 { bottom: -200px; right: -80px; background: radial-gradient(circle, rgba(245,197,66,.18), transparent 70%); }
-    header {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 24px 8vw;
-    }
-    .logo {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      letter-spacing: .08em;
-      font-size: 1.15rem;
-    }
-    .logo span { color: var(--gold); }
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      margin-left: 28px;
-      font-weight: 500;
-      transition: color .2s;
-    }
-    nav a:hover { color: var(--gold); }
-    .hero {
-      position: relative;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 48px;
-      align-items: center;
-      padding: 40px 8vw 80px;
-      min-height: calc(100vh - 88px);
-    }
-    .badge {
+    button, input, textarea { font: inherit; }
+    a { color: inherit; }
+    .shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; }
+    .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      border: 1px solid rgba(176,38,255,.4);
-      background: rgba(176,38,255,.08);
-      color: var(--purple-soft);
-      padding: 6px 14px;
+      color: var(--pink);
+      border: 1px solid rgba(217,70,239,.32);
+      background: rgba(217,70,239,.07);
       border-radius: 999px;
-      font-size: .82rem;
-      letter-spacing: .06em;
+      padding: 7px 13px;
+      font-size: .76rem;
+      font-weight: 800;
+      letter-spacing: .09em;
       text-transform: uppercase;
-      margin-bottom: 22px;
     }
-    h1 {
-      font-size: clamp(2.6rem, 6vw, 5.2rem);
-      line-height: .95;
-      font-weight: 900;
-      letter-spacing: -0.03em;
+    .section { padding: 88px 0; position: relative; }
+    .section-head { max-width: 760px; margin-bottom: 30px; }
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1;
+      letter-spacing: -.045em;
+      margin: 14px 0 12px;
     }
-    h1 .gold { color: var(--gold); }
-    h1 .grad {
-      background: linear-gradient(90deg, #fff, #d946ef, #f5c542);
+    .section-title span { color: var(--gold); }
+    .section-copy { color: var(--muted); line-height: 1.65; font-size: 1.03rem; }
+    .card {
+      background: linear-gradient(180deg, rgba(25,14,42,.86), rgba(13,7,23,.88));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      background: rgba(7,4,15,.82);
+      backdrop-filter: blur(16px);
+    }
+    .header-inner {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand {
+      font-family: 'Space Grotesk', sans-serif;
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: .08em;
+      white-space: nowrap;
+    }
+    .brand span { color: var(--gold); }
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .nav a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: .92rem;
+      font-weight: 650;
+      transition: color .18s ease;
+    }
+    .nav a:hover { color: var(--text); }
+    .nav .nav-cta {
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--purple), var(--purple-2));
+      box-shadow: 0 0 24px rgba(176,38,255,.24);
+    }
+    .menu-btn {
+      display: none;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255,255,255,.04);
+      border-radius: 12px;
+      padding: 9px 12px;
+      cursor: pointer;
+    }
+
+    .hero {
+      min-height: calc(100vh - 74px);
+      display: grid;
+      grid-template-columns: 1.06fr .94fr;
+      gap: 64px;
+      align-items: center;
+      padding: 62px 0 76px;
+    }
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(4rem, 10vw, 7.6rem);
+      line-height: .86;
+      letter-spacing: -.07em;
+      margin: 22px 0 22px;
+    }
+    .hero h1 span {
+      background: linear-gradient(90deg, #fff 4%, var(--pink) 48%, var(--gold) 94%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
-    .tagline {
-      margin: 22px 0 32px;
-      color: var(--muted);
-      font-size: 1.2rem;
-      max-width: 520px;
-      line-height: 1.5;
+    .hero-sub {
+      font-size: clamp(1.25rem, 2.5vw, 1.7rem);
+      font-weight: 700;
+      letter-spacing: .03em;
+      margin-bottom: 10px;
     }
-    .quote {
-      font-style: italic;
-      color: #e9d5ff;
-      margin-bottom: 36px;
-    }
-    .cta {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
+    .hero-quote { color: var(--muted); font-style: italic; margin-bottom: 28px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 14px 26px;
+      justify-content: center;
+      gap: 9px;
+      min-height: 48px;
+      padding: 12px 20px;
+      border: 1px solid transparent;
       border-radius: 999px;
-      font-weight: 700;
       text-decoration: none;
-      transition: transform .15s, box-shadow .15s;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
     }
     .btn:hover { transform: translateY(-2px); }
     .btn-primary {
-      background: linear-gradient(135deg, #b026ff, #7c3aed);
-      color: white;
-      box-shadow: 0 10px 30px rgba(176,38,255,.35);
+      color: #fff;
+      background: linear-gradient(135deg, var(--purple), var(--purple-2));
+      box-shadow: 0 12px 34px rgba(176,38,255,.3);
     }
-    .btn-ghost {
-      border: 1px solid rgba(245,197,66,.45);
+    .btn-secondary {
       color: var(--gold);
+      border-color: rgba(245,197,66,.35);
+      background: rgba(245,197,66,.04);
     }
-    .mascot-wrap {
-      position: relative;
-      display: flex;
-      justify-content: center;
+    .btn-soft {
+      color: var(--text);
+      border-color: var(--line);
+      background: rgba(255,255,255,.035);
     }
+    .mascot-wrap { display: flex; justify-content: center; }
     .ring {
-      width: min(420px, 80vw);
+      width: min(440px, 82vw);
       aspect-ratio: 1;
       border-radius: 50%;
       padding: 8px;
-      background: conic-gradient(from 180deg, #b026ff, #f5c542, #b026ff);
-      box-shadow: 0 0 80px rgba(176,38,255,.45);
-      animation: spin 18s linear infinite;
+      background: conic-gradient(from 180deg, var(--purple), var(--gold), var(--pink), var(--purple));
+      box-shadow: 0 0 90px rgba(176,38,255,.32);
+      animation: spin 22s linear infinite;
     }
     .ring-inner {
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      background: #0b0614;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: #0a0611;
     }
     .ring-inner img {
-      width: 92%;
-      height: 92%;
+      width: 94%;
+      height: 94%;
       object-fit: cover;
       border-radius: 50%;
-      animation: spin-rev 18s linear infinite;
+      animation: spin-rev 22s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes spin-rev { to { transform: rotate(-360deg); } }
-    .stats {
-      position: relative;
-      z-index: 2;
+
+    .pillars {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      padding: 0 8vw 80px;
+      grid-template-columns: repeat(3,1fr);
+      gap: 14px;
+      margin-top: -26px;
+      padding-bottom: 40px;
     }
-    .stat {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(176,38,255,.18);
-      border-radius: 18px;
-      padding: 22px;
+    .pillar { padding: 22px; }
+    .pillar small {
+      display: block;
+      color: var(--pink);
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
     }
-    .stat small { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: .72rem; }
-    .stat strong { display: block; margin-top: 8px; font-size: 1.4rem; }
-    footer {
-      position: relative;
-      z-index: 2;
-      padding: 40px 8vw 60px;
+    .pillar strong { font-family: 'Space Grotesk', sans-serif; font-size: 1.22rem; }
+
+    .devlog-panel { padding: 26px; }
+    .dev-tabs, .topic-tabs, .tweet-tabs {
+      display: flex;
+      gap: 9px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding-bottom: 6px;
+    }
+    .chip {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
       color: var(--muted);
-      border-top: 1px solid rgba(255,255,255,.06);
+      border-radius: 999px;
+      padding: 10px 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .chip.active {
+      color: #fff;
+      border-color: var(--line-strong);
+      background: linear-gradient(135deg, rgba(176,38,255,.24), rgba(124,58,237,.18));
+      box-shadow: 0 0 18px rgba(176,38,255,.12);
+    }
+    .dev-entry {
+      margin-top: 18px;
+      min-height: 190px;
+      padding: 24px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.025);
+    }
+    .dev-meta {
+      color: var(--gold);
+      font-size: .75rem;
+      font-weight: 900;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .dev-entry h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.45rem;
+      margin: 10px 0;
+    }
+    .dev-entry p { color: var(--muted); line-height: 1.65; }
+    .pager {
       display: flex;
       justify-content: space-between;
-      flex-wrap: wrap;
+      align-items: center;
       gap: 12px;
+      margin-top: 18px;
     }
+    .pager-count { color: var(--muted); font-weight: 700; font-size: .9rem; }
+    .icon-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.035);
+      color: var(--text);
+      border-radius: 12px;
+      min-width: 46px;
+      min-height: 42px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .icon-btn:disabled { opacity: .35; cursor: default; }
 
-    .what-is-muba {
-      position: relative;
-      z-index: 2;
-      padding: 0 8vw 80px;
+    .knowledge-shell { padding: 26px; }
+    .knowledge-intro {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 16px;
+      margin-bottom: 22px;
     }
-    .muba-heading {
+    .knowledge-note {
+      border: 1px solid rgba(245,197,66,.18);
+      background: rgba(245,197,66,.035);
+      border-radius: 16px;
+      padding: 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .knowledge-note strong { color: var(--gold); }
+    .topic-tabs { margin-bottom: 18px; }
+    .topic-panel {
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding-top: 18px;
+    }
+    .topic-header { margin-bottom: 14px; }
+    .topic-header h3 {
       font-family: 'Space Grotesk', sans-serif;
-      font-size: clamp(2rem, 4vw, 3.4rem);
-      margin-bottom: 24px;
-      letter-spacing: -0.03em;
+      font-size: clamp(1.5rem, 3vw, 2.1rem);
+      margin-bottom: 7px;
     }
-    .muba-heading span { color: var(--gold); }
-    .muba-accordion { display: grid; gap: 10px; }
-    .muba-accordion details {
-      background: rgba(255,255,255,.03);
-      border: 1px solid rgba(176,38,255,.18);
+    .topic-header p { color: var(--muted); line-height: 1.55; }
+    .accordion { display: grid; gap: 10px; }
+    .accordion details {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.027);
       border-radius: 16px;
       overflow: hidden;
     }
-    .muba-accordion summary {
-      cursor: pointer;
+    .accordion summary {
       list-style: none;
-      padding: 20px 24px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700;
-      font-size: 1.05rem;
+      cursor: pointer;
+      padding: 18px 20px;
+      font-weight: 800;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 16px;
     }
-    .muba-accordion summary::-webkit-details-marker { display: none; }
-    .muba-accordion summary::after {
-      content: '+';
-      color: var(--gold);
-      font-size: 1.5rem;
-      line-height: 1;
-    }
-    .muba-accordion details[open] summary::after { content: '−'; }
-    .muba-content {
-      padding: 0 24px 24px;
+    .accordion summary::-webkit-details-marker { display: none; }
+    .accordion summary::after { content: '+'; color: var(--gold); font-size: 1.4rem; }
+    .accordion details[open] summary::after { content: '−'; }
+    .accordion-body {
+      padding: 0 20px 20px;
       color: var(--muted);
-      line-height: 1.7;
-      font-size: 1rem;
+      line-height: 1.68;
     }
-    .muba-content p { margin: 0 0 16px; }
-    .muba-content p:last-child { margin-bottom: 0; }
-    .muba-content strong { color: var(--text); }
-    .telegram-btn {
-      border: 1px solid rgba(196, 125, 62, .95);
-      color: #ffd2a3;
-      background: rgba(91, 49, 24, .88);
-      box-shadow: 0 0 12px rgba(196, 125, 62, .55), 0 0 28px rgba(196, 125, 62, .28);
+    .accordion-body p + p { margin-top: 12px; }
+
+    .studio-grid {
+      display: grid;
+      grid-template-columns: .92fr 1.08fr;
+      gap: 20px;
+      align-items: stretch;
     }
-    .telegram-btn:hover {
-      color: #fff0df;
-      box-shadow: 0 0 16px rgba(196, 125, 62, .8), 0 0 34px rgba(196, 125, 62, .4);
-    }
-    .ca-btn {
-      border: 1px solid rgba(245,197,66,.45);
-      color: var(--gold);
-      background: rgba(245,197,66,.06);
-      cursor: default;
-    }
-    .ca-wide {
-      width: 100%;
-      justify-content: center;
-      border-radius: 16px;
-      margin-top: 10px;
-    }
-    .ca-copy {
-      margin-top: 12px;
-      padding: 16px 20px;
-      width: 100%;
-      border: 1px solid rgba(245,197,66,.28);
-      border-radius: 14px;
-      background: rgba(255,255,255,.03);
-      color: var(--muted);
-      font-family: 'Space Grotesk', sans-serif;
-    }
-    .ca-copy-label {
-      display: block;
-      color: var(--gold);
-      font-size: .78rem;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin-bottom: 8px;
-    }
-    .ca-value {
-      display: flex;
+    .studio-card { padding: 26px; }
+    .studio-identity {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 18px;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      margin-bottom: 22px;
     }
-    .ca-value code {
-      flex: 1;
-      font-family: 'Space Grotesk', monospace;
-      color: var(--text);
-      word-break: break-all;
+    .studio-identity img {
+      width: 92px;
+      height: 92px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid var(--purple);
+      box-shadow: 0 0 24px rgba(176,38,255,.26);
     }
-    .copy-ca {
-      border: 1px solid rgba(245,197,66,.45);
-      background: transparent;
-      color: var(--gold);
-      padding: 8px 14px;
-      border-radius: 999px;
-      font-weight: 700;
-      cursor: pointer;
+    .studio-identity h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.55rem;
+      margin-bottom: 5px;
     }
-    .copy-ca:disabled {
-      opacity: .45;
-      cursor: default;
+    .studio-identity p { color: var(--muted); line-height: 1.45; }
+    .studio-flow {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 8px;
+      margin: 20px 0;
+    }
+    .flow-step {
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 8px;
+      background: rgba(255,255,255,.025);
+      font-size: .82rem;
+      font-weight: 800;
+    }
+    .studio-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.5;
     }
 
-    @media (max-width: 860px) {
-      .hero { grid-template-columns: 1fr; text-align: center; }
-      .tagline, .quote { margin-left: auto; margin-right: auto; }
-      .cta { justify-content: center; }
-      nav { display: none; }
-      .stats { grid-template-columns: 1fr; }
+    .prompt-box { padding: 26px; }
+    .prompt-box h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.35rem;
+      margin-bottom: 6px;
+    }
+    .prompt-box > p { color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+    .prompt-box textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border-radius: 15px;
+      border: 1px solid var(--line);
+      background: #090510;
+      color: #fff;
+      padding: 14px;
+      outline: none;
+    }
+    .prompt-box textarea:focus { border-color: rgba(217,70,239,.7); }
+    .creator-types {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 8px;
+      margin: 10px 0 14px;
+    }
+    .creator-type {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      border-radius: 12px;
+      padding: 10px 8px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .creator-type.active { color: #fff; border-color: var(--pink); background: rgba(217,70,239,.1); }
+    .creator-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+    .tweet-lab { margin-top: 20px; padding: 26px; }
+    .tweet-card {
+      margin-top: 16px;
+      min-height: 210px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.026);
+      border-radius: 18px;
+      padding: 22px;
+    }
+    .tweet-text {
+      white-space: pre-wrap;
+      font-size: clamp(1.05rem, 2vw, 1.23rem);
+      line-height: 1.58;
+      font-weight: 550;
+    }
+    .tweet-tools {
+      margin-top: 24px;
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .status-text {
+      color: var(--success);
+      font-size: .85rem;
+      font-weight: 750;
+      min-height: 20px;
+    }
+    .tags-box {
+      margin-top: 12px;
+      border: 1px dashed rgba(245,197,66,.28);
+      color: var(--gold);
+      border-radius: 14px;
+      padding: 13px 15px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      letter-spacing: .03em;
+    }
+
+    .official {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 14px;
+    }
+    .official a {
+      padding: 22px;
+      text-decoration: none;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+    .official a:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+    .official strong { display: block; font-size: 1.15rem; margin-bottom: 5px; }
+    .official span { color: var(--muted); font-size: .92rem; }
+
+    footer {
+      border-top: 1px solid rgba(255,255,255,.06);
+      padding: 34px 0 50px;
+      color: var(--muted);
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .footer-inner strong { color: var(--text); }
+
+    @media (max-width: 900px) {
+      .menu-btn { display: inline-flex; }
+      .nav {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        top: 66px;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(10,6,18,.98);
+        box-shadow: var(--shadow);
+      }
+      .nav.open { display: flex; }
+      .nav a { padding: 11px 12px; }
+      .hero { grid-template-columns: 1fr; text-align: center; gap: 34px; }
+      .hero-actions { justify-content: center; }
+      .hero .eyebrow { margin-inline: auto; }
+      .pillars, .knowledge-intro, .studio-grid { grid-template-columns: 1fr; }
+      .studio-flow, .creator-types { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 24px, 1180px); }
+      .section { padding: 68px 0; }
+      .hero { padding-top: 42px; }
+      .hero h1 { font-size: clamp(3.45rem, 22vw, 5.2rem); }
+      .pillars { grid-template-columns: 1fr; margin-top: 0; }
+      .devlog-panel, .knowledge-shell, .studio-card, .prompt-box, .tweet-lab { padding: 18px; }
+      .official { grid-template-columns: 1fr; }
+      .studio-identity { grid-template-columns: 72px 1fr; }
+      .studio-identity img { width: 72px; height: 72px; }
+      .creator-actions .btn, .tweet-tools .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .ring, .ring-inner img { animation: none; }
+      * { transition: none !important; }
     }
   </style>
 </head>
 <body>
-  <div class="glow-orb orb-1"></div>
-  <div class="glow-orb orb-2"></div>
   <header>
-    <div class="logo">ROBINHOOD + FLAP + UNISWAP : <span>$MUBA</span></div>
-    <nav>
-      <a href="https://x.com/MUBA_RH" target="_blank">X / Twitter</a>
-      <a href="https://t.me/MUBA_RH" target="_blank">Telegram</a>
-      <a href="#what-is-muba">WHAT IS MUBA?</a>
-      <a href="#ca" class="btn ca-btn">CA coming soon</a>
-    </nav>
+    <div class="shell header-inner">
+      <a class="brand" href="#top"><span>$MUBA</span> — WE LIVE HERE NOW</a>
+      <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-nav">MENU</button>
+      <nav class="nav" id="site-nav">
+        <a href="#development">Development</a>
+        <a href="#what-is-muba">What is MUBA?</a>
+        <a href="#studio">MUBA Studio</a>
+        <a href="https://x.com/MUBA_RH" target="_blank" rel="noopener">X</a>
+        <a href="https://t.me/MUBA_RH" target="_blank" rel="noopener">Telegram</a>
+        <a class="nav-cta" href="#studio">Create → Share</a>
+      </nav>
+    </div>
   </header>
-  <section class="hero">
-    <div>
-      <h1>We're not<br>going <span class="gold">anywhere.</span><br><span class="grad">$MUBA</span></h1>
-      <p class="tagline">We Live Here Now.</p>
-      <p class="quote">“MUBA is MUBA.”</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://x.com/MUBA_RH" target="_blank">Follow @MUBA_RH</a>
-        <a class="btn telegram-btn" href="https://t.me/MUBA_RH" target="_blank">Chat on t.me/MUBA_RH</a>
-        <a class="btn btn-ghost" href="https://x.com/search?q=%24MUBA" target="_blank">Join the conversation</a>
-        <span id="ca" class="btn ca-btn ca-wide">CA coming soon</span>
-        <div class="ca-copy">
-          <span class="ca-copy-label">CA</span>
-          <div class="ca-value">
-            <code id="ca-address"></code>
-            <button class="copy-ca" id="copy-ca-btn" type="button" onclick="copyCA()" disabled>Copy</button>
+
+  <main id="top">
+    <div class="shell">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <div class="eyebrow">A CHARACTER · A MEME · A COMMUNITY</div>
+          <h1 id="hero-title">I'M <span>MUBA.</span></h1>
+          <p class="hero-sub">WE LIVE HERE NOW.</p>
+          <p class="hero-quote">“MUBA is MUBA.”</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://x.com/MUBA_RH" target="_blank" rel="noopener">Follow @MUBA_RH</a>
+            <a class="btn btn-secondary" href="https://t.me/MUBA_RH" target="_blank" rel="noopener">Join Telegram</a>
+            <a class="btn btn-soft" href="#what-is-muba">Explore MUBA</a>
+          </div>
+        </div>
+        <div class="mascot-wrap">
+          <div class="ring" aria-hidden="true">
+            <div class="ring-inner">
+              <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pillars" aria-label="MUBA pillars">
+        <div class="pillar card"><small>01</small><strong>Character</strong></div>
+        <div class="pillar card"><small>02</small><strong>Culture</strong></div>
+        <div class="pillar card"><small>03</small><strong>Community</strong></div>
+      </section>
+    </div>
+
+    <section class="section" id="development">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">MUBA · NOW</div>
+          <h2 class="section-title">MUBA <span>Development Log</span></h2>
+          <p class="section-copy">MUBA's story is not being written in advance. It is being lived. This log records what has actually been added, updated and refined as MUBA grows.</p>
+        </div>
+        <div class="devlog-panel card">
+          <div class="dev-tabs" id="dev-tabs" aria-label="Development log categories"></div>
+          <article class="dev-entry" id="dev-entry" aria-live="polite"></article>
+          <div class="pager">
+            <button class="icon-btn" id="dev-prev" type="button" aria-label="Previous development entry">←</button>
+            <span class="pager-count" id="dev-count"></span>
+            <button class="icon-btn" id="dev-next" type="button" aria-label="Next development entry">→</button>
           </div>
         </div>
       </div>
-    </div>
-    <div class="mascot-wrap">
-      <div class="ring">
-        <div class="ring-inner">
-          <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA mascot" />
+    </section>
+
+    <section class="section" id="what-is-muba">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">LIVING KNOWLEDGE HUB</div>
+          <h2 class="section-title">WHAT IS <span>MUBA?</span></h2>
+          <p class="section-copy">Not a fixed twelve-question page. This is a living MUBA knowledge hub. Choose a topic, open what matters, and follow what MUBA has actually become.</p>
+        </div>
+
+        <div class="knowledge-shell card">
+          <div class="knowledge-intro">
+            <div class="knowledge-note"><strong>Simple by design.</strong><br>MUBA began as an original character inside the chaos of meme culture. The community, tools and experiences around that character have grown over time.</div>
+            <div class="knowledge-note"><strong>Expandable by design.</strong><br>New MUBA topics can be added without rebuilding the page into another fixed list. The hub grows with MUBA.</div>
+          </div>
+          <div class="topic-tabs" id="topic-tabs" aria-label="MUBA knowledge topics"></div>
+          <div class="topic-panel" id="topic-panel" aria-live="polite"></div>
         </div>
       </div>
-    </div>
-  </section>
-  <section class="what-is-muba" id="what-is-muba">
-    <h2 class="muba-heading">WHAT IS <span>MUBA?</span></h2>
-    <div class="muba-accordion">
-      <details>
-        <summary>WHAT IS MUBA?</summary>
-        <div class="muba-content">
-          <p>MUBA is not a character that emerged from a classic project narrative.</p>
-          <p>There is no grand technological promise at the beginning of MUBA, no complicated system, no revolutionary product, and no long list of missions presented to people. MUBA emerged simply as a character within the natural chaos of the meme world, and over time, a community began to form around that character.</p>
-          <p>That is exactly what makes MUBA different:</p>
-          <p>MUBA is not a copy of another character.</p>
-          <p>It does not represent someone else’s dog. It does not represent someone else’s cat. It is not a reimagined version of another project’s character. MUBA has its own face, its own appearance, its own personality, and its own energy.</p>
-          <p>That is why MUBA’s own definition is actually very simple:</p>
-          <p>“I’m MUBA.”</p>
-          <p>There is no need for a bigger explanation.</p>
-          <p>MUBA’s identity comes from not trying to present itself as something more serious or bigger than it actually is. Instead of defining itself as a “revolution,” “world-changing technology,” or something similar, MUBA embraces what it is:</p>
-          <p>A character. A meme. A community.</p>
-          <p>And that community begins creating its own atmosphere around MUBA.</p>
+    </section>
+
+    <section class="section" id="studio">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">CREATE · REMIX · SHARE</div>
+          <h2 class="section-title">MUBA <span>Studio</span></h2>
+          <p class="section-copy">Turn MUBA into content. The secure creator stays inside the existing Telegram MUBA Studio; the website becomes its public gateway and sharing desk.</p>
         </div>
-      </details>
-      <details>
-        <summary>HOW DID MUBA COME INTO EXISTENCE?</summary>
-        <div class="muba-content">
-          <p>MUBA’s birth is closer to the natural way internet culture works than to a carefully planned grand narrative.</p>
-          <p>Meme culture has always created new characters, new jokes, new symbols, and new communities. MUBA appeared within this world as a character that gradually found its own identity.</p>
-          <p>When MUBA first appeared, there was no completed “legend” behind it.</p>
-          <p>First, there was the character.</p>
-          <p>Then people began seeing the character, sharing it, commenting on it, and creating their own content around it.</p>
-          <p>That is how MUBA became more than just an image.</p>
-          <p>Character → content → interaction → community → culture.</p>
-          <p>This is the journey behind MUBA’s formation.</p>
-          <p>That is why MUBA’s story is not a rigid script written as “one day this will happen.” The story develops as the community grows and people add their own contributions to MUBA.</p>
-          <p>In other words:</p>
-          <p>MUBA’s story is not being written. It is being lived.</p>
+
+        <div class="studio-grid">
+          <div class="studio-card card">
+            <div class="studio-identity">
+              <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
+              <div>
+                <h3>MUBA Studio</h3>
+                <p>Create MUBA memes, images, stickers and reactions using the existing Studio experience.</p>
+              </div>
+            </div>
+            <div class="studio-flow">
+              <div class="flow-step">DESCRIBE</div>
+              <div class="flow-step">CREATE</div>
+              <div class="flow-step">CHOOSE TWT</div>
+              <div class="flow-step">SHARE</div>
+            </div>
+            <a class="btn btn-primary" href="https://t.me/MUBA_RH_AI_Bot?start=assistant" target="_blank" rel="noopener">Open MUBA Studio in Telegram</a>
+            <p class="studio-note">Open MUBA Assistant and choose <strong>MUBA Studio</strong>. The creator remains Telegram-authenticated so Studio security is not weakened by the public website.</p>
+          </div>
+
+          <div class="prompt-box card">
+            <h3>Prepare your MUBA idea</h3>
+            <p>Write a concept here, copy it, then use the same idea inside MUBA Studio.</p>
+            <textarea id="studio-prompt" maxlength="120" placeholder="Example: MUBA walks into a neon city while the timeline melts behind him."></textarea>
+            <div class="creator-types" id="creator-types">
+              <button class="creator-type active" type="button" data-kind="Meme">Meme</button>
+              <button class="creator-type" type="button" data-kind="Image">Image</button>
+              <button class="creator-type" type="button" data-kind="Sticker">Sticker</button>
+              <button class="creator-type" type="button" data-kind="Reaction">Reaction</button>
+            </div>
+            <div class="creator-actions">
+              <button class="btn btn-secondary" type="button" id="copy-concept">Copy concept</button>
+              <a class="btn btn-soft" href="https://t.me/MUBA_RH_AI_Bot?start=assistant" target="_blank" rel="noopener">Continue in Studio</a>
+            </div>
+            <div class="status-text" id="concept-status" aria-live="polite"></div>
+          </div>
         </div>
-      </details>
-      <details>
-        <summary>WHO IS MUBA?</summary>
-        <div class="muba-content">
-          <p>MUBA is not an anonymous symbol hidden behind a company logo.</p>
-          <p>MUBA has a character identity.</p>
-          <p>It has its own appearance, its own sense of humor, and its own atmosphere.</p>
-          <p>At the core of MUBA’s visual identity is a cute, absurd, and instantly recognizable character. Its large and expressive eyes, short dense fur, pink tongue, black MUBA cap, and black hoodie marked with $MUBA form the foundation of its recognizable appearance.</p>
-          <p>But MUBA is not defined only by its appearance.</p>
-          <p>MUBA is also an attitude.</p>
-          <p>Sometimes MUBA does not explain anything.</p>
-          <p>Sometimes MUBA knocks on a door.</p>
-          <p>Sometimes MUBA appears on the timeline.</p>
-          <p>Sometimes MUBA stands beside the community.</p>
-          <p>And sometimes MUBA simply does something completely absurd.</p>
-          <p>At the heart of this character is an identity that does not try to take itself too seriously while remaining completely clear about what it is.</p>
-          <p>MUBA is MUBA.</p>
+
+        <div class="tweet-lab card" id="twt">
+          <div class="section-head" style="margin-bottom:18px">
+            <div class="eyebrow">MUBA TWT</div>
+            <h3 class="section-title" style="font-size:clamp(1.8rem,4vw,2.8rem)">Give it a <span>voice.</span></h3>
+            <p class="section-copy">Choose a MUBA tone, move between ready-to-share posts, copy the text or open it directly on X.</p>
+          </div>
+          <div class="tweet-tabs" id="tweet-tabs" aria-label="MUBA TWT categories"></div>
+          <div class="tweet-card">
+            <div class="tweet-text" id="tweet-text"></div>
+            <div>
+              <div class="tweet-tools">
+                <button class="icon-btn" type="button" id="tweet-prev" aria-label="Previous MUBA TWT">←</button>
+                <button class="icon-btn" type="button" id="tweet-next" aria-label="Next MUBA TWT">→</button>
+                <span class="pager-count" id="tweet-count"></span>
+              </div>
+              <div class="tweet-tools">
+                <button class="btn btn-secondary" type="button" id="copy-tweet">Copy TWT</button>
+                <button class="btn btn-soft" type="button" id="copy-tags">Copy tags</button>
+                <a class="btn btn-primary" id="share-x" href="#" target="_blank" rel="noopener">Share on X</a>
+              </div>
+              <div class="tags-box" id="share-tags">$MUBA #MUBA 🪶</div>
+              <div class="status-text" id="tweet-status" aria-live="polite"></div>
+            </div>
+          </div>
         </div>
-      </details>
-      <details>
-        <summary>WHAT IS MUBA’S PURPOSE?</summary>
-        <div class="muba-content">
-          <p>MUBA is not built around a single technical product or one short-term objective.</p>
-          <p>Its main purpose is to create a lasting culture and community atmosphere around MUBA.</p>
-          <p>People in the MUBA community are not simply observers who “follow” a character.</p>
-          <p>People can:</p>
-          <p>Talk about MUBA.</p>
-          <p>Ask MUBA questions.</p>
-          <p>Share their ideas.</p>
-          <p>Create content.</p>
-          <p>Make memes.</p>
-          <p>Contribute to MUBA’s story.</p>
-          <p>That is why the community is not outside MUBA.</p>
-          <p>The community is part of MUBA’s story.</p>
-          <p>MUBA’s purpose is not simply to reach the highest possible visibility as quickly as possible. It is to strengthen its identity over time, be discovered by more people, and create an atmosphere where people can genuinely feel like they are part of the community.</p>
-          <p>And this distinction matters:</p>
-          <p>Not empty hype. Real interest.</p>
-          <p>Instead of simply shouting louder, MUBA aims to make people curious enough to discover it, research it, talk about it, and become part of the community.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">OFFICIAL MUBA</div>
+          <h2 class="section-title">Stay with <span>MUBA.</span></h2>
+          <p class="section-copy">Use MUBA's official public spaces to follow the story and join the community.</p>
         </div>
-      </details>
-      <details>
-        <summary>THE MUBA COMMUNITY</summary>
-        <div class="muba-content">
-          <p>One of the most important parts of MUBA is the community.</p>
-          <p>Because if MUBA were only a character, the entire story could remain limited to a single image.</p>
-          <p>But when the community enters the picture, a world begins to form around the character.</p>
-          <p>That world contains:</p>
-          <p>Humor.</p>
-          <p>Meme culture.</p>
-          <p>Community interaction.</p>
-          <p>Visuals.</p>
-          <p>Different characters and different elements of internet culture.</p>
-          <p>And most importantly, participation.</p>
-          <p>The purpose of the MUBA community is not simply for people to consume content. It is for people to contribute to the atmosphere being created around MUBA.</p>
-          <p>That is why MUBA’s community philosophy is closer to:</p>
-          <p>“You have a place here.”</p>
-          <p>rather than:</p>
-          <p>“Watch us.”</p>
+        <div class="official">
+          <a class="card" href="https://x.com/MUBA_RH" target="_blank" rel="noopener">
+            <strong>X / @MUBA_RH</strong>
+            <span>Follow MUBA on the timeline.</span>
+          </a>
+          <a class="card" href="https://t.me/MUBA_RH" target="_blank" rel="noopener">
+            <strong>Telegram / MUBA_RH</strong>
+            <span>Enter the MUBA community.</span>
+          </a>
         </div>
-      </details>
-      <details>
-        <summary>MUBA AND THE MEME WORLD</summary>
-        <div class="muba-content">
-          <p>MUBA does not separate itself from the meme world.</p>
-          <p>The meme world is MUBA’s natural home.</p>
-          <p>For that reason, MUBA is better understood as a character living inside internet culture rather than being presented like a serious financial brand.</p>
-          <p>That is exactly what the phrase:</p>
-          <p>“WE LIVE HERE NOW.”</p>
-          <p>represents.</p>
-          <p>MUBA does not need to go somewhere else.</p>
-          <p>MUBA is already here.</p>
-          <p>On the timeline.</p>
-          <p>Inside the community.</p>
-          <p>Inside meme culture.</p>
-          <p>And the story continues here.</p>
-        </div>
-      </details>
-      <details>
-        <summary>ROBINHOOD × FLAP × MUBA</summary>
-        <div class="muba-content">
-          <p>Robinhood and Flap are important connections within MUBA’s story.</p>
-          <p>The idea is that MUBA is stepping into a larger meme universe.</p>
-          <p>That is why the concept:</p>
-          <p>“Same Meme. Different Universe.”</p>
-          <p>has become part of MUBA’s language.</p>
-          <p>MUBA remains within the same meme culture while stepping into a different universe.</p>
-          <p>The Robinhood side is represented in MUBA’s visual and narrative world through the green feather symbol.</p>
-          <p>Flap adds another layer to MUBA’s story through the movement and effect of the butterfly.</p>
-          <p>This creates an important idea for MUBA:</p>
-          <p>A single wingbeat may look small. Its impact does not have to be.</p>
-          <p>That is the foundation of MUBA’s “butterfly effect” theme.</p>
-        </div>
-      </details>
-      <details>
-        <summary>WHAT IS MUBA’S GOAL?</summary>
-        <div class="muba-content">
-          <p>It would be too simple to define MUBA’s goal through a single number.</p>
-          <p>The first goal is to become a recognizable character.</p>
-          <p>Then to build a strong and active community.</p>
-          <p>Then to allow MUBA to develop its own culture.</p>
-          <p>And eventually, to become a character that people remember within internet culture.</p>
-          <p>One of the strongest lines for MUBA’s future is:</p>
-          <p>Maybe MUBA becomes a legend.</p>
-          <p>Maybe MUBA becomes a legend.</p>
-          <p>Maybe MUBA becomes one of the weirdest characters on the timeline.</p>
-          <p>Maybe people remember MUBA years later and laugh.</p>
-          <p>Maybe the community simply has a great time throughout the journey.</p>
-          <p>MUBA’s goal is to create a world where all of these possibilities can exist.</p>
-        </div>
-      </details>
-      <details>
-        <summary>WHY IS MUBA DIFFERENT?</summary>
-        <div class="muba-content">
-          <p>Because MUBA does not try to over-explain itself.</p>
-          <p>MUBA is not:</p>
-          <p>A technology company.</p>
-          <p>A complicated product narrative.</p>
-          <p>A project making endless promises.</p>
-          <p>MUBA’s strength comes from the character itself and the relationship it builds with the community.</p>
-          <p>That is why ideas such as:</p>
-          <p>No complicated plans.</p>
-          <p>No fake promises.</p>
-          <p>Memes. Chaos. Community.</p>
-          <p>fit naturally into MUBA’s identity.</p>
-          <p>Instead of trying to explain everything today, MUBA leaves room for some things to be discovered over time.</p>
-        </div>
-      </details>
-      <details>
-        <summary>THE MUBA PHILOSOPHY</summary>
-        <div class="muba-content">
-          <p>At its core, MUBA is built around a few simple ideas.</p>
-          <p>Be what you are.</p>
-          <p>MUBA does not try to become someone else.</p>
-          <p>Grow with the community.</p>
-          <p>MUBA is not shaped only by a team. The people around it also shape it.</p>
-          <p>Do not make unnecessary promises.</p>
-          <p>Instead of guaranteeing the future, it is more important to show what is being built today.</p>
-          <p>Create culture.</p>
-          <p>The real strength of a character does not come only from its visibility, but from the way people use it, share it, and make it part of their own culture.</p>
-          <p>Stay here.</p>
-          <p>One of MUBA’s strongest phrases is:</p>
-          <p>We Live Here Now.</p>
-          <p>That also becomes the essence of MUBA’s character.</p>
-        </div>
-      </details>
-      <details>
-        <summary>MUBA’S FUTURE</summary>
-        <div class="muba-content">
-          <p>MUBA’s future is not completely written in advance.</p>
-          <p>That is intentional.</p>
-          <p>One of MUBA’s most important characteristics is that the story develops together with the community.</p>
-          <p>Today, MUBA is a character.</p>
-          <p>Tomorrow, it may become a stronger community.</p>
-          <p>Then it may become the center of different content, new ideas, and new cultural elements.</p>
-          <p>Time will show where MUBA ultimately goes.</p>
-          <p>But one thing should remain unchanged.</p>
-          <p>MUBA stays MUBA.</p>
-        </div>
-      </details>
-      <details>
-        <summary>CONCLUSION</summary>
-        <div class="muba-content">
-          <p>If MUBA’s story had to be reduced to a single sentence:</p>
-          <p>MUBA is a character with its own identity that appeared within the chaos of the meme world and gradually became the center of a community building its own culture around it.</p>
-          <p>MUBA is not here to make huge promises.</p>
-          <p>MUBA is not here to force an explanation.</p>
-          <p>MUBA is not here to carry someone else’s identity.</p>
-          <p>MUBA is simply MUBA.</p>
-          <p>And as the community grows around it, the character’s story grows too.</p>
-          <p>Maybe it becomes a legend.</p>
-          <p>Maybe it becomes the weirdest character on the timeline.</p>
-          <p>Maybe it simply gives people great moments along the way.</p>
-          <p>But one thing remains clear:</p>
-          <p>WE LIVE HERE NOW. 🪶</p>
-        </div>
-      </details>
-    </div>
-  </section>
+      </div>
+    </section>
+  </main>
+
   <footer>
-    <span>$MUBA — community meme. Not financial advice.</span>
-    <span>Designed for @MUBA_RH</span>
+    <div class="shell footer-inner">
+      <span><strong>$MUBA</strong> — A character. A meme. A community.</span>
+      <span>WE LIVE HERE NOW. 🪶</span>
+    </div>
   </footer>
 
   <script>
-    function copyCA() {
-      const value = document.getElementById('ca-address').textContent.trim();
-      if (!value) return;
-      navigator.clipboard.writeText(value);
+    const devLog = {
+      new: [
+        {
+          date: "SEP 2026",
+          title: "MUBA Studio moved closer to the community",
+          text: "MUBA Studio now sits inside the wider MUBA experience: create a visual in Telegram, choose a MUBA voice on the web, copy it and share it."
+        },
+        {
+          date: "SEP 2026",
+          title: "MUBA Assistant became a deeper MUBA space",
+          text: "Story Mode, Community Guide, current-topic context, Daily and CREATE → SHARE flows expanded the private Assistant beyond simple question-and-answer."
+        },
+        {
+          date: "SEP 2026",
+          title: "Guardian gained browsable violation history",
+          text: "Real community violations can be recorded and reviewed by category while ordinary successful DEV controls stay quiet."
+        }
+      ],
+      updates: [
+        {
+          date: "SEP 2026",
+          title: "Guardian START / STOP behavior synchronized",
+          text: "PAUSED now means runtime protection is actually paused, and START brings protection back. DEV controls remain available while Guardian is paused."
+        },
+        {
+          date: "SEP 2026",
+          title: "MUBA knowledge became more current",
+          text: "Origin, identity, difference, purpose, community and future context were expanded so MUBA can describe what exists today without pretending the story was written in advance."
+        },
+        {
+          date: "SEP 2026",
+          title: "The website became a living MUBA hub",
+          text: "The old fixed information page evolved into a development log, expandable knowledge hub, Studio gateway and MUBA TWT sharing desk."
+        }
+      ],
+      refined: [
+        {
+          date: "SEP 2026",
+          title: "Guardian reports became quieter and more useful",
+          text: "Successful DEV management actions no longer create unnecessary private report noise. Reports focus on actual security events and user violations."
+        },
+        {
+          date: "SEP 2026",
+          title: "Five-language Assistant consistency improved",
+          text: "MUBA Assistant keeps English, Turkish, Chinese, Arabic and Hindi interaction separated so the response follows the user's selected or detected language."
+        },
+        {
+          date: "SEP 2026",
+          title: "CREATE → SHARE became a clearer loop",
+          text: "MUBA content creation is now connected to ready-to-share MUBA writing, copy actions and community participation instead of ending at the generated image."
+        }
+      ]
+    };
+
+    const devLabels = { new: "NEW", updates: "UPDATES", refined: "REFINED" };
+    let devCategory = "new";
+    let devIndex = 0;
+
+    function renderDevTabs() {
+      const root = document.getElementById("dev-tabs");
+      root.innerHTML = Object.keys(devLog).map(key =>
+        '<button class="chip ' + (key === devCategory ? 'active' : '') + '" type="button" data-dev="' + key + '">' + devLabels[key] + '</button>'
+      ).join("");
+      root.querySelectorAll("[data-dev]").forEach(button => {
+        button.addEventListener("click", () => {
+          devCategory = button.dataset.dev;
+          devIndex = 0;
+          renderDevTabs();
+          renderDevEntry();
+        });
+      });
     }
 
-    function updateCACopyButton() {
-      const value = document.getElementById('ca-address').textContent.trim();
-      document.getElementById('copy-ca-btn').disabled = !value;
+    function renderDevEntry() {
+      const entries = devLog[devCategory];
+      devIndex = Math.max(0, Math.min(devIndex, entries.length - 1));
+      const item = entries[devIndex];
+      document.getElementById("dev-entry").innerHTML =
+        '<div class="dev-meta">' + devLabels[devCategory] + ' · ' + item.date + '</div>' +
+        '<h3>' + item.title + '</h3>' +
+        '<p>' + item.text + '</p>';
+      document.getElementById("dev-count").textContent = (devIndex + 1) + " / " + entries.length;
+      document.getElementById("dev-prev").disabled = devIndex === 0;
+      document.getElementById("dev-next").disabled = devIndex === entries.length - 1;
     }
 
-    updateCACopyButton();
+    const knowledge = [
+      {
+        key: "muba",
+        label: "MUBA",
+        title: "What is MUBA?",
+        intro: "The shortest answer is still the strongest one: MUBA is MUBA.",
+        items: [
+          ["The simple answer", "MUBA is an original character that emerged inside the natural chaos of meme culture. Around that character, people began sharing, reacting, creating and forming a community. The essence remains simple: a character, a meme, a community."],
+          ["What MUBA is not", "MUBA did not begin with a grand technological promise, a complicated product narrative or a long list of missions. It does not need to pretend to be bigger or more serious than it is."],
+          ["Why the definition stays simple", "The identity works because it does not need borrowed mythology. “I'M MUBA.” is not a missing explanation; it is the center of the explanation."]
+        ]
+      },
+      {
+        key: "origin",
+        label: "ORIGIN",
+        title: "How did MUBA emerge?",
+        intro: "Character first. Culture after. No prewritten legend required.",
+        items: [
+          ["The beginning", "First there was the character. People saw it, shared it, commented on it and began creating around it. Interaction slowly turned an image into something people could recognize and participate in."],
+          ["The natural sequence", "Character → content → interaction → community → culture. That sequence is closer to the way internet culture actually grows than a story invented in advance."],
+          ["A living origin", "MUBA's origin is not used to manufacture a legend after the fact. What happened is documented; what has not happened is not presented as history."]
+        ]
+      },
+      {
+        key: "identity",
+        label: "IDENTITY",
+        title: "MUBA identity",
+        intro: "A recognizable face, a recognizable attitude and a very simple name.",
+        items: [
+          ["Visual identity", "MUBA's established face uses wide expressive eyes, short dense fur, a playful pink tongue, a black MUBA cap and a black hoodie marked with $MUBA. The original identity is preserved instead of being replaced by another meme mascot."],
+          ["Character attitude", "MUBA can be cute, absurd, calm, strange or unexpectedly serious for one second. The tone does not need to become corporate to be consistent."],
+          ["Core language", "I'M MUBA. WE LIVE HERE NOW. MUBA is MUBA. These phrases are not decoration; they are recurring identity anchors."]
+        ]
+      },
+      {
+        key: "difference",
+        label: "DIFFERENCE",
+        title: "Why is MUBA different?",
+        intro: "Not because MUBA claims to be everything. Because MUBA stays itself.",
+        items: [
+          ["Original character", "MUBA does not represent someone else's dog, cat or reworked mascot. The character has its own face, appearance and atmosphere."],
+          ["No inflated identity", "MUBA does not need to call itself a revolution, promise impossible technology or invent secret importance. The community can see what actually exists."],
+          ["Consistency over noise", "Recognition grows through repeated identity, content, participation and culture—not by changing the character every time the timeline changes."]
+        ]
+      },
+      {
+        key: "purpose",
+        label: "PURPOSE",
+        title: "What is MUBA trying to build?",
+        intro: "A place where the character, community and tools reinforce one another.",
+        items: [
+          ["The main purpose", "MUBA aims to build a lasting culture and community atmosphere around an original character rather than chase one temporary moment."],
+          ["From audience to participant", "People can ask, create, remix, share, make memes and contribute to the atmosphere around MUBA. The community is part of the story rather than an audience outside it."],
+          ["What changed over time", "MUBA now has spaces that help people learn, create and participate directly. The purpose is still cultural; the tools make that participation easier."]
+        ]
+      },
+      {
+        key: "community",
+        label: "COMMUNITY",
+        title: "The MUBA community",
+        intro: "The world around MUBA exists because people can take part in it.",
+        items: [
+          ["Community philosophy", "The community idea is closer to “You have a place here” than “Watch us.” Participation matters more than passive consumption."],
+          ["What people can do", "Talk about MUBA, ask questions, create visuals, write posts, make memes, share ideas and help shape how the character lives on the timeline."],
+          ["Community and identity", "Participation can expand MUBA's culture without replacing MUBA's core identity. Community creativity and character consistency can exist together."]
+        ]
+      },
+      {
+        key: "culture",
+        label: "CULTURE",
+        title: "MUBA and meme culture",
+        intro: "Meme culture is not a side theme. It is MUBA's natural environment.",
+        items: [
+          ["Where MUBA lives", "MUBA belongs on timelines, in community conversations, in visuals, in jokes and in the strange rhythm of internet culture."],
+          ["Why humor matters", "Humor keeps MUBA human-sized. The character does not need to act like a corporate brand to be memorable."],
+          ["WE LIVE HERE NOW", "The phrase captures the idea that MUBA does not need to escape the meme world to become meaningful. MUBA can build culture exactly where it already lives."]
+        ]
+      },
+      {
+        key: "story",
+        label: "STORY",
+        title: "The living MUBA story",
+        intro: "The story records what happens. It does not dictate what must happen.",
+        items: [
+          ["Not a rigid roadmap", "MUBA's story is not a sequence of future promises disguised as history. It grows through real community activity, content and development."],
+          ["Story Mode", "MUBA Assistant includes a paged Story Mode that helps people move through the journey without turning the project into a fictional corporate timeline."],
+          ["The rule", "MUBA's story is not being written. It is being lived. New chapters should be added because something happened, not because something was promised."]
+        ]
+      },
+      {
+        key: "assistant",
+        label: "ASSISTANT",
+        title: "MUBA Assistant",
+        intro: "A private place to explore MUBA through natural conversation.",
+        items: [
+          ["What it is", "MUBA Assistant is the private conversational side of the MUBA experience. It answers MUBA questions, explains culture and helps people navigate the project without turning the main group into a help desk."],
+          ["Five languages", "The Assistant supports English, Turkish, Chinese, Arabic and Hindi. The answer follows the user's selected or detected language instead of mixing language layers."],
+          ["What it knows not to invent", "The Assistant does not invent team identities, listings, partnerships, secret plans, contract addresses, roadmap dates or price predictions. Unknown information stays unknown."],
+          ["More than Q&A", "Story Mode, MUBA Daily, Community Guide, Security Check, topic context, Studio and CREATE → SHARE make the Assistant an interactive MUBA space rather than a static FAQ."]
+        ]
+      },
+      {
+        key: "guardian",
+        label: "GUARDIAN",
+        title: "MUBA Guardian",
+        intro: "The security and management layer of the MUBA main group.",
+        items: [
+          ["Why Guardian exists", "A public community needs a clear separation between normal conversation and security authority. Guardian handles that protected layer."],
+          ["DEV authority", "Guardian management is restricted to the verified MUBA DEV authority. Ordinary users cannot take control by typing management commands."],
+          ["START / STOP", "Guardian can be deliberately paused and resumed by DEV. When paused, runtime protection pauses while DEV controls remain available so the system can be brought back safely."],
+          ["Violation history", "Real security events can be recorded and reviewed by category. Successful normal DEV management actions stay quiet so reports remain useful."]
+        ]
+      },
+      {
+        key: "daily",
+        label: "MUBA DAILY",
+        title: "MUBA Daily",
+        intro: "A quick way to see what changed around MUBA.",
+        items: [
+          ["Daily view", "MUBA Daily organizes current MUBA activity into focused areas instead of forcing users to search through unrelated conversation."],
+          ["Development Log", "The development log separates NEW, UPDATES and REFINED items and keeps previous entries browsable so progress does not disappear after one announcement."],
+          ["Why it matters", "MUBA can show what exists today instead of relying on old descriptions that no longer reflect the project."]
+        ]
+      },
+      {
+        key: "studio",
+        label: "STUDIO",
+        title: "MUBA Studio",
+        intro: "The creation side of MUBA.",
+        items: [
+          ["What Studio does", "MUBA Studio lets the community turn ideas into MUBA content such as memes, images, stickers and reactions."],
+          ["Why Studio lives in Telegram", "The creator uses the existing Telegram-authenticated Studio flow so user validation and generation controls stay protected rather than exposing private credentials on a public page."],
+          ["Website + Studio", "The website becomes the Studio gateway and sharing desk: prepare an idea here, create it in Telegram, then return to MUBA TWT for a matching voice and sharing flow."]
+        ]
+      },
+      {
+        key: "share",
+        label: "CREATE → SHARE",
+        title: "CREATE → SHARE",
+        intro: "A MUBA visual should not have to end as a file sitting on one device.",
+        items: [
+          ["Create", "Start with a MUBA idea and build the visual in MUBA Studio."],
+          ["Give it a voice", "Use MUBA TWT to choose an iconic, community, story, chaos or culture tone that fits the visual."],
+          ["Share", "Copy the post, copy the MUBA tags or open the text directly on X. Creation becomes participation."]
+        ]
+      },
+      {
+        key: "security",
+        label: "SECURITY",
+        title: "MUBA security",
+        intro: "Simple rule: official information should stay official.",
+        items: [
+          ["Official-source discipline", "MUBA security separates verified project information from random messages, fake links and unverified contract-address claims."],
+          ["No invented CA", "If an official MUBA contract address has not been configured and announced through official sources, MUBA systems do not fabricate one."],
+          ["Community protection", "Guardian can react to fake-CA patterns, suspicious links, phishing-style behavior, flooding and unauthorized control attempts according to its security rules."]
+        ]
+      },
+      {
+        key: "website",
+        label: "WEBSITE",
+        title: "The MUBA website",
+        intro: "The website is becoming the public map of MUBA rather than a frozen description.",
+        items: [
+          ["Living knowledge", "WHAT IS MUBA is now topic-based and expandable. It can grow when MUBA gains a real new capability without being trapped inside a fixed number of questions."],
+          ["Development visibility", "The public Development Log makes meaningful MUBA changes visible without exposing private credentials or internal security secrets."],
+          ["Participation", "MUBA Studio and MUBA TWT connect reading with creating and sharing, giving the website a role beyond presentation."]
+        ]
+      },
+      {
+        key: "today",
+        label: "TODAY",
+        title: "What exists today?",
+        intro: "MUBA is still a character, meme and community—now with more ways to experience each part.",
+        items: [
+          ["Public identity", "MUBA has its website, X presence and Telegram community built around one consistent character identity."],
+          ["Interactive MUBA", "The private Assistant provides five-language knowledge, Story Mode, Daily, guides, security context and Studio access."],
+          ["Community protection", "Guardian manages the protected security layer of the main group while normal MUBA conversation remains separate."],
+          ["Creation", "MUBA Studio and CREATE → SHARE turn community ideas into content and give that content a path back to the timeline."]
+        ]
+      },
+      {
+        key: "philosophy",
+        label: "PHILOSOPHY",
+        title: "The MUBA philosophy",
+        intro: "Be what you are. Build what is real. Leave room for culture to grow.",
+        items: [
+          ["Be MUBA", "MUBA does not need to become another character to be recognizable."],
+          ["Build visibly", "It is more useful to show what exists today than to make unnecessary promises about tomorrow."],
+          ["Let people participate", "Culture becomes stronger when people can use, share and reinterpret a character while its identity remains recognizable."],
+          ["Stay here", "WE LIVE HERE NOW is both a line and a philosophy: build inside the culture that gave MUBA life."]
+        ]
+      },
+      {
+        key: "future",
+        label: "FUTURE",
+        title: "MUBA's future",
+        intro: "Open enough to grow. Grounded enough not to invent tomorrow.",
+        items: [
+          ["No fake certainty", "MUBA does not need a fictional roadmap to appear active. Future development should be announced when it is real and ready to be shown."],
+          ["What can grow", "Community participation, original content, Assistant experiences, Studio, website tools and MUBA's cultural presence can continue to deepen over time."],
+          ["What should not change", "Whatever new tools appear, the center should remain recognizable: MUBA stays MUBA."]
+        ]
+      }
+    ];
+
+    let activeTopic = "muba";
+
+    function renderTopicTabs() {
+      const root = document.getElementById("topic-tabs");
+      root.innerHTML = knowledge.map(topic =>
+        '<button class="chip ' + (topic.key === activeTopic ? 'active' : '') + '" type="button" data-topic="' + topic.key + '">' + topic.label + '</button>'
+      ).join("");
+      root.querySelectorAll("[data-topic]").forEach(button => {
+        button.addEventListener("click", () => {
+          activeTopic = button.dataset.topic;
+          renderTopicTabs();
+          renderTopicPanel();
+        });
+      });
+    }
+
+    function renderTopicPanel() {
+      const topic = knowledge.find(item => item.key === activeTopic) || knowledge[0];
+      const accordion = topic.items.map(item =>
+        '<details><summary>' + item[0] + '</summary><div class="accordion-body"><p>' + item[1] + '</p></div></details>'
+      ).join("");
+      document.getElementById("topic-panel").innerHTML =
+        '<div class="topic-header"><h3>' + topic.title + '</h3><p>' + topic.intro + '</p></div>' +
+        '<div class="accordion">' + accordion + '</div>';
+    }
+
+    const tweets = {
+      iconic: [
+        "MUBA didn't arrive with a ten-page explanation.\n\nMUBA arrived.\nPeople looked.\nPeople stayed.\n\nWE LIVE HERE NOW.",
+        "Some characters need a lore thread.\n\nMUBA needs two words:\n\nI'M MUBA.",
+        "The timeline asked for an explanation.\n\nMUBA showed up instead.\n\nWE LIVE HERE NOW.",
+        "No borrowed face.\nNo borrowed story.\nNo borrowed identity.\n\nMUBA is MUBA."
+      ],
+      community: [
+        "A meme becomes different when people stop only watching it and start building around it.\n\nThat part belongs to the community.",
+        "MUBA has a face.\nThe community gives that face a world to live in.\n\nThat's where the story gets interesting.",
+        "You don't have to stand outside the MUBA story.\n\nMake something. Share something. Add a little chaos.",
+        "The best part of MUBA was never supposed to be one post.\n\nIt's what people keep creating after it."
+      ],
+      story: [
+        "MUBA's story isn't waiting inside a roadmap PDF.\n\nIt happens when something actually happens.\n\nThen we keep the chapter.",
+        "Character first.\nContent next.\nCommunity after.\nCulture somewhere in the chaos.\n\nMUBA kept moving.",
+        "Some stories are written before anyone arrives.\n\nMUBA's is being lived while everyone is already here.",
+        "No need to invent yesterday to make tomorrow look bigger.\n\nMUBA keeps the real chapters."
+      ],
+      chaos: [
+        "The meme world was already chaotic.\n\nMUBA looked around and apparently decided this was home.",
+        "Timeline: please behave normally.\n\nMUBA: absolutely not.",
+        "Somewhere between memes, chaos and one very long timeline, MUBA found a place to live.",
+        "MUBA did not fix the chaos.\n\nMUBA moved in."
+      ],
+      culture: [
+        "A character becomes culture when people know the face before they need the explanation.\n\nMUBA is working on the rest.",
+        "Memes disappear fast.\nCharacters last longer when people give them language, habits, jokes and a place to return to.",
+        "MUBA isn't trying to escape meme culture and become something else.\n\nThis is the place.",
+        "Create it. Remix it. Share it.\n\nCulture doesn't grow by standing still."
+      ],
+      create: [
+        "Made something with MUBA Studio.\n\nNow it has to survive the timeline.",
+        "One MUBA idea in.\nOne new piece of chaos out.\n\nCREATE → SHARE.",
+        "The community doesn't need to wait for the next MUBA post.\n\nMake the next one.",
+        "A blank prompt is just a MUBA meme that hasn't happened yet."
+      ]
+    };
+
+    const tweetLabels = {
+      iconic: "ICONIC",
+      community: "COMMUNITY",
+      story: "STORY",
+      chaos: "CHAOS",
+      culture: "CULTURE",
+      create: "CREATE"
+    };
+    const shareTags = "$MUBA #MUBA 🪶";
+    let tweetCategory = "iconic";
+    let tweetIndex = 0;
+
+    function renderTweetTabs() {
+      const root = document.getElementById("tweet-tabs");
+      root.innerHTML = Object.keys(tweets).map(key =>
+        '<button class="chip ' + (key === tweetCategory ? 'active' : '') + '" type="button" data-tweet="' + key + '">' + tweetLabels[key] + '</button>'
+      ).join("");
+      root.querySelectorAll("[data-tweet]").forEach(button => {
+        button.addEventListener("click", () => {
+          tweetCategory = button.dataset.tweet;
+          tweetIndex = 0;
+          renderTweetTabs();
+          renderTweet();
+        });
+      });
+    }
+
+    function currentTweetWithTags() {
+      return tweets[tweetCategory][tweetIndex] + "\n\n" + shareTags;
+    }
+
+    function renderTweet() {
+      const list = tweets[tweetCategory];
+      tweetIndex = (tweetIndex + list.length) % list.length;
+      document.getElementById("tweet-text").textContent = list[tweetIndex];
+      document.getElementById("tweet-count").textContent = (tweetIndex + 1) + " / " + list.length;
+      document.getElementById("share-x").href = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(currentTweetWithTags());
+      document.getElementById("tweet-status").textContent = "";
+    }
+
+    async function copyText(value, statusId, successText) {
+      try {
+        await navigator.clipboard.writeText(value);
+        document.getElementById(statusId).textContent = successText;
+      } catch (error) {
+        window.prompt("Copy this text:", value);
+      }
+    }
+
+    document.getElementById("dev-prev").addEventListener("click", () => { devIndex -= 1; renderDevEntry(); });
+    document.getElementById("dev-next").addEventListener("click", () => { devIndex += 1; renderDevEntry(); });
+
+    document.getElementById("tweet-prev").addEventListener("click", () => { tweetIndex -= 1; renderTweet(); });
+    document.getElementById("tweet-next").addEventListener("click", () => { tweetIndex += 1; renderTweet(); });
+    document.getElementById("copy-tweet").addEventListener("click", () => copyText(currentTweetWithTags(), "tweet-status", "MUBA TWT copied."));
+    document.getElementById("copy-tags").addEventListener("click", () => copyText(shareTags, "tweet-status", "MUBA tags copied."));
+
+    let creatorKind = "Meme";
+    document.querySelectorAll(".creator-type").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".creator-type").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        creatorKind = button.dataset.kind;
+      });
+    });
+
+    document.getElementById("copy-concept").addEventListener("click", () => {
+      const prompt = document.getElementById("studio-prompt").value.trim();
+      if (!prompt) {
+        document.getElementById("concept-status").textContent = "Write a MUBA idea first.";
+        return;
+      }
+      copyText(creatorKind + ": " + prompt, "concept-status", "MUBA Studio concept copied.");
+    });
+
+    const menuButton = document.getElementById("menu-btn");
+    const nav = document.getElementById("site-nav");
+    menuButton.addEventListener("click", () => {
+      const open = nav.classList.toggle("open");
+      menuButton.setAttribute("aria-expanded", String(open));
+    });
+    nav.querySelectorAll("a").forEach(link => link.addEventListener("click", () => {
+      nav.classList.remove("open");
+      menuButton.setAttribute("aria-expanded", "false");
+    }));
+
+    renderDevTabs();
+    renderDevEntry();
+    renderTopicTabs();
+    renderTopicPanel();
+    renderTweetTabs();
+    renderTweet();
   </script>
 </body>
 </html>
