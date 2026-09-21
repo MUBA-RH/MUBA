@@ -42,6 +42,11 @@ DAILY={
 
 def daily_text(lang, section):
     lang=lang if lang in DAILY else "en"
+    if section=="updates":
+        from muba_history import entries as _history_entries
+        rows=_history_entries(lang)[:3]
+        if rows:
+            return "\n\n".join(f'{item["date"]} — {item["text"]}' for item in rows)
     return DAILY[lang].get(section, DAILY[lang]["updates"])
 
 
