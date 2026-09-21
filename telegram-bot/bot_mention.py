@@ -259,6 +259,12 @@ def _update_badge(lang,user_id,area):
 def _any_unseen_updates(user_id):
     return any(has_unseen_update(area,get_assistant_update_seen(user_id,area)) for area in ("gallery","studio","web","telegram","daily","assistant","guardian"))
 
+def _combined_update_badge(lang,user_id,areas):
+    for area in areas:
+        badge=_update_badge(lang,user_id,area)
+        if badge: return badge
+    return ""
+
 def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     labels=TOPIC_LABELS[lang]
@@ -267,7 +273,7 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
     for topic in ("origin","identity","difference","purpose","community","plan"):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
-    rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_update_badge(lang,user_id,"daily"),callback_data="daily")])
+    rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
