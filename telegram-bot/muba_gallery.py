@@ -34,6 +34,9 @@ def _storage_root():
     memory_file=os.getenv("MUBA_MEMORY_FILE","").strip()
     if memory_file:
         return Path(memory_file).expanduser().resolve().parent/"muba-gallery", True
+    render_disk=Path("/var/data")
+    if render_disk.exists() and os.path.ismount(render_disk):
+        return render_disk/"muba-gallery", True
     return Path(tempfile.gettempdir())/"muba-gallery", False
 
 def storage_status():
