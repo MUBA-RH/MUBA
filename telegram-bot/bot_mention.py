@@ -372,8 +372,11 @@ def updates_area_text(lang,user_id,area,index):
         return AREA_LABELS[lang].get(area,area),0,0
     index=max(0,min(index,len(rows)-1))
     item=rows[index]
-    # Seen state is advanced only by the central update center. Unit-local
-    # history is informational and never changes global read-state.
+    # Opening a unit's newest update means that unit has been read. This clears
+    # only that unit's badge; older-history browsing cannot move seen state back.
+    latest=latest_update_id(area)
+    if latest and item.get("id")==latest:
+        mark_assistant_update_seen(user_id,area,latest)
     kind_label=UPDATE_LABELS[lang].get(item["type"],item["type"].upper())
     body=(
         f'{AREA_LABELS[lang].get(area,area)}\n\n'
