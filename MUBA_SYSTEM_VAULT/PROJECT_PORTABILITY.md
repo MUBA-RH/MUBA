@@ -1,9 +1,29 @@
-# Project Portability / Clone and Rebrand
+# Authorized Project Portability / Clone and Rebrand
 
-This architecture may seed another isolated project, for example XXX, without renaming or damaging MUBA production.
+This architecture may seed another isolated project, for example XXX, **only after explicit authorization** and without renaming or damaging MUBA production.
 
-## Required choice
-DEV must explicitly choose CREATE A NEW PROJECT FROM THIS ARCHITECTURE.
+## Permission gate — mandatory
+DEV must explicitly choose CREATE A NEW PROJECT FROM THIS ARCHITECTURE **and** provide prior written authorization for that reuse.
+
+Before requesting any new-project IDs, tokens, credentials, repository destinations or deployment configuration, verify the authorization:
+
+```bash
+python scripts/muba_permission_gate.py verify --permission MUBA_PERMISSION.json
+```
+
+The permission file must match an active SHA-256 approval fingerprint in the official `muba_authorizations.json` registry.
+
+If the command exits non-zero:
+- stop immediately;
+- do not create a repository;
+- do not configure a bot, domain, provider or deployment;
+- do not adapt/rebrand the MUBA implementation;
+- do not request secret configuration;
+- explain that prior written authorization from the MUBA Developer is required.
+
+A public Vault ZIP, fork, clone or visible source tree is not authorization.
+
+After a successful check, continue only within the project, grantee, scope and time limits of that approved permission grant.
 
 ## New project inputs
 Request and verify, as applicable:

@@ -35,7 +35,18 @@ Preserve:
 Treat Android V3 as an isolated client project. Never solve Android translation by modifying production Guardian/Assistant unless DEV explicitly requests a separate integration and safety review.
 
 ## Vault maintenance
-Vault remains on its dedicated branch and is updated after meaningful stable system milestones. It is documentation/recovery/source snapshot, not a deployment target.
+Vault remains on its dedicated branch and is refreshed automatically after green `main` updates by MUBA Vault Auto Sync. It is documentation/recovery/source snapshot, not a deployment target.
+
+## New-project authorization
+If the requested path is CREATE A NEW PROJECT FROM THIS ARCHITECTURE, do not begin setup from a public Vault copy alone.
+
+Require `MUBA_PERMISSION.json` and run:
+
+```bash
+python scripts/muba_permission_gate.py verify --permission MUBA_PERMISSION.json
+```
+
+A failed or missing authorization is a hard stop. Do not collect secrets, create infrastructure or adapt MUBA for the new project until the gate succeeds.
 
 ## Secret handling
 Never write secrets into:
