@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260921-vault-auto-sync",
+      "date": "2026-09-21",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "daily"
+      ],
+      "title": {
+        "en": "MUBA Vault continuity became automatic",
+        "tr": "MUBA Vault sürekliliği otomatik hale geldi",
+        "zh": "MUBA Vault 连续性实现自动化",
+        "ar": "أصبحت استمرارية MUBA Vault تلقائية",
+        "hi": "MUBA Vault continuity automatic हुई"
+      },
+      "text": {
+        "en": "After every main update, a dedicated workflow now validates Telegram regressions, the public website and canonical History before synchronizing the passive Vault and creating a new ZIP plus SHA256 export.",
+        "tr": "Her main güncellemesinden sonra özel workflow önce Telegram regression testlerini, web sitesini ve canonical History'yi doğruluyor; ardından pasif Vault'ı otomatik güncelliyor ve yeni ZIP + SHA256 export'u üretiyor.",
+        "zh": "每次 main 更新后，专用 workflow 会先验证 Telegram 回归测试、公开网站和 canonical History，再同步被动 Vault，并生成新的 ZIP 与 SHA256 导出。",
+        "ar": "بعد كل تحديث لـ main يتحقق workflow مخصص أولاً من اختبارات Telegram والموقع العام وCanonical History، ثم يزامن Vault السلبي وينشئ ZIP وSHA256 جديدين.",
+        "hi": "हर main update के बाद dedicated workflow पहले Telegram regressions, public website और canonical History validate करता है; फिर passive Vault sync करके नया ZIP + SHA256 export बनाता है।"
+      }
+    },
+    {
       "id": "20260921-continuity",
       "date": "2026-09-21",
       "type": "improved",
