@@ -4,14 +4,14 @@
   "repository": "MUBA-RH/MUBA",
   "snapshot_date": "2026-09-21",
   "stable_main": {
-    "sha": "cbdd3ddab1bce4d6deebebb2c77f4f9a7ed4cd33",
+    "sha": "cfcd8f8a2285ba8daa53b5201aa13289c6ee60d1",
     "branch": "main"
   },
   "vault": {
     "runtime_dependency": false,
     "production_branch": false,
     "intended_base_branch": "vault/system-vault-final",
-    "refresh_branch": "vault/system-vault-refresh-continuity-20260921"
+    "refresh_branch": "automatic-main-sync"
   },
   "operator_interface": {
     "default_dev_language": "tr",
@@ -65,7 +65,8 @@
   "protocol": {
     "dev_command": "BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒",
     "v2_requires_explicit_dev_choice": true,
-    "user_facing_change_requires_history_entry": true
+    "user_facing_change_requires_history_entry": true,
+    "auto_vault_sync_after_green_main": true
   },
   "credentials_in_vault": false,
   "entry_paths": [
@@ -79,6 +80,17 @@
     "Secrets and provider ownership are intentionally external.",
     "Runtime state automatically uses configured persistent storage when available; live persistence must still be verified through deployment state.",
     "muba_history.json is the canonical append-only user-facing development timeline.",
-    "GitHub branch protection administration is external to this Vault and must be verified separately."
-  ]
+    "GitHub branch protection administration is external to this Vault and must be verified separately.",
+    "Vault source and export automatically refresh only after the auto-sync workflow passes runtime, web and history validation."
+  ],
+  "automation": {
+    "enabled": true,
+    "mode": "green-main-auto-sync",
+    "source_workflow": "MUBA Vault Auto Sync",
+    "last_synced_main_sha": "cfcd8f8a2285ba8daa53b5201aa13289c6ee60d1",
+    "last_synced_at": "2026-09-21T16:17:47.418782Z",
+    "source_run_id": "35624648886",
+    "production_writeback": false,
+    "v2_auto_activation": false
+  }
 }

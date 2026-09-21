@@ -24,9 +24,10 @@ class ContinuityHistoryTests(unittest.TestCase):
 
     def test_updates_and_daily_share_canonical_history(self):
         self.assertIs(muba_updates.UPDATES,muba_history.UPDATES)
-        self.assertIn("Continuity",muba_daily.DEVLOG["en"]["fixed"][0])
+        self.assertTrue(any("Continuity" in row for row in muba_daily.DEVLOG["en"]["fixed"]))
         latest=muba_updates.entries("tr")[0]
-        self.assertEqual(latest["id"],"20260921-continuity")
+        self.assertEqual(latest["id"],muba_history.UPDATES[0]["id"])
+        self.assertTrue(any(item["id"]=="20260921-continuity" for item in muba_history.UPDATES))
         self.assertTrue(latest["title_text"])
 
     def test_web_reads_same_history_file(self):

@@ -41,7 +41,7 @@ Production baseline is `main`.
 
 Development follows:
 
-**BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒**
+**START 🔥 MERGE 🟢 PROTECT SYSTEM 🛡️ STABLE 🔒**
 
 Meaning: isolate the requested work, preserve the current stable system, test, merge only when green, validate after merge and retain rollback/recovery capability.
 
@@ -75,6 +75,8 @@ Runtime state automatically prefers:
 ## Recovery / Vault
 
 MUBA System Vault is intentionally passive and isolated from production. It exists for source recovery, continuity, handover and optional future architecture work. Vault must never auto-replace current MUBA or auto-activate V2.
+
+After every `main` update, **MUBA Vault Auto Sync** independently runs the pinned Telegram regression suite, public website smoke check and canonical History validation. Only after those checks pass does it synchronize the passive `vault/system-vault-final` snapshot, update its stable-main metadata and create a new ZIP + SHA256 artifact. A failed validation leaves the previous Vault snapshot untouched.
 
 Secrets are not stored in the repository or Vault.
 
