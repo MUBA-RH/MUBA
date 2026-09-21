@@ -4,6 +4,7 @@ Transport code imports this module; all reasoning lives in muba_core and isolate
 """
 from __future__ import annotations
 import importlib, os
+from pathlib import Path
 from types import MappingProxyType
 from muba_core import Message, MubaCore, VERSION
 from muba_core.actions import create as _create_action, transition as _transition_action, verify as _verify_action
@@ -20,9 +21,26 @@ AUTHORIZED_GROUP_IDS={-1004485415245}
 MUBA_BOT_IDS={8661249663}
 PROTECTED_OFFICIAL_SOURCES=MappingProxyType({'official_x':'@MUBA_RH','official_website':'https://muba-rh.github.io/MUBA/'})
 
+def _persistent_state_path():
+ explicit=os.getenv('MUBA_MEMORY_FILE','').strip()
+ if explicit:
+  return Path(explicit).expanduser()
+ gallery_dir=os.getenv('MUBA_GALLERY_DIR','').strip()
+ if gallery_dir:
+  return Path(gallery_dir).expanduser().resolve().parent/'muba-state.json'
+ render_disk=Path('/var/data')
+ if render_disk.exists() and os.path.ismount(render_disk):
+  return render_disk/'muba-state.json'
+ return None
+
 def _repository():
- path=os.getenv('MUBA_MEMORY_FILE','').strip()
- return JSONRepository(path) if path else MemoryRepository()
+ path=_persistent_state_path()
+ return JSONRepository(str(path)) if path else MemoryRepository()
+
+def state_storage_status():
+ path=_persistent_state_path()
+ return {'persistent':bool(path),'backend':'json' if path else 'memory'}
+
 STORE=_repository(); CORE=MubaCore(STORE)
 
 def detect_language(text): return importlib.import_module('layers.13_language.layer').detect(text)
@@ -78,6 +96,12 @@ def set_assistant_language(user_id,language):
  STORE.set('assistant_language',str(user_id),language); return True
 def clear_assistant_language(user_id):
  STORE.set('assistant_language',str(user_id),None)
+
+def get_assistant_update_seen(user_id,area):
+ return STORE.get('assistant_update_seen',str(user_id)+':'+str(area),None)
+def mark_assistant_update_seen(user_id,area,update_id):
+ STORE.set('assistant_update_seen',str(user_id)+':'+str(area),update_id)
+ return True
 
 def get_guardian_report_language():
  return STORE.get('guardian_report_settings','language',None)

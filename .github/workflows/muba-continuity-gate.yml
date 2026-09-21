@@ -1,0 +1,24 @@
+name: MUBA Continuity Gate
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'muba_history.json'
+      - 'telegram-bot/**'
+      - 'android-v3/**'
+      - 'scripts/check_continuity.py'
+      - '.github/workflows/muba-continuity-gate.yml'
+jobs:
+  continuity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate append-only MUBA history
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python scripts/check_continuity.py
