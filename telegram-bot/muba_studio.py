@@ -59,7 +59,7 @@ def wants_visible_text(prompt:str)->bool:
     if any(marker in value for marker in _TEXT_REQUEST_MARKERS):
         return True
     # Quoted wording plus an explicit placement/request cue is also treated as text intent.
-    if re.search(r'["“”‘’\'][^"“”‘’\']{1,80}["“”‘’\']',value):
+    if re.search(r"[\\\"'“”‘’][^\\\"'“”‘’]{1,80}[\\\"'“”‘’]",value):
         cues=(" on image "," on the image "," on top "," at the bottom "," üstüne "," üzerine "," resme "," görsele ")
         return any(cue in value for cue in cues)
     return False
@@ -101,7 +101,7 @@ def render_meme(reference_bytes:bytes,prompt:str,kind:str="meme")->bytes:
     if wants_visible_text(prompt):
         try: font=ImageFont.truetype("DejaVuSans-Bold.ttf",max(26,size[0]//24))
         except OSError: font=ImageFont.load_default()
-        quoted=re.search(r'["“”‘’\\']([^"“”‘’\\']{1,80})["“”‘’\\']',prompt)
+        quoted=re.search(r"[\\\"'“”‘’]([^\\\"'“”‘’]{1,80})[\\\"'“”‘’]",prompt)
         caption=(quoted.group(1).strip() if quoted else prompt)[:90]
         words=caption.split(); lines=[]; cur=""
         maxchars=30 if size[0]>600 else 18
