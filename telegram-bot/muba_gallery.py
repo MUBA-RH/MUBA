@@ -79,19 +79,18 @@ def _r2_config():
     account=(os.getenv("MUBA_R2_ACCOUNT_ID") or os.getenv("CLOUDFLARE_ACCOUNT_ID") or "").strip()
     access=os.getenv("MUBA_R2_ACCESS_KEY_ID","").strip()
     secret=os.getenv("MUBA_R2_SECRET_ACCESS_KEY","").strip()
-    bucket=os.getenv("MUBA_R2_BUCKET","muba-gallery").strip()
-    values=(account,access,secret,bucket)
-    if any(values) and not all(values):
+    bucket=os.getenv("MUBA_R2_BUCKET","muba-gallery").strip() or "muba-gallery"
+    credentials=(account,access,secret)
+    if any(credentials) and not all(credentials):
         missing=[
             name for name,value in (
                 ("account id",account),
                 ("access key id",access),
                 ("secret access key",secret),
-                ("bucket",bucket),
             ) if not value
         ]
         raise GalleryStorageError("Incomplete R2 configuration: "+", ".join(missing))
-    if not all(values):
+    if not all(credentials):
         return None
     return {"account":account,"access":access,"secret":secret,"bucket":bucket}
 
