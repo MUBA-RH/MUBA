@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-central-updates",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA Updates became the single ecosystem change center",
+        "tr": "MUBA Yenilikleri tek ekosistem değişiklik merkezi oldu",
+        "zh": "MUBA Updates 成为统一的生态变更中心",
+        "ar": "أصبحت MUBA Updates مركز تغييرات النظام البيئي الموحد",
+        "hi": "MUBA Updates एकल ecosystem change center बना"
+      },
+      "text": {
+        "en": "All canonical ecosystem changes now flow through one MUBA Updates feed. Related units show badges while the full change detail stays in the same canonical history record, and MUBA Daily no longer duplicates the general update list.",
+        "tr": "Tüm canonical ekosistem değişiklikleri artık tek MUBA Yenilikleri akışında toplanıyor. İlgili birimler badge gösterirken değişikliğin tam detayı aynı canonical geçmiş kaydında kalıyor; MUBA Daily artık genel yenilik listesini tekrar etmiyor.",
+        "zh": "所有 canonical 生态变更现在统一进入一个 MUBA Updates 流。相关单元显示 badge，而完整变更详情保留在同一条 canonical 历史记录中；MUBA Daily 不再重复通用更新列表。",
+        "ar": "تتدفق جميع تغييرات النظام البيئي canonical الآن عبر موجز واحد لـ MUBA Updates. تعرض الوحدات المرتبطة badge بينما تبقى تفاصيل التغيير الكاملة في سجل التاريخ canonical نفسه، ولم يعد MUBA Daily يكرر قائمة التحديثات العامة.",
+        "hi": "सभी canonical ecosystem changes अब एक ही MUBA Updates feed में आते हैं। संबंधित units badge दिखाते हैं जबकि पूरा change detail उसी canonical history record में रहता है; MUBA Daily अब general update list को duplicate नहीं करता।"
+      }
+    },
+    {
       "id": "20260921-gallery-r2",
       "date": "2026-09-21",
       "type": "fixed",
