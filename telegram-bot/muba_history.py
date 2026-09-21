@@ -54,6 +54,7 @@ def devlog(lang="en"):
     grouped={"new":[],"updates":[],"fixed":[]}
     for item in UPDATES:
         category="new" if item["type"]=="new" else ("updates" if item["type"]=="updated" else "fixed")
+        title=item["title"].get(lang,item["title"]["en"])
         text=item["text"].get(lang,item["text"]["en"])
-        grouped[category].append(f'{item["date"]} — {text}')
+        grouped[category].append(f'{item["date"]} — {title}: {text}')
     return grouped
