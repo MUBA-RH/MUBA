@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260922-unit-badge-read-state",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "Unit update badges now clear after reading",
+        "tr": "Birim yenilik bildirimleri okunduktan sonra temizleniyor",
+        "zh": "单元更新标记现在会在阅读后清除",
+        "ar": "تختفي شارات تحديث الوحدات الآن بعد قراءتها",
+        "hi": "Unit update badges अब पढ़ने के बाद हट जाते हैं"
+      },
+      "text": {
+        "en": "Opening the newest update inside a unit now marks that unit as read and removes its UPDATED, IMPROVED or FIXED badge. Reading one unit does not clear another unit's badge, and browsing older history cannot restore a cleared badge.",
+        "tr": "Birimin içindeki en yeni yenilik açıldığında artık yalnız o birim okundu olarak işaretleniyor ve GÜNCELLENDİ, İYİLEŞTİRİLDİ veya DÜZELTİLDİ bildirimi kalkıyor. Bir birimi okumak başka birimin bildirimini temizlemiyor; eski geçmişe bakmak da temizlenmiş bildirimi geri getirmiyor.",
+        "zh": "打开某个单元中的最新更新后，该单元会被标记为已读，并移除 UPDATED、IMPROVED 或 FIXED 标记。阅读一个单元不会清除其他单元的标记，浏览旧历史也不会让已清除的标记重新出现。",
+        "ar": "عند فتح أحدث تحديث داخل وحدة، يتم الآن اعتبار تلك الوحدة مقروءة وتختفي شارة UPDATED أو IMPROVED أو FIXED الخاصة بها. قراءة وحدة لا تمسح شارة وحدة أخرى، وتصفح السجل الأقدم لا يعيد الشارة التي تم مسحها.",
+        "hi": "किसी unit का सबसे नया update खोलने पर अब वही unit read mark होता है और उसका UPDATED, IMPROVED या FIXED badge हट जाता है। एक unit पढ़ने से दूसरे unit का badge clear नहीं होता, और पुरानी history देखने से cleared badge वापस नहीं आता।"
+      }
+    },
+    {
       "id": "20260922-assistant-three-pillars",
       "date": "2026-09-22",
       "type": "improved",
