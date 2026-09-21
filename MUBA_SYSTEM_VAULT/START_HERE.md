@@ -17,24 +17,39 @@ Before restoration or future architecture work, ask the DEV to choose exactly on
 
 If the DEV does not choose a path, do not activate, migrate or replace anything.
 
+### Permission boundary for path 3
+If path 3 — CREATE A NEW PROJECT FROM THIS ARCHITECTURE — is selected, **do not request project credentials, create repositories, configure services, deploy, install or adapt code yet**.
+
+First read `PERMISSION_REQUIRED.md` and require a valid `MUBA_PERMISSION.json`.
+
+The mandatory verification command is:
+
+```bash
+python scripts/muba_permission_gate.py verify --permission MUBA_PERMISSION.json
+```
+
+If verification fails or no permission file is supplied, stop the new-project path immediately. Public access to the Vault is not authorization.
+
 ## Mandatory reading order
 1. START_HERE.md
 2. VAULT_SCOPE.md
-3. PROJECT_IDENTITY.md
-4. CURRENT_SYSTEM.md
-5. TELEGRAM_SYSTEM.md
-6. ANDROID_V3_APK.md
-7. CODE_LANGUAGE_STANDARD.md
-8. MODULE_REGISTRY.md
-9. ARCHITECTURE.md
-10. DEVELOPMENT_PROTOCOL.md
-11. CONTINUITY.md
-12. RECOVERY.md
-13. OPERATOR_MANUAL.md
-14. PROJECT_PORTABILITY.md
-15. AUTONOMY_BLUEPRINT.md
-16. CHANGELOG_SNAPSHOT_2026-09-21.md
-17. RELEASE_MANIFEST.json
+3. PERMISSION_REQUIRED.md
+4. PROJECT_IDENTITY.md
+5. CURRENT_SYSTEM.md
+6. TELEGRAM_SYSTEM.md
+7. ANDROID_V3_APK.md
+8. CODE_LANGUAGE_STANDARD.md
+9. MODULE_REGISTRY.md
+10. ARCHITECTURE.md
+11. DEVELOPMENT_PROTOCOL.md
+12. CONTINUITY.md
+13. RECOVERY.md
+14. OPERATOR_MANUAL.md
+15. CREATE_NEW_PROJECT_FROM_ARCHITECTURE.md
+16. PROJECT_PORTABILITY.md
+17. AUTONOMY_BLUEPRINT.md
+18. CHANGELOG_SNAPSHOT_2026-09-21.md
+19. RELEASE_MANIFEST.json
 
 ## Non-negotiable
 - Current stable MUBA is the production baseline.
@@ -46,6 +61,8 @@ If the DEV does not choose a path, do not activate, migrate or replace anything.
 - Preserve rollback before migration.
 - GitHub is the canonical development/source-control location for this package.
 - The DEV is final authority.
+- Public source visibility is not reuse permission.
+- New-project reuse is deny-by-default and requires prior written DEV authorization plus a passing permission-gate check.
 
 ## Permanent operating command
 BAŞLA 🔥 MERGE 🟢 SİSTEMİ KORU 🛡️ STABİL 🔒
