@@ -10,6 +10,7 @@ INDEX=(REPO/"index.html").read_text(encoding="utf-8")
 class WebStudioPublicTests(unittest.TestCase):
     def test_runtime_parses(self):
         ast.parse(BOT)
+        self.assertIn("from collections import OrderedDict, defaultdict", BOT)
 
     def test_public_web_endpoint_is_isolated_and_rate_limited(self):
         self.assertIn('_WEB_STUDIO_DAILY_LIMIT = 3',BOT)

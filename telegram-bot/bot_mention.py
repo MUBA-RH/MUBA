@@ -9,7 +9,7 @@ import logging
 import json
 import os
 import time
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
