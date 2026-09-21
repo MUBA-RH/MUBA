@@ -463,6 +463,85 @@
       line-height: 1.45;
     }
 
+    .gallery-wrap { margin-top: 20px; padding: 26px; overflow: hidden; }
+    .gallery-head { max-width: 780px; margin-bottom: 18px; }
+    .gallery-head h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.8rem,4vw,2.8rem);
+      margin: 12px 0 8px;
+      line-height: 1.04;
+      letter-spacing: -.04em;
+    }
+    .gallery-head h3 span { color: var(--gold); }
+    .gallery-head p { color: var(--muted); line-height: 1.58; }
+    .gallery-filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 0 12px;
+      scrollbar-width: thin;
+    }
+    .gallery-strip {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-inline: contain;
+      padding: 4px 2px 16px;
+      scrollbar-width: thin;
+      touch-action: pan-x;
+    }
+    .gallery-card {
+      flex: 0 0 clamp(230px, 29vw, 310px);
+      scroll-snap-align: start;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.028);
+      overflow: hidden;
+      min-width: 0;
+    }
+    .gallery-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #05030a;
+    }
+    .gallery-card-body { padding: 14px; }
+    .gallery-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gallery-meta {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .075em;
+      text-transform: uppercase;
+    }
+    .gallery-status {
+      color: var(--muted);
+      min-height: 22px;
+      font-size: .88rem;
+      font-weight: 700;
+      margin: 3px 0 7px;
+    }
+    .gallery-status.error { color: #fca5a5; }
+    .gallery-empty {
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      padding: 28px 20px;
+      color: var(--muted);
+      min-width: min(520px, 90vw);
+    }
+
     .tweet-lab { margin-top: 20px; padding: 26px; }
     .tweet-card {
       margin-top: 16px;
@@ -562,7 +641,7 @@
       .section { padding: 68px 0; }
       .hero { padding-top: 42px; }
       .hero h1 { font-size: clamp(3.45rem, 22vw, 5.2rem); }
-      .devlog-panel, .knowledge-shell, .studio-card, .prompt-box, .tweet-lab { padding: 18px; }
+      .devlog-panel, .knowledge-shell, .studio-card, .prompt-box, .gallery-wrap, .tweet-lab { padding: 18px; }
       .official { grid-template-columns: 1fr; }
       .studio-identity { grid-template-columns: 72px 1fr; }
       .studio-identity img { width: 72px; height: 72px; }
@@ -711,6 +790,23 @@
           </div>
         </div>
 
+        <div class="gallery-wrap card" id="gallery">
+          <div class="gallery-head">
+            <div class="eyebrow">MUBA GALLERY</div>
+            <h3>CREATE MUBA. <span>BECOME PART OF THE STORY.</span></h3>
+            <p>Every creation becomes part of the MUBA archive. Web Studio and Telegram Studio creations meet here so the community can see MUBA's visual story grow over time.</p>
+          </div>
+          <div class="gallery-filters" id="gallery-filters" aria-label="MUBA Gallery filters">
+            <button class="chip active" type="button" data-gallery-kind="all">ALL</button>
+            <button class="chip" type="button" data-gallery-kind="meme">MEME</button>
+            <button class="chip" type="button" data-gallery-kind="image">IMAGE</button>
+            <button class="chip" type="button" data-gallery-kind="sticker">STICKER</button>
+            <button class="chip" type="button" data-gallery-kind="emoji">REACTION</button>
+          </div>
+          <div class="gallery-status" id="gallery-status" aria-live="polite"></div>
+          <div class="gallery-strip" id="gallery-strip" aria-label="Community MUBA creations"></div>
+        </div>
+
         <div class="tweet-lab card" id="twt">
           <div class="section-head" style="margin-bottom:18px">
             <div class="eyebrow">MUBA TWT</div>
@@ -770,6 +866,11 @@
   <script>
     const devLog = {
       new: [
+        {
+          date: "SEP 2026",
+          title: "MUBA Gallery became the community visual archive",
+          text: "Successful creations from Web Studio and Telegram Studio now flow into one manually scrollable MUBA Gallery with format, source and short visual labels."
+        },
         {
           date: "SEP 2026",
           title: "MUBA Studio moved closer to the community",
@@ -1182,6 +1283,56 @@
     document.getElementById("copy-tags").addEventListener("click", () => copyText(shareTags, "tweet-status", "MUBA tags copied."));
 
     const studioApiBase = (document.querySelector('meta[name="muba-studio-api"]')?.content || "").replace(/\/$/, "");
+    let galleryKind = "all";
+
+    function escapeGalleryText(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[char]));
+    }
+
+    async function loadGallery() {
+      const strip=document.getElementById("gallery-strip");
+      const status=document.getElementById("gallery-status");
+      if (!strip || !status || !studioApiBase) return;
+      status.className="gallery-status";
+      status.textContent="Loading MUBA Gallery…";
+      try {
+        const suffix=galleryKind==="all" ? "" : "&kind="+encodeURIComponent(galleryKind);
+        const response=await fetch(studioApiBase+"/gallery?limit=80"+suffix);
+        if (!response.ok) throw new Error("Gallery unavailable.");
+        const payload=await response.json();
+        const items=Array.isArray(payload.items) ? payload.items : [];
+        if (!items.length) {
+          strip.innerHTML='<div class="gallery-empty">The archive is ready. New MUBA Studio creations will appear here automatically.</div>';
+          status.textContent="";
+          return;
+        }
+        strip.innerHTML=items.map(item => {
+          const kind=item.kind==="emoji" ? "REACTION" : String(item.kind || "image").toUpperCase();
+          const source=item.source==="telegram" ? "TELEGRAM STUDIO" : "WEB STUDIO";
+          return '<article class="gallery-card">'+
+            '<img loading="lazy" src="'+encodeURI(item.image_url)+'" alt="'+escapeGalleryText(item.label)+'">'+
+            '<div class="gallery-card-body">'+
+              '<div class="gallery-label">'+escapeGalleryText(item.label)+'</div>'+
+              '<div class="gallery-meta">'+kind+' · '+source+'</div>'+
+            '</div></article>';
+        }).join("");
+        status.textContent=items.length+" MUBA creation"+(items.length===1?"":"s")+" in this view.";
+      } catch (error) {
+        strip.innerHTML='<div class="gallery-empty">MUBA Gallery is temporarily unavailable.</div>';
+        status.className="gallery-status error";
+        status.textContent="Gallery could not be loaded.";
+      }
+    }
+
+    document.querySelectorAll("[data-gallery-kind]").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-gallery-kind]").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        galleryKind=button.dataset.galleryKind || "all";
+        loadGallery();
+      });
+    });
+
     let creatorKind = "meme";
     let studioObjectUrl = "";
 
@@ -1268,6 +1419,7 @@
         document.getElementById("studio-preview-meta").textContent =
           "Created with MUBA Studio." + (remaining !== null ? " " + remaining + "/3 web creations left today." : "");
         setStudioStatus("Created. Your MUBA visual is ready.", "ok");
+        loadGallery();
       } catch (error) {
         const message = error && error.message ? error.message : "Web Studio is unavailable right now.";
         setStudioStatus(message + " You can still use Telegram Studio.", "error");
@@ -1308,6 +1460,7 @@
     renderTopicPanel();
     renderTweetTabs();
     renderTweet();
+    loadGallery();
   </script>
 </body>
 </html>

@@ -79,7 +79,12 @@ def _text_policy(prompt:str)->str:
     )
 
 def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:
-    format_hint={"meme":"cinematic meme-ready image","image":"polished cinematic image","sticker":"single expressive sticker subject, simple clean background","emoji":"single expressive emoji-like reaction, centered, simple clean background"}.get(kind,"polished image")
+    format_hint={
+        "meme":"high-quality realistic meme scene with clear visual storytelling, expressive MUBA body language and believable lighting/environment; the image itself must work without relying on text",
+        "image":"high-fidelity cinematic MUBA image with believable fur, materials, depth, lighting and environment; polished enough to feel like a finished character artwork",
+        "sticker":"high-fidelity MUBA sticker with a crisp readable silhouette, strong expression, clean isolated composition and polished 3D/illustrative finish suitable for messaging",
+        "emoji":"high-fidelity MUBA reaction icon focused on the face and emotion; use polished 3D emoji-like rendering with believable fur and lighting while preserving MUBA's facial identity. Make the requested emotion immediately readable (for example laughing, crying, heart-eyes, angry, surprised, sleepy or in-love) through eyes, eyelids, brows, mouth, tongue, tears or heart-eye treatment as appropriate. Do not turn MUBA into a generic yellow emoji",
+    }.get(kind,"polished high-fidelity MUBA image")
     instruction=(f"Use the reference image as MUBA identity guidance, not as a rigid composition template. Keep MUBA recognizably MUBA through the core facial identity: wide expressive eyes, tan short fur, playful tongue expression, and the characteristic face proportions. Adapt the character naturally to the user's concept, pose, framing, scale, lighting, environment and visual style. Do not force a large centered MUBA portrait, circular avatar framing, black cap, or black $MUBA hoodie unless the user asks for them or they fit the scene naturally. Prefer a softer, more integrated interpretation while preserving MUBA's recognizable identity. The requested concept should lead the composition; MUBA should belong inside the scene rather than dominate it by default. {format_hint}. {_text_policy(prompt)} User request: {clean_prompt(prompt)}")
     return {"prompt":instruction,"input_image":reference_data_uri,"width":1024,"height":1024}
 

@@ -40,6 +40,8 @@ from muba_brain import (
     set_guardian_report_language,
     append_guardian_violation,
     guardian_violation_history,
+    get_assistant_update_seen,
+    mark_assistant_update_seen,
 )
 from assistant_mode import LANGS, TOPIC_LABELS, QUESTIONS, TEXT, guided_answer, group_event, assistant_relevant, answer_for_question, match_catalog
 from human_catalog import match as match_human_catalog
@@ -54,6 +56,8 @@ from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANS
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
+from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status
+from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -246,19 +250,69 @@ def guardian_history_text(lang,category,index):
 def language_keyboard():
     return InlineKeyboardMarkup([[InlineKeyboardButton(label,callback_data=f"lang:{code}")] for code,label in LANGS.items()])
 
+def _update_badge(lang,user_id,area):
+    seen=get_assistant_update_seen(user_id,area)
+    kind=update_badge_type(area,seen)
+    if not kind: return ""
+    return " · "+UPDATE_LABELS[lang].get(kind,kind.upper())
+
+def _any_unseen_updates(user_id):
+    return any(has_unseen_update(area,get_assistant_update_seen(user_id,area)) for area in ("gallery","studio","web","telegram","daily","assistant","guardian"))
+
+def _combined_update_badge(lang,user_id,areas):
+    for area in areas:
+        badge=_update_badge(lang,user_id,area)
+        if badge: return badge
+    return ""
+
 def menu_keyboard(lang,user_id=None):
+    user_id=int(user_id or 0)
     labels=TOPIC_LABELS[lang]
-    rows=[[InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")]]
+    updates_label=UPDATE_LABELS[lang]["center"]+(" · "+UPDATE_LABELS[lang]["new"] if _any_unseen_updates(user_id) else "")
+    rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
+    rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
     for topic in ("origin","identity","difference","purpose","community","plan"):
         rows.append([InlineKeyboardButton(labels[topic],callback_data=f"topic:{topic}")])
-    rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")])
+    rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
-    rows.append([InlineKeyboardButton("🎭 MUBA Studio",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
+    rows.append([InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
+    rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")])
     rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
     rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
+    return InlineKeyboardMarkup(rows)
+
+def updates_center_keyboard(lang,user_id):
+    rows=[]
+    for area in ("gallery","studio","web","telegram","daily","assistant","guardian"):
+        rows.append([InlineKeyboardButton(AREA_LABELS[lang][area]+_update_badge(lang,user_id,area),callback_data=f"updates_area:{area}:0")])
+    rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
+def updates_area_text(lang,user_id,area,index):
+    rows=update_entries(lang,area)
+    if not rows:
+        return UPDATE_LABELS[lang]["center"],0,0
+    index=max(0,min(index,len(rows)-1))
+    item=rows[index]
+    if index==0:
+        latest=latest_update_id(area)
+        if latest: mark_assistant_update_seen(user_id,area,latest)
+    kind_label=UPDATE_LABELS[lang].get(item["type"],item["type"].upper())
+    return f'{kind_label} · {item["date"]}\n{item["text"]}\n\n{index+1}/{len(rows)}',index,len(rows)
+
+def updates_area_keyboard(lang,user_id,area,index):
+    rows_data=update_entries(lang,area)
+    total=len(rows_data)
+    pager=[]
+    if index>0: pager.append(InlineKeyboardButton("⬅️",callback_data=f"updates_area:{area}:{index-1}"))
+    if index+1<total: pager.append(InlineKeyboardButton("➡️",callback_data=f"updates_area:{area}:{index+1}"))
+    rows=[pager] if pager else []
+    if area=="gallery":
+        rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["open_gallery"],url="https://muba-rh.github.io/MUBA/#gallery")])
+    rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="updates_center")])
     return InlineKeyboardMarkup(rows)
 
 def transparency_keyboard(lang,page):
@@ -280,14 +334,15 @@ def transparency_text(lang,page):
     page=max(0,min(page,len(pages)-1))
     return f'{pages[page]}\n\n{TRANSPARENCY_NAV[lang]["page"]} {page+1}/{len(pages)}'
 
-def daily_keyboard(lang):
+def daily_keyboard(lang,user_id=None):
+    user_id=int(user_id or 0)
     labels=DAILY_LABELS[lang]
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(labels["x"],callback_data="daily:x")],
-        [InlineKeyboardButton(labels["web"],callback_data="daily:web")],
-        [InlineKeyboardButton(labels["telegram"],callback_data="daily:telegram")],
-        [InlineKeyboardButton(labels["updates"],callback_data="daily:updates")],
-        [InlineKeyboardButton(DEVLOG_LABELS[lang]["log"],callback_data="devlog")],
+        [InlineKeyboardButton(labels["web"]+_update_badge(lang,user_id,"web"),callback_data="daily:web")],
+        [InlineKeyboardButton(labels["telegram"]+_update_badge(lang,user_id,"telegram"),callback_data="daily:telegram")],
+        [InlineKeyboardButton(labels["updates"]+_update_badge(lang,user_id,"daily"),callback_data="daily:updates")],
+        [InlineKeyboardButton(DEVLOG_LABELS[lang]["log"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
         [InlineKeyboardButton(labels["back"],callback_data="menu")],
     ])
 
@@ -429,6 +484,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+    if data=="updates_center":
+        await q.edit_message_text(UPDATE_LABELS[lang]["center"],reply_markup=updates_center_keyboard(lang,user_id)); return
+    if data.startswith("updates_area:"):
+        _,area,raw=data.split(":",2)
+        index=int(raw) if raw.isdigit() else 0
+        body,index,total=updates_area_text(lang,user_id,area,index)
+        await q.edit_message_text(body,reply_markup=updates_area_keyboard(lang,user_id,area,index),disable_web_page_preview=True); return
     if data.startswith("transparency:"):
         raw=data.split(":",1)[1]
         page=int(raw) if raw.isdigit() else 0
@@ -437,11 +499,17 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="translator_note":
         await q.edit_message_text(TRANSLATOR_NOTE_TEXT[lang],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")]]),disable_web_page_preview=True); return
     if data=="daily":
-        await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang)); return
+        await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang,user_id)); return
     if data.startswith("daily:"):
         section=data.split(":",1)[1]
-        await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang),disable_web_page_preview=True); return
+        area={"web":"web","telegram":"telegram","updates":"daily"}.get(section)
+        if area:
+            latest=latest_update_id(area)
+            if latest: mark_assistant_update_seen(user_id,area,latest)
+        await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang,user_id),disable_web_page_preview=True); return
     if data=="devlog":
+        latest=latest_update_id("assistant")
+        if latest: mark_assistant_update_seen(user_id,"assistant",latest)
         await q.edit_message_text(DEVLOG_LABELS[lang]["log"],reply_markup=devlog_keyboard(lang)); return
     if data.startswith("devlog:"):
         _,category,raw=data.split(":",2)
@@ -929,6 +997,7 @@ async def studio_generate_handler(request: web.Request):
         logger.exception("MUBA AI generation failed")
         return web.json_response({"error":"MUBA AI could not create this image. Failed attempts do not count."},status=503)
     consume(uid)
+    gallery_item=_archive_studio_output(body,out_type,prompt,kind,"telegram")
     import secrets, time
     key=secrets.token_urlsafe(24)
     _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time()}
@@ -936,6 +1005,7 @@ async def studio_generate_handler(request: web.Request):
     return web.Response(body=body,content_type=out_type,headers={
         "X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid)),
         "X-MUBA-Output-URL":output_url,
+        "X-MUBA-Gallery-ID":gallery_item["id"] if gallery_item else "",
         "Content-Disposition":'inline; filename="muba-studio.png"',
     })
 
@@ -959,7 +1029,7 @@ def _web_studio_cors_headers(origin: str) -> dict:
         "Access-Control-Allow-Origin":origin,
         "Access-Control-Allow-Methods":"POST, OPTIONS",
         "Access-Control-Allow-Headers":"Content-Type",
-        "Access-Control-Expose-Headers":"X-MUBA-Remaining, X-MUBA-Output-URL",
+        "Access-Control-Expose-Headers":"X-MUBA-Remaining, X-MUBA-Output-URL, X-MUBA-Gallery-ID",
         "Vary":"Origin",
     }
 
@@ -1024,6 +1094,7 @@ async def studio_web_generate_handler(request: web.Request):
         return _web_studio_json(origin,{"error":"MUBA Studio could not create this image. Failed attempts do not count."},503)
 
     _web_studio_consume(client_key)
+    gallery_item=_archive_studio_output(body,out_type,prompt,kind,"web")
     import secrets
     key=secrets.token_urlsafe(24)
     _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time()}
@@ -1032,10 +1103,45 @@ async def studio_web_generate_handler(request: web.Request):
     headers.update({
         "X-MUBA-Remaining":str(_web_studio_remaining(client_key)),
         "X-MUBA-Output-URL":output_url,
+        "X-MUBA-Gallery-ID":gallery_item["id"] if gallery_item else "",
         "Content-Disposition":'inline; filename="muba-studio.png"',
         "Cache-Control":"no-store",
     })
     return web.Response(body=body,content_type=out_type,headers=headers)
+
+def _archive_studio_output(body,out_type,prompt,kind,source):
+    try:
+        content_type=(out_type or "image/png").split(";",1)[0].strip()
+        return archive_creation(body,content_type,prompt,kind,source)
+    except Exception:
+        logger.exception("MUBA Gallery archive write failed")
+        return None
+
+def _gallery_cors_headers():
+    return {"Access-Control-Allow-Origin":_WEB_STUDIO_ALLOWED_ORIGIN,"Vary":"Origin"}
+
+async def gallery_list_handler(request: web.Request):
+    raw_limit=request.query.get("limit","60")
+    limit=int(raw_limit) if str(raw_limit).isdigit() else 60
+    kind=request.query.get("kind") or None
+    items=[]
+    for item in list_gallery(limit=limit,kind=kind):
+        items.append({
+            "id":item["id"],
+            "label":item["label"],
+            "kind":item["kind"],
+            "source":item["source"],
+            "created_at":item["created_at"],
+            "image_url":EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["id"],
+        })
+    state=storage_status()
+    return web.json_response({"items":items,"persistent":state["persistent"],"writable":state["writable"]},headers=_gallery_cors_headers())
+
+async def gallery_image_handler(request: web.Request):
+    result=read_gallery_image(request.match_info.get("item_id",""))
+    if not result: return web.Response(status=404,text="Gallery item not found.")
+    body,content_type=result
+    return web.Response(body=body,content_type=content_type,headers={"Cache-Control":"public, max-age=31536000, immutable"})
 
 async def studio_output_handler(request: web.Request):
     import time
@@ -1194,6 +1300,8 @@ async def start_webhook_server():
     app.router.add_post("/studio/web-generate", studio_web_generate_handler)
     app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
+    app.router.add_get("/gallery", gallery_list_handler)
+    app.router.add_get("/gallery/image/{item_id}", gallery_image_handler)
 
     runner = web.AppRunner(app)
 
