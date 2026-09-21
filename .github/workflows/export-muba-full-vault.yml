@@ -1,0 +1,41 @@
+name: Export MUBA Full System Vault
+
+on:
+  push:
+    branches:
+      - vault/system-vault-final
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Vault branch
+        uses: actions/checkout@v4
+
+      - name: Build independent Vault package
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="MUBA_FULL_SYSTEM_VAULT_2026-09-21"
+          mkdir -p "$root"
+          rsync -a --exclude '.git' --exclude "$root" ./ "$root/"
+          printf '%s\n' "Vault branch: vault/system-vault-final" > "$root/VAULT_EXPORT_INFO.txt"
+          printf '%s\n' "Vault commit: $GITHUB_SHA" >> "$root/VAULT_EXPORT_INFO.txt"
+          printf '%s\n' "Stable production main captured in RELEASE_MANIFEST.json" >> "$root/VAULT_EXPORT_INFO.txt"
+          printf '%s\n' "This package is passive and has no runtime dependency." >> "$root/VAULT_EXPORT_INFO.txt"
+          zip -qr "MUBA_FULL_SYSTEM_VAULT_2026-09-21.zip" "$root"
+          sha256sum "MUBA_FULL_SYSTEM_VAULT_2026-09-21.zip" > "MUBA_FULL_SYSTEM_VAULT_2026-09-21_SHA256.txt"
+
+      - name: Upload downloadable Vault package
+        uses: actions/upload-artifact@v4
+        with:
+          name: MUBA-FULL-SYSTEM-VAULT-2026-09-21
+          path: |
+            MUBA_FULL_SYSTEM_VAULT_2026-09-21.zip
+            MUBA_FULL_SYSTEM_VAULT_2026-09-21_SHA256.txt
+          if-no-files-found: error
+          retention-days: 30
