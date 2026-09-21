@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-unit-update-scoping",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "gallery",
+        "telegram"
+      ],
+      "title": {
+        "en": "Unit update views became context-specific",
+        "tr": "Birim yenilik görünümleri kendi bağlamına ayrıldı",
+        "zh": "各单元更新视图改为按自身上下文显示",
+        "ar": "أصبحت عروض تحديث الوحدات خاصة بسياق كل وحدة",
+        "hi": "Unit update views अब अपने context के अनुसार अलग हुए"
+      },
+      "text": {
+        "en": "The central MUBA Updates feed still shows all canonical project changes, while a unit's own update view now shows only history related to that unit. MUBA Gallery therefore shows Gallery changes without unrelated unit notices.",
+        "tr": "Merkezi MUBA Yenilikleri akışı tüm canonical proje değişikliklerini göstermeye devam ederken, her birimin kendi yenilik görünümü artık yalnız o birimle ilgili geçmişi gösteriyor. Böylece MUBA Galeri, diğer birimlerin ilgisiz bildirimleri olmadan yalnız Galeri gelişmelerini gösteriyor.",
+        "zh": "中央 MUBA Updates 仍显示所有 canonical 项目变更，而各单元自己的更新视图现在只显示与该单元相关的历史。因此 MUBA Gallery 只显示 Gallery 变更，不再混入无关单元通知。",
+        "ar": "يستمر موجز MUBA Updates المركزي في عرض جميع تغييرات المشروع canonical، بينما يعرض تحديث كل وحدة الآن السجل المرتبط بتلك الوحدة فقط. لذلك يعرض MUBA Gallery تغييرات Gallery دون إشعارات الوحدات غير المرتبطة.",
+        "hi": "Central MUBA Updates feed सभी canonical project changes दिखाता रहता है, जबकि हर unit का अपना update view अब केवल उसी unit से जुड़ी history दिखाता है। इसलिए MUBA Gallery में केवल Gallery changes दिखते हैं, unrelated unit notices नहीं।"
+      }
+    },
+    {
       "id": "20260922-central-updates",
       "date": "2026-09-22",
       "type": "improved",
