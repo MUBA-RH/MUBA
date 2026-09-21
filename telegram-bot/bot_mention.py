@@ -1202,7 +1202,7 @@ async def gallery_list_handler(request: web.Request):
             "image_url":EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["id"],
         })
     state=storage_status()
-    return web.json_response({"items":items,"persistent":state["persistent"],"writable":state["writable"]},headers=_gallery_cors_headers())
+    return web.json_response({"items":items,"persistent":state["persistent"],"writable":state["writable"],"backend":state.get("backend","unknown")},headers=_gallery_cors_headers())
 
 async def gallery_image_handler(request: web.Request):
     result=read_gallery_image(request.match_info.get("item_id",""))
@@ -1254,7 +1254,7 @@ async def state_health_handler(request: web.Request):
     gallery=storage_status()
     return web.json_response({
         "state":{"persistent":state["persistent"],"backend":state["backend"]},
-        "gallery":{"persistent":gallery["persistent"],"writable":gallery["writable"]},
+        "gallery":{"persistent":gallery["persistent"],"writable":gallery["writable"],"backend":gallery.get("backend","unknown")},
     })
 
 

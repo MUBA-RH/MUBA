@@ -19,6 +19,31 @@
   },
   "entries": [
     {
+      "id": "20260921-gallery-r2",
+      "date": "2026-09-21",
+      "type": "fixed",
+      "areas": [
+        "gallery",
+        "studio",
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA Gallery gained durable Cloudflare R2 storage",
+        "tr": "MUBA Galeri kalıcı Cloudflare R2 depolamasına geçti",
+        "zh": "MUBA Gallery 接入持久化 Cloudflare R2 存储",
+        "ar": "انتقل MUBA Gallery إلى تخزين Cloudflare R2 الدائم",
+        "hi": "MUBA Gallery को durable Cloudflare R2 storage मिला"
+      },
+      "text": {
+        "en": "Gallery creations can now persist outside Render's temporary filesystem. A private R2 bucket stores the archive while the MUBA backend continues serving public Gallery images.",
+        "tr": "Galeri üretimleri artık Render'ın geçici dosya sisteminden bağımsız olarak kalıcı tutulabiliyor. Özel R2 bucket arşivi saklarken, herkese açık Galeri görsellerini MUBA backend sunmaya devam ediyor.",
+        "zh": "Gallery 作品现在可脱离 Render 临时文件系统持久保存。私有 R2 bucket 保存档案，公开 Gallery 图片仍由 MUBA 后端提供。",
+        "ar": "يمكن الآن الاحتفاظ بإبداعات Gallery بشكل دائم خارج نظام ملفات Render المؤقت. يحتفظ R2 الخاص بالأرشيف بينما يستمر MUBA backend في تقديم صور Gallery العامة.",
+        "hi": "Gallery creations अब Render के temporary filesystem से बाहर स्थायी रह सकती हैं। Private R2 bucket archive रखता है और public Gallery images MUBA backend से ही serve होती हैं।"
+      }
+    },
+    {
       "id": "20260921-permission-model",
       "date": "2026-09-21",
       "type": "improved",
