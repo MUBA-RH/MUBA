@@ -9,7 +9,17 @@ Keep MUBA understandable, recoverable and historically consistent as the project
 Consumers:
 - public Website Development Log;
 - Telegram Assistant MUBA Updates;
-- MUBA Daily Development Log / Updates.
+- MUBA Daily Development Log.
+
+### Assistant update-center rule
+Telegram Assistant **MUBA Updates** is the single user-facing ecosystem change center.
+
+- every canonical change appears there once;
+- one record may reference multiple related areas;
+- related Assistant units may show NEW / UPDATED / IMPROVED / FIXED badges;
+- those badges resolve to the same canonical history record rather than creating a duplicate area-specific copy;
+- MUBA Daily must not maintain a second general update feed;
+- Development Log may remain a categorized historical/technical view of the canonical history.
 
 Do not maintain separate copies of the same development history.
 
