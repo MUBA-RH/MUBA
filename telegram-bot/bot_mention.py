@@ -639,14 +639,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if section=="updates":
             body,index,total=updates_center_text(lang,user_id,0)
             await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
-        area={"web":"web","telegram":"telegram"}.get(section)
-        if area:
-            latest=latest_update_id(area)
-            if latest: mark_assistant_update_seen(user_id,area,latest)
         await q.edit_message_text(daily_text(lang,section),reply_markup=daily_keyboard(lang,user_id),disable_web_page_preview=True); return
     if data=="devlog":
-        latest=latest_update_id("assistant")
-        if latest: mark_assistant_update_seen(user_id,"assistant",latest)
         await q.edit_message_text(DEVLOG_LABELS[lang]["log"],reply_markup=devlog_keyboard(lang)); return
     if data.startswith("devlog:"):
         _,category,raw=data.split(":",2)
