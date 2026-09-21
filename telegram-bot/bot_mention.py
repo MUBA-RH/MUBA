@@ -372,9 +372,8 @@ def updates_area_text(lang,user_id,area,index):
         return AREA_LABELS[lang].get(area,area),0,0
     index=max(0,min(index,len(rows)-1))
     item=rows[index]
-    latest=latest_update_id(area)
-    if latest and latest==item.get("id"):
-        mark_assistant_update_seen(user_id,area,latest)
+    # Seen state is advanced only by the central update center. Unit-local
+    # history is informational and never changes global read-state.
     kind_label=UPDATE_LABELS[lang].get(item["type"],item["type"].upper())
     body=(
         f'{AREA_LABELS[lang].get(area,area)}\n\n'
