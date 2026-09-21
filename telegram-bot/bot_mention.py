@@ -257,8 +257,21 @@ def _update_badge(lang,user_id,area):
     if not kind: return ""
     return " · "+UPDATE_LABELS[lang].get(kind,kind.upper())
 
+_UPDATE_AREAS=("gallery","studio","web","telegram","daily","assistant","guardian")
+
 def _any_unseen_updates(user_id):
-    return any(has_unseen_update(area,get_assistant_update_seen(user_id,area)) for area in ("gallery","studio","web","telegram","daily","assistant","guardian"))
+    return any(has_unseen_update(area,get_assistant_update_seen(user_id,area)) for area in _UPDATE_AREAS)
+
+def _global_update_badge(lang,user_id):
+    for item in update_entries("en"):
+        if any(
+            area in item.get("areas",()) and
+            has_unseen_update(area,get_assistant_update_seen(user_id,area))
+            for area in _UPDATE_AREAS
+        ):
+            kind=item.get("type","new")
+            return " · "+UPDATE_LABELS[lang].get(kind,kind.upper())
+    return ""
 
 def _combined_update_badge(lang,user_id,areas):
     for area in areas:
@@ -266,10 +279,36 @@ def _combined_update_badge(lang,user_id,areas):
         if badge: return badge
     return ""
 
+def _mark_central_update_seen(user_id,item):
+    # Only advance an area's seen marker when this item is that area's latest
+    # canonical change. Browsing older history must never re-open a badge.
+    for area in item.get("areas",()):
+        latest=latest_update_id(area)
+        if latest and latest==item.get("id"):
+            mark_assistant_update_seen(user_id,area,latest)
+
+def _global_update_index(lang,item_id):
+    rows=update_entries(lang)
+    for index,item in enumerate(rows):
+        if item.get("id")==item_id:
+            return index
+    return 0
+
+def _latest_area_global_index(lang,area):
+    item_id=latest_update_id(area)
+    return _global_update_index(lang,item_id) if item_id else 0
+
+def _legacy_area_global_index(lang,area,area_index):
+    area_rows=update_entries(lang,area)
+    if not area_rows:
+        return 0
+    area_index=max(0,min(area_index,len(area_rows)-1))
+    return _global_update_index(lang,area_rows[area_index].get("id"))
+
 def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     labels=TOPIC_LABELS[lang]
-    updates_label=UPDATE_LABELS[lang]["center"]+(" · "+UPDATE_LABELS[lang]["new"] if _any_unseen_updates(user_id) else "")
+    updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
     rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
     for topic in ("origin","identity","difference","purpose","community","plan"):
@@ -277,9 +316,9 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
-    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"],callback_data="extra:security")])
+    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")])
     rows.append([InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
-    rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")])
+    rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_jump:gallery")])
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")])
     rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
@@ -287,36 +326,53 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
-def updates_center_keyboard(lang,user_id):
-    rows=[]
-    for area in ("gallery","studio","web","telegram","daily","assistant","guardian"):
-        rows.append([InlineKeyboardButton(AREA_LABELS[lang][area]+_update_badge(lang,user_id,area),callback_data=f"updates_area:{area}:0")])
-    rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="menu")])
-    return InlineKeyboardMarkup(rows)
-
-def updates_area_text(lang,user_id,area,index):
-    rows=update_entries(lang,area)
+def updates_center_text(lang,user_id,index=0):
+    rows=update_entries(lang)
     if not rows:
         return UPDATE_LABELS[lang]["center"],0,0
     index=max(0,min(index,len(rows)-1))
     item=rows[index]
-    if index==0:
-        latest=latest_update_id(area)
-        if latest: mark_assistant_update_seen(user_id,area,latest)
+    _mark_central_update_seen(user_id,item)
     kind_label=UPDATE_LABELS[lang].get(item["type"],item["type"].upper())
-    return f'{kind_label} · {item["date"]}\n{item["title_text"]}\n\n{item["text"]}\n\n{index+1}/{len(rows)}',index,len(rows)
+    related=" · ".join(AREA_LABELS[lang].get(area,area) for area in item.get("areas",()))
+    body=(
+        f'{UPDATE_LABELS[lang]["center"]}\n\n'
+        f'{kind_label} · {item["date"]}\n'
+        f'{item["title_text"]}\n\n'
+        f'{item["text"]}'
+    )
+    if related:
+        body+=f'\n\n{UPDATE_LABELS[lang]["related"]}: {related}'
+    body+=f'\n\n{index+1}/{len(rows)}'
+    return body,index,len(rows)
+
+def updates_center_keyboard(lang,user_id,index=0):
+    rows_data=update_entries(lang)
+    total=len(rows_data)
+    if not total:
+        return InlineKeyboardMarkup([[InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="menu")]])
+    index=max(0,min(index,total-1))
+    pager=[]
+    if index>0:
+        pager.append(InlineKeyboardButton("⬅️",callback_data=f"updates_global:{index-1}"))
+    if index+1<total:
+        pager.append(InlineKeyboardButton("➡️",callback_data=f"updates_global:{index+1}"))
+    rows=[pager] if pager else []
+    item=rows_data[index]
+    if "gallery" in item.get("areas",()):
+        rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["open_gallery"],url="https://muba-rh.github.io/MUBA/#gallery")])
+    rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
+def updates_area_text(lang,user_id,area,index):
+    # Backward compatibility for buttons/messages created before the central
+    # MUBA Updates feed. Old area pages now resolve to the same canonical item.
+    global_index=_legacy_area_global_index(lang,area,index)
+    return updates_center_text(lang,user_id,global_index)
 
 def updates_area_keyboard(lang,user_id,area,index):
-    rows_data=update_entries(lang,area)
-    total=len(rows_data)
-    pager=[]
-    if index>0: pager.append(InlineKeyboardButton("⬅️",callback_data=f"updates_area:{area}:{index-1}"))
-    if index+1<total: pager.append(InlineKeyboardButton("➡️",callback_data=f"updates_area:{area}:{index+1}"))
-    rows=[pager] if pager else []
-    if area=="gallery":
-        rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["open_gallery"],url="https://muba-rh.github.io/MUBA/#gallery")])
-    rows.append([InlineKeyboardButton(UPDATE_LABELS[lang]["back"],callback_data="updates_center")])
-    return InlineKeyboardMarkup(rows)
+    global_index=_legacy_area_global_index(lang,area,index)
+    return updates_center_keyboard(lang,user_id,global_index)
 
 GALLERY_ADMIN_LABELS={
 "en":{"menu":"🛠 Gallery Moderation","title":"🛠 MUBA Gallery Moderation","empty":"No Gallery items.","public":"PUBLIC","hidden":"HIDDEN","rejected":"REJECTED","back":"⬅️ Back","saved":"Gallery status updated."},
