@@ -14,22 +14,17 @@ class DailyStoryTests(unittest.TestCase):
         self.assertTrue(item["rules"]["human_approval_required"])
         self.assertFalse(item["rules"]["auto_publish"])
 
-    def test_visual_policy_is_isolated_chibi_episode(self):
+    def test_visual_policy_uses_reusable_chibi_character_anchor(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("preserve only the minimum identity cues",prompt)
-        self.assertIn("chibi / super-deformed",prompt)
-        self.assertIn("one chibi mini-story",prompt)
-        self.assertIn("continuity:",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-only")
+        self.assertIn("recurring character dna",prompt)
+        self.assertIn("strict 2d japanese chibi",prompt)
+        self.assertIn("identity anchor only",prompt)
+        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-anchor-v2")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
-        self.assertEqual(item["rules"]["continuity"],"previous-frame-image")
-        self.assertEqual(item["rules"]["frame_text_max_words"],3)
-        self.assertEqual(len(item["frame_labels"]),4)
-        self.assertGreater(len(item["story"].split()),70)
-        self.assertLess(len(item["summary"].split()),40)
-        self.assertIn("purple neon",item["prompts"][0].lower())
-        self.assertIn("must not be reproduced",item["prompts"][0].lower())
+        self.assertEqual(item["rules"]["continuity"],"character-anchor-plus-story-state")
+        self.assertEqual(item["rules"]["character_anchor_version"],"chibi-muba-v2")
+        self.assertIn("purple neon",prompt)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
@@ -38,27 +33,23 @@ class DailyStoryTests(unittest.TestCase):
         self.assertNotIn('>0\'+(i+1)',web)
         self.assertIn('story-book',web)
 
-    def test_chibi_layer_is_dedicated_to_living_story(self):
+    def test_chibi_layer_has_character_sheet_anchor(self):
         layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
-        self.assertIn("living story chibi only",layer)
-        self.assertIn("2-to-2.5-head-tall",layer)
-        self.assertIn("not 3d",layer)
+        self.assertIn("character_dna",layer)
+        self.assertIn("character sheet anchor",layer)
+        self.assertIn("2-head-tall",layer)
+        self.assertIn("no 3d",layer)
         self.assertIn("no panel number",layer)
-        self.assertIn("upside-down",layer)
-
-    def test_chibi_composition_reduces_character_dominance(self):
-        layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
         self.assertIn("20-45 percent",layer)
-        self.assertIn("story action, story object and environment are visually dominant",layer)
-        self.assertIn("never center a large muba head",layer)
-        self.assertIn("prioritize the requested action, prop and environment over resemblance",layer)
 
-    def test_generation_chains_previous_frame_as_visual_reference(self):
+    def test_generation_uses_same_neutral_anchor_for_all_story_panels(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertNotIn('input_image_1',bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")])
-        self.assertIn('if previous_frame is None:',bot)
-        self.assertIn('previous-story-frame-',bot)
-        self.assertIn('previous_frame=body',bot)
+        section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
+        self.assertIn("character_anchor_prompt",section)
+        self.assertIn("character_anchor,_=await render",section)
+        self.assertIn("character_anchor,f\"muba-chibi-character-anchor-",section)
+        self.assertNotIn("previous_frame",section)
+        self.assertNotIn("input_image_1",section)
 
     def test_technical_change_is_not_literal_story_title(self):
         item=muba_story.draft("2026-09-22")

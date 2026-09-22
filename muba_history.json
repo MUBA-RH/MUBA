@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-character-anchor-v2",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story Character Anchor V2",
+        "tr": "Living Story Character Anchor V2",
+        "zh": "Living Story Character Anchor V2",
+        "ar": "Living Story Character Anchor V2",
+        "hi": "Living Story Character Anchor V2"
+      },
+      "text": {
+        "en": "Living Story now translates the source MUBA portrait once into a neutral 2D Chibi character anchor. All four panels independently reuse that same anchor while repeated Character DNA and explicit storyboard state control identity and continuity. Previous generated panels are no longer fed back into later panels, preventing portrait and pose feedback loops while keeping DEV approval and four-image publishing safeguards unchanged.",
+        "tr": "Living Story artık kaynak MUBA portresini bir kez nötr 2D Chibi Character Anchor'a dönüştürüyor. Dört karenin tamamı aynı anchor'ı bağımsız kullanırken kimlik ve devamlılığı tekrarlanan Character DNA ile açık storyboard durumu yönetiyor. Önceki üretilmiş kareler sonraki karelere tekrar referans olarak verilmiyor; böylece portre/poz geri besleme döngüsü engelleniyor. DEV onayı ve dört görsel yayın güvenliği değişmeden korunuyor.",
+        "zh": "Living Story 现在先将源 MUBA 肖像转换一次为中性的 2D Chibi Character Anchor。四个画面独立复用同一 anchor，并通过重复的 Character DNA 与明确的 storyboard 状态保持身份和连续性。后续画面不再使用前一张生成图作为参考，从而避免肖像和姿势反馈循环，同时保留 DEV 审核与四图发布保护。",
+        "ar": "يحوّل Living Story الآن صورة MUBA المصدر مرة واحدة إلى Character Anchor محايد بأسلوب Chibi ثنائي الأبعاد. تستخدم اللوحات الأربع نفس الـ anchor بشكل مستقل، بينما تحافظ Character DNA المتكررة وحالة storyboard الصريحة على الهوية والاستمرارية. لم تعد اللوحات السابقة تُعاد كمرجع للوحات اللاحقة، لمنع حلقات تكرار الصورة والوضعية مع بقاء موافقة DEV وحماية نشر الصور الأربع.",
+        "hi": "Living Story अब source MUBA portrait को एक बार neutral 2D Chibi Character Anchor में बदलती है।चारों panels उसी anchor को स्वतंत्र रूप से reuse करते हैं और repeated Character DNA तथा explicit storyboard state identity/continuity नियंत्रित करते हैं।पिछले generated panels को आगे reference के रूप में feed नहीं किया जाता, जिससे portrait/pose feedback loop रुकता है और DEV approval व four-image publish safeguards सुरक्षित रहते हैं।"
+      }
+    },
+    {
       "id": "20260922-living-story-reduce-muba-dominance",
       "date": "2026-09-22",
       "type": "fixed",

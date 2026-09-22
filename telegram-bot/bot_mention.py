@@ -1323,50 +1323,51 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four sequential frames; each new frame receives the previous frame as continuity reference."""
+    """Generate a reusable Chibi identity anchor, then four action-driven story panels."""
     if not ai_configured():
         raise RuntimeError("MUBA AI engine is not configured")
     import base64, aiohttp
+    from muba_story_chibi import character_anchor_prompt
+
+    async def render(session,prompt,reference,filename):
+        form=aiohttp.FormData()
+        payload=ai_payload(prompt,"image","")
+        form.add_field("prompt",payload["prompt"])
+        form.add_field("width",str(payload["width"]))
+        form.add_field("height",str(payload["height"]))
+        form.add_field("input_image_0",reference,filename=filename,content_type="image/png")
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+            raw=await response.read()
+            if response.status != 200:
+                raise RuntimeError("Daily Story image generation failed")
+            if response.headers.get("Content-Type","").startswith("image/"):
+                return raw,response.headers.get("Content-Type")
+            result=json.loads(raw.decode("utf-8")).get("result",{})
+            encoded=result.get("image") if isinstance(result,dict) else None
+            if not encoded:
+                raise RuntimeError("Daily Story image response contained no image")
+            return base64.b64decode(encoded),"image/png"
+
     async with aiohttp.ClientSession() as session:
         async with session.get(REFERENCE_URL,timeout=15) as response:
             if response.status != 200:
                 raise RuntimeError("MUBA reference unavailable")
-            identity_ref=await response.read()
+            source_identity=await response.read()
+
+        # Stage A: translate the source portrait once into a neutral reusable Chibi identity anchor.
+        character_anchor,_=await render(session,character_anchor_prompt(),source_identity,"muba-source-identity.png")
+
+        # Stage B: every story panel starts from the SAME neutral character anchor.
+        # Previous panels are deliberately not fed back as image references: story continuity lives in
+        # the repeated Character DNA + explicit storyboard state, preventing portrait/pose drift loops.
         ids=[]
-        previous_frame=None
         for index,prompt in enumerate(item["prompts"]):
-            form=aiohttp.FormData()
-            payload=ai_payload(prompt,"image","")
-            form.add_field("prompt",payload["prompt"])
-            form.add_field("width",str(payload["width"]))
-            form.add_field("height",str(payload["height"]))
-            # Living Story deliberately reduces identity-reference dominance after the establishing frame.
-            # Frame 1 gets the MUBA identity anchor. Frames 2-4 get ONLY the previous story panel,
-            # so action/environment continuity can dominate instead of repeatedly reconstructing the source portrait.
-            if previous_frame is None:
-                form.add_field("input_image_0",identity_ref,filename="muba-identity.jpg",content_type="image/jpeg")
-            else:
-                form.add_field("input_image_0",previous_frame,filename=f"previous-story-frame-{index}.png",content_type="image/png")
-            headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
-            async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
-                raw=await response.read()
-                if response.status != 200:
-                    raise RuntimeError("Daily Story image generation failed")
-                if response.headers.get("Content-Type","").startswith("image/"):
-                    body=raw
-                    out_type=response.headers.get("Content-Type")
-                else:
-                    result=json.loads(raw.decode("utf-8")).get("result",{})
-                    encoded=result.get("image") if isinstance(result,dict) else None
-                    if not encoded:
-                        raise RuntimeError("Daily Story image response contained no image")
-                    body=base64.b64decode(encoded)
-                    out_type="image/png"
+            body,out_type=await render(session,prompt,character_anchor,f"muba-chibi-character-anchor-{index}.png")
             archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
             if not archived:
                 raise RuntimeError("Daily Story image archive failed")
             ids.append(archived["id"])
-            previous_frame=body
     return set_story_images(item["day"],ids)
 
 async def story_public_handler(request: web.Request):

@@ -1,36 +1,42 @@
-"""Living Story CHIBI-only visual layer.
+"""Living Story CHIBI character-anchor layer.
 
-Isolated from Studio, Gallery, and every general MUBA visual style.
-Only THE LIVING STORY imports this policy.
+This module owns the Story character DNA and storyboard prompt contract only.
+It is isolated from Studio, Gallery and all other MUBA visual systems.
 """
-CHIBI_IDENTITY=(
-    "LIVING STORY CHIBI ONLY. MUBA is the recurring actor, NOT the composition. Preserve only the minimum identity cues needed "
-    "for recognizability: distinctive eye relationship, tan short fur, tiny nose, playful tongue when expression calls for it, "
-    "black MUBA cap and black hoodie. Do NOT copy the reference pose, crop, camera angle, head scale, neon circle or portrait composition. "
-    "Never replace MUBA with another character, but never let identity matching override the scene action. "
+
+CHARACTER_DNA=(
+    "RECURRING CHARACTER DNA — repeat unchanged in every panel: MUBA, tan/brown short dense fur; "
+    "distinctive very large expressive eyes; tiny dark nose; playful small mouth/tongue when emotion calls for it; "
+    "black MUBA cap; black hoodie marked $MUBA. Preserve these identity markers, not the source portrait composition. "
 )
-CHIBI_STYLE=(
-    "Render ONLY as polished Japanese chibi / super-deformed (SD) illustration. Use approximately 2-to-2.5-head-tall proportions: "
-    "oversized head, very small soft rounded body, short simplified limbs, rounded hands/feet, soft cheeks and extremely expressive eyes. "
-    "Keep the face recognizably MUBA while freely posing the compact body. MUBA may face left, right, up or down, lean, tumble, turn, "
-    "run, crouch, jump or appear upside-down when the action needs it. Use clean manga/anime linework, refined cel shading and only a "
-    "light digital-painted finish. High-quality illustration; not photorealistic, not 3D, not CGI, not plush/toy, not standard-proportion "
-    "anime, and not any non-chibi style. "
+
+CHIBI_DNA=(
+    "STRICT 2D JAPANESE CHIBI / SUPER-DEFORMED DNA: approximately 2-head-tall body, oversized rounded head, tiny pear-shaped torso, "
+    "very short rounded limbs, simplified mitten-like hands and feet, almost no neck, huge low-set sparkling eyes, tiny nose, rounded cheeks. "
+    "Clean thick manga line art, flat/soft cel shading, simple graphic shapes. Absolutely no photorealism, no 3D, no CGI, no plush/toy render. "
 )
-CHIBI_CONTINUITY=(
-    "The four outputs are sequential panels of ONE chibi mini-story. STORY ACTION, STORY OBJECT and ENVIRONMENT are visually dominant; "
-    "MUBA should usually occupy only about 20-45 percent of the frame, with full-body or action-oriented staging instead of close portraits. "
-    "Preserve location, time, clothing, recurring objects and cause/effect continuity. The named plot object MUST be clearly visible whenever "
-    "the action refers to it. Change camera distance, direction, body orientation and silhouette between panels. Every panel must advance the "
-    "physical event and must NOT repeat the same standing pose. The identity reference's purple neon ring, crown, lighting and background are "
-    "presentation decoration and MUST NOT be reproduced. "
+
+STORYBOARD_DNA=(
+    "This is ONE four-beat sequential comic, not four portraits. The CHARACTER DNA stays fixed while ACTION, POSE, CAMERA and STORY STATE change. "
+    "The named plot object and environment must carry the narrative. Use wide or medium full-body staging; the character should normally occupy "
+    "roughly 20-45 percent of the frame. Preserve geography, lighting, recurring props and cause/effect. Exaggerate chibi emotion and physical pose. "
+    "Never copy the identity reference pose, crop, camera, purple neon ring/crown, lighting or background. "
 )
+
+def character_anchor_prompt():
+    """Prompt used only to establish a reusable Chibi MUBA identity anchor."""
+    return (
+        f"{CHARACTER_DNA} {CHIBI_DNA} "
+        "Create a neutral reusable CHARACTER SHEET anchor, not a story panel: plain light background, full body, three-quarter view, "
+        "relaxed neutral stance, identity readable, no scenery, no action, no text, no panel number, no watermark."
+    )
+
 def panel_prompt(title,premise,action,caption):
     return (
-        f"{CHIBI_IDENTITY} {CHIBI_STYLE} {CHIBI_CONTINUITY} "
+        f"{CHARACTER_DNA} {CHIBI_DNA} {STORYBOARD_DNA} "
         f"EPISODE: {title}. PLOT: {premise} CONTINUITY: sequential seconds/minutes. {action} "
-        f'Tiny integrated story word/phrase only: "{caption}". It must help carry the story into the next panel. '
-        "No panel number, no 01/02/03/04, no speech balloon, no extra writing, no watermark. "
-        "Use the MUBA reference only as a loose FACE/IDENTITY checksum. Prioritize the requested action, prop and environment over resemblance. "
-        "Never center a large MUBA head. Never make a mascot portrait. Use wide/medium storytelling compositions and make the plot object readable."
+        f'Tiny integrated story word/phrase only: "{caption}". '
+        "The character reference is an IDENTITY ANCHOR only. Do not imitate its stance or framing. "
+        "Prioritize the current action, visible plot object, exaggerated emotion and spatial environment. "
+        "No panel number, no 01/02/03/04, no speech balloon, no extra writing, no watermark."
     )
