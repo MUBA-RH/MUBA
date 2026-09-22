@@ -1,0 +1,51 @@
+name: Living Story HF Live Probe
+on:
+  pull_request:
+    paths:
+      - 'telegram-bot/muba_story_hf.py'
+      - '.github/workflows/story-hf-live-probe.yml'
+jobs:
+  live-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Gradio client
+        run: pip install 'gradio_client>=2.0,<3' pillow
+      - name: Generate a real reference-conditioned image
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          from gradio_client import Client, handle_file
+
+          space="InstantX/flux-IP-adapter"
+          reference="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg"
+          client=Client(space,verbose=False)
+          api=client.view_api(return_format="dict",print_info=False) or {}
+          named=api.get("named_endpoints") or {}
+          normalized={str(k).lstrip("/"):str(k) for k in named}
+          endpoint=normalized.get("process_image")
+          if not endpoint:
+              endpoint=next((v for k,v in normalized.items() if "process_image" in k.lower()),None)
+          if not endpoint:
+              raise RuntimeError("process_image endpoint unavailable: "+", ".join(sorted(normalized)))
+          result=client.predict(
+              handle_file(reference),
+              "2D Japanese chibi MUBA walking through a simple neighborhood street, full body, clean manga line art, flat cel shading",
+              0.7,42,False,512,512,api_name=endpoint,
+          )
+          image=result[0] if isinstance(result,(list,tuple)) else result
+          path=image.get("path") if isinstance(image,dict) else image
+          if not path or not Path(path).exists():
+              raise RuntimeError(f"No generated image file: {result!r}")
+          with Image.open(path) as im:
+              im.verify()
+          size=Path(path).stat().st_size
+          if size < 10000:
+              raise RuntimeError(f"Generated image unexpectedly small: {size}")
+          print(f"LIVE_STORY_PROBE_OK bytes={size}")
+          PY
