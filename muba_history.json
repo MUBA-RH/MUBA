@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-reference-approval-share",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story reference and approval flow locked",
+        "tr": "Daily Story referans ve onay akışı kilitlendi",
+        "zh": "Daily Story 参考与审批流程已锁定",
+        "ar": "تم تثبيت مرجع ومسار اعتماد Daily Story",
+        "hi": "Daily Story reference और approval flow लॉक किया गया"
+      },
+      "text": {
+        "en": "Daily Story now routes every panel through one locked MUBA identity and continuity layer, sends the four generated scenes to DEV in Telegram as 1/4 through 4/4 before web approval, and exposes an X share action only after the approved story is public.",
+        "tr": "Daily Story artık her kareyi tek bir kilitli MUBA kimlik ve devamlılık katmanından geçiriyor; dört sahneyi web onayından önce Telegram'da DEV'e 1/4–4/4 olarak tek tek gönderiyor ve X paylaşımını yalnızca onaylanmış hikâye webde yayınlandıktan sonra gösteriyor.",
+        "zh": "Daily Story 现在通过单一锁定的 MUBA 身份与连续性层生成每一格，在网页批准前于 Telegram 中按 1/4 至 4/4 逐张发送给 DEV，并仅在批准后的故事公开后显示 X 分享操作。",
+        "ar": "يمرر Daily Story الآن كل لوحة عبر طبقة واحدة مقفلة لهوية MUBA والاستمرارية، ويرسل المشاهد الأربعة إلى DEV في Telegram من 1/4 إلى 4/4 قبل اعتماد الويب، ولا يظهر مشاركة X إلا بعد نشر القصة المعتمدة.",
+        "hi": "Daily Story अब हर panel को एक locked MUBA identity और continuity layer से चलाता है, web approval से पहले Telegram में DEV को 1/4 से 4/4 तक चारों scenes अलग-अलग भेजता है, और approved story public होने के बाद ही X share action दिखाता है।"
+      }
+    },
+    {
       "id": "20260923-living-story-cloudflare-backend",
       "date": "2026-09-23",
       "type": "updated",
