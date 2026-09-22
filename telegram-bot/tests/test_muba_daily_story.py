@@ -29,7 +29,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertGreater(len(item["story"].split()),70)
         self.assertLess(len(item["summary"].split()),40)
         self.assertIn("purple neon",item["prompts"][0].lower())
-        self.assertIn("must not appear",item["prompts"][0].lower())
+        self.assertIn("must not be reproduced",item["prompts"][0].lower())
 
     def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
