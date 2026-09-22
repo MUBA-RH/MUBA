@@ -1327,30 +1327,38 @@ async def _story_generate_images(item):
     if not ai_configured():
         raise RuntimeError("MUBA AI engine is not configured")
     import base64, aiohttp
-    import aiohttp\n    async with aiohttp.ClientSession() as session:\n        async with session.get(REFERENCE_URL,timeout=15) as response:\n            if response.status != 200: raise RuntimeError("MUBA reference unavailable")\n            ref=await response.read()
-    ids=[]
-    for prompt in item["prompts"]:
-        form=aiohttp.FormData()
-        payload=ai_payload(prompt,"image","")
-        form.add_field("prompt",payload["prompt"])
-        form.add_field("width",str(payload["width"]))
-        form.add_field("height",str(payload["height"]))
-        form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
-        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
-        async with aiohttp.ClientSession() as session:\n            async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
-            raw=await response.read()
+    async with aiohttp.ClientSession() as session:
+        async with session.get(REFERENCE_URL,timeout=15) as response:
             if response.status != 200:
-                raise RuntimeError("Daily Story image generation failed")
-            if response.headers.get("Content-Type","").startswith("image/"):
-                body=raw; out_type=response.headers.get("Content-Type")
-            else:
-                result=json.loads(raw.decode("utf-8")).get("result",{})
-                encoded=result.get("image") if isinstance(result,dict) else None
-                if not encoded: raise RuntimeError("Daily Story image response contained no image")
-                body=base64.b64decode(encoded); out_type="image/png"
-        archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
-        if not archived: raise RuntimeError("Daily Story image archive failed")
-        ids.append(archived["id"])
+                raise RuntimeError("MUBA reference unavailable")
+            ref=await response.read()
+        ids=[]
+        for prompt in item["prompts"]:
+            form=aiohttp.FormData()
+            payload=ai_payload(prompt,"image","")
+            form.add_field("prompt",payload["prompt"])
+            form.add_field("width",str(payload["width"]))
+            form.add_field("height",str(payload["height"]))
+            form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+            headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+            async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+                raw=await response.read()
+                if response.status != 200:
+                    raise RuntimeError("Daily Story image generation failed")
+                if response.headers.get("Content-Type","").startswith("image/"):
+                    body=raw
+                    out_type=response.headers.get("Content-Type")
+                else:
+                    result=json.loads(raw.decode("utf-8")).get("result",{})
+                    encoded=result.get("image") if isinstance(result,dict) else None
+                    if not encoded:
+                        raise RuntimeError("Daily Story image response contained no image")
+                    body=base64.b64decode(encoded)
+                    out_type="image/png"
+            archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
+            if not archived:
+                raise RuntimeError("Daily Story image archive failed")
+            ids.append(archived["id"])
     return set_story_images(item["day"],ids)
 
 async def story_public_handler(request: web.Request):
