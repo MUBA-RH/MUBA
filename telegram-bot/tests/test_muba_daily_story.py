@@ -26,6 +26,14 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")',bot)
         self.assertIn('if is_dev(user_id):',bot)
 
+    def test_story_callback_chain_exists(self):
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn('if data=="story_director":',bot)
+        self.assertIn('if data=="story_publish":',bot)
+        self.assertIn('callback_data="story_publish"',bot)
+        self.assertIn('callback_data="menu"',bot)
+        self.assertIn('MUBA GÜNLÜK HİKÂYE',bot)
+
     def test_unapproved_story_is_not_public(self):
         day="2099-01-02"
         muba_story.unpublish(day)
