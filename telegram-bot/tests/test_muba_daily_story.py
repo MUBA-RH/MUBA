@@ -63,7 +63,7 @@ class DailyStoryTests(unittest.TestCase):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
         self.assertIn("muba_story_cloudflare",section)
-        self.assertIn("session.get(REFERENCE_URL",section)
+        self.assertIn("session.get(STORY_REFERENCE_URL",section)
         self.assertIn("cf_story_generate(session,prompt,reference",section)
         self.assertNotIn("muba_story_hf",section)
         self.assertNotIn("generate_anchor",section)
@@ -117,6 +117,23 @@ class DailyStoryTests(unittest.TestCase):
         day="2099-01-02"
         muba_story.unpublish(day)
         self.assertIsNone(muba_story.public_story(day))
+
+    def test_locked_reference_layer_drives_story_generation(self):
+        ref=(ROOT/"muba_daily_story_reference.py").read_text(encoding="utf-8")
+        layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8")
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn("muba-daily-story-reference-v1",ref)
+        self.assertIn("FOUR-PANEL CONTINUITY CONTRACT",ref)
+        self.assertIn("story_identity_prompt",layer)
+        self.assertIn("STORY_REFERENCE_URL",bot)
+        self.assertIn("reply_photo",bot)
+        self.assertIn("1 → 2 → 3 → 4",bot)
+
+    def test_web_x_share_only_lives_in_approved_story_path(self):
+        web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
+        self.assertIn('id="story-share-x"',web)
+        self.assertIn("twitter.com/intent/tweet",web)
+        self.assertIn("share.hidden=false",web)
 
 if __name__=="__main__": unittest.main()
 
