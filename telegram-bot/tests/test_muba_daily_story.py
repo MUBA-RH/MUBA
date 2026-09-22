@@ -17,7 +17,7 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_uses_reusable_chibi_character_anchor(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("muba character identity only",prompt)
+        self.assertIn("canonical muba face architecture",prompt)
         self.assertIn("true hand-drawn 2d japanese chibi",prompt)
         self.assertIn("identity",prompt)
         self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-hf-flux-ipadapter-v6")
