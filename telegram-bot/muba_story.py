@@ -90,8 +90,8 @@ def draft(day=None):
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
-                 "visual_style":"living-story-chibi-only","continuity":"previous-frame-image","frame_text_max_words":3,
-                 "visual_layer":"muba_story_chibi","reference_excludes":["purple-neon-ring","crown","background"]},
+                 "visual_style":"living-story-chibi-anchor-v2","continuity":"character-anchor-plus-story-state","frame_text_max_words":3,
+                 "visual_layer":"muba_story_chibi","character_anchor_version":"chibi-muba-v2","reference_excludes":["purple-neon-ring","crown","background"]},
     }
 
 def set_images(day,image_ids):
