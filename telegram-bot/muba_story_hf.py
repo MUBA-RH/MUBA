@@ -12,7 +12,8 @@ from pathlib import Path
 
 SPACE_ID=os.getenv("MUBA_STORY_HF_SPACE","InstantX/flux-IP-adapter").strip()
 API_CANDIDATES=("process_image","predict")
-IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.70"))
+PANEL_IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.62"))
+ANCHOR_IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_ANCHOR_WEIGHT","0.42"))
 
 def configured()->bool:
     return bool(os.getenv("HF_TOKEN")) and bool(SPACE_ID)
@@ -34,7 +35,7 @@ def _select_endpoint(named:dict[str,str])->str:
         + ", ".join(sorted(named)[:20])
     )
 
-def _run_gradio(prompt:str,reference_url:str):
+def _run_gradio(prompt:str,reference_url:str,weight:float,seed:int):
     from gradio_client import Client, handle_file
 
     token=os.getenv("HF_TOKEN","").strip() or None
@@ -45,9 +46,9 @@ def _run_gradio(prompt:str,reference_url:str):
     return client.predict(
         handle_file(reference_url),
         prompt,
-        IP_WEIGHT,
-        42,
-        True,
+        weight,
+        seed,
+        False,
         1024,
         1024,
         api_name=api_name,
@@ -63,13 +64,16 @@ def _result_path(result)->str:
             value=image.get(key)
             if value:
                 return str(value)
+    object_path=getattr(image,"path",None)
+    if object_path:
+        return str(object_path)
     raise RuntimeError("Unexpected Hugging Face FLUX IP-Adapter image response")
 
-async def generate(session,prompt:str,reference_url:str)->tuple[bytes,str]:
+async def generate(session,prompt:str,reference_url:str,*,weight:float|None=None,seed:int=42)->tuple[bytes,str]:
     if not configured():
         raise RuntimeError("HF_TOKEN is not configured for Living Story")
     import asyncio
-    result=await asyncio.to_thread(_run_gradio,prompt,reference_url)
+    result=await asyncio.to_thread(_run_gradio,prompt,reference_url,PANEL_IP_WEIGHT if weight is None else weight,seed)
     path=_result_path(result)
     body=await asyncio.to_thread(Path(path).read_bytes)
     if not body:
@@ -81,3 +85,6 @@ async def generate(session,prompt:str,reference_url:str)->tuple[bytes,str]:
         ".webp":"image/webp",
     }.get(suffix,"image/png")
     return body,content_type
+async def generate_anchor(session,prompt:str,reference_url:str)->tuple[bytes,str]:
+    """Create a clean chibi identity anchor with deliberately low composition transfer."""
+    return await generate(session,prompt,reference_url,weight=ANCHOR_IP_WEIGHT,seed=20260922)

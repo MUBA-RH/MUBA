@@ -19,6 +19,26 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-chibi-continuity-v5",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": ["daily", "telegram"],
+      "title": {
+        "en": "Living Story visual continuity corrected",
+        "tr": "Living Story görsel sürekliliği düzeltildi",
+        "zh": "Living Story 视觉连续性已修正",
+        "ar": "تم تصحيح الاستمرارية البصرية في Living Story",
+        "hi": "Living Story की दृश्य निरंतरता सुधारी गई"
+      },
+      "text": {
+        "en": "Living Story now creates a clean 2D chibi identity anchor before the four panels, suppresses neon portrait composition and generated text, and gives every panel a concrete cause-and-effect scene state so the four images follow one story.",
+        "tr": "Living Story artık dört kareden önce temiz bir 2D chibi kimlik referansı oluşturuyor; neon portre kompozisyonunu ve üretilmiş yazıları bastırıyor ve dört görselin tek hikâyeyi izlemesi için her kareye somut neden-sonuç sahnesi veriyor.",
+        "zh": "Living Story 现在会先创建干净的 2D chibi 身份锚点，再生成四个画面；同时抑制霓虹人像构图和生成文字，并为每个画面指定明确的因果场景状态，使四张图属于同一个故事。",
+        "ar": "ينشئ Living Story الآن مرجع هوية chibi ثنائي الأبعاد ونظيف قبل اللوحات الأربع، ويمنع تكوين البورتريه النيون والنصوص المولدة، ويحدد لكل لوحة حالة مشهد سببية واضحة لتتبع الصور الأربع قصة واحدة.",
+        "hi": "Living Story अब चार पैनलों से पहले साफ़ 2D chibi identity anchor बनाता है, neon portrait composition और generated text को रोकता है, और हर panel को स्पष्ट cause-and-effect scene state देता है ताकि चारों चित्र एक ही कहानी का क्रम बनें।"
+      }
+    },
+    {
       "id": "20260922-living-story-hf-only-fail-closed",
       "date": "2026-09-22",
       "type": "fixed",
