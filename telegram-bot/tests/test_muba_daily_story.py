@@ -41,6 +41,13 @@ class DailyStoryTests(unittest.TestCase):
         self.assertTrue(item["theme_tr"])
         self.assertTrue(item["source_truth_tr"])
 
+    def test_story_cannot_publish_without_four_images(self):
+        day="2099-01-03"
+        muba_story.unpublish(day)
+        muba_story.set_images(day,[])
+        with self.assertRaises(ValueError): muba_story.publish(day)
+        self.assertIsNone(muba_story.public_story(day))
+
     def test_unapproved_story_is_not_public(self):
         day="2099-01-02"
         muba_story.unpublish(day)
