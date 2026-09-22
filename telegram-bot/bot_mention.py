@@ -1324,6 +1324,7 @@ def _gallery_cors_headers():
 
 async def _story_generate_images(item):
     """Generate four Story panels with HF ZeroGPU SDXL + real IP-Adapter identity conditioning."""
+    import aiohttp
     from muba_story_hf import configured as hf_story_configured, generate as hf_story_generate
     if not hf_story_configured():
         raise RuntimeError("HF_TOKEN is not configured for Living Story")
