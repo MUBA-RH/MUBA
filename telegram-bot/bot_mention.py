@@ -1340,11 +1340,13 @@ async def _story_generate_images(item):
             form.add_field("prompt",payload["prompt"])
             form.add_field("width",str(payload["width"]))
             form.add_field("height",str(payload["height"]))
-            # input_image_0 always anchors MUBA identity. From frame 2 onward,
-            # input_image_1 anchors visual continuity to the immediately prior panel.
-            form.add_field("input_image_0",identity_ref,filename="muba-identity.jpg",content_type="image/jpeg")
-            if previous_frame is not None:
-                form.add_field("input_image_1",previous_frame,filename=f"previous-frame-{index}.png",content_type="image/png")
+            # Living Story deliberately reduces identity-reference dominance after the establishing frame.
+            # Frame 1 gets the MUBA identity anchor. Frames 2-4 get ONLY the previous story panel,
+            # so action/environment continuity can dominate instead of repeatedly reconstructing the source portrait.
+            if previous_frame is None:
+                form.add_field("input_image_0",identity_ref,filename="muba-identity.jpg",content_type="image/jpeg")
+            else:
+                form.add_field("input_image_0",previous_frame,filename=f"previous-story-frame-{index}.png",content_type="image/png")
             headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
             async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
                 raw=await response.read()

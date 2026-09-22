@@ -17,7 +17,7 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_is_isolated_chibi_episode(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("preserve muba's original facial identity",prompt)
+        self.assertIn("preserve only the minimum identity cues",prompt)
         self.assertIn("chibi / super-deformed",prompt)
         self.assertIn("one chibi mini-story",prompt)
         self.assertIn("continuity:",prompt)
@@ -46,9 +46,18 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("no panel number",layer)
         self.assertIn("upside-down",layer)
 
+    def test_chibi_composition_reduces_character_dominance(self):
+        layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
+        self.assertIn("20-45 percent",layer)
+        self.assertIn("story action, story object and environment are visually dominant",layer)
+        self.assertIn("never center a large muba head",layer)
+        self.assertIn("prioritize the requested action, prop and environment over resemblance",layer)
+
     def test_generation_chains_previous_frame_as_visual_reference(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn('input_image_1',bot)
+        self.assertNotIn('input_image_1',bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")])
+        self.assertIn('if previous_frame is None:',bot)
+        self.assertIn('previous-story-frame-',bot)
         self.assertIn('previous_frame=body',bot)
 
     def test_technical_change_is_not_literal_story_title(self):

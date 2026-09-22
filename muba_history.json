@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-reduce-muba-dominance",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story reduces character-reference dominance",
+        "tr": "Living Story karakter referansı baskınlığını azalttı",
+        "zh": "Living Story 降低角色参考图主导性",
+        "ar": "خفض Living Story هيمنة مرجع الشخصية",
+        "hi": "Living Story ने character-reference dominance घटाया"
+      },
+      "text": {
+        "en": "Living Story now treats MUBA as the recurring actor rather than the composition itself. Story action, props and environment are visually dominant, MUBA is framed smaller in action-oriented shots, and the original identity image is injected only into the first panel. Later panels continue from the immediately previous Story frame instead of re-injecting the source portrait.",
+        "tr": "Living Story artık MUBA'yı kompozisyonun kendisi değil, hikâyenin tekrar eden oyuncusu olarak ele alıyor. Olay, nesneler ve çevre görsel olarak baskın; MUBA aksiyon kadrajlarında daha küçük kullanılıyor. Orijinal kimlik görseli yalnız ilk kareye veriliyor; sonraki kareler kaynak portreyi yeniden almadan doğrudan bir önceki Story karesinden devam ediyor.",
+        "zh": "Living Story 现在把 MUBA 视为故事中的持续角色，而不是画面构图本身。故事动作、道具和环境成为视觉主体，MUBA 在动作镜头中占比更小；原始身份图仅注入第一格，后续画面直接沿用上一格 Story，而不再次注入源肖像。",
+        "ar": "يتعامل Living Story الآن مع MUBA كشخصية متكررة داخل القصة لا كموضوع التكوين نفسه. أصبحت الحركة والأغراض والبيئة هي العناصر البصرية المهيمنة، ويظهر MUBA بحجم أصغر في لقطات الحركة. تُستخدم صورة الهوية الأصلية في اللوحة الأولى فقط، ثم تتابع اللوحات التالية من لوحة Story السابقة مباشرة دون إعادة إدخال صورة المصدر.",
+        "hi": "Living Story अब MUBA को composition स्वयं नहीं बल्कि कहानी के recurring actor की तरह उपयोग करती है।Story action, props और environment visual priority लेते हैं, action shots में MUBA छोटा रहता है, और original identity image केवल पहले panel में दी जाती है।बाद के panels source portrait को दोबारा inject किए बिना पिछले Story frame से आगे बढ़ते हैं।"
+      }
+    },
+    {
       "id": "20260922-living-story-chibi-layer",
       "date": "2026-09-22",
       "type": "fixed",
