@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-dev-turkish",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story DEV screen localized to Turkish",
+        "tr": "Daily Story DEV ekranı Türkçeleştirildi",
+        "zh": "Daily Story DEV 界面已切换为土耳其语",
+        "ar": "تم تحويل شاشة Daily Story DEV إلى التركية",
+        "hi": "Daily Story DEV स्क्रीन तुर्की में की गई"
+      },
+      "text": {
+        "en": "The DEV-facing Daily Story preview now presents its theme, four scene descriptions, status and controls in Turkish while keeping the internal visual prompts unchanged.",
+        "tr": "DEV'e özel Daily Story önizlemesi artık tema, dört sahne açıklaması, durum ve kontrolleri Türkçe gösteriyor; görsel üretim için kullanılan dahili prompt yapısı değiştirilmedi.",
+        "zh": "面向 DEV 的 Daily Story 预览现在以土耳其语显示主题、四个场景说明、状态和控制项，同时保持内部视觉提示词不变。",
+        "ar": "تعرض معاينة Daily Story الخاصة بـ DEV الآن الموضوع ووصف المشاهد الأربعة والحالة وعناصر التحكم باللغة التركية مع إبقاء تعليمات التوليد البصرية الداخلية دون تغيير.",
+        "hi": "DEV के लिए Daily Story preview अब theme, चार scene descriptions, status और controls तुर्की में दिखाता है, जबकि internal visual prompts अपरिवर्तित रहते हैं।"
+      }
+    },
+    {
       "id": "20260922-story-dev-menu-entry",
       "date": "2026-09-22",
       "type": "fixed",

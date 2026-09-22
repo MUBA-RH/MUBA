@@ -641,15 +641,15 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="story_director":
         if not is_dev(user_id): return
         item=story_draft()
-        body="🎬 MUBA DAILY STORY — "+item["day"]+"\\n\\n"+item["theme"]+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item["scenes"]))+"\\n\\nTWT: "+item["twt"]+"\\n\\nStatus: "+item["status"].upper() 
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\\n\\n"+item.get("theme_tr",item["theme"])+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\\n\\nTWT: "+item.get("twt_tr",item["twt"])+"\\n\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK") 
         rows=[]
         if item["status"]!="published": rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        rows.append([InlineKeyboardButton("⬅️ Back",callback_data="menu")]) 
+        rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")]) 
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
     if data=="story_publish":
         if not is_dev(user_id): return
         item=publish_story(story_draft()["day"])
-        await q.edit_message_text("🎬 MUBA Daily Story\\n\\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Back",callback_data="menu")]])); return
+        await q.edit_message_text("🎬 MUBA Günlük Hikâye\\n\\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Back",callback_data="menu")]])); return
     if data=="gallery_admin":
         if not is_dev(user_id): return
         await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["title"],reply_markup=gallery_admin_keyboard(lang)); return
