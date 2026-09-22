@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - 'telegram-bot/muba_story_hf.py'
+      - 'telegram-bot/muba_story_chibi.py'
+      - 'telegram-bot/muba_face_architecture.py'
+      - 'telegram-bot/bot_mention.py'
       - '.github/workflows/story-hf-live-probe.yml'
 jobs:
   live-probe:
@@ -48,4 +51,39 @@ jobs:
           if size < 10000:
               raise RuntimeError(f"Generated image unexpectedly small: {size}")
           print(f"LIVE_STORY_PROBE_OK bytes={size}")
+          PY
+      - name: Run the production five-call Story chain
+        working-directory: telegram-bot
+        env:
+          MUBA_STORY_HF_ATTEMPTS: "3"
+        run: |
+          python - <<'PY'
+          import asyncio, tempfile
+          from pathlib import Path
+          import aiohttp
+          from PIL import Image
+          from muba_story import draft
+          from muba_story_chibi import character_anchor_prompt
+          from muba_story_hf import generate, generate_anchor
+
+          REFERENCE="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg"
+
+          async def main():
+              item=draft("2099-01-01")
+              async with aiohttp.ClientSession() as session:
+                  anchor,ctype=await generate_anchor(session,character_anchor_prompt(),REFERENCE)
+                  suffix=".jpg" if "jpeg" in ctype else ".webp" if "webp" in ctype else ".png"
+                  with tempfile.NamedTemporaryFile(suffix=suffix,delete=False) as tmp:
+                      tmp.write(anchor); anchor_path=tmp.name
+                  sizes=[]
+                  try:
+                      for index,prompt in enumerate(item["prompts"]):
+                          body,out_type=await generate(session,prompt,anchor_path,seed=20260923+index)
+                          if len(body)<10000: raise RuntimeError("panel unexpectedly small")
+                          sizes.append(len(body))
+                  finally:
+                      Path(anchor_path).unlink(missing_ok=True)
+                  if len(sizes)!=4: raise RuntimeError("four panels were not produced")
+                  print("PRODUCTION_STORY_CHAIN_OK",sizes)
+          asyncio.run(main())
           PY
