@@ -20,10 +20,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("recurring character dna",prompt)
         self.assertIn("strict 2d japanese chibi",prompt)
         self.assertIn("identity anchor only",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-hf-ipadapter-v3")
+        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-hf-flux-ipadapter-v4")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
         self.assertEqual(item["rules"]["continuity"],"canonical-reference-plus-story-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"hf-sdxl-ipadapter-v3")
+        self.assertEqual(item["rules"]["character_anchor_version"],"hf-flux-ipadapter-v4")
         self.assertIn("purple neon",prompt)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
@@ -50,19 +50,18 @@ class DailyStoryTests(unittest.TestCase):
         self.assertNotIn("previous_frame",section)
         self.assertNotIn("character_anchor,_=await render",section)
 
-    def test_hf_bridge_is_real_sdxl_ipadapter_and_token_gated(self):
+    def test_hf_bridge_is_real_flux_ipadapter_and_token_gated(self):
         bridge=(ROOT/"muba_story_hf.py").read_text(encoding="utf-8")
-        self.assertIn('stabilityai/SDXL-Base-1.0',bridge)
-        self.assertIn('"injector_type":"ipadapter"',bridge)
-        self.assertIn('"preset":IP_PRESET',bridge)
+        self.assertIn('InstantX/flux-IP-adapter',bridge)
+        self.assertIn('API_CANDIDATES=("process_image","predict")',bridge)
         self.assertIn('HF_TOKEN',bridge)
-        self.assertIn('from gradio_client import Client',bridge)
-        self.assertIn('Client("RioShiina/ImageGen",token=token,verbose=False)',bridge)
+        self.assertIn('from gradio_client import Client, handle_file',bridge)
+        self.assertIn('Client(SPACE_ID,token=token,verbose=False)',bridge)
         self.assertIn('view_api(return_format="dict",print_info=False)',bridge)
-        self.assertIn('API_CANDIDATES=("run_imagegen","ImageGen_run_imagegen")',bridge)
-        self.assertIn('endswith("run_imagegen")',bridge)
-        self.assertNotIn('api_name="/run_imagegen"',bridge)
-        self.assertNotIn('/gradio_api/call/v2/',bridge)
+        self.assertIn('handle_file(reference_url)',bridge)
+        self.assertIn('IP_WEIGHT',bridge)
+        self.assertNotIn('RioShiina/ImageGen',bridge)
+        self.assertNotIn('run_imagegen',bridge)
         self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
 
     def test_technical_change_is_not_literal_story_title(self):
