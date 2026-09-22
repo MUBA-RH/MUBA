@@ -140,7 +140,7 @@ class TestLivingStoryIsolation(unittest.TestCase):
         self.assertIn("hf_story_generate(session,prompt,anchor_path",story)
         self.assertIn("generated=[]",story)
         self.assertLess(story.index("generated.append"),story.index("_archive_studio_output"))
-        self.assertIn("HF_TOKEN is not configured for Living Story",story)
+        self.assertIn("Living Story HF engine is not configured",story)
         self.assertNotIn("cloudflare_story_generate",story)
         self.assertNotIn("ai_endpoint()",story)
         self.assertNotIn("CLOUDFLARE_API_TOKEN",story)
