@@ -1323,19 +1323,61 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four Story panels with HF ZeroGPU SDXL + real IP-Adapter identity conditioning."""
-    import aiohttp
-    from muba_story_hf import configured as hf_story_configured, generate as hf_story_generate
-    if not hf_story_configured():
-        raise RuntimeError("HF_TOKEN is not configured for Living Story")
+    """Generate four Story panels with resilient HF-first / Cloudflare fallback."""
+    import aiohttp, base64
 
-    # Every panel is generated independently from the same canonical MUBA identity
-    # reference. No generated frame is recursively reused, so pose/composition errors
-    # cannot snowball. Character continuity comes from IP-Adapter + fixed Character DNA.
+    async def cloudflare_story_generate(session, prompt):
+        if not ai_configured():
+            raise RuntimeError("Cloudflare fallback is not configured")
+        ref=await session.get(REFERENCE_URL,timeout=15)
+        async with ref:
+            if ref.status!=200:
+                raise RuntimeError("MUBA reference unavailable")
+            reference_bytes=await ref.read()
+        form=aiohttp.FormData()
+        payload=ai_payload(prompt,"image","")
+        # Story-specific direction: keep the proven reference-conditioned engine,
+        # while the prompt itself carries the 2D CHIBI storyboard constraints.
+        form.add_field("prompt",payload["prompt"])
+        form.add_field("width","1024")
+        form.add_field("height","1024")
+        form.add_field("input_image_0",reference_bytes,filename="muba-reference.jpg",content_type="image/jpeg")
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        async with session.post(ai_endpoint(),data=form,headers=headers,timeout=120) as response:
+            raw=await response.read()
+            if response.status!=200:
+                raise RuntimeError(f"Cloudflare Story fallback failed ({response.status})")
+            if response.headers.get("Content-Type","").startswith("image/"):
+                return raw,response.headers.get("Content-Type","image/png").split(";",1)[0]
+            decoded=json.loads(raw.decode("utf-8"))
+            result=decoded.get("result",decoded)
+            encoded=result.get("image") if isinstance(result,dict) else None
+            if not encoded:
+                raise RuntimeError("Cloudflare Story fallback returned no image")
+            return base64.b64decode(encoded),"image/png"
+
+    # HF/IP-Adapter is preferred, but the public ZeroGPU Space is an external
+    # dependency whose high-level run endpoint can disappear. A Story must not
+    # become unavailable because of that upstream API. Fall back per panel to
+    # the already-proven Cloudflare reference-conditioned generator.
+    try:
+        from muba_story_hf import configured as hf_story_configured, generate as hf_story_generate
+        use_hf=hf_story_configured()
+    except Exception:
+        logger.exception("Living Story HF bridge unavailable; Cloudflare fallback enabled")
+        use_hf=False
+
     ids=[]
     async with aiohttp.ClientSession() as session:
         for prompt in item["prompts"]:
-            body,out_type=await hf_story_generate(session,prompt,REFERENCE_URL)
+            body=out_type=None
+            if use_hf:
+                try:
+                    body,out_type=await hf_story_generate(session,prompt,REFERENCE_URL)
+                except Exception:
+                    logger.exception("Living Story HF generation failed; using Cloudflare fallback")
+            if body is None:
+                body,out_type=await cloudflare_story_generate(session,prompt)
             archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
             if not archived:
                 raise RuntimeError("Daily Story image archive failed")
