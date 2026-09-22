@@ -46,7 +46,11 @@ def draft(day=None):
         title=(change.get("title") or {}).get("en") or "A new MUBA day"
         fact=(change.get("text") or {}).get("en") or title
         theme=f"MUBA encounters a real change in its own living ecosystem: {title}."
+        title_tr=(change.get("title") or {}).get("tr") or title
+        fact_tr=(change.get("text") or {}).get("tr") or fact
+        theme_tr=f"MUBA kendi yaşayan ekosistemindeki gerçek bir gelişmeyle karşılaşıyor: {title_tr}."
         truth=fact
+        truth_tr=fact_tr
     else:
         theme="A quiet day inside MUBA's living world becomes a small unexpected character moment."
         truth="No public ecosystem development is required for this episode."

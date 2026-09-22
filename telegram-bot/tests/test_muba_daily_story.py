@@ -33,6 +33,13 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('callback_data="story_publish"',bot)
         self.assertIn('callback_data="menu"',bot)
         self.assertIn('MUBA GÜNLÜK HİKÂYE',bot)
+        self.assertEqual(bot.count('if data=="story_director":'),1)
+        self.assertEqual(bot.count('if data=="story_publish":'),1)
+
+    def test_today_change_has_turkish_runtime_fields(self):
+        item=muba_story.draft("2026-09-22")
+        self.assertTrue(item["theme_tr"])
+        self.assertTrue(item["source_truth_tr"])
 
     def test_unapproved_story_is_not_public(self):
         day="2099-01-02"
