@@ -22,10 +22,16 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("one continuous mini-episode",prompt)
         self.assertIn("continuity lock",prompt)
         self.assertEqual(item["rules"]["visual_style"],"comic-anime-hybrid")
-        self.assertEqual(item["rules"]["continuity"],"locked-sequential")
+        self.assertEqual(item["rules"]["continuity"],"previous-frame-image")
         self.assertEqual(item["rules"]["frame_text_max_words"],3)
         self.assertEqual(len(item["frame_labels"]),4)
-        self.assertGreater(len(item["story"].split()),45)
+        self.assertGreater(len(item["story"].split()),70)
+        self.assertNotIn("purple neon",item["prompts"][0].lower().replace("must not appear",""))
+
+    def test_generation_chains_previous_frame_as_visual_reference(self):
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn('input_image_1',bot)
+        self.assertIn('previous_frame=body',bot)
 
     def test_technical_change_is_not_literal_story_title(self):
         item=muba_story.draft("2026-09-22")
