@@ -62,10 +62,18 @@ def draft(day=None):
         "theme":theme,"source_truth":truth,"scenes":scenes,"prompts":prompts,
         "twt":"MUBA keeps moving. Today simply became part of the story.",
         "twt_tr":"MUBA ilerlemeye devam ediyor. Bugün de hikâyenin bir parçası oldu.",
-        "images":image_ids(day),\n        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"reference-image"},
+        "images":image_ids(day),
+        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"reference-image"},
     }
 
-def set_images(day,image_ids):\n    STORE.set("story_images",str(day),list(image_ids)[:4])\n    return draft(day)\n\ndef image_ids(day):\n    return list(STORE.get("story_images",str(day),[]) or [])[:4]\n\ndef is_published(day):
+def set_images(day,image_ids):
+    STORE.set("story_images",str(day),list(image_ids)[:4])
+    return draft(day)
+
+def image_ids(day):
+    return list(STORE.get("story_images",str(day),[]) or [])[:4]
+
+def is_published(day):
     return bool(STORE.get("story_publish",str(day),False))
 
 def publish(day):
