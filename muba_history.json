@@ -19,6 +19,31 @@
   },
   "entries": [
     {
+      "id": "20260922-daily-story-director",
+      "date": "2026-09-22",
+      "type": "new",
+      "areas": [
+        "daily",
+        "web",
+        "assistant",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Daily Story Director established",
+        "tr": "MUBA Daily Story Director kuruldu",
+        "zh": "MUBA Daily Story Director 已建立",
+        "ar": "تم إنشاء MUBA Daily Story Director",
+        "hi": "MUBA Daily Story Director स्थापित हुआ"
+      },
+      "text": {
+        "en": "MUBA now has an isolated daily visual-story layer that reads canonical ecosystem history, prepares one four-scene story per day, preserves the reference character identity, and requires DEV approval before public web publication. The visual policy avoids anime, comic-book and hard glossy CGI treatment.",
+        "tr": "MUBA artık canonical ekosistem geçmişini okuyarak her gün dört bağlantılı sahneden oluşan bir hikâye hazırlayan, referans karakter kimliğini koruyan ve web yayını öncesinde DEV onayı isteyen izole bir günlük görsel hikâye katmanına sahip. Görsel politika anime, çizgi roman ve sert/parlak CGI görünümünü dışlıyor.",
+        "zh": "MUBA 现拥有独立的每日视觉故事层：读取 canonical 生态历史，每天准备一个四场景故事，保持参考角色身份，并在公开网页发布前要求 DEV 审核。视觉规则排除动漫、漫画和强烈光泽 CGI 风格。",
+        "ar": "أصبح لدى MUBA الآن طبقة مستقلة للقصة البصرية اليومية تقرأ سجل النظام canonical وتجهز قصة من أربعة مشاهد مترابطة يومياً وتحافظ على هوية الشخصية المرجعية وتتطلب موافقة DEV قبل النشر العام على الويب. تستبعد السياسة البصرية أسلوب الأنمي والقصص المصورة وCGI اللامع القاسي.",
+        "hi": "MUBA में अब एक अलग daily visual-story layer है जो canonical ecosystem history पढ़कर हर दिन चार जुड़े scenes तैयार करती है, reference character identity सुरक्षित रखती है और public web publication से पहले DEV approval मांगती है। Visual policy anime, comic-book और hard glossy CGI treatment को बाहर रखती है।"
+      }
+    },
+    {
       "id": "20260922-unit-badge-read-state",
       "date": "2026-09-22",
       "type": "fixed",
