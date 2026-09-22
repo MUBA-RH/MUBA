@@ -641,7 +641,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="story_director":
         if not is_dev(user_id): return
         item=story_draft()
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\n\nTWT: "+item.get("twt_tr",item["twt"])+"\n\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+\n\n"+item.get("twt_tr",item["twt"])+"\n\nDurum: +("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
         if item["status"]!="published" and len(item.get("images",[]))==4: rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
         elif item["status"]!="published": rows.append([InlineKeyboardButton("🖼 4 GÖRSELİ ÜRET",callback_data="story_generate")])
