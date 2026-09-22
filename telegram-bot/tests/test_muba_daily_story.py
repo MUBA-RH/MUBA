@@ -33,6 +33,9 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('callback_data="story_publish"',bot)
         self.assertIn('callback_data="menu"',bot)
         self.assertIn('MUBA GÜNLÜK HİKÂYE',bot)
+        self.assertIn('if data==\"story_generate\":',bot)
+        self.assertIn('callback_data=\"story_generate\"',bot)
+        self.assertIn('_story_generate_images',bot)
         self.assertEqual(bot.count('if data=="story_director":'),1)
         self.assertEqual(bot.count('if data=="story_publish":'),1)
 
