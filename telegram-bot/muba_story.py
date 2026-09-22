@@ -38,7 +38,13 @@ def _episode_for_day(day):
     options=[
         {
             "title":"The Box That Knocked Back","title_tr":"Karşılık Veren Kutu",
-            "premise":"In a narrow old-city alley, MUBA finds a small weathered wooden box beside a closed shop. When MUBA taps the lid, something inside taps back.",
+            "premise":"A quiet narrow old-city alley in warm morning daylight: faded green shop door, stone pavement, one clay flowerpot, and one small weathered wooden box beside the door. Keep these exact landmarks in every panel.",
+            "actions":[
+                "Wide establishing shot: MUBA walks into the alley, notices the closed wooden box beside the faded green door, stops two steps away and leans forward curiously. The box is still.",
+                "Same alley seconds later: MUBA crouches beside the SAME box and taps its lid once. The lid visibly bumps upward from a knock inside; MUBA jerks backward in surprise.",
+                "Immediate continuation: the SAME box lid flips half open and a tiny brass wind-up bird springs out carrying one large round biscuit in its beak. MUBA falls backward onto the stone pavement. Keep the green door and flowerpot.",
+                "Payoff in the SAME alley: MUBA sits beside the open box and breaks the biscuit in half. The tiny brass bird perches on the box edge and receives one half. Calm warm daylight, resolved ending."
+            ],
             "premise_tr":"Eski şehirde dar bir sokakta MUBA, kapalı bir dükkânın yanında küçük ve yıpranmış ahşap bir kutu bulur. Kapağı tıklatınca içeriden aynı şekilde karşılık gelir.",
             "labels":["KNOCK.","KNOCK?","OH.","YOURS."],
             "story":"At the end of a quiet alley, MUBA noticed a battered wooden box that definitely had not been there a moment ago. One cautious knock on the lid came back from inside. Naturally, MUBA knocked again. The box jumped, the lid cracked open, and a tiny wind-up bird burst out carrying a biscuit almost as large as itself. It dropped the biscuit at MUBA's feet, folded its metal wings and disappeared back into the box. MUBA stared at the unexpected delivery for a second, then sat beside the box and shared the biscuit with whoever—or whatever—was still knocking from inside.",
@@ -46,7 +52,13 @@ def _episode_for_day(day):
         },
         {
             "title":"The Runaway Paper","title_tr":"Kaçak Kâğıt",
-            "premise":"On a breezy neighborhood street, a folded paper slips from a bench and keeps escaping MUBA every time it is almost caught.",
+            "premise":"A bright breezy neighborhood street in daytime: one wooden bench on the left, one shallow puddle near the curb, a pale yellow wall at the far end, and one folded white paper. Keep these exact landmarks in every panel.",
+            "actions":[
+                "Wide establishing shot: the folded white paper lifts from the bench and skates across the pavement in front of walking MUBA. MUBA turns toward it; bench, puddle and yellow wall are visible.",
+                "Same street moments later: MUBA runs full-body after the SAME folded paper as wind pushes it just beyond reach. MUBA splashes through the SAME puddle; the bench is behind.",
+                "Same chase at the pale yellow wall: the paper lands at the base of the wall. MUBA dives and pins it with both tiny hands, cap crooked, exhausted but triumphant.",
+                "Immediate payoff at the SAME wall: MUBA opens the caught paper and it is completely blank; a gust lifts MUBA's black cap into the air behind. MUBA twists around reaching for the flying cap while the blank paper stays under one hand."
+            ],
             "premise_tr":"Rüzgârlı bir mahalle sokağında banktan uçan katlanmış bir kâğıt, MUBA her yaklaştığında yeniden kaçmaya başlar.",
             "labels":["HEY.","GOTCHA—","NOPE.","FINE."],
             "story":"A folded piece of paper skated past MUBA's shoes and stopped just long enough to look catchable. It was a trap. Every time MUBA reached down, the wind carried it a few steps farther through the same street. The chase passed one bench, one puddle and one increasingly annoyed MUBA. At last the paper landed against a wall. MUBA pounced—and unfolded a completely blank sheet. Before the disappointment could settle in, the wind lifted MUBA's cap instead. The paper stayed put. MUBA chased the cap. Apparently the street had chosen a new game.",
@@ -64,12 +76,7 @@ def draft(day=None):
     theme=ep["title"]
     theme_tr=ep["title_tr"]
     labels=ep["labels"]
-    actions=[
-        "FRAME 1 — ESTABLISH. Wide shot. Show MUBA discovering the exact story object in the stated location. The object and surrounding geography must be clearly readable.",
-        "FRAME 2 — ACTION. Continue seconds later. Show MUBA physically interacting with that same object and the first consequence. Preserve exact spatial placement and environmental details.",
-        "FRAME 3 — TURN. Continue the consequence. Show the concrete surprise/reveal from the premise with a strong MUBA reaction. This must visibly follow frame 2.",
-        "FRAME 4 — PAYOFF. Continue immediately. Resolve the exact event with the story's visual punchline and a satisfying ending composition.",
-    ]
+    actions=ep["actions"]
     actions_tr=[
         "Kare 1 — Kurulum: geniş planda MUBA'nın hikâyedeki somut nesneyi belirtilen mekânda bulduğu an gösterilir.",
         "Kare 2 — Eylem: birkaç saniye sonrası; MUBA aynı nesneyle fiziksel olarak etkileşir ve ilk sonuç ortaya çıkar.",
@@ -77,8 +84,8 @@ def draft(day=None):
         "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
     prompts=[
-        panel_prompt(theme,ep["premise"],action,labels[i])
-        for i,action in enumerate(actions)
+        panel_prompt(theme,ep["premise"],action)
+        for action in actions
     ]
     return {
         "day":day,"status":"published" if is_published(day) else "draft",
@@ -90,8 +97,8 @@ def draft(day=None):
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
-                 "visual_style":"living-story-chibi-hf-flux-ipadapter-v4","continuity":"canonical-reference-plus-story-state","frame_text_max_words":3,
-                 "visual_layer":"muba_story_chibi","character_anchor_version":"hf-flux-ipadapter-v4","reference_excludes":["purple-neon-ring","crown","background"]},
+                 "visual_style":"living-story-true-2d-chibi-hf-flux-ipadapter-v5","continuity":"clean-chibi-anchor-plus-explicit-scene-state","frame_text_max_words":0,
+                 "visual_layer":"muba_story_chibi","character_anchor_version":"hf-flux-ipadapter-chibi-v5","reference_excludes":["purple-neon-ring","crown","background"]},
     }
 
 def set_images(day,image_ids):

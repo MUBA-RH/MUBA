@@ -5,38 +5,36 @@ It is isolated from Studio, Gallery and all other MUBA visual systems.
 """
 
 CHARACTER_DNA=(
-    "RECURRING CHARACTER DNA — repeat unchanged in every panel: MUBA, tan/brown short dense fur; "
-    "distinctive very large expressive eyes; tiny dark nose; playful small mouth/tongue when emotion calls for it; "
-    "black MUBA cap; black hoodie marked $MUBA. Preserve these identity markers, not the source portrait composition. "
+    "MUBA CHARACTER IDENTITY ONLY: tan/brown short dense fur, distinctive huge expressive eyes, tiny dark nose, "
+    "small playful mouth, black MUBA cap and black hoodie. Keep the same face, fur color and clothing in every panel. "
 )
 
 CHIBI_DNA=(
-    "STRICT 2D JAPANESE CHIBI / SUPER-DEFORMED DNA: approximately 2-head-tall body, oversized rounded head, tiny pear-shaped torso, "
-    "very short rounded limbs, simplified mitten-like hands and feet, almost no neck, huge low-set sparkling eyes, tiny nose, rounded cheeks. "
-    "Clean thick manga line art, flat/soft cel shading, simple graphic shapes. Absolutely no photorealism, no 3D, no CGI, no plush/toy render. "
+    "TRUE HAND-DRAWN 2D JAPANESE CHIBI / SUPER-DEFORMED ILLUSTRATION: exactly about 2 heads tall; oversized round head; "
+    "tiny pear-shaped torso; very short rounded arms and legs; tiny simplified hands and feet; almost no neck; huge low-set eyes; "
+    "rounded cheeks; bold clean manga outlines; flat cel colors with only one soft shadow tone. "
+    "NO photorealism, NO realistic fur rendering, NO 3D, NO CGI, NO Pixar/Disney look, NO plush/toy, NO glossy render. "
 )
 
 STORYBOARD_DNA=(
-    "This is ONE four-beat sequential comic, not four portraits. The CHARACTER DNA stays fixed while ACTION, POSE, CAMERA and STORY STATE change. "
-    "The named plot object and environment must carry the narrative. Use wide or medium full-body staging; the character should normally occupy "
-    "roughly 20-45 percent of the frame. Preserve geography, lighting, recurring props and cause/effect. Exaggerate chibi emotion and physical pose. "
-    "Never copy the identity reference pose, crop, camera, purple neon ring/crown, lighting or background. "
+    "SEQUENTIAL COMIC RULE: this image is one beat of the same four-scene story. Show a clear physical action, not a portrait. "
+    "MUBA must be full-body or nearly full-body and only about 20-35 percent of the frame. The environment and plot object dominate the frame. "
+    "Use ordinary natural daylight and a clean storybook environment. ABSOLUTELY NO purple neon ring, neon circle, halo, crown, dark purple studio backdrop, "
+    "character-selection thumbnails, poster layout, UI, collage or portrait framing. ABSOLUTELY NO visible text, letters, numbers, captions, labels, "
+    "signs, speech balloons, watermarks or pseudo-writing. "
 )
 
 def character_anchor_prompt():
-    """Prompt used only to establish a reusable Chibi MUBA identity anchor."""
     return (
         f"{CHARACTER_DNA} {CHIBI_DNA} "
-        "Create a neutral reusable CHARACTER SHEET anchor, not a story panel: plain light background, full body, three-quarter view, "
-        "relaxed neutral stance, identity readable, no scenery, no action, no text, no panel number, no watermark."
+        "Create a clean reusable 2D CHIBI character reference: full body, three-quarter view, relaxed standing pose, plain warm off-white background. "
+        "No scenery, no action, no ring, no neon, no crown, no poster design, no extra text or watermark."
     )
 
-def panel_prompt(title,premise,action,caption):
+def panel_prompt(title,premise,action,caption=None):
     return (
         f"{CHARACTER_DNA} {CHIBI_DNA} {STORYBOARD_DNA} "
-        f"EPISODE: {title}. PLOT: {premise} CONTINUITY: sequential seconds/minutes. {action} "
-        f'Tiny integrated story word/phrase only: "{caption}". '
-        "The character reference is an IDENTITY ANCHOR only. Do not imitate its stance or framing. "
-        "Prioritize the current action, visible plot object, exaggerated emotion and spatial environment. "
-        "No panel number, no 01/02/03/04, no speech balloon, no extra writing, no watermark."
+        f"EPISODE: {title}. STORY CONTEXT: {premise} CURRENT BEAT: {action} "
+        "The supplied reference is only for MUBA identity. Do not copy its background, camera, pose, lighting or composition. "
+        "Keep recurring props, street layout, time of day and character design visually consistent with the other panels."
     )
