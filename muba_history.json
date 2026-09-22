@@ -19,6 +19,14 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-runtime-hardening",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": ["daily", "telegram"],
+      "title": {"en":"Living Story runtime hardened end to end","tr":"Living Story çalışma zinciri uçtan uca güçlendirildi","zh":"Living Story 运行链路已端到端加固","ar":"تم تعزيز سلسلة تشغيل Living Story من البداية إلى النهاية","hi":"Living Story runtime chain को end-to-end मजबूत किया गया"},
+      "text": {"en":"The Story engine now retries transient ZeroGPU failures, accepts current Gradio file responses, generates all four panels transactionally, and requires a live five-call anchor-plus-four-panels CI probe for future Story runtime changes.","tr":"Story motoru artık geçici ZeroGPU hatalarını yeniden deniyor, güncel Gradio dosya yanıtlarını kabul ediyor, dört kareyi işlemsel olarak tamamlıyor ve gelecekteki Story çalışma değişikliklerinde anchor artı dört kareden oluşan beş çağrılık canlı CI testini zorunlu tutuyor.","zh":"Story 引擎现在会重试临时 ZeroGPU 故障、兼容当前 Gradio 文件响应、以事务方式完成四个画面，并要求未来的运行时更改通过 anchor 加四个画面的五次实时 CI 调用。","ar":"يعيد محرك Story الآن محاولة أخطاء ZeroGPU المؤقتة، ويدعم استجابات ملفات Gradio الحالية، ويكمل اللوحات الأربع بشكل ذري، ويفرض اختبار CI حي من خمس مكالمات للتغييرات المستقبلية.","hi":"Story engine अब temporary ZeroGPU failures पर retry करता है, current Gradio file responses संभालता है, चारों panels transactionally पूरा करता है और future runtime changes के लिए anchor + four panels का live five-call CI test अनिवार्य करता है।"}
+    },
+    {
       "id": "20260922-muba-face-architecture-v1",
       "date": "2026-09-22",
       "type": "improved",
