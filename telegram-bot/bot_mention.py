@@ -651,7 +651,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         await q.answer("4 MUBA görseli hazırlanıyor…")
         try:
-            item=await _story_generate_images(context.application.bot_data["web_app"],story_draft())
+            item=await _story_generate_images(story_draft())
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörseller üretilemedi. Mevcut sistem korunuyor; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
@@ -1322,12 +1322,12 @@ def _gallery_cors_headers():
     return {"Access-Control-Allow-Origin":_WEB_STUDIO_ALLOWED_ORIGIN,"Vary":"Origin"}
 
 
-async def _story_generate_images(request_app, item):
+async def _story_generate_images(item):
     """Generate and durably archive all four Daily Story frames."""
     if not ai_configured():
         raise RuntimeError("MUBA AI engine is not configured")
     import base64, aiohttp
-    ref=await _studio_reference(type("_Req",(),{"app":request_app})())
+    import aiohttp\n    async with aiohttp.ClientSession() as session:\n        async with session.get(REFERENCE_URL,timeout=15) as response:\n            if response.status != 200: raise RuntimeError("MUBA reference unavailable")\n            ref=await response.read()
     ids=[]
     for prompt in item["prompts"]:
         form=aiohttp.FormData()
@@ -1337,7 +1337,7 @@ async def _story_generate_images(request_app, item):
         form.add_field("height",str(payload["height"]))
         form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
-        async with request_app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+        async with aiohttp.ClientSession() as session:\n            async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
             if response.status != 200:
                 raise RuntimeError("Daily Story image generation failed")
