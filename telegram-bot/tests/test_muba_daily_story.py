@@ -151,6 +151,14 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('add_post("/story/prepare"',bot)
         self.assertIn("compare_digest",bot)
 
+    def test_internal_scheduler_needs_no_external_scheduler_secret(self):
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn("daily_story_scheduler(application)",bot)
+        self.assertIn('ZoneInfo("Europe/Istanbul")',bot)
+        self.assertIn("hour=10,minute=45",bot)
+        self.assertIn("asyncio.create_task(daily_story_scheduler(application))",bot)
+        self.assertIn("WEB YAYINLA onayı verilmeden yayınlanmaz",bot)
+
 if __name__=="__main__": unittest.main()
 
 
