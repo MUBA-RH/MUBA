@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-runtime-fix",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story runtime opening fixed",
+        "tr": "Daily Story açılma sorunu düzeltildi",
+        "zh": "Daily Story 运行时打开问题已修复",
+        "ar": "تم إصلاح مشكلة فتح Daily Story",
+        "hi": "Daily Story runtime opening ठीक किया गया"
+      },
+      "text": {
+        "en": "The Daily Story DEV button now initializes Turkish presentation fields for real same-day ecosystem changes and uses one canonical callback route, preventing the silent runtime failure that blocked the preview.",
+        "tr": "Daily Story DEV butonu artık aynı gün gerçekleşen gerçek ekosistem gelişmelerinde Türkçe gösterim alanlarını doğru başlatıyor ve tek bir canonical callback yolu kullanıyor; önizlemenin sessizce açılmamasına neden olan runtime hatası giderildi.",
+        "zh": "Daily Story DEV 按钮现在会为当天真实生态变化正确初始化土耳其语显示字段，并使用单一 canonical 回调路径，从而消除阻止预览打开的静默运行时错误。",
+        "ar": "يقوم زر Daily Story DEV الآن بتهيئة حقول العرض التركية بشكل صحيح للتغييرات الفعلية في النظام في اليوم نفسه ويستخدم مسار callback واحداً، ما يزيل خطأ التشغيل الصامت الذي كان يمنع فتح المعاينة.",
+        "hi": "Daily Story DEV बटन अब उसी दिन के वास्तविक ecosystem changes के लिए Turkish presentation fields सही तरह initialize करता है और एक canonical callback route उपयोग करता है, जिससे preview रोकने वाली silent runtime failure दूर हुई।"
+      }
+    },
+    {
       "id": "20260922-story-callback-chain",
       "date": "2026-09-22",
       "type": "fixed",
