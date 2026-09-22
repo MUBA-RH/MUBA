@@ -1,22 +1,18 @@
 """Hugging Face ZeroGPU IP-Adapter bridge for MUBA Living Story.
 
-Living Story is isolated from Studio/Gallery. The bridge targets a public
-ZeroGPU Space whose Gradio API exposes a real SDXL + IP-Adapter text-to-image
-function. The Space and endpoint are discovered at runtime; no Studio or
-Cloudflare fallback is permitted.
+Living Story is isolated from Studio/Gallery. It calls InstantX's public
+FLUX IP-Adapter ZeroGPU Space, whose current app exposes a GPU-backed
+process_image(image, prompt, scale, seed, randomize_seed, width, height)
+generation function. No Studio or Cloudflare fallback is permitted.
 """
 from __future__ import annotations
 
 import os
 from pathlib import Path
 
-SPACE_ID=os.getenv("MUBA_STORY_HF_SPACE","tonyassi/IP-Adapter-Playground").strip()
-API_CANDIDATES=("text_to_image","text_to_image_1")
-IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.72"))
-NEGATIVE_PROMPT=(
-    "photorealistic, 3d, cgi, plush toy, mascot render, close-up portrait, "
-    "circular avatar, purple neon ring, crown, watermark, extra text"
-)
+SPACE_ID=os.getenv("MUBA_STORY_HF_SPACE","InstantX/flux-IP-adapter").strip()
+API_CANDIDATES=("process_image","predict")
+IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.70"))
 
 def configured()->bool:
     return bool(os.getenv("HF_TOKEN")) and bool(SPACE_ID)
@@ -31,11 +27,10 @@ def _select_endpoint(named:dict[str,str])->str:
         if candidate in named:
             return named[candidate]
     for normalized,api_name in named.items():
-        low=normalized.lower()
-        if "text_to_image" in low or "text-to-image" in low:
+        if "process_image" in normalized.lower():
             return api_name
     raise RuntimeError(
-        "Hugging Face IP-Adapter generation endpoint unavailable; discovered: "
+        "Hugging Face FLUX IP-Adapter generation endpoint unavailable; discovered: "
         + ", ".join(sorted(named)[:20])
     )
 
@@ -45,32 +40,30 @@ def _run_gradio(prompt:str,reference_url:str):
     token=os.getenv("HF_TOKEN","").strip() or None
     client=Client(SPACE_ID,token=token,verbose=False)
     api_name=_select_endpoint(_named_endpoints(client))
-    # Upstream Space contract (verified from its current app.py):
-    # reference, prompt, negative, width, height, IP scale, strength, CFG, steps.
+    # Verified upstream contract:
+    # image, prompt, IP scale, seed, randomize seed, width, height.
     return client.predict(
         handle_file(reference_url),
         prompt,
-        NEGATIVE_PROMPT,
-        768,
-        768,
         IP_WEIGHT,
-        0.70,
-        7.5,
-        50,
+        42,
+        True,
+        1024,
+        1024,
         api_name=api_name,
     )
 
 def _result_path(result)->str:
-    if isinstance(result,str):
-        return result
-    if isinstance(result,dict):
+    # process_image returns (generated_image, seed).
+    image=result[0] if isinstance(result,(list,tuple)) and result else result
+    if isinstance(image,str):
+        return image
+    if isinstance(image,dict):
         for key in ("path","name"):
-            value=result.get(key)
+            value=image.get(key)
             if value:
                 return str(value)
-    if isinstance(result,(list,tuple)) and result:
-        return _result_path(result[0])
-    raise RuntimeError("Unexpected Hugging Face IP-Adapter image response")
+    raise RuntimeError("Unexpected Hugging Face FLUX IP-Adapter image response")
 
 async def generate(session,prompt:str,reference_url:str)->tuple[bytes,str]:
     if not configured():
@@ -80,7 +73,7 @@ async def generate(session,prompt:str,reference_url:str)->tuple[bytes,str]:
     path=_result_path(result)
     body=await asyncio.to_thread(Path(path).read_bytes)
     if not body:
-        raise RuntimeError("Hugging Face IP-Adapter returned an empty image")
+        raise RuntimeError("Hugging Face FLUX IP-Adapter returned an empty image")
     suffix=Path(path).suffix.lower()
     content_type={
         ".jpg":"image/jpeg",
