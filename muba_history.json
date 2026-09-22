@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-four-image-publish-gate",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "web",
+        "assistant"
+      ],
+      "title": {
+        "en": "Daily Story publication now requires four images",
+        "tr": "Daily Story yayını artık dört görsel gerektiriyor",
+        "zh": "Daily Story 发布现在需要四张图片",
+        "ar": "يتطلب نشر Daily Story الآن أربع صور",
+        "hi": "Daily Story प्रकाशन के लिए अब चार चित्र आवश्यक हैं"
+      },
+      "text": {
+        "en": "Daily Story no longer publishes empty scene placeholders. Public publication is blocked until four story images are attached, and the visible TWT heading was removed from the website while preserving the short story text.",
+        "tr": "Daily Story artık boş sahne kutularıyla yayınlanmıyor. Dört hikâye görseli bağlanmadan web yayını engelleniyor; kısa hikâye metni korunurken web sayfasındaki TWT başlığı kaldırıldı.",
+        "zh": "Daily Story 不再发布空场景占位符。绑定四张故事图片之前将阻止公开发布，同时网站移除了可见的 TWT 标题并保留简短故事文本。",
+        "ar": "لم يعد Daily Story ينشر مربعات مشاهد فارغة. يتم منع النشر العام حتى إرفاق أربع صور للقصة، كما تمت إزالة عنوان TWT الظاهر من الموقع مع الإبقاء على النص القصير.",
+        "hi": "Daily Story अब खाली scene placeholders प्रकाशित नहीं करता। चार story images जुड़ने तक public publication रोका जाता है और short story text रखते हुए website से TWT heading हटा दी गई है।"
+      }
+    },
+    {
       "id": "20260922-story-runtime-fix",
       "date": "2026-09-22",
       "type": "fixed",

@@ -903,8 +903,12 @@
         document.getElementById("story-theme").textContent=story.theme;
         const grid=document.getElementById("story-grid");
         const urls=Array.isArray(story.image_urls)?story.image_urls:[];
-        grid.innerHTML=(urls.length?urls:["","","",""]).slice(0,4).map((url,i)=>url?'<div class="story-frame"><img src="'+url+'" alt="MUBA Daily Story scene '+(i+1)+'"></div>':'<div class="story-frame"><span>SCENE '+(i+1)+'</span></div>').join("");
-        const twt=document.getElementById("story-twt"); twt.hidden=false; twt.innerHTML="<strong>TWT</strong><br>"+escapeDevText(story.twt||"");
+        if(urls.length!==4){
+          document.getElementById("story-empty").textContent="This story is waiting for its four approved images.";
+          return;
+        }
+        grid.innerHTML=urls.slice(0,4).map((url,i)=>'<div class="story-frame"><img src="'+url+'" alt="MUBA Daily Story scene '+(i+1)+'"></div>').join("");
+        const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.twt||"";
         document.getElementById("story-empty").hidden=true;
       }catch(_){ }
     }
