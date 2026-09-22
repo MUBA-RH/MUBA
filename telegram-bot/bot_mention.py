@@ -650,6 +650,38 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         item=publish_story(story_draft()["day"])
         await q.edit_message_text("🎬 MUBA Günlük Hikâye\n\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
+    if data=="gallery_admin":
+        if not is_dev(user_id): return
+        await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["title"],reply_markup=gallery_admin_keyboard(lang)); return
+    if data.startswith("gallery_admin_item:"):
+        if not is_dev(user_id): return
+        item_id=data.split(":",1)[1]
+        item=get_gallery_item(item_id)
+        if not item:
+            await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["empty"],reply_markup=gallery_admin_keyboard(lang)); return
+        await q.edit_message_text(gallery_admin_item_text(lang,item),reply_markup=gallery_admin_item_keyboard(lang,item_id)); return
+    if data.startswith("gallery_set:"):
+        if not is_dev(user_id): return
+        _,item_id,visibility=data.split(":",2)
+        try:
+            item=set_gallery_visibility(item_id,visibility)
+        except ValueError:
+            item=None
+        if not item:
+            await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["empty"],reply_markup=gallery_admin_keyboard(lang)); return
+        await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["saved"]+"\n\n"+gallery_admin_item_text(lang,item),reply_markup=gallery_admin_item_keyboard(lang,item_id)); return
+    if data.startswith("updates_area:"):
+        _,area,raw=data.split(":",2)
+        index=int(raw) if raw.isdigit() else 0
+        body,index,total=updates_area_text(lang,user_id,area,index)
+        await q.edit_message_text(body,reply_markup=updates_area_keyboard(lang,user_id,area,index),disable_web_page_preview=True); return
+    if data.startswith("transparency:"):
+        raw=data.split(":",1)[1]
+        page=int(raw) if raw.isdigit() else 0
+        page=max(0,min(page,len(TRANSPARENCY_PAGES[lang])-1))
+        await q.edit_message_text(transparency_text(lang,page),reply_markup=transparency_keyboard(lang,page),disable_web_page_preview=True); return
+    if data=="translator_note":
+        await q.edit_message_text(TRANSLATOR_NOTE_TEXT[lang],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")]]),disable_web_page_preview=True); return
     if data=="daily":
         await q.edit_message_text(DAILY_LABELS[lang]["daily"],reply_markup=daily_keyboard(lang,user_id)); return
     if data.startswith("daily:"):
