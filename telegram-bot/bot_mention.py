@@ -1308,7 +1308,8 @@ async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
     if not item: return web.json_response({"story":None},headers=_gallery_cors_headers())
     item=dict(item)
-    item["image_urls"]=[EXTERNAL_URL.rstrip("/")+"/gallery/image/"+x for x in item.get("images",[])]\n    item.pop("prompts",None)
+    item["image_urls"]=[EXTERNAL_URL.rstrip("/")+"/gallery/image/"+x for x in item.get("images",[])]
+    item.pop("prompts",None)
     return web.json_response({"story":item},headers=_gallery_cors_headers())
 
 async def gallery_list_handler(request: web.Request):
