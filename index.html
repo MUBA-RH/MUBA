@@ -77,13 +77,17 @@
     }
 
 
-    .story-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:20px; }
-    .story-frame { aspect-ratio:1; border-radius:18px; overflow:hidden; border:1px solid var(--line); background:rgba(255,255,255,.025); display:grid; place-items:center; }
-    .story-frame img { width:100%; height:100%; object-fit:cover; }
+    .story-book { max-width:900px; margin:0 auto; padding:clamp(18px,4vw,42px); background:linear-gradient(180deg,rgba(18,10,31,.96),rgba(9,5,16,.96)); }
+    .story-grid { display:grid; grid-template-columns:1.08fr .92fr; gap:clamp(8px,1.6vw,16px); margin-top:24px; }
+    .story-frame { position:relative; aspect-ratio:1; overflow:hidden; border:2px solid rgba(247,242,255,.82); background:#0a0611; box-shadow:0 8px 30px rgba(0,0,0,.28); }
+    .story-frame:nth-child(1){ transform:rotate(-.35deg); } .story-frame:nth-child(2){ transform:rotate(.3deg); }
+    .story-frame:nth-child(3){ transform:rotate(.2deg); } .story-frame:nth-child(4){ transform:rotate(-.25deg); }
+    .story-frame img { width:100%; height:100%; object-fit:cover; display:block; }
+    .story-panel-no { position:absolute; top:9px; left:10px; min-width:28px; height:28px; display:grid; place-items:center; background:rgba(7,4,15,.82); border:1px solid rgba(255,255,255,.72); font:800 .76rem 'Space Grotesk',sans-serif; }
     .story-empty { color:var(--muted); text-align:center; padding:28px; }
-    .story-copy { margin-top:18px; padding:22px; }
-    .story-copy strong { color:var(--gold); }
-    @media (max-width:760px){ .story-grid{grid-template-columns:1fr 1fr;} }
+    .story-copy { margin-top:24px; padding:0; border:0; box-shadow:none; background:transparent; color:#eee5f8; font-size:1.08rem; line-height:1.65; max-width:680px; }
+    .story-kicker { color:var(--gold); font-weight:900; letter-spacing:.12em; font-size:.72rem; text-transform:uppercase; }
+    @media (max-width:760px){ .story-book{padding:18px 14px}.story-grid{grid-template-columns:1fr 1fr;gap:8px}.story-frame{border-width:1px}.story-copy{font-size:1rem} }
 \n    header {
       position: sticky;
       top: 0;
@@ -712,8 +716,8 @@
           <h2 class="section-title">THE LIVING <span>STORY.</span></h2>
           <p class="section-copy">One day. Four connected scenes. Real MUBA developments become part of the story when they matter; otherwise MUBA simply keeps living.</p>
         </div>
-        <div class="card" style="padding:26px">
-          <div class="dev-meta" id="story-date">TODAY</div>
+        <div class="card story-book">
+          <div class="story-kicker" id="story-date">TODAY</div>
           <h3 id="story-theme" style="margin-top:8px">Waiting for today's approved MUBA story.</h3>
           <div class="story-grid" id="story-grid"></div>
           <div class="story-copy card" id="story-twt" hidden></div>
@@ -907,8 +911,8 @@
           document.getElementById("story-empty").textContent="This story is waiting for its four approved images.";
           return;
         }
-        grid.innerHTML=urls.slice(0,4).map((url,i)=>'<div class="story-frame"><img src="'+url+'" alt="MUBA Daily Story scene '+(i+1)+'"></div>').join("");
-        const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.twt||"";
+        grid.innerHTML=urls.slice(0,4).map((url,i)=>'<figure class="story-frame"><img src="'+url+'" alt="MUBA Daily Story panel '+(i+1)+'"><span class="story-panel-no">0'+(i+1)+'</span></figure>').join("");
+        const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.summary||story.twt||"";
         document.getElementById("story-empty").hidden=true;
       }catch(_){ }
     }
