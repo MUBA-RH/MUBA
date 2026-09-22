@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-comic-anime-sequence",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "studio",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story becomes a connected comic-anime mini-episode",
+        "tr": "Daily Story bağlantılı çizgi roman-anime mini bölümüne dönüştü",
+        "zh": "Daily Story 转为连续漫画×动漫迷你剧集",
+        "ar": "تحولت Daily Story إلى حلقة مصغرة متصلة بأسلوب القصص المصورة والأنمي",
+        "hi": "Daily Story जुड़ी comic-anime mini-episode बनी"
+      },
+      "text": {
+        "en": "The four frames now follow one continuous event with locked character, setting, wardrobe, props and cause-effect continuity. Art direction is a comic-book x anime hybrid, each frame may carry one tiny 1–3 word narrative caption, technical changelog titles are no longer used as literal plots, and the web story copy is expanded into a short episode narrative.",
+        "tr": "Dört kare artık karakter, mekân, kıyafet, nesneler ve neden-sonuç devamlılığı kilitlenmiş tek bir olayı izliyor. Sanat yönü çizgi roman × anime karışımı; her karede 1–3 kelimelik küçük bir anlatı bulunabiliyor, teknik değişiklik başlıkları doğrudan hikâye konusu yapılmıyor ve web hikâye metni kısa bir bölüm anlatısına genişletiliyor.",
+        "zh": "四个画面现在以锁定的角色、场景、服装、道具和因果连续性讲述同一事件。视觉采用漫画×动漫混合风格，每格可包含1–3词的小型叙事文字，技术更新标题不再直接作为剧情，网页故事文本扩展为短篇剧集叙事。",
+        "ar": "تتبع الإطارات الأربعة الآن حدثاً واحداً مع ثبات الشخصية والمكان والملابس والأغراض وتسلسل السبب والنتيجة. الأسلوب مزيج قصص مصورة × أنمي، ويمكن لكل إطار حمل تعليق صغير من 1–3 كلمات، ولا تُستخدم عناوين التغييرات التقنية كحبكة مباشرة، مع توسيع نص الويب إلى سرد حلقة قصيرة.",
+        "hi": "चारों फ्रेम अब character, setting, wardrobe, props और cause-effect continuity लॉक रखते हुए एक ही घटना को आगे बढ़ाते हैं। कला निर्देशन comic-book × anime hybrid है, हर frame में 1–3 शब्द का छोटा narrative caption हो सकता है, technical changelog titles सीधे plot नहीं बनते और web story copy को short episode narrative में बढ़ाया गया है।"
+      }
+    },
+    {
       "id": "20260922-story-four-image-generator",
       "date": "2026-09-22",
       "type": "improved",
