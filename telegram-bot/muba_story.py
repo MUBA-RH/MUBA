@@ -46,66 +46,67 @@ def _public_change(day):
             return item
     return None
 
+def _episode_for_day(day):
+    """Concrete deterministic episode seed; avoids vague 'something happened' plots."""
+    options=[
+        {
+            "title":"The Box That Knocked Back","title_tr":"Karşılık Veren Kutu",
+            "premise":"In a narrow old-city alley, MUBA finds a small weathered wooden box beside a closed shop. When MUBA taps the lid, something inside taps back.",
+            "premise_tr":"Eski şehirde dar bir sokakta MUBA, kapalı bir dükkânın yanında küçük ve yıpranmış ahşap bir kutu bulur. Kapağı tıklatınca içeriden aynı şekilde karşılık gelir.",
+            "labels":["KNOCK.","KNOCK?","OH.","YOURS."],
+            "story":"At the end of a quiet alley, MUBA noticed a battered wooden box that definitely had not been there a moment ago. One cautious knock on the lid came back from inside. Naturally, MUBA knocked again. The box jumped, the lid cracked open, and a tiny wind-up bird burst out carrying a biscuit almost as large as itself. It dropped the biscuit at MUBA's feet, folded its metal wings and disappeared back into the box. MUBA stared at the unexpected delivery for a second, then sat beside the box and shared the biscuit with whoever—or whatever—was still knocking from inside.",
+            "story_tr":"Sessiz bir sokağın sonunda MUBA, az önce orada olmadığına emin olduğu eski bir ahşap kutu fark etti. Kapağa temkinli bir kez vurdu; içeriden aynı vuruşla cevap geldi. Elbette MUBA bir kez daha vurdu. Kutu sıçradı, kapak aralandı ve içinden neredeyse kendisi kadar büyük bir bisküvi taşıyan minik kurmalı bir kuş çıktı. Bisküviyi MUBA'nın ayaklarının önüne bıraktı, metal kanatlarını kapattı ve tekrar kutunun içine kayboldu. MUBA beklenmedik teslimata bir an baktı, sonra kutunun yanına oturup bisküviyi içeride hâlâ tıklatan her kimse—ya da her neyse—onunla paylaştı."
+        },
+        {
+            "title":"The Runaway Paper","title_tr":"Kaçak Kâğıt",
+            "premise":"On a breezy neighborhood street, a folded paper slips from a bench and keeps escaping MUBA every time it is almost caught.",
+            "premise_tr":"Rüzgârlı bir mahalle sokağında banktan uçan katlanmış bir kâğıt, MUBA her yaklaştığında yeniden kaçmaya başlar.",
+            "labels":["HEY.","GOTCHA—","NOPE.","FINE."],
+            "story":"A folded piece of paper skated past MUBA's shoes and stopped just long enough to look catchable. It was a trap. Every time MUBA reached down, the wind carried it a few steps farther through the same street. The chase passed one bench, one puddle and one increasingly annoyed MUBA. At last the paper landed against a wall. MUBA pounced—and unfolded a completely blank sheet. Before the disappointment could settle in, the wind lifted MUBA's cap instead. The paper stayed put. MUBA chased the cap. Apparently the street had chosen a new game.",
+            "story_tr":"Katlanmış bir kâğıt MUBA'nın ayaklarının önünden kayıp geçti ve tam yakalanabilecekmiş gibi durdu. Bu bir tuzaktı. MUBA her eğildiğinde rüzgâr kâğıdı aynı sokakta birkaç adım daha ileri taşıdı. Kovalamaca bir bankı, bir su birikintisini ve giderek sinirlenen bir MUBA'yı geride bıraktı. Sonunda kâğıt bir duvara yaslandı. MUBA üzerine atladı—ve tamamen boş bir sayfa açtı. Hayal kırıklığı daha yerleşemeden rüzgâr bu kez MUBA'nın şapkasını kaptı. Kâğıt yerinde kaldı. MUBA şapkanın peşinden koştu. Görünüşe göre sokak yeni bir oyun seçmişti."
+        },
+    ]
+    return options[sum(ord(x) for x in str(day))%len(options)]
+
 def draft(day=None):
     day=day or datetime.now(TZ).date().isoformat()
     change=_public_change(day)
-
-    # Product/maintenance changelog is context, never the literal plot. A real
-    # development may inspire the episode only when it can be expressed naturally.
-    if change:
-        truth=(change.get("text") or {}).get("en") or "A real MUBA ecosystem change happened today."
-        truth_tr=(change.get("text") or {}).get("tr") or truth
-        seed="Something in MUBA's familiar world works differently today, and MUBA discovers it through a small everyday adventure."
-        seed_tr="MUBA'nın tanıdık dünyasında bugün bir şey farklı işler; MUBA bunu küçük, günlük bir macera içinde keşfeder."
-    else:
-        truth="No public ecosystem development is required for this episode."
-        truth_tr="Bu bölüm için herkese açık bir ekosistem gelişmesi gerekmiyor."
-        seed="A quiet ordinary moment turns into a strange little adventure when MUBA notices something unexpected nearby."
-        seed_tr="Sıradan ve sakin bir an, MUBA yakındaki beklenmedik bir şeyi fark edince küçük ve tuhaf bir maceraya dönüşür."
-
-    theme="A four-panel MUBA mini-episode: "+seed
-    theme_tr="Dört karelik bir MUBA mini bölümü: "+seed_tr
-    labels=["WAIT...","WHAT?","MUBA.","AGAIN?"]
-    scenes=[
-        "FRAME 1 — OPENING. Wide establishing shot. MUBA enters or occupies the setting and notices one specific unusual object or event. Create a clear visual question that demands a next frame.",
-        "FRAME 2 — ACTION. Continue from FRAME 1 in the exact same setting. MUBA approaches, touches, follows or tests the same object/event. Show physical action and consequence; do not reset the scene.",
-        "FRAME 3 — TURN. Continue the consequence from FRAME 2. Give MUBA a strong, funny, unmistakable reaction and reveal the small twist. Preserve every continuity detail from earlier frames.",
-        "FRAME 4 — PAYOFF. Continue immediately from FRAME 3 and resolve the event with a memorable visual joke or character beat. The final image must feel like the ending of the same episode, not a new portrait.",
+    truth=((change.get("text") or {}).get("en") if change else None) or "No public ecosystem development is required for this episode."
+    truth_tr=((change.get("text") or {}).get("tr") if change else None) or "Bu bölüm için herkese açık bir ekosistem gelişmesi gerekmiyor."
+    ep=_episode_for_day(day)
+    theme=ep["title"]
+    theme_tr=ep["title_tr"]
+    labels=ep["labels"]
+    actions=[
+        "FRAME 1 — ESTABLISH. Wide shot. Show MUBA discovering the exact story object in the stated location. The object and surrounding geography must be clearly readable.",
+        "FRAME 2 — ACTION. Continue seconds later. Show MUBA physically interacting with that same object and the first consequence. Preserve exact spatial placement and environmental details.",
+        "FRAME 3 — TURN. Continue the consequence. Show the concrete surprise/reveal from the premise with a strong MUBA reaction. This must visibly follow frame 2.",
+        "FRAME 4 — PAYOFF. Continue immediately. Resolve the exact event with the story's visual punchline and a satisfying ending composition.",
     ]
-    scenes_tr=[
-        "Kare 1 — Açılış: geniş planla mekân kurulur. MUBA belirli ve sıra dışı bir nesne ya da olayı fark eder; sonraki kareyi merak ettiren görsel soru oluşur.",
-        "Kare 2 — Hareket: aynı mekânda ilk karenin doğrudan devamıdır. MUBA aynı nesne/olaya yaklaşır, dokunur, takip eder veya dener; eylemin sonucu görünür.",
-        "Kare 3 — Dönüm: ikinci karenin sonucu devam eder. Küçük sürpriz açığa çıkar ve MUBA güçlü, komik, kendine özgü bir tepki verir; tüm devamlılık korunur.",
-        "Kare 4 — Final: üçüncü karenin hemen devamında olay akılda kalıcı bir görsel şaka veya karakter anıyla çözülür; yeni bir portre değil aynı bölümün finalidir.",
+    actions_tr=[
+        "Kare 1 — Kurulum: geniş planda MUBA'nın hikâyedeki somut nesneyi belirtilen mekânda bulduğu an gösterilir.",
+        "Kare 2 — Eylem: birkaç saniye sonrası; MUBA aynı nesneyle fiziksel olarak etkileşir ve ilk sonuç ortaya çıkar.",
+        "Kare 3 — Dönüm: ikinci karenin sonucu devam eder; hikâyedeki somut sürpriz açığa çıkar ve MUBA belirgin tepki verir.",
+        "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
     prompts=[]
-    continuity="CONTINUITY LOCK: same setting, same wardrobe, same recurring object/event and sequential cause-and-effect from the previous frame."
-    for i,scene in enumerate(scenes):
+    for i,action in enumerate(actions):
         prompts.append(
-            f"{CHARACTER_ANCHOR} {STORY_BIBLE} EPISODE PREMISE: {seed} {continuity} {scene} "
-            f'Allow exactly one tiny narrative caption reading "{labels[i]}" integrated like restrained comic lettering. '
-            "No other words, speech bubbles, logos, watermarks or extra captions."
+            f"{CHARACTER_ANCHOR} {STORY_BIBLE} EPISODE TITLE: {theme}. EXACT PLOT: {ep['premise']} "
+            f"CONTINUITY: same physical location, same black cap and hoodie, same story object, sequential seconds/minutes. {action} "
+            f'Tiny panel caption only: "{labels[i]}". No speech balloons, no extra writing. '
+            "IMPORTANT: the purple neon ring/crown/background from the identity reference is NOT part of MUBA and must NOT appear. "
+            "Use the reference only for MUBA's face/body identity. Compose an actual narrative action panel, never a centered character portrait."
         )
-    story=(
-        "MUBA expected an ordinary day. Then one small detail in the familiar surroundings refused to behave normally. "
-        "Curiosity won, as it usually does. One closer look became an experiment, the experiment became a problem, "
-        "and the problem became exactly the kind of moment MUBA somehow turns into a story. By the final frame, "
-        "nothing world-changing has happened—just one strange little episode that now belongs to MUBA's living world."
-    )
-    story_tr=(
-        "MUBA sıradan bir gün bekliyordu. Sonra tanıdık çevredeki küçücük bir ayrıntı normal davranmamaya başladı. "
-        "Merak yine ağır bastı. Yakından bakmak küçük bir denemeye, deneme bir probleme, problem de MUBA'nın bir şekilde "
-        "hikâyeye dönüştürdüğü o tuhaf anlardan birine dönüştü. Son karede dünyayı değiştiren bir şey olmadı; yalnızca "
-        "MUBA'nın yaşayan dünyasına eklenen küçük ve garip bir bölüm daha ortaya çıktı."
-    )
     return {
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
-        "scenes":scenes,"scenes_tr":scenes_tr,"frame_labels":labels,"prompts":prompts,
-        "story":story,"story_tr":story_tr,"twt":story,"twt_tr":story_tr,
+        "scenes":actions,"scenes_tr":actions_tr,"frame_labels":labels,"prompts":prompts,
+        "story":ep["story"],"story_tr":ep["story_tr"],"twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
-        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"reference-image",
-                 "visual_style":"comic-anime-hybrid","continuity":"locked-sequential","frame_text_max_words":3},
+        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
+                 "visual_style":"comic-anime-hybrid","continuity":"previous-frame-image","frame_text_max_words":3,
+                 "reference_excludes":["purple-neon-ring","crown","background"]},
     }
 
 def set_images(day,image_ids):
