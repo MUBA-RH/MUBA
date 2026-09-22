@@ -109,7 +109,7 @@ if __name__=="__main__": unittest.main()
 
 class TestLivingStoryResilience(unittest.TestCase):
     def test_story_has_cloudflare_fallback(self):
-        source=BOT.read_text(encoding="utf-8")
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
