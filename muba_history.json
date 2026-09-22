@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-provider-fallback",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story provider resilience",
+        "tr": "Living Story sağlayıcı dayanıklılığı",
+        "zh": "Living Story 提供商容错",
+        "ar": "مرونة مزود Living Story",
+        "hi": "Living Story provider resilience"
+      },
+      "text": {
+        "en": "Living Story now prefers the experimental Hugging Face IP-Adapter path but automatically falls back per panel to the proven Cloudflare reference-conditioned generator if the public ZeroGPU endpoint is unavailable. Story generation therefore remains available without affecting Studio or Gallery.",
+        "tr": "Living Story deneysel Hugging Face IP-Adapter yolunu öncelikli kullanır; herkese açık ZeroGPU uç noktası kullanılamazsa her panel için otomatik olarak kanıtlanmış Cloudflare referans-koşullandırmalı üreticiye döner. Böylece Story üretimi Studio veya Galeri'yi etkilemeden kullanılabilir kalır.",
+        "zh": "Living Story 优先使用实验性 Hugging Face IP-Adapter；当公共 ZeroGPU 端点不可用时，每个面板会自动回退到已验证的 Cloudflare 参考图生成器，且不影响 Studio 或 Gallery。",
+        "ar": "يفضل Living Story مسار Hugging Face IP-Adapter التجريبي، ويعود تلقائياً لكل لوحة إلى مولد Cloudflare المثبت عند تعذر نقطة ZeroGPU العامة، من دون التأثير على Studio أو Gallery.",
+        "hi": "Living Story experimental Hugging Face IP-Adapter को प्राथमिकता देता है; public ZeroGPU endpoint उपलब्ध न होने पर हर panel के लिए proven Cloudflare reference-conditioned generator पर अपने-आप fallback करता है, बिना Studio या Gallery को प्रभावित किए।"
+      }
+    },
+    {
       "id": "20260922-living-story-dynamic-gradio-discovery",
       "date": "2026-09-22",
       "type": "fixed",
