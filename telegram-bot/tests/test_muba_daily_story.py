@@ -136,7 +136,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("share.hidden=false",web)
 
     def test_story_uses_previous_day_and_web_summary_is_100_chars(self):
-        item=story.draft("2026-09-23")
+        item=muba_story.draft("2026-09-23")
         self.assertEqual(item["previous_day"],"2026-09-22")
         self.assertLessEqual(len(item["summary"]),100)
         self.assertLessEqual(len(item["summary_tr"]),100)
