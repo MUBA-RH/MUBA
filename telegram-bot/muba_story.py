@@ -7,7 +7,8 @@ separate Studio operation so the production baseline is never auto-published.
 """
 from __future__ import annotations
 import json
-from datetime import datetime
+import hashlib
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from muba_brain import STORE
@@ -32,6 +33,30 @@ def _public_change(day):
         if areas & {"assistant","daily","gallery","studio","web","telegram","guardian"}:
             return item
     return None
+
+def _previous_story_context(day):
+    """Return yesterday's immutable published/draft story state as today's canon."""
+    current=datetime.fromisoformat(str(day)).date()
+    previous=(current-timedelta(days=1)).isoformat()
+    saved=STORE.get("story_canon",previous,None)
+    if isinstance(saved,dict) and saved.get("story"):
+        return saved
+    # Backfill deterministically so continuity survives deployments/restarts.
+    ep=_episode_for_day(previous)
+    return {"day":previous,"theme":ep["title"],"story":ep["story"],"ending":ep["actions"][-1]}
+
+def _continuity_bridge(previous):
+    return (
+        "CONTINUITY FROM YESTERDAY: "+previous["ending"]+" "
+        "Today's opening must visibly begin from this exact resolved state before a new event starts. "
+        "Do not reset MUBA, teleport to an unrelated situation, or contradict yesterday's ending."
+    )
+
+def _summary_100(text):
+    """Website summary: at most 100 Unicode characters, deterministic and readable."""
+    clean=" ".join(str(text or "").split())
+    if len(clean)<=100: return clean
+    return clean[:97].rstrip(" ,.;:-")+"..."
 
 def _episode_for_day(day):
     """Concrete deterministic episode seed; avoids vague 'something happened' plots."""
@@ -72,7 +97,9 @@ def draft(day=None):
     change=_public_change(day)
     truth=((change.get("text") or {}).get("en") if change else None) or "No public ecosystem development is required for this episode."
     truth_tr=((change.get("text") or {}).get("tr") if change else None) or "Bu bölüm için herkese açık bir ekosistem gelişmesi gerekmiyor."
+    previous=_previous_story_context(day)
     ep=_episode_for_day(day)
+    continuity=_continuity_bridge(previous)
     theme=ep["title"]
     theme_tr=ep["title_tr"]
     labels=ep["labels"]
@@ -84,22 +111,27 @@ def draft(day=None):
         "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
     prompts=[
-        panel_prompt(theme,ep["premise"],action)
+        panel_prompt(theme,continuity+" "+ep["premise"],action)
         for action in actions
     ]
-    return {
+    raw_summary=("A loose page leads MUBA through the street; when the paper finally stops, the wind steals the cap and the chase changes direction." if ep["title"]=="The Runaway Paper" else "A mysterious box answers MUBA's knock; curiosity opens the lid and the strange encounter ends with an unexpected little gift.")
+    raw_summary_tr=("Kaçak bir kâğıt MUBA'yı sokakta peşinden sürükler; kâğıt sonunda durunca bu kez rüzgâr şapkayı kapar ve kovalamaca yön değiştirir." if ep["title"]=="The Runaway Paper" else "Gizemli bir kutu MUBA'nın vuruşuna karşılık verir; merak kapağı açtırır ve tuhaf karşılaşma beklenmedik küçük bir hediyeyle biter.")
+    item={
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
         "scenes":actions,"scenes_tr":actions_tr,"frame_labels":labels,"prompts":prompts,
         "story":ep["story"],"story_tr":ep["story_tr"],
-        "summary":("A loose page leads MUBA through the street; when the paper finally stops, the wind steals the cap and the chase changes direction." if ep["title"]=="The Runaway Paper" else "A mysterious box answers MUBA's knock; curiosity opens the lid and the strange encounter ends with an unexpected little gift."),
-        "summary_tr":("Kaçak bir kâğıt MUBA'yı sokakta peşinden sürükler; kâğıt sonunda durunca bu kez rüzgâr şapkayı kapar ve kovalamaca yön değiştirir." if ep["title"]=="The Runaway Paper" else "Gizemli bir kutu MUBA'nın vuruşuna karşılık verir; merak kapağı açtırır ve tuhaf karşılaşma beklenmedik küçük bir hediyeyle biter."),
+        "summary":_summary_100(raw_summary),
+        "summary_tr":_summary_100(raw_summary_tr),
+        "previous_day":previous["day"],"previous_theme":previous["theme"],
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
                  "visual_style":"living-story-true-2d-chibi-cloudflare-flux-v1","continuity":"canonical-face-architecture-plus-canonical-reference-plus-scene-state","frame_text_max_words":0,
                  "visual_layer":"muba_story_chibi","character_anchor_version":"muba-face-architecture-v1","reference_excludes":["purple-neon-ring","crown","background"]},
     }
+    STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
+    return item
 
 def set_images(day,image_ids):
     STORE.set("story_images",str(day),list(image_ids)[:4])

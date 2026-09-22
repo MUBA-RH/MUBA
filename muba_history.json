@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-continuity-scheduler",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story continuity scheduler completed",
+        "tr": "Daily Story devamlılık zamanlayıcısı tamamlandı",
+        "zh": "Daily Story 连续性调度层已完成",
+        "ar": "اكتملت طبقة جدولة استمرارية Daily Story",
+        "hi": "Daily Story continuity scheduler पूरा हुआ"
+      },
+      "text": {
+        "en": "Daily Story now carries yesterday's ending into today's opening, limits the public web summary to 100 characters, and can prepare the four review images before 11:00 Istanbul while keeping web publication behind explicit DEV approval.",
+        "tr": "Daily Story artık dünkü finali bugünün açılışına taşıyor, webdeki kısa açıklamayı 100 karakterle sınırlıyor ve web yayınını açık DEV onayının arkasında tutarken dört inceleme görselini İstanbul saatiyle 11:00'den önce hazırlayabiliyor.",
+        "zh": "Daily Story 现在会把昨天的结尾延续到今天的开场，将网页摘要限制为 100 个字符，并可在伊斯坦布尔时间 11:00 前准备四张审核图片，同时网页发布仍需 DEV 明确批准。",
+        "ar": "ينقل Daily Story الآن نهاية الأمس إلى بداية اليوم، ويحد ملخص الويب إلى 100 حرف، ويمكنه تجهيز صور المراجعة الأربع قبل 11:00 بتوقيت إسطنبول مع بقاء النشر على الويب خلف موافقة DEV الصريحة.",
+        "hi": "Daily Story अब कल के अंत को आज की शुरुआत में जारी रखता है, web summary को 100 characters तक सीमित करता है, और web publication को स्पष्ट DEV approval के पीछे रखते हुए Istanbul समय 11:00 से पहले चार review images तैयार कर सकता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-reference-approval-share",
       "date": "2026-09-23",
       "type": "improved",

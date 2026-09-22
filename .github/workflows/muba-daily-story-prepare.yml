@@ -1,0 +1,25 @@
+name: MUBA Daily Story Prepare
+
+on:
+  schedule:
+    # 07:45 UTC = 10:45 Europe/Istanbul (UTC+3 year-round)
+    - cron: "45 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare Daily Story before 11 Istanbul
+        env:
+          STORY_PREPARE_URL: ${{ secrets.MUBA_STORY_PREPARE_URL }}
+          STORY_SECRET: ${{ secrets.MUBA_STORY_SCHEDULER_SECRET }}
+        run: |
+          test -n "$STORY_PREPARE_URL"
+          test -n "$STORY_SECRET"
+          curl --fail-with-body --retry 2 --retry-delay 10 \
+            -X POST "$STORY_PREPARE_URL/story/prepare" \
+            -H "X-MUBA-Story-Secret: $STORY_SECRET"
