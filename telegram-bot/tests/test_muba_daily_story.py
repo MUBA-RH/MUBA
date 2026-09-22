@@ -56,9 +56,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('"injector_type":"ipadapter"',bridge)
         self.assertIn('"preset":IP_PRESET',bridge)
         self.assertIn('HF_TOKEN',bridge)
-        self.assertIn('/gradio_api/call/v2/',bridge)
-        self.assertIn('json={"json_params":json_params}',bridge)
-        self.assertIn('/gradio_api/call/{api_name}/{event_id}',bridge)
+        self.assertIn('from gradio_client import Client',bridge)
+        self.assertIn('Client("RioShiina/ImageGen",token=token,verbose=False)',bridge)
+        self.assertIn('api_name="/run_imagegen"',bridge)
+        self.assertNotIn('/gradio_api/call/v2/',bridge)
         self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
 
     def test_technical_change_is_not_literal_story_title(self):
