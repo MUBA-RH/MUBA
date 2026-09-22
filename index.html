@@ -668,7 +668,8 @@
       <a class="brand" href="#top"><span>$MUBA</span> — WE LIVE HERE NOW</a>
       <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-nav">MENU</button>
       <nav class="nav" id="site-nav">
-        <a href="#daily-story">Daily Story</a>\n        <a href="#development">Development</a>
+        <a href="#daily-story">Daily Story</a>
+        <a href="#development">Development</a>
         <a href="#what-is-muba">What is MUBA?</a>
         <a href="#studio">MUBA Studio</a>
         <a href="https://x.com/MUBA_RH" target="_blank" rel="noopener">X</a>
@@ -909,7 +910,9 @@
     }
     let devLog = { new: [], updates: [], refined: [] };
 
-    loadDailyStory();\n\n    async function loadDevelopmentHistory() {
+    loadDailyStory();
+
+    async function loadDevelopmentHistory() {
       try {
         const response = await fetch("./muba_history.json", { cache: "no-store" });
         if (!response.ok) throw new Error("History unavailable");
