@@ -20,7 +20,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("do not redesign",prompt)
         self.assertIn("comic-book x anime hybrid",prompt)
         self.assertIn("one continuous mini-episode",prompt)
-        self.assertIn("continuity lock",prompt)
+        self.assertIn("continuity:",prompt)
         self.assertEqual(item["rules"]["visual_style"],"comic-anime-hybrid")
         self.assertEqual(item["rules"]["continuity"],"previous-frame-image")
         self.assertEqual(item["rules"]["frame_text_max_words"],3)
