@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-callback-chain",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story Telegram control chain restored",
+        "tr": "Daily Story Telegram kontrol zinciri düzeltildi",
+        "zh": "Daily Story Telegram 控制链已恢复",
+        "ar": "تمت استعادة سلسلة تحكم Daily Story في Telegram",
+        "hi": "Daily Story Telegram control chain बहाल की गई"
+      },
+      "text": {
+        "en": "The DEV-only Daily Story button now opens its Turkish preview again, WEB YAYINLA reaches the publish action, and Geri returns to the main menu. Regression coverage protects the complete callback chain.",
+        "tr": "Yalnızca DEV'e açık Daily Story butonu artık Türkçe önizlemeyi açıyor; WEB YAYINLA yayın işlemine ulaşıyor ve Geri ana menüye dönüyor. Tam callback zinciri regresyon testiyle korunuyor.",
+        "zh": "仅限 DEV 的 Daily Story 按钮现可再次打开土耳其语预览，WEB YAYINLA 可触达发布操作，Geri 返回主菜单，并由回归测试保护完整回调链。",
+        "ar": "يفتح زر Daily Story الخاص بـ DEV الآن المعاينة التركية، ويصل WEB YAYINLA إلى إجراء النشر، ويعيد Geri المستخدم إلى القائمة الرئيسية، مع اختبار تراجعي يحمي سلسلة الاستدعاءات كاملة.",
+        "hi": "DEV-only Daily Story बटन अब Turkish preview खोलता है, WEB YAYINLA publish action तक पहुँचता है और Geri main menu पर लौटता है। पूरी callback chain regression test से सुरक्षित है।"
+      }
+    },
+    {
       "id": "20260922-story-dev-turkish",
       "date": "2026-09-22",
       "type": "fixed",
