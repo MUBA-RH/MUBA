@@ -135,6 +135,22 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("twitter.com/intent/tweet",web)
         self.assertIn("share.hidden=false",web)
 
+    def test_story_uses_previous_day_and_web_summary_is_100_chars(self):
+        item=story.draft("2026-09-23")
+        self.assertEqual(item["previous_day"],"2026-09-22")
+        self.assertLessEqual(len(item["summary"]),100)
+        self.assertLessEqual(len(item["summary_tr"]),100)
+        self.assertTrue(all("CONTINUITY FROM YESTERDAY:" in p for p in item["prompts"]))
+
+    def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
+        workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn('cron: "45 7 * * *"',workflow)
+        self.assertIn("MUBA_STORY_SCHEDULER_SECRET",workflow)
+        self.assertIn("story_prepare_handler",bot)
+        self.assertIn('add_post("/story/prepare"',bot)
+        self.assertIn("compare_digest",bot)
+
 if __name__=="__main__": unittest.main()
 
 
