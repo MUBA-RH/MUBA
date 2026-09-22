@@ -20,9 +20,9 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("canonical muba face architecture",prompt)
         self.assertIn("true hand-drawn 2d japanese chibi",prompt)
         self.assertIn("identity",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-hf-flux-ipadapter-v6")
+        self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-cloudflare-flux-v1")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
-        self.assertEqual(item["rules"]["continuity"],"canonical-face-architecture-plus-clean-chibi-anchor-plus-scene-state")
+        self.assertEqual(item["rules"]["continuity"],"canonical-face-architecture-plus-canonical-reference-plus-scene-state")
         self.assertEqual(item["rules"]["character_anchor_version"],"muba-face-architecture-v1")
         self.assertIn("no purple neon ring",prompt)
         self.assertIn("no visible text",prompt)
@@ -59,31 +59,24 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("no visible text",layer)
         self.assertIn("20-35 percent",layer)
 
-    def test_generation_uses_hf_ipadapter_canonical_reference_for_all_panels(self):
+    def test_generation_uses_cloudflare_canonical_reference_for_all_panels(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
-        self.assertIn("muba_story_hf",section)
-        self.assertIn("generate_anchor(session,character_anchor_prompt(),REFERENCE_URL)",section)
-        self.assertIn("hf_story_generate(session,prompt,anchor_path",section)
-        self.assertNotIn("previous_frame",section)
-        self.assertNotIn("character_anchor,_=await render",section)
+        self.assertIn("muba_story_cloudflare",section)
+        self.assertIn("session.get(REFERENCE_URL",section)
+        self.assertIn("cf_story_generate(session,prompt,reference",section)
+        self.assertNotIn("muba_story_hf",section)
+        self.assertNotIn("generate_anchor",section)
 
-    def test_hf_bridge_is_real_flux_ipadapter_and_token_gated(self):
-        bridge=(ROOT/"muba_story_hf.py").read_text(encoding="utf-8")
-        self.assertIn('InstantX/flux-IP-adapter',bridge)
-        self.assertIn('API_CANDIDATES=("process_image","predict")',bridge)
-        self.assertIn('HF_TOKEN',bridge)
-        self.assertIn('from gradio_client import Client, handle_file',bridge)
-        self.assertIn('Client(SPACE_ID,token=token,verbose=False)',bridge)
-        self.assertIn('view_api(return_format="dict",print_info=False)',bridge)
-        self.assertIn('handle_file(reference_url)',bridge)
-        self.assertIn('PANEL_IP_WEIGHT',bridge)
-        self.assertIn('ANCHOR_IP_WEIGHT',bridge)
-        self.assertIn('"0.82"',bridge)
-        self.assertIn('"0.78"',bridge)
-        self.assertNotIn('RioShiina/ImageGen',bridge)
-        self.assertNotIn('run_imagegen',bridge)
-        self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
+    def test_cloudflare_bridge_uses_existing_workers_ai_credentials_and_reference(self):
+        bridge=(ROOT/"muba_story_cloudflare.py").read_text(encoding="utf-8")
+        self.assertIn("CLOUDFLARE_ACCOUNT_ID",bridge)
+        self.assertIn("CLOUDFLARE_API_TOKEN",bridge)
+        self.assertIn("@cf/black-forest-labs/flux-2-klein-4b",bridge)
+        self.assertIn("input_image_0",bridge)
+        self.assertIn("multipart",bridge)
+        self.assertNotIn("HF_TOKEN",bridge)
+        self.assertNotIn("gradio_client",bridge)
 
     def test_technical_change_is_not_literal_story_title(self):
         item=muba_story.draft("2026-09-22")
@@ -129,15 +122,14 @@ if __name__=="__main__": unittest.main()
 
 
 class TestLivingStoryIsolation(unittest.TestCase):
-    def test_story_is_hf_only_and_fails_closed(self):
+    def test_story_is_cloudflare_only_and_fails_closed(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
-        self.assertIn("generate_anchor(session,character_anchor_prompt(),REFERENCE_URL)",story)
-        self.assertIn("hf_story_generate(session,prompt,anchor_path",story)
-        self.assertIn("HF_TOKEN is not configured for Living Story",story)
-        self.assertNotIn("cloudflare_story_generate",story)
-        self.assertNotIn("ai_endpoint()",story)
-        self.assertNotIn("CLOUDFLARE_API_TOKEN",story)
-        self.assertNotIn("ai_payload(",story)
+        self.assertIn("muba_story_cloudflare",story)
+        self.assertIn("Cloudflare Living Story engine is not configured",story)
+        self.assertIn("generated=[]",story)
+        self.assertIn("for body,out_type,prompt in generated:",story)
+        self.assertNotIn("muba_story_hf",story)
+        self.assertNotIn("generate_anchor",story)
