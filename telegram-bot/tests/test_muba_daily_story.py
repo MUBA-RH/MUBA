@@ -26,7 +26,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertEqual(item["rules"]["frame_text_max_words"],3)
         self.assertEqual(len(item["frame_labels"]),4)
         self.assertGreater(len(item["story"].split()),70)
-        self.assertNotIn("purple neon",item["prompts"][0].lower().replace("must not appear",""))
+        self.assertIn("purple neon ring/crown/background",item["prompts"][0].lower())
+        self.assertIn("must not appear",item["prompts"][0].lower())
 
     def test_generation_chains_previous_frame_as_visual_reference(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
