@@ -74,7 +74,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("CLOUDFLARE_API_TOKEN",bridge)
         self.assertIn("@cf/black-forest-labs/flux-2-klein-4b",bridge)
         self.assertIn("input_image_0",bridge)
-        self.assertIn("multipart",bridge)
+        self.assertIn("FormData()",bridge)
         self.assertNotIn("HF_TOKEN",bridge)
         self.assertNotIn("gradio_client",bridge)
 
