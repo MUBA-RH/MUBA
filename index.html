@@ -76,7 +76,15 @@
       box-shadow: var(--shadow);
     }
 
-    header {
+
+    .story-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:20px; }
+    .story-frame { aspect-ratio:1; border-radius:18px; overflow:hidden; border:1px solid var(--line); background:rgba(255,255,255,.025); display:grid; place-items:center; }
+    .story-frame img { width:100%; height:100%; object-fit:cover; }
+    .story-empty { color:var(--muted); text-align:center; padding:28px; }
+    .story-copy { margin-top:18px; padding:22px; }
+    .story-copy strong { color:var(--gold); }
+    @media (max-width:760px){ .story-grid{grid-template-columns:1fr 1fr;} }
+\n    header {
       position: sticky;
       top: 0;
       z-index: 50;
@@ -660,7 +668,7 @@
       <a class="brand" href="#top"><span>$MUBA</span> — WE LIVE HERE NOW</a>
       <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-nav">MENU</button>
       <nav class="nav" id="site-nav">
-        <a href="#development">Development</a>
+        <a href="#daily-story">Daily Story</a>\n        <a href="#development">Development</a>
         <a href="#what-is-muba">What is MUBA?</a>
         <a href="#studio">MUBA Studio</a>
         <a href="https://x.com/MUBA_RH" target="_blank" rel="noopener">X</a>
@@ -695,7 +703,24 @@
 
     </div>
 
-    <section class="section" id="development">
+
+    <section class="section" id="daily-story">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">MUBA · DAILY STORY</div>
+          <h2 class="section-title">THE LIVING <span>STORY.</span></h2>
+          <p class="section-copy">One day. Four connected scenes. Real MUBA developments become part of the story when they matter; otherwise MUBA simply keeps living.</p>
+        </div>
+        <div class="card" style="padding:26px">
+          <div class="dev-meta" id="story-date">TODAY</div>
+          <h3 id="story-theme" style="margin-top:8px">Waiting for today's approved MUBA story.</h3>
+          <div class="story-grid" id="story-grid"></div>
+          <div class="story-copy card" id="story-twt" hidden></div>
+          <div class="story-empty" id="story-empty">Today's story appears here only after MUBA DEV reviews and publishes it.</div>
+        </div>
+      </div>
+    </section>
+\n    <section class="section" id="development">
       <div class="shell">
         <div class="section-head">
           <div class="eyebrow">MUBA · NOW</div>
@@ -864,9 +889,27 @@
   </footer>
 
   <script>
-    let devLog = { new: [], updates: [], refined: [] };
 
-    async function loadDevelopmentHistory() {
+    async function loadDailyStory(){
+      const api=(document.querySelector('meta[name="muba-studio-api"]')?.content||"").replace(/\/$/,"");
+      if(!api) return;
+      try{
+        const response=await fetch(api+"/story",{cache:"no-store"});
+        if(!response.ok) return;
+        const payload=await response.json(); const story=payload.story;
+        if(!story) return;
+        document.getElementById("story-date").textContent="MUBA STORY · "+story.day;
+        document.getElementById("story-theme").textContent=story.theme;
+        const grid=document.getElementById("story-grid");
+        const urls=Array.isArray(story.image_urls)?story.image_urls:[];
+        grid.innerHTML=(urls.length?urls:["","","",""]).slice(0,4).map((url,i)=>url?'<div class="story-frame"><img src="'+url+'" alt="MUBA Daily Story scene '+(i+1)+'"></div>':'<div class="story-frame"><span>SCENE '+(i+1)+'</span></div>').join("");
+        const twt=document.getElementById("story-twt"); twt.hidden=false; twt.innerHTML="<strong>TWT</strong><br>"+escapeDevText(story.twt||"");
+        document.getElementById("story-empty").hidden=true;
+      }catch(_){ }
+    }
+\n    let devLog = { new: [], updates: [], refined: [] };
+
+    loadDailyStory();\n\n    async function loadDevelopmentHistory() {
       try {
         const response = await fetch("./muba_history.json", { cache: "no-store" });
         if (!response.ok) throw new Error("History unavailable");
