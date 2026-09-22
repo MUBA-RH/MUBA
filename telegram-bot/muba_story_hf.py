@@ -43,9 +43,12 @@ def _headers()->dict:
     token=os.getenv("HF_TOKEN","").strip()
     return {"Authorization":f"Bearer {token}"} if token else {}
 
-async def _gradio_call(session,api_name:str,data:list,timeout_seconds:int=180):
-    call_url=f"{SPACE_BASE}/gradio_api/call/{api_name}"
-    async with session.post(call_url,json={"data":data},headers=_headers(),timeout=30) as response:
+async def _gradio_call(session,api_name:str,json_params:str,timeout_seconds:int=180):
+    # RioShiina/ImageGen runs Gradio 6. Gradio's current agent API uses the
+    # named-parameter v2 endpoint; the legacy positional {"data":[...]} call
+    # returns HTTP 500 before ImageGen is invoked.
+    call_url=f"{SPACE_BASE}/gradio_api/call/v2/{api_name}"
+    async with session.post(call_url,json={"json_params":json_params},headers=_headers(),timeout=30) as response:
         raw=await response.text()
         if response.status not in (200,201):
             raise RuntimeError(f"Hugging Face Space call failed ({response.status})")
@@ -54,7 +57,7 @@ async def _gradio_call(session,api_name:str,data:list,timeout_seconds:int=180):
         except Exception as exc:
             raise RuntimeError("Hugging Face Space did not return an event id") from exc
 
-    result_url=f"{call_url}/{event_id}"
+    result_url=f"{SPACE_BASE}/gradio_api/call/{api_name}/{event_id}"
     async with session.get(result_url,headers=_headers(),timeout=timeout_seconds) as response:
         if response.status!=200:
             raise RuntimeError(f"Hugging Face Space result failed ({response.status})")
@@ -81,7 +84,7 @@ async def generate(session,prompt:str,reference_url:str)->tuple[bytes,str]:
     if not configured():
         raise RuntimeError("HF_TOKEN is not configured")
     params=build_params(prompt,reference_url)
-    result=await _gradio_call(session,API_NAME,[json.dumps(params,separators=(",",":"))])
+    result=await _gradio_call(session,API_NAME,json.dumps(params,separators=(",",":")))
     if not isinstance(result,dict):
         raise RuntimeError("Unexpected Hugging Face image response")
     if result.get("status")!="completed":
