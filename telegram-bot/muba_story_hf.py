@@ -12,6 +12,7 @@ from urllib.parse import urljoin
 SPACE_BASE=os.getenv("MUBA_STORY_HF_SPACE","https://rioshiina-imagegen.hf.space").rstrip("/")
 MODEL=os.getenv("MUBA_STORY_HF_MODEL","stabilityai/SDXL-Base-1.0")
 API_NAME="run_imagegen"
+API_CANDIDATES=("run_imagegen","ImageGen_run_imagegen")
 IP_PRESET=os.getenv("MUBA_STORY_HF_IP_PRESET","PLUS (high strength)")
 IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.72"))
 FINAL_WEIGHT=float(os.getenv("MUBA_STORY_HF_FINAL_WEIGHT","0.78"))
@@ -40,12 +41,30 @@ def build_params(prompt:str,reference_url:str)->dict:
     }
 
 def _run_gradio(json_params:str):
-    # Use Gradio's official client instead of reimplementing its wire protocol.
-    # This keeps the Living Story bridge compatible with Gradio 6 / ZeroGPU.
+    # Discover the endpoint exported by the currently deployed Space instead of
+    # hard-coding a Gradio api_name. Gradio 6 derives names from the registered
+    # function and the upstream Space can expose either short or qualified form.
     from gradio_client import Client
     token=os.getenv("HF_TOKEN","").strip() or None
     client=Client("RioShiina/ImageGen",token=token,verbose=False)
-    return client.predict(json_params=json_params,api_name="/run_imagegen")
+    endpoints=client.view_api(return_format="dict",print_info=False) or {}
+    named=(endpoints.get("named_endpoints") or {}) if isinstance(endpoints,dict) else {}
+    normalized={str(name).lstrip("/"):str(name) for name in named}
+    for candidate in API_CANDIDATES:
+        if candidate in normalized:
+            return client.predict(json_params=json_params,api_name=normalized[candidate])
+    # Upstream may rename the registered wrapper while retaining its semantic name.
+    for normalized_name,api_name in normalized.items():
+        if normalized_name.lower().endswith("run_imagegen"):
+            return client.predict(json_params=json_params,api_name=api_name)
+    raise RuntimeError(
+        "Hugging Face ImageGen endpoint unavailable; discovered: "
+        + ", ".join(sorted(normalized)[:20])
+    )
+
+def _headers()->dict:
+    token=os.getenv("HF_TOKEN","").strip()
+    return {"Authorization":f"Bearer {token}"} if token else {}
 
 async def generate(session,prompt:str,reference_url:str)->tuple[bytes,str]:
     if not configured():
