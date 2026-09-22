@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-official-gradio-client",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story ZeroGPU transport fixed",
+        "tr": "Living Story ZeroGPU bağlantısı düzeltildi",
+        "zh": "Living Story ZeroGPU 连接已修复",
+        "ar": "تم إصلاح اتصال Living Story ZeroGPU",
+        "hi": "Living Story ZeroGPU कनेक्शन ठीक किया गया"
+      },
+      "text": {
+        "en": "Living Story now uses Gradio's official Python client for Hugging Face ZeroGPU calls instead of a hand-built HTTP transport, keeping the Story engine isolated from Studio and Gallery.",
+        "tr": "Living Story, Hugging Face ZeroGPU çağrılarında elle oluşturulmuş HTTP taşıması yerine Gradio'nun resmi Python istemcisini kullanıyor; Story motoru Studio ve Galeri'den izole kalıyor.",
+        "zh": "Living Story 现在使用 Gradio 官方 Python 客户端调用 Hugging Face ZeroGPU，不再使用手写 HTTP 传输；Story 引擎继续与 Studio 和 Gallery 隔离。",
+        "ar": "يستخدم Living Story الآن عميل Gradio الرسمي بلغة Python لاستدعاءات Hugging Face ZeroGPU بدلاً من نقل HTTP اليدوي، مع بقاء محرك Story معزولاً عن Studio وGallery.",
+        "hi": "Living Story अब Hugging Face ZeroGPU कॉल के लिए हाथ से बने HTTP transport की जगह Gradio के आधिकारिक Python client का उपयोग करता है; Story engine Studio और Gallery से अलग रहता है।"
+      }
+    },
+    {
       "id": "20260922-living-story-hf-ipadapter-v3",
       "date": "2026-09-22",
       "type": "improved",
