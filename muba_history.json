@@ -856,6 +856,30 @@
         "ar": "أصبح PAUSED يوقف الحماية فعلياً ويعيد START الحماية مع بقاء أوامر DEV متاحة.",
         "hi": "PAUSED अब runtime protection को सच में रोकता है और START protection वापस लाता है, जबकि DEV controls available रहते हैं।"
       }
+    },
+    {
+      "id": "20260922-living-story-flux-ipadapter",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "assistant",
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Living Story moved to a callable ZeroGPU IP-Adapter engine",
+        "tr": "Living Story çağrılabilir ZeroGPU IP-Adapter motoruna taşındı",
+        "zh": "Living Story 已迁移到可调用的 ZeroGPU IP-Adapter 引擎",
+        "ar": "تم نقل Living Story إلى محرك ZeroGPU IP-Adapter قابل للاستدعاء",
+        "hi": "Living Story callable ZeroGPU IP-Adapter engine पर منتقل हुआ"
+      },
+      "text": {
+        "en": "The unavailable upstream wrapper was replaced with InstantX FLUX IP-Adapter while Living Story remains isolated and fail-closed with no Studio or Cloudflare fallback.",
+        "tr": "Kullanılamayan üst seviye wrapper yerine InstantX FLUX IP-Adapter bağlandı; Living Story izole ve fail-closed kaldı, Studio veya Cloudflare fallback eklenmedi.",
+        "zh": "不可用的上游包装接口已替换为 InstantX FLUX IP-Adapter；Living Story 继续保持隔离和失败关闭，不使用 Studio 或 Cloudflare 回退。",
+        "ar": "تم استبدال الغلاف العلوي غير المتاح بـ InstantX FLUX IP-Adapter مع بقاء Living Story معزولاً ومغلقاً عند الفشل دون أي رجوع إلى Studio أو Cloudflare.",
+        "hi": "Unavailable upstream wrapper को InstantX FLUX IP-Adapter से बदला गया; Living Story isolated और fail-closed रहता है, Studio या Cloudflare fallback के बिना।"
+      }
     }
   ]
 }
