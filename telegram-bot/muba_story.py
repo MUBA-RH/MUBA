@@ -49,14 +49,22 @@ def draft(day=None):
         truth=fact
     else:
         theme="A quiet day inside MUBA's living world becomes a small unexpected character moment."
-        truth="No public ecosystem development is required for this episode."\n        theme_tr="MUBA’nın yaşayan dünyasındaki sakin bir gün, küçük ve beklenmedik bir karakter anına dönüşüyor."\n        truth_tr="Bu bölüm için herkese açık bir ekosistem gelişmesi gerekmiyor."
+        truth="No public ecosystem development is required for this episode."
+        theme_tr="MUBA’nın yaşayan dünyasındaki sakin bir gün, küçük ve beklenmedik bir karakter anına dönüşüyor."
+        truth_tr="Bu bölüm için herkese açık bir ekosistem gelişmesi gerekmiyor."
     scenes=[
         "Opening: establish one believable place and mood. MUBA notices the day's situation without explanatory text.",
         "Development: show MUBA interacting with the situation; preserve location, light, wardrobe and object continuity.",
         "MUBA moment: a distinctive playful or curious reaction makes the event feel like MUBA rather than a product announcement.",
         "Closing: resolve the small event with a memorable visual beat that can stand as the final frame of the day.",
     ]
-    scenes_tr=[\n        "Açılış: inandırıcı bir mekân ve atmosfer kurulur. MUBA, açıklayıcı yazı olmadan günün durumunu fark eder.",\n        "Gelişme: MUBA durumla etkileşime girer; mekân, ışık, kıyafet ve nesne devamlılığı korunur.",\n        "MUBA anı: özgün, oyuncu veya meraklı bir tepki olayı ürün duyurusundan çıkarıp MUBA hikâyesine dönüştürür.",\n        "Kapanış: küçük olay, günün son karesi olarak tek başına da güçlü durabilecek akılda kalıcı bir görsel anla tamamlanır.",\n    ]\n    prompts=[f"{CHARACTER_ANCHOR} {theme} {scene} No visible captions, logos, speech bubbles or watermarks." for scene in scenes]
+    scenes_tr=[
+        "Açılış: inandırıcı bir mekân ve atmosfer kurulur. MUBA, açıklayıcı yazı olmadan günün durumunu fark eder.",
+        "Gelişme: MUBA durumla etkileşime girer; mekân, ışık, kıyafet ve nesne devamlılığı korunur.",
+        "MUBA anı: özgün, oyuncu veya meraklı bir tepki olayı ürün duyurusundan çıkarıp MUBA hikâyesine dönüştürür.",
+        "Kapanış: küçük olay, günün son karesi olarak tek başına da güçlü durabilecek akılda kalıcı bir görsel anla tamamlanır.",
+    ]
+    prompts=[f"{CHARACTER_ANCHOR} {theme} {scene} No visible captions, logos, speech bubbles or watermarks." for scene in scenes]
     return {
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,"scenes":scenes,"scenes_tr":scenes_tr,"prompts":prompts,
