@@ -1356,6 +1356,42 @@ async def _story_generate_images(item):
         ids.append(archived["id"])
     return set_story_images(item["day"],ids)
 
+async def _prepare_daily_story(application):
+    """Prepare once per Istanbul day; never publish without DEV approval."""
+    item=story_draft()
+    if len(item.get("images",[]))==4:
+        return item
+    item=await _story_generate_images(item)
+    chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
+    await application.bot.send_message(
+        chat_id=chat_id,
+        text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nGünlük devam hikâyesi hazır. 4 görsel 1/4 → 4/4 aşağıda. WEB YAYINLA onayı verilmeden yayınlanmaz.",
+    )
+    for i,gid in enumerate(item["images"],1):
+        await application.bot.send_photo(
+            chat_id=chat_id,
+            photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
+            caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1],
+        )
+    return item
+
+async def daily_story_scheduler(application):
+    """Self-contained Render scheduler: target 10:45 Europe/Istanbul every day."""
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    tz=ZoneInfo("Europe/Istanbul")
+    while True:
+        now=datetime.now(tz)
+        target=now.replace(hour=10,minute=45,second=0,microsecond=0)
+        if now>=target:
+            target+=timedelta(days=1)
+        await asyncio.sleep(max(1,(target-now).total_seconds()))
+        try:
+            await _prepare_daily_story(application)
+        except Exception:
+            logger.exception("Internal Daily Story scheduler failed; production remains unchanged")
+            await asyncio.sleep(60)
+
 async def story_prepare_handler(request: web.Request):
     """DEV-secret scheduler endpoint: prepare today's four images, never publish."""
     secret=os.getenv("MUBA_STORY_SCHEDULER_SECRET","")
@@ -1561,6 +1597,8 @@ async def start_webhook_server():
     app["http_session"] = aiohttp.ClientSession()
 
     app["telegram_application"] = application
+
+    app["daily_story_scheduler_task"] = asyncio.create_task(daily_story_scheduler(application))
 
     app.router.add_get(
         "/",
