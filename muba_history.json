@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-hf-ipadapter-v3",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story HF IP-Adapter V3",
+        "tr": "Living Story HF IP-Adapter V3",
+        "zh": "Living Story HF IP-Adapter V3",
+        "ar": "Living Story HF IP-Adapter V3",
+        "hi": "Living Story HF IP-Adapter V3"
+      },
+      "text": {
+        "en": "Living Story image generation is isolated from the previous Cloudflare portrait loop and now uses a Hugging Face ZeroGPU SDXL pipeline with real IP-Adapter reference conditioning. Every panel starts independently from the canonical MUBA identity reference plus fixed Character DNA and Story state; generated frames are never recursively reused. DEV approval and four-image publishing safeguards remain unchanged.",
+        "tr": "Living Story görsel üretimi önceki Cloudflare portre döngüsünden ayrıldı ve artık gerçek IP-Adapter referans koşullandırması kullanan Hugging Face ZeroGPU SDXL hattına bağlandı. Her kare kanonik MUBA kimlik referansı, sabit Character DNA ve Story durumundan bağımsız başlar; üretilmiş kareler tekrar referans olarak kullanılmaz. DEV onayı ve dört görsel yayın güvenliği değişmeden korunur.",
+        "zh": "Living Story 图像生成已与旧的 Cloudflare 肖像循环隔离，并改用带真实 IP-Adapter 参考条件的 Hugging Face ZeroGPU SDXL 管线。每个画面都从规范 MUBA 身份参考、固定 Character DNA 和 Story 状态独立生成，不递归复用已生成画面。DEV 审核和四图发布保护保持不变。",
+        "ar": "تم عزل توليد صور Living Story عن حلقة صور Cloudflare السابقة، وأصبح يستخدم مسار Hugging Face ZeroGPU SDXL مع تكييف مرجعي حقيقي عبر IP-Adapter. تبدأ كل لوحة بشكل مستقل من مرجع هوية MUBA الأساسي مع Character DNA وحالة Story الثابتة، ولا يعاد استخدام الصور المولدة بشكل تكراري. تبقى موافقة DEV وحماية نشر أربع صور دون تغيير.",
+        "hi": "Living Story image generation को पुराने Cloudflare portrait loop से अलग कर Hugging Face ZeroGPU SDXL pipeline और वास्तविक IP-Adapter reference conditioning से जोड़ा गया है।हर panel canonical MUBA identity reference, fixed Character DNA और Story state से स्वतंत्र रूप से शुरू होता है; generated frames को recursive reference के रूप में reuse नहीं किया जाता।DEV approval और four-image publishing safeguards अपरिवर्तित हैं।"
+      }
+    },
+    {
       "id": "20260922-living-story-character-anchor-v2",
       "date": "2026-09-22",
       "type": "improved",
