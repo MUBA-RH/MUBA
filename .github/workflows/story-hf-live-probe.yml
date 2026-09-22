@@ -11,6 +11,8 @@ jobs:
   live-probe:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,7 +29,8 @@ jobs:
 
           space="InstantX/flux-IP-adapter"
           reference="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg"
-          client=Client(space,verbose=False)
+          import os
+          client=Client(space,token=os.getenv("HF_TOKEN") or None,verbose=False)
           api=client.view_api(return_format="dict",print_info=False) or {}
           named=api.get("named_endpoints") or {}
           normalized={str(k).lstrip("/"):str(k) for k in named}
