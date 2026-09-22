@@ -89,6 +89,8 @@ def is_published(day):
     return bool(STORE.get("story_publish",str(day),False))
 
 def publish(day):
+    if len(image_ids(day)) != 4:
+        raise ValueError("Daily Story requires four approved images before publishing")
     STORE.set("story_publish",str(day),True)
     return draft(day)
 
@@ -98,4 +100,4 @@ def unpublish(day):
 
 def public_story(day=None):
     item=draft(day)
-    return item if item["status"]=="published" else None
+    return item if item["status"]=="published" and len(item.get("images",[]))==4 else None
