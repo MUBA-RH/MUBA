@@ -12,8 +12,8 @@ from pathlib import Path
 
 SPACE_ID=os.getenv("MUBA_STORY_HF_SPACE","InstantX/flux-IP-adapter").strip()
 API_CANDIDATES=("process_image","predict")
-PANEL_IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.62"))
-ANCHOR_IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_ANCHOR_WEIGHT","0.42"))
+PANEL_IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_IP_WEIGHT","0.78"))
+ANCHOR_IP_WEIGHT=float(os.getenv("MUBA_STORY_HF_ANCHOR_WEIGHT","0.82"))
 
 def configured()->bool:
     return bool(os.getenv("HF_TOKEN")) and bool(SPACE_ID)
@@ -86,5 +86,5 @@ async def generate(session,prompt:str,reference_url:str,*,weight:float|None=None
     }.get(suffix,"image/png")
     return body,content_type
 async def generate_anchor(session,prompt:str,reference_url:str)->tuple[bytes,str]:
-    """Create a clean chibi identity anchor with deliberately low composition transfer."""
+    """Create a clean chibi identity anchor with strong canonical identity transfer."""
     return await generate(session,prompt,reference_url,weight=ANCHOR_IP_WEIGHT,seed=20260922)
