@@ -1323,7 +1323,7 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate and durably archive all four Daily Story frames."""
+    """Generate four sequential frames; each new frame receives the previous frame as continuity reference."""
     if not ai_configured():
         raise RuntimeError("MUBA AI engine is not configured")
     import base64, aiohttp
@@ -1331,15 +1331,20 @@ async def _story_generate_images(item):
         async with session.get(REFERENCE_URL,timeout=15) as response:
             if response.status != 200:
                 raise RuntimeError("MUBA reference unavailable")
-            ref=await response.read()
+            identity_ref=await response.read()
         ids=[]
-        for prompt in item["prompts"]:
+        previous_frame=None
+        for index,prompt in enumerate(item["prompts"]):
             form=aiohttp.FormData()
             payload=ai_payload(prompt,"image","")
             form.add_field("prompt",payload["prompt"])
             form.add_field("width",str(payload["width"]))
             form.add_field("height",str(payload["height"]))
-            form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+            # input_image_0 always anchors MUBA identity. From frame 2 onward,
+            # input_image_1 anchors visual continuity to the immediately prior panel.
+            form.add_field("input_image_0",identity_ref,filename="muba-identity.jpg",content_type="image/jpeg")
+            if previous_frame is not None:
+                form.add_field("input_image_1",previous_frame,filename=f"previous-frame-{index}.png",content_type="image/png")
             headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
             async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
                 raw=await response.read()
@@ -1359,6 +1364,7 @@ async def _story_generate_images(item):
             if not archived:
                 raise RuntimeError("Daily Story image archive failed")
             ids.append(archived["id"])
+            previous_frame=body
     return set_story_images(item["day"],ids)
 
 async def story_public_handler(request: web.Request):
