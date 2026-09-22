@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install Gradio client
-        run: pip install 'gradio_client>=2.0,<3' pillow
+        run: pip install 'gradio_client>=2.0,<3' pillow aiohttp
       - name: Generate a real reference-conditioned image
         run: |
           python - <<'PY'
