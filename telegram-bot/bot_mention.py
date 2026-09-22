@@ -655,11 +655,15 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörseller üretilemedi. Mevcut sistem korunuyor; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 görsel hazır. Yayınlamadan önce aşağıdan kontrol edebilirsin."
-        rows=[[InlineKeyboardButton(f"🖼 Görsel {i+1}",url=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid)] for i,gid in enumerate(item["images"])]
-        rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
-        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 görsel hazır. Aşağıda 1 → 2 → 3 → 4 sırasıyla tek tek gönderiyorum. Dördünü kontrol ettikten sonra WEB YAYINLA ile onaylayabilirsin."
+        rows=[[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]]
+        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows))
+        for i,gid in enumerate(item["images"],1):
+            await q.message.reply_photo(
+                photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
+                caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1],
+            )
+        return
     if data=="story_publish":
         if not is_dev(user_id): return
         try: item=publish_story(story_draft()["day"])
@@ -1326,6 +1330,7 @@ async def _story_generate_images(item):
     """Generate four Cloudflare reference-conditioned panels transactionally."""
     import aiohttp
     from muba_story_cloudflare import configured as cf_story_configured, generate as cf_story_generate
+    from muba_daily_story_reference import REFERENCE_URL as STORY_REFERENCE_URL
     if not cf_story_configured():
         raise RuntimeError("Cloudflare Living Story engine is not configured")
 
@@ -1333,9 +1338,9 @@ async def _story_generate_images(item):
     # directly for every panel; no fifth anchor-generation call is required.
     generated=[]
     async with aiohttp.ClientSession() as session:
-        async with session.get(REFERENCE_URL,timeout=15) as response:
+        async with session.get(STORY_REFERENCE_URL,timeout=15) as response:
             if response.status!=200:
-                raise RuntimeError("Canonical MUBA reference unavailable")
+                raise RuntimeError("Locked MUBA Daily Story reference unavailable")
             reference=await response.read()
             reference_type=response.headers.get("Content-Type","image/jpeg").split(";",1)[0]
         for prompt in item["prompts"]:

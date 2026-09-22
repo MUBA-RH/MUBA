@@ -4,10 +4,10 @@ This module owns the Story character DNA and storyboard prompt contract only.
 It is isolated from Studio, Gallery and all other MUBA visual systems.
 """
 
-from muba_face_architecture import identity_prompt
+from muba_daily_story_reference import story_identity_prompt
 
 CHARACTER_DNA=(
-    identity_prompt()+" "
+    story_identity_prompt()+" "
     "Translate the canonical face geometry into 2D chibi without changing the identity geometry. Keep the same face, eye asymmetry, tiny nose, hanging tongue, fur distribution and clothing in every panel. "
 )
 
