@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-dynamic-gradio-discovery",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story endpoint discovery hardened",
+        "tr": "Living Story uç nokta keşfi kalıcılaştırıldı",
+        "zh": "Living Story 端点发现已加固",
+        "ar": "تم تعزيز اكتشاف نقطة نهاية Living Story",
+        "hi": "Living Story endpoint discovery मजबूत किया गया"
+      },
+      "text": {
+        "en": "Living Story no longer hard-codes the upstream Gradio endpoint name. It discovers the currently exported ImageGen API at runtime and accepts both short and qualified run_imagegen names, reducing breakage when the public Space changes Gradio registration details.",
+        "tr": "Living Story artık üst Gradio uç nokta adını sabit kodlamıyor. Çalışma anında mevcut ImageGen API'sini keşfediyor ve hem kısa hem nitelikli run_imagegen adlarını kabul ediyor; böylece herkese açık Space'in Gradio kayıt ayrıntıları değiştiğinde kırılma riski azalıyor.",
+        "zh": "Living Story 不再硬编码上游 Gradio 端点名称，而是在运行时发现当前导出的 ImageGen API，并兼容简短及限定的 run_imagegen 名称，以降低公共 Space 更改 Gradio 注册细节时的故障风险。",
+        "ar": "لم يعد Living Story يثبت اسم نقطة نهاية Gradio في الكود؛ بل يكتشف واجهة ImageGen المصدّرة وقت التشغيل ويدعم اسمي run_imagegen المختصر والمؤهل، مما يقلل الأعطال عند تغيّر تفاصيل تسجيل Gradio في الـ Space العام.",
+        "hi": "Living Story अब upstream Gradio endpoint नाम को hard-code नहीं करता। यह runtime पर उपलब्ध ImageGen API खोजता है और short तथा qualified run_imagegen दोनों नाम स्वीकार करता है, जिससे public Space के Gradio registration बदलने पर टूटने का जोखिम घटता है।"
+      }
+    },
+    {
       "id": "20260922-living-story-official-gradio-client",
       "date": "2026-09-22",
       "type": "fixed",
