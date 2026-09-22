@@ -321,6 +321,7 @@ def menu_keyboard(lang,user_id=None):
     rows.append([InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
     rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")])
     if is_dev(user_id):
+        rows.append([InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")])
         rows.append([InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")])
     rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
     rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
