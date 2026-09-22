@@ -19,18 +19,59 @@
   },
   "entries": [
     {
+      "id": "20260923-living-story-cloudflare-backend",
+      "date": "2026-09-23",
+      "type": "updated",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Living Story moved to Cloudflare image generation",
+        "tr": "Living Story Cloudflare görsel üretimine taşındı",
+        "zh": "Living Story 已迁移至 Cloudflare 图像生成",
+        "ar": "تم نقل Living Story إلى توليد الصور عبر Cloudflare",
+        "hi": "Living Story को Cloudflare image generation पर स्थानांतरित किया गया"
+      },
+      "text": {
+        "en": "The daily four-panel Story now uses the existing Cloudflare Workers AI connection and canonical MUBA reference for every panel, removing the Hugging Face ZeroGPU dependency while preserving manual approval and fail-closed behavior.",
+        "tr": "Günlük dört karelik Story artık her karede mevcut Cloudflare Workers AI bağlantısını ve kanonik MUBA referansını kullanıyor; Hugging Face ZeroGPU bağımlılığı kaldırılırken manuel onay ve fail-closed davranışı korunuyor.",
+        "zh": "每日四格 Story 现在每一格都使用现有 Cloudflare Workers AI 连接和标准 MUBA 参考图，移除 Hugging Face ZeroGPU 依赖，同时保留人工批准和失败关闭行为。",
+        "ar": "تستخدم قصة MUBA اليومية ذات الأربع لوحات الآن اتصال Cloudflare Workers AI الحالي ومرجع MUBA الأساسي لكل لوحة، مع إزالة الاعتماد على Hugging Face ZeroGPU والحفاظ على الموافقة اليدوية وسلوك الإغلاق عند الفشل.",
+        "hi": "दैनिक चार-पैनल Story अब हर पैनल के लिए मौजूदा Cloudflare Workers AI कनेक्शन और canonical MUBA reference का उपयोग करती है; Hugging Face ZeroGPU निर्भरता हटाते हुए manual approval और fail-closed व्यवहार बरकरार है।"
+      }
+    },
+    {
       "id": "20260922-muba-face-architecture-v1",
       "date": "2026-09-22",
       "type": "improved",
-      "areas": ["daily", "telegram"],
-      "title": {"en":"MUBA canonical face architecture added","tr":"MUBA kanonik yüz mimarisi eklendi","zh":"已添加 MUBA 标准面部架构","ar":"تمت إضافة بنية وجه MUBA القياسية","hi":"MUBA canonical face architecture जोड़ा गया"},
-      "text": {"en":"Living Story now conditions every chibi generation on MUBA's explicit facial geometry: enormous asymmetric eyes, tiny nose, compact muzzle, hanging tongue, broad short face and restrained ears, with generic hamster/bear/mouse substitutions explicitly rejected.","tr":"Living Story artık her chibi üretimini MUBA'nın açık yüz geometrisine bağlıyor: dev asimetrik gözler, minicik burun, kısa ağız bölgesi, sarkan dil, geniş-kısa yüz ve küçük kulaklar; genel hamster/ayı/fare dönüşümleri açıkça reddediliyor.","zh":"Living Story 现在将每次 chibi 生成绑定到 MUBA 明确的面部几何结构，并明确排除通用仓鼠、熊和老鼠替代形象。","ar":"يربط Living Story الآن كل توليد chibi بهندسة وجه MUBA الصريحة مع رفض بدائل الهامستر والدب والفأر العامة.","hi":"Living Story अब हर chibi generation को MUBA की स्पष्ट face geometry से बांधता है और generic hamster/bear/mouse रूपों को स्पष्ट रूप से अस्वीकार करता है।"}
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA canonical face architecture added",
+        "tr": "MUBA kanonik yüz mimarisi eklendi",
+        "zh": "已添加 MUBA 标准面部架构",
+        "ar": "تمت إضافة بنية وجه MUBA القياسية",
+        "hi": "MUBA canonical face architecture जोड़ा गया"
+      },
+      "text": {
+        "en": "Living Story now conditions every chibi generation on MUBA's explicit facial geometry: enormous asymmetric eyes, tiny nose, compact muzzle, hanging tongue, broad short face and restrained ears, with generic hamster/bear/mouse substitutions explicitly rejected.",
+        "tr": "Living Story artık her chibi üretimini MUBA'nın açık yüz geometrisine bağlıyor: dev asimetrik gözler, minicik burun, kısa ağız bölgesi, sarkan dil, geniş-kısa yüz ve küçük kulaklar; genel hamster/ayı/fare dönüşümleri açıkça reddediliyor.",
+        "zh": "Living Story 现在将每次 chibi 生成绑定到 MUBA 明确的面部几何结构，并明确排除通用仓鼠、熊和老鼠替代形象。",
+        "ar": "يربط Living Story الآن كل توليد chibi بهندسة وجه MUBA الصريحة مع رفض بدائل الهامستر والدب والفأر العامة.",
+        "hi": "Living Story अब हर chibi generation को MUBA की स्पष्ट face geometry से बांधता है और generic hamster/bear/mouse रूपों को स्पष्ट रूप से अस्वीकार करता है।"
+      }
     },
     {
       "id": "20260922-living-story-chibi-continuity-v5",
       "date": "2026-09-22",
       "type": "fixed",
-      "areas": ["daily", "telegram"],
+      "areas": [
+        "daily",
+        "telegram"
+      ],
       "title": {
         "en": "Living Story visual continuity corrected",
         "tr": "Living Story görsel sürekliliği düzeltildi",

@@ -1323,34 +1323,32 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate a clean chibi identity anchor, then four isolated sequential Story panels."""
-    import aiohttp, os, tempfile
-    from muba_story_chibi import character_anchor_prompt
-    from muba_story_hf import configured as hf_story_configured, generate as hf_story_generate, generate_anchor
-    if not hf_story_configured():
-        raise RuntimeError("HF_TOKEN is not configured for Living Story")
+    """Generate four Cloudflare reference-conditioned panels transactionally."""
+    import aiohttp
+    from muba_story_cloudflare import configured as cf_story_configured, generate as cf_story_generate
+    if not cf_story_configured():
+        raise RuntimeError("Cloudflare Living Story engine is not configured")
 
-    # Stage 1 deliberately strips the canonical portrait's purple-neon composition.
-    # Stage 2 reuses only that clean 2D chibi identity anchor for every story beat.
-    anchor_path=None
-    ids=[]
+    # One daily post = four panel calls. The canonical MUBA image is reused
+    # directly for every panel; no fifth anchor-generation call is required.
+    generated=[]
     async with aiohttp.ClientSession() as session:
-        anchor_body,anchor_type=await generate_anchor(session,character_anchor_prompt(),REFERENCE_URL)
-        suffix=".jpg" if "jpeg" in anchor_type else ".webp" if "webp" in anchor_type else ".png"
-        with tempfile.NamedTemporaryFile(prefix="muba-story-anchor-",suffix=suffix,delete=False) as tmp:
-            tmp.write(anchor_body)
-            anchor_path=tmp.name
-        try:
-            for index,prompt in enumerate(item["prompts"]):
-                body,out_type=await hf_story_generate(session,prompt,anchor_path,seed=20260923+index)
-                archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
-                if not archived:
-                    raise RuntimeError("Daily Story image archive failed")
-                ids.append(archived["id"])
-        finally:
-            if anchor_path:
-                try: os.unlink(anchor_path)
-                except OSError: pass
+        async with session.get(REFERENCE_URL,timeout=15) as response:
+            if response.status!=200:
+                raise RuntimeError("Canonical MUBA reference unavailable")
+            reference=await response.read()
+            reference_type=response.headers.get("Content-Type","image/jpeg").split(";",1)[0]
+        for prompt in item["prompts"]:
+            body,out_type=await cf_story_generate(session,prompt,reference,reference_type=reference_type)
+            generated.append((body,out_type,prompt))
+
+    # Fail closed: archive/state mutation starts only after all four calls pass.
+    ids=[]
+    for body,out_type,prompt in generated:
+        archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
+        if not archived:
+            raise RuntimeError("Daily Story image archive failed")
+        ids.append(archived["id"])
     return set_story_images(item["day"],ids)
 
 async def story_public_handler(request: web.Request):
