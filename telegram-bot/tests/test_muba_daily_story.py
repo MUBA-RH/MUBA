@@ -17,14 +17,22 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_uses_reusable_chibi_character_anchor(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("recurring character dna",prompt)
-        self.assertIn("strict 2d japanese chibi",prompt)
-        self.assertIn("identity anchor only",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-hf-flux-ipadapter-v4")
+        self.assertIn("muba character identity only",prompt)
+        self.assertIn("true hand-drawn 2d japanese chibi",prompt)
+        self.assertIn("identity",prompt)
+        self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-hf-flux-ipadapter-v5")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
-        self.assertEqual(item["rules"]["continuity"],"canonical-reference-plus-story-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"hf-flux-ipadapter-v4")
-        self.assertIn("purple neon",prompt)
+        self.assertEqual(item["rules"]["continuity"],"clean-chibi-anchor-plus-explicit-scene-state")
+        self.assertEqual(item["rules"]["character_anchor_version"],"hf-flux-ipadapter-chibi-v5")
+        self.assertIn("no purple neon ring",prompt)
+        self.assertIn("no visible text",prompt)
+
+    def test_each_prompt_has_concrete_story_state(self):
+        item=muba_story.draft("2099-01-01")
+        joined=" ".join(item["prompts"]).lower()
+        self.assertTrue(("same box" in joined) or ("same folded paper" in joined))
+        self.assertNotIn("tiny integrated story word",joined)
+        self.assertEqual(item["rules"]["frame_text_max_words"],0)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
@@ -36,17 +44,18 @@ class DailyStoryTests(unittest.TestCase):
     def test_chibi_layer_has_character_sheet_anchor(self):
         layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
         self.assertIn("character_dna",layer)
-        self.assertIn("character sheet anchor",layer)
-        self.assertIn("2-head-tall",layer)
+        self.assertIn("clean reusable 2d chibi character reference",layer)
+        self.assertIn("2 heads tall",layer)
         self.assertIn("no 3d",layer)
-        self.assertIn("no panel number",layer)
-        self.assertIn("20-45 percent",layer)
+        self.assertIn("no visible text",layer)
+        self.assertIn("20-35 percent",layer)
 
     def test_generation_uses_hf_ipadapter_canonical_reference_for_all_panels(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
         self.assertIn("muba_story_hf",section)
-        self.assertIn("hf_story_generate(session,prompt,REFERENCE_URL)",section)
+        self.assertIn("generate_anchor(session,character_anchor_prompt(),REFERENCE_URL)",section)
+        self.assertIn("hf_story_generate(session,prompt,anchor_path",section)
         self.assertNotIn("previous_frame",section)
         self.assertNotIn("character_anchor,_=await render",section)
 
@@ -59,7 +68,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('Client(SPACE_ID,token=token,verbose=False)',bridge)
         self.assertIn('view_api(return_format="dict",print_info=False)',bridge)
         self.assertIn('handle_file(reference_url)',bridge)
-        self.assertIn('IP_WEIGHT',bridge)
+        self.assertIn('PANEL_IP_WEIGHT',bridge)
+        self.assertIn('ANCHOR_IP_WEIGHT',bridge)
         self.assertNotIn('RioShiina/ImageGen',bridge)
         self.assertNotIn('run_imagegen',bridge)
         self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
@@ -113,7 +123,8 @@ class TestLivingStoryIsolation(unittest.TestCase):
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
-        self.assertIn("hf_story_generate(session,prompt,REFERENCE_URL)",story)
+        self.assertIn("generate_anchor(session,character_anchor_prompt(),REFERENCE_URL)",story)
+        self.assertIn("hf_story_generate(session,prompt,anchor_path",story)
         self.assertIn("HF_TOKEN is not configured for Living Story",story)
         self.assertNotIn("cloudflare_story_generate",story)
         self.assertNotIn("ai_endpoint()",story)
