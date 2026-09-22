@@ -4,14 +4,16 @@ This module owns the Story character DNA and storyboard prompt contract only.
 It is isolated from Studio, Gallery and all other MUBA visual systems.
 """
 
+from muba_face_architecture import identity_prompt
+
 CHARACTER_DNA=(
-    "MUBA CHARACTER IDENTITY ONLY: tan/brown short dense fur, distinctive huge expressive eyes, tiny dark nose, "
-    "small playful mouth, black MUBA cap and black hoodie. Keep the same face, fur color and clothing in every panel. "
+    identity_prompt()+" "
+    "Translate the canonical face geometry into 2D chibi without changing the identity geometry. Keep the same face, eye asymmetry, tiny nose, hanging tongue, fur distribution and clothing in every panel. "
 )
 
 CHIBI_DNA=(
     "TRUE HAND-DRAWN 2D JAPANESE CHIBI / SUPER-DEFORMED ILLUSTRATION: exactly about 2 heads tall; oversized round head; "
-    "tiny pear-shaped torso; very short rounded arms and legs; tiny simplified hands and feet; almost no neck; huge low-set eyes; "
+    "tiny pear-shaped torso; very short rounded arms and legs; tiny simplified hands and feet; almost no neck. Preserve MUBA's canonical asymmetric bulging-eye geometry exactly rather than generic anime/chibi eyes. "
     "rounded cheeks; bold clean manga outlines; flat cel colors with only one soft shadow tone. "
     "NO photorealism, NO realistic fur rendering, NO 3D, NO CGI, NO Pixar/Disney look, NO plush/toy, NO glossy render. "
 )
@@ -27,7 +29,7 @@ STORYBOARD_DNA=(
 def character_anchor_prompt():
     return (
         f"{CHARACTER_DNA} {CHIBI_DNA} "
-        "Create a clean reusable 2D CHIBI character reference: full body, three-quarter view, relaxed standing pose, plain warm off-white background. "
+        "Create a clean reusable 2D CHIBI character reference: full body, three-quarter body pose but face readable almost front-on, relaxed standing pose, plain warm off-white background. Identity accuracy is more important than generic cuteness. "
         "No scenery, no action, no ring, no neon, no crown, no poster design, no extra text or watermark."
     )
 
