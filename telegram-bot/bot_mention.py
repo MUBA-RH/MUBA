@@ -1323,47 +1323,18 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate a reusable Chibi identity anchor, then four action-driven story panels."""
-    if not ai_configured():
-        raise RuntimeError("MUBA AI engine is not configured")
-    import base64, aiohttp
-    from muba_story_chibi import character_anchor_prompt
+    """Generate four Story panels with HF ZeroGPU SDXL + real IP-Adapter identity conditioning."""
+    from muba_story_hf import configured as hf_story_configured, generate as hf_story_generate
+    if not hf_story_configured():
+        raise RuntimeError("HF_TOKEN is not configured for Living Story")
 
-    async def render(session,prompt,reference,filename):
-        form=aiohttp.FormData()
-        payload=ai_payload(prompt,"image","")
-        form.add_field("prompt",payload["prompt"])
-        form.add_field("width",str(payload["width"]))
-        form.add_field("height",str(payload["height"]))
-        form.add_field("input_image_0",reference,filename=filename,content_type="image/png")
-        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
-        async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
-            raw=await response.read()
-            if response.status != 200:
-                raise RuntimeError("Daily Story image generation failed")
-            if response.headers.get("Content-Type","").startswith("image/"):
-                return raw,response.headers.get("Content-Type")
-            result=json.loads(raw.decode("utf-8")).get("result",{})
-            encoded=result.get("image") if isinstance(result,dict) else None
-            if not encoded:
-                raise RuntimeError("Daily Story image response contained no image")
-            return base64.b64decode(encoded),"image/png"
-
+    # Every panel is generated independently from the same canonical MUBA identity
+    # reference. No generated frame is recursively reused, so pose/composition errors
+    # cannot snowball. Character continuity comes from IP-Adapter + fixed Character DNA.
+    ids=[]
     async with aiohttp.ClientSession() as session:
-        async with session.get(REFERENCE_URL,timeout=15) as response:
-            if response.status != 200:
-                raise RuntimeError("MUBA reference unavailable")
-            source_identity=await response.read()
-
-        # Stage A: translate the source portrait once into a neutral reusable Chibi identity anchor.
-        character_anchor,_=await render(session,character_anchor_prompt(),source_identity,"muba-source-identity.png")
-
-        # Stage B: every story panel starts from the SAME neutral character anchor.
-        # Previous panels are deliberately not fed back as image references: story continuity lives in
-        # the repeated Character DNA + explicit storyboard state, preventing portrait/pose drift loops.
-        ids=[]
-        for index,prompt in enumerate(item["prompts"]):
-            body,out_type=await render(session,prompt,character_anchor,f"muba-chibi-character-anchor-{index}.png")
+        for prompt in item["prompts"]:
+            body,out_type=await hf_story_generate(session,prompt,REFERENCE_URL)
             archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
             if not archived:
                 raise RuntimeError("Daily Story image archive failed")
