@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-dev-menu-entry",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "assistant",
+        "telegram",
+        "daily"
+      ],
+      "title": {
+        "en": "Daily Story DEV menu entry restored",
+        "tr": "Daily Story DEV menü girişi düzeltildi",
+        "zh": "Daily Story DEV 菜单入口已修复",
+        "ar": "تم إصلاح مدخل Daily Story في قائمة DEV",
+        "hi": "Daily Story DEV मेनू एंट्री ठीक की गई"
+      },
+      "text": {
+        "en": "The missing DEV-only MUBA Daily Story button is now exposed in the Telegram Assistant main menu, linking the existing Story Director to its intended control surface.",
+        "tr": "Eksik olan yalnızca DEV'e açık MUBA Daily Story butonu Telegram Assistant ana menüsüne eklendi ve mevcut Story Director amaçlanan kontrol ekranına bağlandı.",
+        "zh": "缺失的仅限 DEV 的 MUBA Daily Story 按钮现已显示在 Telegram Assistant 主菜单中，并连接到现有 Story Director 控制界面。",
+        "ar": "تمت إضافة زر MUBA Daily Story المخصص لـ DEV فقط إلى القائمة الرئيسية في Telegram Assistant وربطه بواجهة التحكم الحالية لـ Story Director.",
+        "hi": "गायब DEV-only MUBA Daily Story बटन अब Telegram Assistant के मुख्य मेनू में दिखता है और मौजूदा Story Director control surface से जुड़ा है।"
+      }
+    },
+    {
       "id": "20260922-daily-story-director",
       "date": "2026-09-22",
       "type": "new",

@@ -21,6 +21,11 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("no comic-book",prompt)
         self.assertIn("no hard glossy cgi",prompt)
 
+    def test_dev_menu_exposes_story_director(self):
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn('InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")',bot)
+        self.assertIn('if is_dev(user_id):',bot)
+
     def test_unapproved_story_is_not_public(self):
         day="2099-01-02"
         muba_story.unpublish(day)
