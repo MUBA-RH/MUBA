@@ -17,7 +17,7 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_is_isolated_chibi_episode(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("do not redesign",prompt)
+        self.assertIn("preserve muba's original facial identity",prompt)
         self.assertIn("chibi / super-deformed",prompt)
         self.assertIn("one chibi mini-story",prompt)
         self.assertIn("continuity:",prompt)
