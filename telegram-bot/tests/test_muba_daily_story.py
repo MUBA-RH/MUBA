@@ -107,15 +107,16 @@ class DailyStoryTests(unittest.TestCase):
 
 if __name__=="__main__": unittest.main()
 
-class TestLivingStoryResilience(unittest.TestCase):
-    def test_story_has_cloudflare_fallback(self):
+
+class TestLivingStoryIsolation(unittest.TestCase):
+    def test_story_is_hf_only_and_fails_closed(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
         self.assertIn("hf_story_generate(session,prompt,REFERENCE_URL)",story)
-        self.assertIn("cloudflare_story_generate(session,prompt)",story)
-        self.assertIn("ai_endpoint()",story)
-        self.assertIn("input_image_0",story)
-        self.assertIn("CLOUDFLARE_API_TOKEN",story)
-        self.assertIn("except Exception",story)
+        self.assertIn("HF_TOKEN is not configured for Living Story",story)
+        self.assertNotIn("cloudflare_story_generate",story)
+        self.assertNotIn("ai_endpoint()",story)
+        self.assertNotIn("CLOUDFLARE_API_TOKEN",story)
+        self.assertNotIn("ai_payload(",story)
