@@ -19,6 +19,32 @@
   },
   "entries": [
     {
+      "id": "20260922-story-four-image-generator",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "studio",
+        "gallery",
+        "telegram",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story four-image production connected",
+        "tr": "Daily Story dört görsel üretimine bağlandı",
+        "zh": "Daily Story 已连接四图生成流程",
+        "ar": "تم ربط Daily Story بإنتاج أربع صور",
+        "hi": "Daily Story चार-चित्र उत्पादन से जोड़ा गया"
+      },
+      "text": {
+        "en": "The DEV Daily Story flow can now generate four reference-anchored MUBA frames, archive them durably in the Gallery, preview each frame, and unlock WEB YAYINLA only after all four exist.",
+        "tr": "DEV Daily Story akışı artık MUBA referansına bağlı dört sahne görseli üretebiliyor, bunları Galeri'de kalıcı olarak arşivliyor, her görseli kontrol için açıyor ve yalnızca dört görsel de hazır olduğunda WEB YAYINLA seçeneğini açıyor.",
+        "zh": "DEV Daily Story 流程现在可生成四张以 MUBA 参考图为锚点的场景图，持久归档到 Gallery，逐张预览，并仅在四张全部就绪后启用 WEB YAYINLA。",
+        "ar": "يمكن لمسار DEV Daily Story الآن إنشاء أربع لقطات مرتبطة بمرجع MUBA وأرشفتها بشكل دائم في Gallery ومعاينة كل لقطة، ولا يتم تفعيل WEB YAYINLA إلا بعد اكتمال الصور الأربع.",
+        "hi": "DEV Daily Story flow अब MUBA reference से जुड़ी चार scene images बना सकता है, उन्हें Gallery में स्थायी रूप से archive करता है, हर image preview कराता है और चारों तैयार होने पर ही WEB YAYINLA खोलता है।"
+      }
+    },
+    {
       "id": "20260922-story-four-image-publish-gate",
       "date": "2026-09-22",
       "type": "fixed",
