@@ -643,12 +643,15 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         item=story_draft()
         body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\n\nTWT: "+item.get("twt_tr",item["twt"])+"\n\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
-        if item["status"]!="published": rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
+        if item["status"]!="published" and len(item.get("images",[]))==4: rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
+        elif item["status"]!="published": rows.append([InlineKeyboardButton("🖼 4 GÖRSEL GEREKLİ",callback_data="story_director")])
         rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
     if data=="story_publish":
         if not is_dev(user_id): return
-        item=publish_story(story_draft()["day"])
+        try: item=publish_story(story_draft()["day"])
+        except ValueError:
+            await q.answer("Önce 4 hikâye görseli hazırlanmalı.",show_alert=True); return
         await q.edit_message_text("🎬 MUBA Günlük Hikâye\n\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
     if data=="gallery_admin":
         if not is_dev(user_id): return
