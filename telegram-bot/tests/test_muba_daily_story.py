@@ -63,7 +63,7 @@ class DailyStoryTests(unittest.TestCase):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
         self.assertIn("muba_story_cloudflare",section)
-        self.assertIn("session.get(REFERENCE_URL",section)
+        self.assertIn("session.get(STORY_REFERENCE_URL",section)
         self.assertIn("cf_story_generate(session,prompt,reference",section)
         self.assertNotIn("muba_story_hf",section)
         self.assertNotIn("generate_anchor",section)
