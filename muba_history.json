@@ -19,6 +19,31 @@
   },
   "entries": [
     {
+      "id": "20260922-story-real-sequential-generation",
+      "date": "2026-09-22",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "studio",
+        "gallery",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story now uses concrete plots and previous-frame continuity",
+        "tr": "Daily Story artık somut olay ve önceki kare devamlılığı kullanıyor",
+        "zh": "Daily Story 现使用具体剧情和前一帧连续性",
+        "ar": "تستخدم Daily Story الآن حبكات محددة واستمرارية الإطار السابق",
+        "hi": "Daily Story अब ठोस कथानक और पिछले फ्रेम की continuity उपयोग करती है"
+      },
+      "text": {
+        "en": "Daily Story now starts from a concrete mini-episode with a named event and actual cause-effect actions. The MUBA reference is identity-only: its purple ring, crown and background are explicitly excluded. After frame one, every new frame receives the immediately previous generated panel as an additional visual reference, so location, props and action can continue instead of resetting to four portraits.",
+        "tr": "Daily Story artık adı ve gerçek neden-sonuç eylemleri olan somut bir mini bölümden başlıyor. MUBA referansı yalnızca kimlik için kullanılıyor; mor halka, taç ve arka plan açıkça hariç tutuluyor. İlk kareden sonra her yeni kare, hemen önce üretilen paneli ek görsel referans olarak alıyor; böylece mekân, nesneler ve hareket dört ayrı portreye sıfırlanmak yerine devam edebiliyor.",
+        "zh": "Daily Story 现在从具有明确事件和真实因果动作的具体迷你剧情开始。MUBA 参考图仅用于身份，其紫色光环、皇冠和背景被明确排除。从第二帧起，每个新画面都会额外引用紧邻的上一帧，以延续场景、道具和动作，而不是重置成四张独立肖像。",
+        "ar": "تبدأ Daily Story الآن بحلقة مصغرة محددة ذات حدث واضح وتسلسل سببي فعلي. تُستخدم صورة MUBA للهوية فقط مع استبعاد الحلقة البنفسجية والتاج والخلفية صراحةً. بعد الإطار الأول، يستقبل كل إطار جديد اللوحة السابقة مباشرةً كمرجع بصري إضافي لاستمرار المكان والأغراض والحركة بدلاً من إعادة الضبط إلى أربع صور منفصلة.",
+        "hi": "Daily Story अब नामित घटना और वास्तविक cause-effect actions वाली ठोस mini-episode से शुरू होती है।MUBA reference केवल identity के लिए है; purple ring, crown और background स्पष्ट रूप से बाहर हैं।पहले frame के बाद हर नया frame पिछले generated panel को अतिरिक्त visual reference के रूप में लेता है, जिससे location, props और action चार अलग portraits में reset होने के बजाय जारी रह सकें।"
+      }
+    },
+    {
       "id": "20260922-story-comic-anime-sequence",
       "date": "2026-09-22",
       "type": "improved",
