@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-self-contained-scheduler",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story scheduler made self-contained",
+        "tr": "Daily Story zamanlayıcısı bağımsız hale getirildi",
+        "zh": "Daily Story 调度器已内置",
+        "ar": "أصبح مجدول Daily Story مدمجًا",
+        "hi": "Daily Story scheduler self-contained किया गया"
+      },
+      "text": {
+        "en": "Daily Story now schedules its own 10:45 Europe/Istanbul preparation inside the live bot runtime, removing the need for separate GitHub scheduler secrets while preserving DEV-only web publication.",
+        "tr": "Daily Story artık canlı bot çalışma zamanı içinde İstanbul saatiyle 10:45 hazırlığını kendi zamanlıyor; ayrı GitHub zamanlayıcı secret gereksinimi kaldırılırken web yayını DEV onayına bağlı kalıyor.",
+        "zh": "Daily Story 现在会在实时机器人运行时内部自行安排伊斯坦布尔时间 10:45 的准备任务，无需单独的 GitHub 调度密钥，同时网页发布仍需 DEV 批准。",
+        "ar": "يجدول Daily Story الآن تحضيره يوميًا عند 10:45 بتوقيت إسطنبول داخل تشغيل البوت نفسه، دون الحاجة إلى أسرار جدولة GitHub منفصلة، مع بقاء نشر الويب بموافقة DEV فقط.",
+        "hi": "Daily Story अब live bot runtime के अंदर Europe/Istanbul 10:45 की तैयारी खुद schedule करता है; अलग GitHub scheduler secrets की जरूरत हट गई है और web publication DEV approval-only रहता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-continuity-scheduler",
       "date": "2026-09-23",
       "type": "improved",
