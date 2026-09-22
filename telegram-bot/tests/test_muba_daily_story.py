@@ -14,12 +14,23 @@ class DailyStoryTests(unittest.TestCase):
         self.assertTrue(item["rules"]["human_approval_required"])
         self.assertFalse(item["rules"]["auto_publish"])
 
-    def test_visual_policy_preserves_muba_without_anime_or_comic_style(self):
-        prompt=muba_story.draft("2099-01-01")["prompts"][0].lower()
-        self.assertIn("do not redesign the face",prompt)
-        self.assertIn("no anime",prompt)
-        self.assertIn("no comic-book",prompt)
-        self.assertIn("no hard glossy cgi",prompt)
+    def test_visual_policy_is_connected_comic_anime_episode(self):
+        item=muba_story.draft("2099-01-01")
+        prompt=item["prompts"][0].lower()
+        self.assertIn("do not redesign",prompt)
+        self.assertIn("comic-book x anime hybrid",prompt)
+        self.assertIn("one continuous mini-episode",prompt)
+        self.assertIn("continuity lock",prompt)
+        self.assertEqual(item["rules"]["visual_style"],"comic-anime-hybrid")
+        self.assertEqual(item["rules"]["continuity"],"locked-sequential")
+        self.assertEqual(item["rules"]["frame_text_max_words"],3)
+        self.assertEqual(len(item["frame_labels"]),4)
+        self.assertGreater(len(item["story"].split()),45)
+
+    def test_technical_change_is_not_literal_story_title(self):
+        item=muba_story.draft("2026-09-22")
+        self.assertNotIn("four-image production connected",item["theme"].lower())
+        self.assertNotIn("four-image production connected",item["story"].lower())
 
     def test_dev_menu_exposes_story_director(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")

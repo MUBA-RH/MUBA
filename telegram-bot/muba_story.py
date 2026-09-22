@@ -16,10 +16,17 @@ TZ=ZoneInfo("Europe/Istanbul")
 HISTORY_PATH=Path(__file__).resolve().parents[1]/"muba_history.json"
 
 CHARACTER_ANCHOR=(
-    "Preserve the supplied MUBA reference identity: large expressive eyes, tan short dense fur, "
-    "small nose, playful tongue, and the same recognizable face proportions. Do not redesign the face. "
-    "No anime, no comic-book treatment, no hard glossy CGI. Use soft cinematic, tactile, lightly surreal "
-    "photographic-illustrative storytelling. The world adapts to MUBA; MUBA is not redesigned for the world."
+    "Preserve the supplied MUBA reference identity exactly: the same large expressive eyes, tan short dense fur, "
+    "small nose, playful tongue, black MUBA cap, black hoodie and recognizable face proportions. Do not redesign "
+    "MUBA into a generic cute animal. Art direction: premium comic-book x anime hybrid, expressive hand-drawn linework, "
+    "cinematic anime lighting, textured painted backgrounds, dynamic panel composition, never glossy 3D CGI. "
+)
+
+STORY_BIBLE=(
+    "Treat all four frames as ONE continuous mini-episode, not four independent portraits. Keep the exact same MUBA "
+    "design, wardrobe, location, time of day, lighting direction and recurring props across every frame. Each frame must "
+    "visibly advance the action from the previous frame. Use varied camera language: establishing shot, action/interaction "
+    "shot, expressive reaction, then a resolving final shot. Do not repeat the same portrait composition. "
 )
 
 def _history():
@@ -42,40 +49,63 @@ def _public_change(day):
 def draft(day=None):
     day=day or datetime.now(TZ).date().isoformat()
     change=_public_change(day)
+
+    # Product/maintenance changelog is context, never the literal plot. A real
+    # development may inspire the episode only when it can be expressed naturally.
     if change:
-        title=(change.get("title") or {}).get("en") or "A new MUBA day"
-        fact=(change.get("text") or {}).get("en") or title
-        theme=f"MUBA encounters a real change in its own living ecosystem: {title}."
-        title_tr=(change.get("title") or {}).get("tr") or title
-        fact_tr=(change.get("text") or {}).get("tr") or fact
-        theme_tr=f"MUBA kendi yaşayan ekosistemindeki gerçek bir gelişmeyle karşılaşıyor: {title_tr}."
-        truth=fact
-        truth_tr=fact_tr
+        truth=(change.get("text") or {}).get("en") or "A real MUBA ecosystem change happened today."
+        truth_tr=(change.get("text") or {}).get("tr") or truth
+        seed="Something in MUBA's familiar world works differently today, and MUBA discovers it through a small everyday adventure."
+        seed_tr="MUBA'nın tanıdık dünyasında bugün bir şey farklı işler; MUBA bunu küçük, günlük bir macera içinde keşfeder."
     else:
-        theme="A quiet day inside MUBA's living world becomes a small unexpected character moment."
         truth="No public ecosystem development is required for this episode."
-        theme_tr="MUBA’nın yaşayan dünyasındaki sakin bir gün, küçük ve beklenmedik bir karakter anına dönüşüyor."
         truth_tr="Bu bölüm için herkese açık bir ekosistem gelişmesi gerekmiyor."
+        seed="A quiet ordinary moment turns into a strange little adventure when MUBA notices something unexpected nearby."
+        seed_tr="Sıradan ve sakin bir an, MUBA yakındaki beklenmedik bir şeyi fark edince küçük ve tuhaf bir maceraya dönüşür."
+
+    theme="A four-panel MUBA mini-episode: "+seed
+    theme_tr="Dört karelik bir MUBA mini bölümü: "+seed_tr
+    labels=["WAIT...","WHAT?","MUBA.","AGAIN?"]
     scenes=[
-        "Opening: establish one believable place and mood. MUBA notices the day's situation without explanatory text.",
-        "Development: show MUBA interacting with the situation; preserve location, light, wardrobe and object continuity.",
-        "MUBA moment: a distinctive playful or curious reaction makes the event feel like MUBA rather than a product announcement.",
-        "Closing: resolve the small event with a memorable visual beat that can stand as the final frame of the day.",
+        "FRAME 1 — OPENING. Wide establishing shot. MUBA enters or occupies the setting and notices one specific unusual object or event. Create a clear visual question that demands a next frame.",
+        "FRAME 2 — ACTION. Continue from FRAME 1 in the exact same setting. MUBA approaches, touches, follows or tests the same object/event. Show physical action and consequence; do not reset the scene.",
+        "FRAME 3 — TURN. Continue the consequence from FRAME 2. Give MUBA a strong, funny, unmistakable reaction and reveal the small twist. Preserve every continuity detail from earlier frames.",
+        "FRAME 4 — PAYOFF. Continue immediately from FRAME 3 and resolve the event with a memorable visual joke or character beat. The final image must feel like the ending of the same episode, not a new portrait.",
     ]
     scenes_tr=[
-        "Açılış: inandırıcı bir mekân ve atmosfer kurulur. MUBA, açıklayıcı yazı olmadan günün durumunu fark eder.",
-        "Gelişme: MUBA durumla etkileşime girer; mekân, ışık, kıyafet ve nesne devamlılığı korunur.",
-        "MUBA anı: özgün, oyuncu veya meraklı bir tepki olayı ürün duyurusundan çıkarıp MUBA hikâyesine dönüştürür.",
-        "Kapanış: küçük olay, günün son karesi olarak tek başına da güçlü durabilecek akılda kalıcı bir görsel anla tamamlanır.",
+        "Kare 1 — Açılış: geniş planla mekân kurulur. MUBA belirli ve sıra dışı bir nesne ya da olayı fark eder; sonraki kareyi merak ettiren görsel soru oluşur.",
+        "Kare 2 — Hareket: aynı mekânda ilk karenin doğrudan devamıdır. MUBA aynı nesne/olaya yaklaşır, dokunur, takip eder veya dener; eylemin sonucu görünür.",
+        "Kare 3 — Dönüm: ikinci karenin sonucu devam eder. Küçük sürpriz açığa çıkar ve MUBA güçlü, komik, kendine özgü bir tepki verir; tüm devamlılık korunur.",
+        "Kare 4 — Final: üçüncü karenin hemen devamında olay akılda kalıcı bir görsel şaka veya karakter anıyla çözülür; yeni bir portre değil aynı bölümün finalidir.",
     ]
-    prompts=[f"{CHARACTER_ANCHOR} {theme} {scene} No visible captions, logos, speech bubbles or watermarks." for scene in scenes]
+    prompts=[]
+    continuity="CONTINUITY LOCK: same setting, same wardrobe, same recurring object/event and sequential cause-and-effect from the previous frame."
+    for i,scene in enumerate(scenes):
+        prompts.append(
+            f"{CHARACTER_ANCHOR} {STORY_BIBLE} EPISODE PREMISE: {seed} {continuity} {scene} "
+            f'Allow exactly one tiny narrative caption reading "{labels[i]}" integrated like restrained comic lettering. '
+            "No other words, speech bubbles, logos, watermarks or extra captions."
+        )
+    story=(
+        "MUBA expected an ordinary day. Then one small detail in the familiar surroundings refused to behave normally. "
+        "Curiosity won, as it usually does. One closer look became an experiment, the experiment became a problem, "
+        "and the problem became exactly the kind of moment MUBA somehow turns into a story. By the final frame, "
+        "nothing world-changing has happened—just one strange little episode that now belongs to MUBA's living world."
+    )
+    story_tr=(
+        "MUBA sıradan bir gün bekliyordu. Sonra tanıdık çevredeki küçücük bir ayrıntı normal davranmamaya başladı. "
+        "Merak yine ağır bastı. Yakından bakmak küçük bir denemeye, deneme bir probleme, problem de MUBA'nın bir şekilde "
+        "hikâyeye dönüştürdüğü o tuhaf anlardan birine dönüştü. Son karede dünyayı değiştiren bir şey olmadı; yalnızca "
+        "MUBA'nın yaşayan dünyasına eklenen küçük ve garip bir bölüm daha ortaya çıktı."
+    )
     return {
         "day":day,"status":"published" if is_published(day) else "draft",
-        "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,"scenes":scenes,"scenes_tr":scenes_tr,"prompts":prompts,
-        "twt":"MUBA keeps moving. Today simply became part of the story.",
-        "twt_tr":"MUBA ilerlemeye devam ediyor. Bugün de hikâyenin bir parçası oldu.",
+        "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
+        "scenes":scenes,"scenes_tr":scenes_tr,"frame_labels":labels,"prompts":prompts,
+        "story":story,"story_tr":story_tr,"twt":story,"twt_tr":story_tr,
         "images":image_ids(day),
-        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"reference-image"},
+        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"reference-image",
+                 "visual_style":"comic-anime-hybrid","continuity":"locked-sequential","frame_text_max_words":3},
     }
 
 def set_images(day,image_ids):
