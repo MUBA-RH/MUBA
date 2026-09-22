@@ -18,16 +18,23 @@ class DailyStoryTests(unittest.TestCase):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
         self.assertIn("do not redesign",prompt)
-        self.assertIn("comic-book x anime hybrid",prompt)
+        self.assertIn("modern manga/anime illustration",prompt)
         self.assertIn("one continuous mini-episode",prompt)
         self.assertIn("continuity:",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"comic-anime-hybrid")
+        self.assertEqual(item["rules"]["visual_style"],"modern-manga-light-digital")
         self.assertEqual(item["rules"]["continuity"],"previous-frame-image")
         self.assertEqual(item["rules"]["frame_text_max_words"],3)
         self.assertEqual(len(item["frame_labels"]),4)
         self.assertGreater(len(item["story"].split()),70)
+        self.assertLess(len(item["summary"].split()),40)
         self.assertIn("purple neon ring/crown/background",item["prompts"][0].lower())
         self.assertIn("must not appear",item["prompts"][0].lower())
+
+    def test_web_uses_short_summary_and_manga_panel_layout(self):
+        web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
+        self.assertIn('story.summary||story.twt',web)
+        self.assertIn('story-panel-no',web)
+        self.assertIn('story-book',web)
 
     def test_generation_chains_previous_frame_as_visual_reference(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")

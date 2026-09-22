@@ -18,8 +18,8 @@ HISTORY_PATH=Path(__file__).resolve().parents[1]/"muba_history.json"
 CHARACTER_ANCHOR=(
     "Preserve the supplied MUBA reference identity exactly: the same large expressive eyes, tan short dense fur, "
     "small nose, playful tongue, black MUBA cap, black hoodie and recognizable face proportions. Do not redesign "
-    "MUBA into a generic cute animal. Art direction: premium comic-book x anime hybrid, expressive hand-drawn linework, "
-    "cinematic anime lighting, textured painted backgrounds, dynamic panel composition, never glossy 3D CGI. "
+    "MUBA into a generic cute animal. Art direction: polished modern manga/anime illustration with comic-panel storytelling: "
+    "clean expressive ink lines, refined cel shading, selective soft digital painting, luminous but restrained highlights, crisp high-resolution finish, elegant color separation and dynamic manga composition. Mostly illustrated, only lightly digital; no photorealism, no plush/toy render, no 3D mascot look, no glossy CGI. The manga reference is a QUALITY/FINISH target only, never a character-design source. "
 )
 
 STORY_BIBLE=(
@@ -94,7 +94,7 @@ def draft(day=None):
         prompts.append(
             f"{CHARACTER_ANCHOR} {STORY_BIBLE} EPISODE TITLE: {theme}. EXACT PLOT: {ep['premise']} "
             f"CONTINUITY: same physical location, same black cap and hoodie, same story object, sequential seconds/minutes. {action} "
-            f'Tiny panel caption only: "{labels[i]}". No speech balloons, no extra writing. '
+            f'Tiny panel caption only: "{labels[i]}". The caption must help bridge this frame into the next like restrained manga narration. No speech balloons, no extra writing. '
             "IMPORTANT: the purple neon ring/crown/background from the identity reference is NOT part of MUBA and must NOT appear. "
             "Use the reference only for MUBA's face/body identity. Compose an actual narrative action panel, never a centered character portrait."
         )
@@ -102,10 +102,13 @@ def draft(day=None):
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
         "scenes":actions,"scenes_tr":actions_tr,"frame_labels":labels,"prompts":prompts,
-        "story":ep["story"],"story_tr":ep["story_tr"],"twt":ep["story"],"twt_tr":ep["story_tr"],
+        "story":ep["story"],"story_tr":ep["story_tr"],
+        "summary":("A loose page leads MUBA through the street; when the paper finally stops, the wind steals the cap and the chase changes direction." if ep["title"]=="The Runaway Paper" else "A mysterious box answers MUBA's knock; curiosity opens the lid and the strange encounter ends with an unexpected little gift."),
+        "summary_tr":("Kaçak bir kâğıt MUBA'yı sokakta peşinden sürükler; kâğıt sonunda durunca bu kez rüzgâr şapkayı kapar ve kovalamaca yön değiştirir." if ep["title"]=="The Runaway Paper" else "Gizemli bir kutu MUBA'nın vuruşuna karşılık verir; merak kapağı açtırır ve tuhaf karşılaşma beklenmedik küçük bir hediyeyle biter."),
+        "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
-                 "visual_style":"comic-anime-hybrid","continuity":"previous-frame-image","frame_text_max_words":3,
+                 "visual_style":"modern-manga-light-digital","continuity":"previous-frame-image","frame_text_max_words":3,
                  "reference_excludes":["purple-neon-ring","crown","background"]},
     }
 
