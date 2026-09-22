@@ -20,10 +20,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("recurring character dna",prompt)
         self.assertIn("strict 2d japanese chibi",prompt)
         self.assertIn("identity anchor only",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-anchor-v2")
+        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-hf-ipadapter-v3")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
-        self.assertEqual(item["rules"]["continuity"],"character-anchor-plus-story-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"chibi-muba-v2")
+        self.assertEqual(item["rules"]["continuity"],"canonical-reference-plus-story-state")
+        self.assertEqual(item["rules"]["character_anchor_version"],"hf-sdxl-ipadapter-v3")
         self.assertIn("purple neon",prompt)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
@@ -42,14 +42,22 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("no panel number",layer)
         self.assertIn("20-45 percent",layer)
 
-    def test_generation_uses_same_neutral_anchor_for_all_story_panels(self):
+    def test_generation_uses_hf_ipadapter_canonical_reference_for_all_panels(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
-        self.assertIn("character_anchor_prompt",section)
-        self.assertIn("character_anchor,_=await render",section)
-        self.assertIn("character_anchor,f\"muba-chibi-character-anchor-",section)
+        self.assertIn("muba_story_hf",section)
+        self.assertIn("hf_story_generate(session,prompt,REFERENCE_URL)",section)
         self.assertNotIn("previous_frame",section)
-        self.assertNotIn("input_image_1",section)
+        self.assertNotIn("character_anchor,_=await render",section)
+
+    def test_hf_bridge_is_real_sdxl_ipadapter_and_token_gated(self):
+        bridge=(ROOT/"muba_story_hf.py").read_text(encoding="utf-8")
+        self.assertIn('stabilityai/SDXL-Base-1.0',bridge)
+        self.assertIn('"injector_type":"ipadapter"',bridge)
+        self.assertIn('"preset":IP_PRESET',bridge)
+        self.assertIn('HF_TOKEN',bridge)
+        self.assertIn('/gradio_api/call/',bridge)
+        self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
 
     def test_technical_change_is_not_literal_story_title(self):
         item=muba_story.draft("2026-09-22")
