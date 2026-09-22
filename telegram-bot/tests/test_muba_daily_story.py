@@ -56,7 +56,9 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('"injector_type":"ipadapter"',bridge)
         self.assertIn('"preset":IP_PRESET',bridge)
         self.assertIn('HF_TOKEN',bridge)
-        self.assertIn('/gradio_api/call/',bridge)
+        self.assertIn('/gradio_api/call/v2/',bridge)
+        self.assertIn('json={"json_params":json_params}',bridge)
+        self.assertIn('/gradio_api/call/{api_name}/{event_id}',bridge)
         self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
 
     def test_technical_change_is_not_literal_story_title(self):
