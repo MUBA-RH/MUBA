@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260922-story-manga-web-redesign",
+      "date": "2026-09-22",
+      "type": "refined",
+      "areas": [
+        "daily",
+        "studio",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story visual and web presentation refined",
+        "tr": "Daily Story görsel ve web sunumu yenilendi",
+        "zh": "Daily Story 视觉与网页呈现已优化",
+        "ar": "تم تحسين العرض البصري وعرض الويب لـ Daily Story",
+        "hi": "Daily Story visual और web presentation सुधारा गया"
+      },
+      "text": {
+        "en": "Daily Story now targets polished modern manga/anime illustration with clean linework, refined cel shading and only light digital finishing rather than mascot-like renders. Panel captions help carry the sequence, while the public page presents the four frames as a manga-style page and uses a concise story-like summary instead of reproducing the full plot.",
+        "tr": "Daily Story artık maskot benzeri renderlar yerine temiz çizgili, rafine cel shading kullanan ve yalnız hafif dijital dokunuş taşıyan modern manga/anime görsel kalitesini hedefliyor. Kare içi kısa kelimeler akışı taşıyor; web sayfası dört görseli manga sayfası gibi sunuyor ve tüm olay örgüsünü anlatmak yerine kısa, hikâye hissi veren bir özet gösteriyor.",
+        "zh": "Daily Story 现在以精致的现代漫画/动漫插画为目标，采用干净线稿、细致赛璐璐上色和轻度数字润色，避免吉祥物式渲染。画面内短词推动连续性，网页以漫画页面方式呈现四格，并用简短故事式摘要代替完整剧情复述。",
+        "ar": "تستهدف Daily Story الآن رسماً حديثاً مصقولاً بأسلوب المانغا/الأنمي بخطوط نظيفة وتظليل cel refined ولمسات رقمية خفيفة بدلاً من مظهر الشخصيات المجسمة. تساعد الكلمات القصيرة داخل الإطارات على استمرار التسلسل، ويعرض الموقع الإطارات الأربعة كصفحة مانغا مع ملخص قصير بطابع قصصي بدلاً من سرد الحبكة كاملة.",
+        "hi": "Daily Story अब mascot-जैसे renders के बजाय साफ linework, refined cel shading और हल्के digital finish वाली modern manga/anime illustration quality को लक्ष्य बनाती है।Panels के छोटे शब्द sequence को आगे बढ़ाते हैं, जबकि web page चार frames को manga-style page की तरह दिखाता है और पूरी plot बताने के बजाय छोटा story-like summary देता है।"
+      }
+    },
+    {
       "id": "20260922-story-real-sequential-generation",
       "date": "2026-09-22",
       "type": "improved",
