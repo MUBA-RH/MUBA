@@ -58,7 +58,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('HF_TOKEN',bridge)
         self.assertIn('from gradio_client import Client',bridge)
         self.assertIn('Client("RioShiina/ImageGen",token=token,verbose=False)',bridge)
-        self.assertIn('api_name="/run_imagegen"',bridge)
+        self.assertIn('view_api(return_format="dict",print_info=False)',bridge)
+        self.assertIn('API_CANDIDATES=("run_imagegen","ImageGen_run_imagegen")',bridge)
+        self.assertIn('endswith("run_imagegen")',bridge)
+        self.assertNotIn('api_name="/run_imagegen"',bridge)
         self.assertNotIn('/gradio_api/call/v2/',bridge)
         self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
 
