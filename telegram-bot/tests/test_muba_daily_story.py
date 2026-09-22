@@ -73,6 +73,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('InstantX/flux-IP-adapter',bridge)
         self.assertIn('API_CANDIDATES=("process_image","predict")',bridge)
         self.assertIn('HF_TOKEN',bridge)
+        self.assertIn('MAX_ATTEMPTS',bridge)
+        self.assertIn('asyncio.wait_for',bridge)
         self.assertIn('from gradio_client import Client, handle_file',bridge)
         self.assertIn('Client(SPACE_ID,token=token,verbose=False)',bridge)
         self.assertIn('view_api(return_format="dict",print_info=False)',bridge)
@@ -136,6 +138,8 @@ class TestLivingStoryIsolation(unittest.TestCase):
         story=source[start:end]
         self.assertIn("generate_anchor(session,character_anchor_prompt(),REFERENCE_URL)",story)
         self.assertIn("hf_story_generate(session,prompt,anchor_path",story)
+        self.assertIn("generated=[]",story)
+        self.assertLess(story.index("generated.append"),story.index("_archive_studio_output"))
         self.assertIn("HF_TOKEN is not configured for Living Story",story)
         self.assertNotIn("cloudflare_story_generate",story)
         self.assertNotIn("ai_endpoint()",story)
