@@ -58,7 +58,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
-from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
+from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type\nfrom muba_story import draft as story_draft, publish as publish_story, public_story
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -636,7 +636,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         index=_latest_area_global_index(lang,area)
         body,index,total=updates_center_text(lang,user_id,index)
         await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
-    if data=="gallery_admin":
+    if data=="story_director":\n        if not is_dev(user_id): return\n        item=story_draft()\n        body="🎬 MUBA DAILY STORY — "+item["day"]+"\\n\\n"+item["theme"]+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item["scenes"]))+"\\n\\nTWT: "+item["twt"]+"\\n\\nStatus: "+item["status"].upper()\n        rows=[]\n        if item["status"]!="published": rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])\n        rows.append([InlineKeyboardButton("⬅️ Back",callback_data="menu")])\n        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return\n    if data=="story_publish":\n        if not is_dev(user_id): return\n        item=publish_story(story_draft()["day"])\n        await q.edit_message_text("🎬 MUBA Daily Story\\n\\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Back",callback_data="menu")]])); return\n    if data=="gallery_admin":
         if not is_dev(user_id): return
         await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["title"],reply_markup=gallery_admin_keyboard(lang)); return
     if data.startswith("gallery_admin_item:"):
@@ -1291,7 +1291,7 @@ def _archive_studio_output(body,out_type,prompt,kind,source):
 def _gallery_cors_headers():
     return {"Access-Control-Allow-Origin":_WEB_STUDIO_ALLOWED_ORIGIN,"Vary":"Origin"}
 
-async def gallery_list_handler(request: web.Request):
+async def story_public_handler(request: web.Request):\n    item=public_story(request.query.get("day") or None)\n    if not item: return web.json_response({"story":None},headers=_gallery_cors_headers())\n    item=dict(item)\n    item["image_urls"]=[EXTERNAL_URL.rstrip("/")+"/gallery/image/"+x for x in item.get("images",[])]\n    item.pop("prompts",None)\n    return web.json_response({"story":item},headers=_gallery_cors_headers())\n\nasync def gallery_list_handler(request: web.Request):
     raw_limit=request.query.get("limit","60")
     limit=int(raw_limit) if str(raw_limit).isdigit() else 60
     kind=request.query.get("kind") or None
@@ -1483,7 +1483,7 @@ async def start_webhook_server():
     app.router.add_post("/studio/web-generate", studio_web_generate_handler)
     app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
-    app.router.add_get("/gallery", gallery_list_handler)
+    app.router.add_get("/story", story_public_handler)\n    app.router.add_get("/gallery", gallery_list_handler)
     app.router.add_get("/gallery/image/{item_id}", gallery_image_handler)
 
     runner = web.AppRunner(app)
