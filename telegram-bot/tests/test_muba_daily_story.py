@@ -14,27 +14,37 @@ class DailyStoryTests(unittest.TestCase):
         self.assertTrue(item["rules"]["human_approval_required"])
         self.assertFalse(item["rules"]["auto_publish"])
 
-    def test_visual_policy_is_connected_comic_anime_episode(self):
+    def test_visual_policy_is_isolated_chibi_episode(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("do not redesign",prompt)
-        self.assertIn("modern manga/anime illustration",prompt)
-        self.assertIn("one continuous mini-episode",prompt)
+        self.assertIn("preserve muba's original facial identity",prompt)
+        self.assertIn("chibi / super-deformed",prompt)
+        self.assertIn("one chibi mini-story",prompt)
         self.assertIn("continuity:",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"modern-manga-light-digital")
+        self.assertEqual(item["rules"]["visual_style"],"living-story-chibi-only")
+        self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
         self.assertEqual(item["rules"]["continuity"],"previous-frame-image")
         self.assertEqual(item["rules"]["frame_text_max_words"],3)
         self.assertEqual(len(item["frame_labels"]),4)
         self.assertGreater(len(item["story"].split()),70)
         self.assertLess(len(item["summary"].split()),40)
-        self.assertIn("purple neon ring/crown/background",item["prompts"][0].lower())
-        self.assertIn("must not appear",item["prompts"][0].lower())
+        self.assertIn("purple neon",item["prompts"][0].lower())
+        self.assertIn("must not be reproduced",item["prompts"][0].lower())
 
-    def test_web_uses_short_summary_and_manga_panel_layout(self):
+    def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
         self.assertIn('story.summary||story.twt',web)
-        self.assertIn('story-panel-no',web)
+        self.assertNotIn('story-panel-no',web)
+        self.assertNotIn('>0\'+(i+1)',web)
         self.assertIn('story-book',web)
+
+    def test_chibi_layer_is_dedicated_to_living_story(self):
+        layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
+        self.assertIn("living story chibi only",layer)
+        self.assertIn("2-to-2.5-head-tall",layer)
+        self.assertIn("not 3d",layer)
+        self.assertIn("no panel number",layer)
+        self.assertIn("upside-down",layer)
 
     def test_generation_chains_previous_frame_as_visual_reference(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")

@@ -11,23 +11,10 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from muba_brain import STORE
+from muba_story_chibi import panel_prompt
 
 TZ=ZoneInfo("Europe/Istanbul")
 HISTORY_PATH=Path(__file__).resolve().parents[1]/"muba_history.json"
-
-CHARACTER_ANCHOR=(
-    "Preserve the supplied MUBA reference identity exactly: the same large expressive eyes, tan short dense fur, "
-    "small nose, playful tongue, black MUBA cap, black hoodie and recognizable face proportions. Do not redesign "
-    "MUBA into a generic cute animal. Art direction: polished modern manga/anime illustration with comic-panel storytelling: "
-    "clean expressive ink lines, refined cel shading, selective soft digital painting, luminous but restrained highlights, crisp high-resolution finish, elegant color separation and dynamic manga composition. Mostly illustrated, only lightly digital; no photorealism, no plush/toy render, no 3D mascot look, no glossy CGI. The manga reference is a QUALITY/FINISH target only, never a character-design source. "
-)
-
-STORY_BIBLE=(
-    "Treat all four frames as ONE continuous mini-episode, not four independent portraits. Keep the exact same MUBA "
-    "design, wardrobe, location, time of day, lighting direction and recurring props across every frame. Each frame must "
-    "visibly advance the action from the previous frame. Use varied camera language: establishing shot, action/interaction "
-    "shot, expressive reaction, then a resolving final shot. Do not repeat the same portrait composition. "
-)
 
 def _history():
     try:
@@ -89,15 +76,10 @@ def draft(day=None):
         "Kare 3 — Dönüm: ikinci karenin sonucu devam eder; hikâyedeki somut sürpriz açığa çıkar ve MUBA belirgin tepki verir.",
         "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
-    prompts=[]
-    for i,action in enumerate(actions):
-        prompts.append(
-            f"{CHARACTER_ANCHOR} {STORY_BIBLE} EPISODE TITLE: {theme}. EXACT PLOT: {ep['premise']} "
-            f"CONTINUITY: same physical location, same black cap and hoodie, same story object, sequential seconds/minutes. {action} "
-            f'Tiny panel caption only: "{labels[i]}". The caption must help bridge this frame into the next like restrained manga narration. No speech balloons, no extra writing. '
-            "IMPORTANT: the purple neon ring/crown/background from the identity reference is NOT part of MUBA and must NOT appear. "
-            "Use the reference only for MUBA's face/body identity. Compose an actual narrative action panel, never a centered character portrait."
-        )
+    prompts=[
+        panel_prompt(theme,ep["premise"],action,labels[i])
+        for i,action in enumerate(actions)
+    ]
     return {
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
@@ -108,8 +90,8 @@ def draft(day=None):
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
-                 "visual_style":"modern-manga-light-digital","continuity":"previous-frame-image","frame_text_max_words":3,
-                 "reference_excludes":["purple-neon-ring","crown","background"]},
+                 "visual_style":"living-story-chibi-only","continuity":"previous-frame-image","frame_text_max_words":3,
+                 "visual_layer":"muba_story_chibi","reference_excludes":["purple-neon-ring","crown","background"]},
     }
 
 def set_images(day,image_ids):

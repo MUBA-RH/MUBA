@@ -83,12 +83,12 @@
     .story-frame:nth-child(1){ transform:rotate(-.35deg); } .story-frame:nth-child(2){ transform:rotate(.3deg); }
     .story-frame:nth-child(3){ transform:rotate(.2deg); } .story-frame:nth-child(4){ transform:rotate(-.25deg); }
     .story-frame img { width:100%; height:100%; object-fit:cover; display:block; }
-    .story-panel-no { position:absolute; top:9px; left:10px; min-width:28px; height:28px; display:grid; place-items:center; background:rgba(7,4,15,.82); border:1px solid rgba(255,255,255,.72); font:800 .76rem 'Space Grotesk',sans-serif; }
     .story-empty { color:var(--muted); text-align:center; padding:28px; }
     .story-copy { margin-top:24px; padding:0; border:0; box-shadow:none; background:transparent; color:#eee5f8; font-size:1.08rem; line-height:1.65; max-width:680px; }
     .story-kicker { color:var(--gold); font-weight:900; letter-spacing:.12em; font-size:.72rem; text-transform:uppercase; }
     @media (max-width:760px){ .story-book{padding:18px 14px}.story-grid{grid-template-columns:1fr 1fr;gap:8px}.story-frame{border-width:1px}.story-copy{font-size:1rem} }
-\n    header {
+
+    header {
       position: sticky;
       top: 0;
       z-index: 50;
@@ -911,7 +911,7 @@
           document.getElementById("story-empty").textContent="This story is waiting for its four approved images.";
           return;
         }
-        grid.innerHTML=urls.slice(0,4).map((url,i)=>'<figure class="story-frame"><img src="'+url+'" alt="MUBA Daily Story panel '+(i+1)+'"><span class="story-panel-no">0'+(i+1)+'</span></figure>').join("");
+        grid.innerHTML=urls.slice(0,4).map((url,i)=>'<figure class="story-frame"><img src="'+url+'" alt="MUBA Living Story scene"></figure>').join("");
         const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.summary||story.twt||"";
         document.getElementById("story-empty").hidden=true;
       }catch(_){ }
