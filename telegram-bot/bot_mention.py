@@ -59,7 +59,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
-from muba_story import draft as story_draft, publish as publish_story, public_story
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -641,10 +641,23 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="story_director":
         if not is_dev(user_id): return
         item=story_draft()
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\n\nTWT: "+item.get("twt_tr",item["twt"])+"\n\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\\n\\n"+item.get("theme_tr",item["theme"])+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\\n\\n"+item.get("twt_tr",item["twt"])+"\\n\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
         if item["status"]!="published" and len(item.get("images",[]))==4: rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        elif item["status"]!="published": rows.append([InlineKeyboardButton("🖼 4 GÖRSEL GEREKLİ",callback_data="story_director")])
+        elif item["status"]!="published": rows.append([InlineKeyboardButton("🖼 4 GÖRSELİ ÜRET",callback_data="story_generate")])
+        rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
+        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
+    if data=="story_generate":
+        if not is_dev(user_id): return
+        await q.answer("4 MUBA görseli hazırlanıyor…")
+        try:
+            item=await _story_generate_images(story_draft())
+        except Exception:
+            logger.exception("MUBA Daily Story image generation failed")
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörseller üretilemedi. Mevcut sistem korunuyor; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 görsel hazır. Yayınlamadan önce aşağıdan kontrol edebilirsin."
+        rows=[[InlineKeyboardButton(f"🖼 Görsel {i+1}",url=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid)] for i,gid in enumerate(item["images"])]
+        rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
         rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
     if data=="story_publish":
@@ -1307,6 +1320,46 @@ def _archive_studio_output(body,out_type,prompt,kind,source):
 
 def _gallery_cors_headers():
     return {"Access-Control-Allow-Origin":_WEB_STUDIO_ALLOWED_ORIGIN,"Vary":"Origin"}
+
+
+async def _story_generate_images(item):
+    """Generate and durably archive all four Daily Story frames."""
+    if not ai_configured():
+        raise RuntimeError("MUBA AI engine is not configured")
+    import base64, aiohttp
+    async with aiohttp.ClientSession() as session:
+        async with session.get(REFERENCE_URL,timeout=15) as response:
+            if response.status != 200:
+                raise RuntimeError("MUBA reference unavailable")
+            ref=await response.read()
+        ids=[]
+        for prompt in item["prompts"]:
+            form=aiohttp.FormData()
+            payload=ai_payload(prompt,"image","")
+            form.add_field("prompt",payload["prompt"])
+            form.add_field("width",str(payload["width"]))
+            form.add_field("height",str(payload["height"]))
+            form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+            headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+            async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+                raw=await response.read()
+                if response.status != 200:
+                    raise RuntimeError("Daily Story image generation failed")
+                if response.headers.get("Content-Type","").startswith("image/"):
+                    body=raw
+                    out_type=response.headers.get("Content-Type")
+                else:
+                    result=json.loads(raw.decode("utf-8")).get("result",{})
+                    encoded=result.get("image") if isinstance(result,dict) else None
+                    if not encoded:
+                        raise RuntimeError("Daily Story image response contained no image")
+                    body=base64.b64decode(encoded)
+                    out_type="image/png"
+            archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
+            if not archived:
+                raise RuntimeError("Daily Story image archive failed")
+            ids.append(archived["id"])
+    return set_story_images(item["day"],ids)
 
 async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
