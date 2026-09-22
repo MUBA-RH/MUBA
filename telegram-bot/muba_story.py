@@ -97,7 +97,7 @@ def draft(day=None):
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
-                 "visual_style":"living-story-true-2d-chibi-hf-flux-ipadapter-v6","continuity":"canonical-face-architecture-plus-clean-chibi-anchor-plus-scene-state","frame_text_max_words":0,
+                 "visual_style":"living-story-true-2d-chibi-cloudflare-flux-v1","continuity":"canonical-face-architecture-plus-canonical-reference-plus-scene-state","frame_text_max_words":0,
                  "visual_layer":"muba_story_chibi","character_anchor_version":"muba-face-architecture-v1","reference_excludes":["purple-neon-ring","crown","background"]},
     }
 
