@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-chibi-layer",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "web"
+      ],
+      "title": {
+        "en": "The Living Story receives an isolated CHIBI layer",
+        "tr": "The Living Story bağımsız CHIBI katmanına ayrıldı",
+        "zh": "The Living Story 已拆分为独立 CHIBI 层",
+        "ar": "تم فصل The Living Story في طبقة CHIBI مستقلة",
+        "hi": "The Living Story को स्वतंत्र CHIBI layer में अलग किया गया"
+      },
+      "text": {
+        "en": "The Living Story now uses its own CHIBI-only visual policy, isolated from Studio, Gallery and other MUBA visual production. MUBA's face remains identity-locked while the body can use expressive super-deformed poses. Non-chibi rendering is forbidden, panel numbers were removed from the public page, and short in-image words may carry the four-scene story forward.",
+        "tr": "The Living Story artık Studio, Galeri ve diğer MUBA görsel üretimlerinden ayrılmış yalnızca CHIBI kullanan kendi görsel politikasına sahip. MUBA'nın yüz kimliği kilitli kalırken gövde güçlü super-deformed pozlarda kullanılabiliyor. Chibi dışı üretim yasaklandı, web panel numaraları kaldırıldı ve kısa görsel içi kelimeler dört sahnelik hikâyeyi ileri taşıyabiliyor.",
+        "zh": "The Living Story 现在使用独立于 Studio、Gallery 和其他 MUBA 视觉生产的 CHIBI-only 视觉策略。MUBA 的面部身份保持锁定，身体可使用富有表现力的 SD 姿势。禁止非 Chibi 渲染，网页面板编号已移除，画面内短词可推动四幕故事。",
+        "ar": "يستخدم The Living Story الآن سياسة بصرية CHIBI فقط مستقلة عن Studio وGallery وبقية إنتاج MUBA البصري. تبقى هوية وجه MUBA ثابتة مع حرية استخدام وضعيات super-deformed معبرة. يُمنع أي إخراج غير Chibi، وأزيلت أرقام اللوحات من صفحة الويب، ويمكن للكلمات القصيرة داخل الصور دفع قصة المشاهد الأربعة.",
+        "hi": "The Living Story अब Studio, Gallery और अन्य MUBA visual production से अलग अपना CHIBI-only visual policy उपयोग करती है।MUBA का चेहरा identity-locked रहता है जबकि body expressive super-deformed poses ले सकती है।Non-chibi rendering निषिद्ध है, web panel numbers हटा दिए गए हैं और image के छोटे शब्द चार-scene story को आगे बढ़ा सकते हैं।"
+      }
+    },
+    {
       "id": "20260922-story-manga-web-redesign",
       "date": "2026-09-22",
       "type": "fixed",
