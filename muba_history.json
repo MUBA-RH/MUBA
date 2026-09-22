@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260922-living-story-hf-only-fail-closed",
+      "date": "2026-09-22",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Living Story restored to isolated HF-only mode",
+        "tr": "Living Story izole HF-only moda geri alındı",
+        "zh": "Living Story 恢复为隔离的 HF-only 模式",
+        "ar": "تمت إعادة Living Story إلى وضع HF-only المعزول",
+        "hi": "Living Story को isolated HF-only mode में बहाल किया गया"
+      },
+      "text": {
+        "en": "The temporary Cloudflare Story fallback was removed. Living Story now uses only its isolated Hugging Face/IP-Adapter engine and fails closed if that engine is unavailable, preventing regression to the old portrait-style generator. Studio and Web Studio remain unchanged.",
+        "tr": "Geçici Cloudflare Story fallback kaldırıldı. Living Story artık yalnızca izole Hugging Face/IP-Adapter motorunu kullanıyor ve bu motor kullanılamazsa kapalı hata veriyor; eski portre tipi üreticiye geri dönmüyor. Studio ve Web Studio değişmedi.",
+        "zh": "临时 Cloudflare Story 回退已移除。Living Story 仅使用隔离的 Hugging Face/IP-Adapter 引擎；该引擎不可用时会直接失败，不再退回旧的人像式生成器。Studio 和 Web Studio 未更改。",
+        "ar": "تمت إزالة الرجوع المؤقت إلى Cloudflare في Story. يستخدم Living Story الآن محرك Hugging Face/IP-Adapter المعزول فقط، ويفشل بشكل مغلق عند عدم توفره بدلاً من العودة إلى مولد الصور الشخصية القديم. لم يتغير Studio أو Web Studio.",
+        "hi": "अस्थायी Cloudflare Story fallback हटा दिया गया है। Living Story अब केवल isolated Hugging Face/IP-Adapter engine उपयोग करता है और उसके अनुपलब्ध होने पर fail-closed रहता है; पुराने portrait-style generator पर वापस नहीं जाता। Studio और Web Studio अपरिवर्तित हैं।"
+      }
+    },
+    {
       "id": "20260922-living-story-provider-fallback",
       "date": "2026-09-22",
       "type": "fixed",
