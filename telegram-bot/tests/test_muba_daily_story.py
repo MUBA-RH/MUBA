@@ -17,13 +17,13 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_uses_reusable_chibi_character_anchor(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("muba character identity only",prompt)
+        self.assertIn("canonical muba face architecture",prompt)
         self.assertIn("true hand-drawn 2d japanese chibi",prompt)
         self.assertIn("identity",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-hf-flux-ipadapter-v5")
+        self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-hf-flux-ipadapter-v6")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
-        self.assertEqual(item["rules"]["continuity"],"clean-chibi-anchor-plus-explicit-scene-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"hf-flux-ipadapter-chibi-v5")
+        self.assertEqual(item["rules"]["continuity"],"canonical-face-architecture-plus-clean-chibi-anchor-plus-scene-state")
+        self.assertEqual(item["rules"]["character_anchor_version"],"muba-face-architecture-v1")
         self.assertIn("no purple neon ring",prompt)
         self.assertIn("no visible text",prompt)
 
@@ -33,6 +33,15 @@ class DailyStoryTests(unittest.TestCase):
         self.assertTrue(("same box" in joined) or ("same folded paper" in joined))
         self.assertNotIn("tiny integrated story word",joined)
         self.assertEqual(item["rules"]["frame_text_max_words"],0)
+
+    def test_canonical_face_architecture_is_hard_identity_constraint(self):
+        face=(ROOT/"muba_face_architecture.py").read_text(encoding="utf-8").lower()
+        layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
+        self.assertIn("giant asymmetric bulging eyes",face)
+        self.assertIn("tiny dark nose",face)
+        self.assertIn("hanging pink tongue",face)
+        self.assertIn("reject hamster",face)
+        self.assertIn("identity_prompt",layer)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
@@ -70,6 +79,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn('handle_file(reference_url)',bridge)
         self.assertIn('PANEL_IP_WEIGHT',bridge)
         self.assertIn('ANCHOR_IP_WEIGHT',bridge)
+        self.assertIn('"0.82"',bridge)
+        self.assertIn('"0.78"',bridge)
         self.assertNotIn('RioShiina/ImageGen',bridge)
         self.assertNotIn('run_imagegen',bridge)
         self.assertNotIn('CLOUDFLARE_API_TOKEN',bridge)
