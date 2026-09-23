@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-sequential-identity-v4",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story sequential identity engine",
+        "tr": "Daily Story ardışık kimlik motoru",
+        "zh": "Daily Story 连续身份引擎",
+        "ar": "محرك هوية Daily Story المتسلسل",
+        "hi": "Daily Story sequential identity engine"
+      },
+      "text": {
+        "en": "Daily Story now uses the higher-capacity FLUX.2 Klein 9B path with a fresh identity reference plus the immediately previous frame for scenes 2–4, strengthening character and scene continuity while enforcing one full-bleed frame per story beat.",
+        "tr": "Daily Story artık daha yüksek kapasiteli FLUX.2 Klein 9B yolunu kullanıyor; 2–4. sahnelerde taze kimlik referansına ek olarak hemen önceki kareyi de referans alarak karakter ve sahne sürekliliğini güçlendiriyor ve her hikâye adımını tek tam-kare görsele zorluyor.",
+        "zh": "Daily Story 现使用更高容量的 FLUX.2 Klein 9B，并在第2至4幕同时参考新身份图和上一帧，以增强角色与场景连续性并强制每个故事节拍为单一全幅画面。",
+        "ar": "يستخدم Daily Story الآن مسار FLUX.2 Klein 9B الأعلى سعة، مع مرجع الهوية الجديد والإطار السابق مباشرة للمشاهد 2–4 لتعزيز استمرارية الشخصية والمشهد وفرض إطار كامل واحد لكل جزء.",
+        "hi": "Daily Story अब उच्च क्षमता वाले FLUX.2 Klein 9B का उपयोग करता है और दृश्य 2–4 में ताज़ा identity reference के साथ पिछले frame को भी reference बनाता है, जिससे character/scene continuity मजबूत होती है और हर beat एक single full-frame image रहता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-filter-isolation",
       "date": "2026-09-23",
       "type": "fixed",

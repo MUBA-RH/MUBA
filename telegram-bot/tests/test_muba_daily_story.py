@@ -62,7 +62,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
         self.assertNotIn("session.get(",section)
-        self.assertIn("cf_story_generate(session,prompt,reference",section)
+        self.assertIn("session,prompt,reference,reference_type=reference_type",section)
         self.assertNotIn("muba_story_hf",section)
         self.assertNotIn("generate_anchor",section)
 
@@ -70,7 +70,7 @@ class DailyStoryTests(unittest.TestCase):
         bridge=(ROOT/"muba_story_cloudflare.py").read_text(encoding="utf-8")
         self.assertIn("CLOUDFLARE_ACCOUNT_ID",bridge)
         self.assertIn("CLOUDFLARE_API_TOKEN",bridge)
-        self.assertIn("@cf/black-forest-labs/flux-2-klein-4b",bridge)
+        self.assertIn("@cf/black-forest-labs/flux-2-klein-9b",bridge)
         self.assertIn("input_image_0",bridge)
         self.assertIn("FormData()",bridge)
         self.assertNotIn("HF_TOKEN",bridge)
