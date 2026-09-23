@@ -21,6 +21,7 @@ CHIBI_DNA=(
 STORYBOARD_DNA=(
     "SEQUENTIAL STORY RULE: this file is exactly ONE scene/beat of the same four-image story. Render ONE continuous full-bleed 16:9 scene only. Never divide the canvas into panels, frames, boxes, strips, grids, collages, before/after views or multiple moments. Show one clear physical action, not a portrait. "
     "MUBA must be full-body or nearly full-body and only about 20-35 percent of the frame. The environment and plot object dominate the frame. "
+    "VISUAL LANGUAGE: cinematic storybook illustration with tactile fur detail, expressive oversized eyes, warm natural light, crisp environmental textures and shallow depth of field while preserving the supplied MUBA identity. Prefer a lively polished illustration over a flat generic chibi redraw. "
     "Use story-appropriate natural light and a clean storybook environment in a landscape 16:9 frame. ABSOLUTELY NO purple neon ring, neon circle, halo, crown, dark purple studio backdrop, "
     "character-selection thumbnails, poster layout, UI, collage or portrait framing. NO visible text except the existing MUBA lettering on the cap; "
     "no captions, labels, signs, speech balloons, watermarks or pseudo-writing. Keep the hoodie plain black as in the approved reference. "
@@ -37,6 +38,6 @@ def panel_prompt(title,premise,action,caption=None):
     return (
         f"{CHARACTER_DNA} {CHIBI_DNA} {STORYBOARD_DNA} "
         f"EPISODE: {title}. STORY CONTEXT: {premise} CURRENT BEAT: {action} "
-        "The supplied reference defines MUBA identity AND drawing style, not the plot. Do not copy its background, camera, pose, lighting or composition. "
+        "REFERENCE GATE: generation requires the current DEV-supplied MUBA reference. If no current reference is available, ask the DEV for the MUBA reference image and do not invent or substitute a character. The supplied reference defines MUBA identity AND drawing style, not the plot. Do not copy its background, camera, pose, lighting or composition. "
         "Keep recurring props, street layout and time of day visually consistent with the other images. FACE LOCK: MUBA must remain recognizably the exact same approved character in every image; do not redesign or mutate the head, eyes, pupils, muzzle, nose, cheeks, mouth/tongue, cap, fur palette or proportions. Only story-required expression, gaze and pose may change."
     )

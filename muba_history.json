@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-origin-reference-gate",
+      "date": "2026-09-23",
+      "type": "updated",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story origin and reference gate",
+        "tr": "Daily Story başlangıç ve referans kapısı",
+        "zh": "Daily Story 起源与参考图门控",
+        "ar": "بداية Daily Story وبوابة الصورة المرجعية",
+        "hi": "Daily Story शुरुआत और रेफरेंस गेट"
+      },
+      "text": {
+        "en": "Daily Story now begins with MUBA's first ordinary appearance, keeps four connected single-scene images, and requires the current DEV-supplied MUBA reference before visual generation. The visual language is story-driven while MUBA identity stays locked.",
+        "tr": "Daily Story artık MUBA'nın sıradan ilk ortaya çıkışıyla başlar, birbirine bağlı dört tek-sahne görselini korur ve görsel üretimden önce DEV'in güncel MUBA referansını gerektirir. Görsel dil hikâyeye göre akarken MUBA kimliği kilitli kalır.",
+        "zh": "Daily Story 现在从 MUBA 最初的普通出现开始，保持四张连续的单场景图像，并在视觉生成前要求 DEV 当前提供的 MUBA 参考图。视觉语言随故事变化，但 MUBA 身份保持锁定。",
+        "ar": "تبدأ Daily Story الآن بالظهور العادي الأول لـ MUBA، وتحافظ على أربع صور مترابطة أحادية المشهد، وتتطلب صورة MUBA المرجعية الحالية من DEV قبل التوليد البصري. تتغير اللغة البصرية مع القصة مع بقاء هوية MUBA ثابتة.",
+        "hi": "Daily Story अब MUBA की पहली सामान्य उपस्थिति से शुरू होती है, चार जुड़ी हुई सिंगल-सीन इमेज बनाए रखती है, और विज़ुअल जनरेशन से पहले DEV की मौजूदा MUBA रेफरेंस इमेज आवश्यक करती है। विज़ुअल भाषा कहानी के अनुसार बदलती है जबकि MUBA की पहचान लॉक रहती है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-single-frame-face-lock",
       "date": "2026-09-23",
       "type": "fixed",
