@@ -54,10 +54,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("never a collage",layer)
         self.assertIn("face/identity lock",layer)
 
-    def test_generation_uses_openai_canonical_reference_for_all_panels(self):
+    def test_generation_uses_huggingface_canonical_reference_for_all_panels(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
-        self.assertIn("muba_story_openai",section)
+        self.assertIn("muba_story_hf",section)
         self.assertIn("story_reference_for_day",section)
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
@@ -66,9 +66,9 @@ class DailyStoryTests(unittest.TestCase):
         self.assertNotIn("muba_story_hf",section)
         self.assertNotIn("generate_anchor",section)
 
-    def test_openai_bridge_uses_configured_credentials_and_reference(self):
-        bridge=(ROOT/"muba_story_openai.py").read_text(encoding="utf-8")
-        self.assertIn("OPENAI_"+"API_KEY",bridge)
+    def test_huggingface_bridge_uses_configured_credentials_and_reference(self):
+        bridge=(ROOT/"muba_story_hf.py").read_text(encoding="utf-8")
+        self.assertIn("HF_"+"TOKEN",bridge)
         self.assertIn("gpt-image-2.5-sunburst",bridge)
         self.assertIn("gpt-image-2.5-sunburst",bridge)
         self.assertIn('form.add_field("image[]",identity',bridge)
@@ -162,13 +162,13 @@ if __name__=="__main__": unittest.main()
 
 
 class TestLivingStoryIsolation(unittest.TestCase):
-    def test_story_is_openai_only_and_fails_closed(self):
+    def test_story_is_huggingface_only_and_fails_closed(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
-        self.assertIn("muba_story_openai",story)
-        self.assertIn("OpenAI Daily Story image engine is not configured",story)
+        self.assertIn("muba_story_hf",story)
+        self.assertIn("Hugging Face ZeroGPU Daily Story engine is not configured",story)
         self.assertIn("generated=[]",story)
         self.assertIn("for body,out_type,prompt in generated:",story)
         self.assertNotIn("muba_story_hf",story)
