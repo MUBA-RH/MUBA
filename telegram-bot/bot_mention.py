@@ -1384,10 +1384,19 @@ async def _story_generate_images(item):
     if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
         raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
     generated=[]
+    previous_body=None
+    previous_type="image/jpeg"
     async with aiohttp.ClientSession() as session:
         for prompt in item["prompts"]:
-            body,out_type=await cf_story_generate(session,prompt,reference,reference_type=reference_type)
+            # Frame 1 uses the fresh DEV identity/style reference. Frames 2-4
+            # additionally use the immediately previous generated frame so the
+            # location, props, lighting and physical story state carry forward.
+            body,out_type=await cf_story_generate(
+                session,prompt,reference,reference_type=reference_type,
+                continuity_bytes=previous_body,continuity_type=previous_type,
+            )
             generated.append((body,out_type,prompt))
+            previous_body,previous_type=body,out_type
 
     # Fail closed: archive/state mutation starts only after all four calls pass.
     ids=[]
