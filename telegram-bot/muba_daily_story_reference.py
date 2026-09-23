@@ -1,21 +1,29 @@
-"""Locked MUBA Daily Story reference/continuity layer.
+"""DEV-approved Daily Story character AND drawing-style reference.
 
-This is the only identity source the Daily Story generator may use. The public
-canonical asset URL points at the same MUBA master artwork used by the site.
-Changing this layer is a deliberate DEV change; story prompts must never invent
-or substitute another mascot.
+The bundled image is the unmodified 1000307689.png upload approved on
+2026-09-23. Its actual encoding is JPEG, so it is stored/sent as JPEG.
+This contract is Story-only: it does not replace the Studio/site reference or
+the shared face-architecture module. A missing/changed asset fails closed.
 """
-from muba_face_architecture import identity_prompt
+import hashlib
+from pathlib import Path
 
-REFERENCE_LAYER_VERSION="muba-daily-story-reference-v1"
-REFERENCE_URL="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg"
-REFERENCE_ROLE="identity-only"
+REFERENCE_LAYER_VERSION="muba-daily-story-approved-chibi-v2"
+REFERENCE_PATH=Path(__file__).resolve().parent/"assets"/"daily-story"/"muba-approved-chibi-v2.jpg"
+REFERENCE_SHA256="175a87e2331228d079487b7e0a1119c7a182649a72f877e3069407f16a8b88a0"
+REFERENCE_CONTENT_TYPE="image/jpeg"
+REFERENCE_ROLE="identity-and-style"
+VISUAL_STYLE="living-story-approved-2d-chibi-v2"
 
 REFERENCE_RULES=(
-    "Always inspect and condition on the locked MUBA master reference before every Daily Story panel. "
-    "The reference defines MUBA identity only: face geometry, enormous asymmetric white eyes, tiny dark nose, crooked mouth, hanging pink tongue, warm tan-brown short fur, black MUBA cap and black $MUBA hoodie. "
-    "Never copy the reference background, purple neon ring, crown, camera crop or portrait composition into a story scene. "
-    "Never substitute a cat, dog, hamster, bear, mouse, plush mascot or generic kawaii character. "
+    "DEV-APPROVED MUBA 2D CHIBI REFERENCE: use the supplied image for BOTH character identity and drawing style in every panel. "
+    "Preserve the broad rounded caramel head, compact cream lower-face patch, very large white oval eyes with black pupils and white highlights, "
+    "tiny black nose, expressive black eyebrows, pink cheek patches, pink tongue, black MUBA baseball cap and plain black hoodie. "
+    "Keep the same short rounded body, small hands and feet, and subtle short tail when visible. "
+    "Expressions, gaze, mouth movement and poses follow the action; do not freeze the reference's expression or force the old portrait's divergent bulging-eye geometry. "
+    "Match the reference's bold clean contours, warm muted colors and simple soft cel shading, not realistic fur, 3D or a generic replacement mascot. "
+    "The street, green door, wooden box, paper scraps, plants, camera crop and pose are EXAMPLE SCENERY, not required content. "
+    "Use them only when the current story actually calls for them. Never copy the reference composition into every scene. "
 )
 
 CONTINUITY_RULES=(
@@ -27,4 +35,18 @@ CONTINUITY_RULES=(
 )
 
 def story_identity_prompt()->str:
-    return identity_prompt()+" "+REFERENCE_RULES+" "+CONTINUITY_RULES
+    return REFERENCE_RULES+" "+CONTINUITY_RULES
+
+def reference_metadata()->dict:
+    return {"version":REFERENCE_LAYER_VERSION,"sha256":REFERENCE_SHA256,
+            "role":REFERENCE_ROLE,"style":VISUAL_STYLE}
+
+def load_reference()->tuple[bytes,str]:
+    """Load the exact approved bytes; never fall back to an older/public image."""
+    try:
+        body=REFERENCE_PATH.read_bytes()
+    except OSError as exc:
+        raise RuntimeError("Approved MUBA Daily Story reference unavailable") from exc
+    if hashlib.sha256(body).hexdigest()!=REFERENCE_SHA256:
+        raise RuntimeError("Approved MUBA Daily Story reference checksum mismatch")
+    return body,REFERENCE_CONTENT_TYPE

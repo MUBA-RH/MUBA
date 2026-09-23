@@ -19,6 +19,26 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-approved-chibi-reference",
+      "date": "2026-09-23",
+      "type": "updated",
+      "areas": ["daily", "telegram"],
+      "title": {
+        "en": "Daily Story adopts the DEV-approved drawing reference",
+        "tr": "Daily Story, DEV onaylı çizim referansını kullanıyor",
+        "zh": "Daily Story 采用 DEV 批准的绘画参考",
+        "ar": "يعتمد Daily Story مرجع الرسم المعتمد من DEV",
+        "hi": "Daily Story में DEV-अनुमोदित चित्र संदर्भ"
+      },
+      "text": {
+        "en": "All four Daily Story image requests now use the same bundled, checksum-verified 2D MUBA drawing for character identity and style. Expressions and scenery follow the story. Unapproved older-reference batches require regeneration; published images and the DEV approval flow are preserved. Other visual systems are unchanged. Artistic likeness still requires review of the generated panels.",
+        "tr": "Daily Story'nin dört görsel isteği artık karakter ve çizim stili için dosya bütünlüğü doğrulanan aynı 2D MUBA referansını kullanıyor. Mimikler ve ortam hikâyeyi izliyor. Onaylanmamış eski referanslı taslaklar yeniden üretim gerektiriyor; yayınlanmış görseller ve DEV onay akışı korunuyor. Diğer görsel sistemler değişmedi. Çizim benzerliği üretilen kareler üzerinden ayrıca kontrol edilmeli.",
+        "zh": "Daily Story 的四次图像请求现在均使用同一张内置并通过校验和验证的二维 MUBA 绘画，作为角色身份和画风参考。表情与场景随故事变化。未批准的旧参考批次需重新生成；已发布图片和 DEV 审批流程保持不变。其他视觉系统不变。生成画面的相似度仍需审核。",
+        "ar": "تستخدم طلبات الصور الأربعة في Daily Story الآن رسم MUBA ثنائي الأبعاد نفسه، المرفق والمتحقق من بصمته، مرجعًا للهوية والأسلوب. تتبع التعابير والمشاهد القصة. تتطلب المسودات غير المعتمدة ذات المرجع القديم إعادة توليد، مع الحفاظ على الصور المنشورة ومسار موافقة DEV. لم تتغير الأنظمة البصرية الأخرى. يظل التشابه الفني بحاجة إلى مراجعة الصور الناتجة.",
+        "hi": "Daily Story के चारों चित्र अनुरोध अब पहचान और शैली के लिए साथ रखे गए उसी 2D MUBA चित्र का उपयोग करते हैं, जिसकी checksum जाँची जाती है। भाव और दृश्य कहानी के अनुसार बदलते हैं। पुराने संदर्भ वाले गैर-अनुमोदित बैच दोबारा बनेंगे; प्रकाशित चित्र और DEV अनुमोदन प्रक्रिया सुरक्षित हैं। अन्य दृश्य प्रणालियाँ नहीं बदली हैं। कलात्मक समानता की जाँच बने हुए चित्रों पर अभी भी जरूरी है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-self-contained-scheduler",
       "date": "2026-09-23",
       "type": "improved",
