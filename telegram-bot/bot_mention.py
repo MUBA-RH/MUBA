@@ -1022,7 +1022,7 @@ async def daily_story_package_document(update: Update, context: ContextTypes.DEF
     item=set_story_images(item["day"],ids)
     await update.message.reply_text("🎬 4 hazır görsel doğrulandı. Aşağıda 1 → 4 sırasıyla gönderiyorum.")
     for i,gid in enumerate(ids,1):
-        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\\n\\n"+item["scenes"][i-1])
+        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1])
     await update.message.reply_text("Dördünü kontrol et. Uygunsa Daily Story menüsünden WEB YAYINLA ile onayla.")
 
 
@@ -1045,7 +1045,7 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     set_story_reference(item["day"],archived["id"],digest,"image/jpeg")
     item=story_draft(item["day"])
     await message.reply_text(
-        "📥 DAILY STORY INBOX — Referans alındı.\\n\\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında Telegram'da 1/4 → 4/4 önizleme olarak gelecek.",
+        "📥 DAILY STORY INBOX — Referans alındı.\n\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında Telegram'da 1/4 → 4/4 önizleme olarak gelecek.",
     )
     try:
         item=await _story_generate_images(item)
@@ -1425,15 +1425,15 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four Cloudflare reference-conditioned panels transactionally."""
+    """Generate four OpenAI reference-conditioned frames transactionally."""
     import aiohttp
-    from muba_story_cloudflare import configured as cf_story_configured, generate as cf_story_generate
+    from muba_story_openai import configured as story_image_configured, generate as story_image_generate
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
-    if not cf_story_configured():
-        raise RuntimeError("Cloudflare Living Story engine is not configured")
+    if not story_image_configured():
+        raise RuntimeError("OpenAI Daily Story image engine is not configured")
 
     # Every production batch must use the fresh DEV-uploaded reference for this day.
     metadata=story_reference_for_day(item["day"])
@@ -1453,7 +1453,7 @@ async def _story_generate_images(item):
             # Frame 1 uses the fresh DEV identity/style reference. Frames 2-4
             # additionally use the immediately previous generated frame so the
             # location, props, lighting and physical story state carry forward.
-            body,out_type=await cf_story_generate(
+            body,out_type=await story_image_generate(
                 session,prompt,reference,reference_type=reference_type,
                 continuity_bytes=previous_body,continuity_type=previous_type,
             )
