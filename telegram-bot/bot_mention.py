@@ -1427,34 +1427,14 @@ async def daily_story_scheduler(application):
             await asyncio.sleep(60)
 
 async def story_prepare_handler(request: web.Request):
-    """DEV-secret scheduler endpoint: prepare today's four images, never publish."""
+    """Protected reminder endpoint. V3 generation happens only from Telegram DEV."""
     secret=os.getenv("MUBA_STORY_SCHEDULER_SECRET","")
     supplied=request.headers.get("X-MUBA-Story-Secret","")
     if not secret or not supplied or not hashlib.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
     item=story_draft()
-    if len(item.get("images",[]))==4:
-        return web.json_response({"ok":True,"day":item["day"],"prepared":True,"cached":True})
-    try:
-        item=await _story_generate_images(item)
-    except Exception:
-        logger.exception("Scheduled Daily Story preparation failed")
-        return web.json_response({"ok":False,"day":item["day"],"prepared":False},status=503)
-    try:
-        chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
-        await request.app["telegram_application"].bot.send_message(
-            chat_id=chat_id,
-            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nSaat 11:00 öncesi taslak hazır. 4 görseli 1/4 → 4/4 kontrol et; WEB YAYINLA onayı verilmeden web'e taşınmaz.",
-        )
-        for i,gid in enumerate(item["images"],1):
-            await request.app["telegram_application"].bot.send_photo(
-                chat_id=chat_id,
-                photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
-                caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1],
-            )
-    except Exception:
-        logger.exception("Scheduled Daily Story Telegram preview failed")
-    return web.json_response({"ok":True,"day":item["day"],"prepared":True,"cached":False})
+    reference=story_reference_for_day(item["day"])
+    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"generation":"telegram-dev-only"})
 
 async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
