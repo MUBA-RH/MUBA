@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260923-kaggle-balanced-t4-v13",
+      "date": "2026-09-23",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Qwen balanced T4 x2 loading",
+        "tr": "Qwen dengeli T4 x2 yükleme",
+        "zh": "Qwen T4 x2 均衡加载",
+        "ar": "تحميل Qwen المتوازن على T4 x2",
+        "hi": "Qwen balanced T4 x2 loading"
+      },
+      "text": {
+        "en": "The Kaggle Qwen runtime now uses balanced multi-GPU placement with explicit per-device memory caps instead of loading the model onto a single T4.",
+        "tr": "Kaggle Qwen çalışma katmanı artık modeli tek T4'e yüklemek yerine açık cihaz bellek sınırlarıyla dengeli çoklu GPU yerleşimi kullanır.",
+        "zh": "Kaggle Qwen 运行层现在使用带明确设备内存上限的均衡多 GPU 放置，而不是将模型加载到单个 T4。",
+        "ar": "تستخدم طبقة Qwen على Kaggle الآن توزيعًا متوازنًا على عدة وحدات GPU مع حدود ذاكرة صريحة لكل جهاز بدل تحميل النموذج على T4 واحدة.",
+        "hi": "Kaggle Qwen runtime अब मॉडल को एक T4 पर लोड करने के बजाय स्पष्ट memory limits के साथ balanced multi-GPU placement उपयोग करता है।"
+      }
+    },
+    {
       "id": "20260923-kaggle-qwen-smoke-fix-v12",
       "date": "2026-09-23",
       "type": "fixed",
