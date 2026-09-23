@@ -1022,9 +1022,7 @@ async def daily_story_package_document(update: Update, context: ContextTypes.DEF
     item=set_story_images(item["day"],ids)
     await update.message.reply_text("🎬 4 hazır görsel doğrulandı. Aşağıda 1 → 4 sırasıyla gönderiyorum.")
     for i,gid in enumerate(ids,1):
-        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4
-
-"+item["scenes"][i-1])
+        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\\n\\n"+item["scenes"][i-1])
     await update.message.reply_text("Dördünü kontrol et. Uygunsa Daily Story menüsünden WEB YAYINLA ile onayla.")
 
 
