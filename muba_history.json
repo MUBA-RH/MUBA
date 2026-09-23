@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-reviewed-package-v5",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story reviewed package flow",
+        "tr": "Daily Story onaylı paket akışı",
+        "zh": "Daily Story 审核包流程",
+        "ar": "مسار حزمة Daily Story المراجعة",
+        "hi": "Daily Story reviewed package flow"
+      },
+      "text": {
+        "en": "Daily Story can now ingest a prepared four-frame ZIP after the daily reference is set, validate four 16:9 PNG frames, show them to DEV in Telegram, and keep web publication behind explicit approval.",
+        "tr": "Daily Story artık günlük referans belirlendikten sonra hazırlanmış dört karelik ZIP paketini alabilir, dört adet 16:9 PNG kareyi doğrular, Telegram'da DEV'e gösterir ve web yayınını açık onayın arkasında tutar.",
+        "zh": "Daily Story 现在可在设置每日参考图后导入准备好的四帧 ZIP，验证四张 16:9 PNG，并在 Telegram 中展示给 DEV，网页发布仍需明确批准。",
+        "ar": "يمكن لـ Daily Story الآن استيراد حزمة ZIP جاهزة من أربع لقطات بعد تعيين المرجع اليومي، والتحقق من أربع صور PNG بنسبة 16:9 وعرضها على DEV في Telegram مع بقاء النشر على الويب خلف موافقة صريحة.",
+        "hi": "Daily Story अब daily reference सेट होने के बाद तैयार चार-frame ZIP ले सकता है, चार 16:9 PNG frames validate करता है, Telegram में DEV को दिखाता है और web publish को explicit approval के पीछे रखता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-sequential-identity-v4",
       "date": "2026-09-23",
       "type": "improved",
