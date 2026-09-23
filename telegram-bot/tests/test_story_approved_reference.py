@@ -55,7 +55,7 @@ class ReferenceFirstStateTests(unittest.TestCase):
 
 class CloudflareReferenceInputTests(unittest.TestCase):
     def test_reference_preparation_contract_is_present(self):
-        source=inspect.getsource(bridge._prepare_reference)
+        source=inspect.getsource(cloudflare_bridge._prepare_reference)
         self.assertIn("511/max_side",source)
         self.assertIn('format="JPEG"',source)
         self.assertIn('"image/jpeg"',source)
@@ -63,8 +63,8 @@ class CloudflareReferenceInputTests(unittest.TestCase):
 
 class CloudflareRetryTests(unittest.TestCase):
     def test_only_provider_flag_retries(self):
-        self.assertTrue(bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
-        self.assertFalse(bridge._flagged(500,'server error'))
+        self.assertTrue(cloudflare_bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
+        self.assertFalse(cloudflare_bridge._flagged(500,'server error'))
         safe=bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
         self.assertIn('friendly fictional illustrated scene',safe)
         self.assertIn('MUBA walks into a quiet street',safe)
