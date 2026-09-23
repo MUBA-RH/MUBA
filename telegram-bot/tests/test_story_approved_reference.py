@@ -80,7 +80,7 @@ class HuggingFaceStoryEngineTests(unittest.TestCase):
     def test_openai_engine_preserves_reference_and_continuity(self):
         source=(ROOT/"muba_story_zerogpu.py").read_text(encoding="utf-8")
         self.assertIn("continuity_bytes",source)
-        self.assertIn("input_fidelity",source)
+        self.assertIn("reference_bytes",source)
         self.assertIn("muba-reference.png",source)
         self.assertIn("previous-frame.png",source)
         self.assertIn("ONE single full-frame",source)
