@@ -70,6 +70,15 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
+class TelegramInboxOutboxTests(unittest.TestCase):
+    def test_reference_upload_auto_generates_and_previews(self):
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn("DAILY STORY INBOX",source)
+        self.assertIn("item=await _story_generate_images(item)",source)
+        self.assertIn("DAILY STORY OUTBOX",source)
+        self.assertIn('callback_data="story_publish"',source)
+        self.assertIn('callback_data="story_generate"',source)
+
 class PackageIngestTests(unittest.TestCase):
     def test_package_ingest_contract(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")

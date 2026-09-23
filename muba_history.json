@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-telegram-inbox-outbox-v6",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Telegram Daily Story inbox/outbox",
+        "tr": "Telegram Daily Story gelen/giden katmanı",
+        "zh": "Telegram Daily Story 收发层",
+        "ar": "طبقة إدخال وإخراج Telegram Daily Story",
+        "hi": "Telegram Daily Story inbox/outbox"
+      },
+      "text": {
+        "en": "A fresh DEV reference uploaded in Telegram now acts as the Daily Story inbox trigger: the bot stores it, generates the four sequential reference-conditioned frames, returns all four to Telegram for review, and keeps web publication behind explicit DEV approval.",
+        "tr": "Telegram'a yüklenen taze DEV referansı artık Daily Story giriş tetikleyicisidir: bot referansı saklar, referansa bağlı dört ardışık kareyi üretir, dördünü inceleme için Telegram'a geri gönderir ve web yayınını açık DEV onayının arkasında tutar.",
+        "zh": "DEV 在 Telegram 上传的新参考图现在会触发 Daily Story：机器人保存参考图、生成四张连续参考帧并返回 Telegram 审核，网页发布仍需 DEV 明确批准。",
+        "ar": "أصبح مرجع DEV الجديد المرفوع في Telegram مشغّل Daily Story: يحفظه البوت ويولد أربع لقطات متسلسلة مرتبطة بالمرجع ثم يعيدها إلى Telegram للمراجعة، مع إبقاء النشر على الويب خلف موافقة DEV الصريحة.",
+        "hi": "Telegram में अपलोड किया गया नया DEV reference अब Daily Story inbox trigger है: bot इसे सहेजता है, चार sequential reference-conditioned frames बनाता है, review के लिए Telegram में लौटाता है और web publish को explicit DEV approval के पीछे रखता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-reviewed-package-v5",
       "date": "2026-09-23",
       "type": "improved",
