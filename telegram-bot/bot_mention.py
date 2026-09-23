@@ -683,7 +683,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for i,gid in enumerate(item["images"],1):
             await q.message.reply_photo(
                 photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
-                caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1],
+                caption=item["summary"],
             )
         return
     if data=="story_publish":
@@ -1022,7 +1022,7 @@ async def daily_story_package_document(update: Update, context: ContextTypes.DEF
     item=set_story_images(item["day"],ids)
     await update.message.reply_text("🎬 4 hazır görsel doğrulandı. Aşağıda 1 → 4 sırasıyla gönderiyorum.")
     for i,gid in enumerate(ids,1):
-        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1])
+        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=item["summary"])
     await update.message.reply_text("Dördünü kontrol et. Uygunsa Daily Story menüsünden WEB YAYINLA ile onayla.")
 
 
@@ -1045,13 +1045,13 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     set_story_reference(item["day"],archived["id"],digest,"image/jpeg")
     item=story_draft(item["day"])
     await message.reply_text(
-        "📥 DAILY STORY INBOX — Referans alındı.\n\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında Telegram'da 1/4 → 4/4 önizleme olarak gelecek.",
+        "📥 DAILY STORY INBOX — Referans alındı.\n\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında dört ayrı görsel Telegram'da önizlemeye gelecek.",
     )
     try:
         item=await _story_generate_images(item)
         await message.reply_text("📤 DAILY STORY OUTBOX — 4 görsel hazır. Aşağıda kontrol et.")
         for i,gid in enumerate(item.get("image_ids",[]),1):
-            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\\n\\n"+item["scenes"][i-1])
+            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=item["summary"])
         await message.reply_text("Dördünü kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")

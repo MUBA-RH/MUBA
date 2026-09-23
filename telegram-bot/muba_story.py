@@ -134,18 +134,25 @@ def draft(day=None):
         story_identity_prompt()+" EPISODE: "+theme+". STORY CONTEXT: "+continuity+" "+ep["premise"]+" CURRENT BEAT: "+action
         for action in actions
     ]
-    raw_summary=("A loose page leads MUBA through the street; when the paper finally stops, the wind steals the cap and the chase changes direction." if ep["title"]=="The Runaway Paper" else "A mysterious box answers MUBA's knock; curiosity opens the lid and the strange encounter ends with an unexpected little gift.")
-    raw_summary_tr=("Kaçak bir kâğıt MUBA'yı sokakta peşinden sürükler; kâğıt sonunda durunca bu kez rüzgâr şapkayı kapar ve kovalamaca yön değiştirir." if ep["title"]=="The Runaway Paper" else "Gizemli bir kutu MUBA'nın vuruşuna karşılık verir; merak kapağı açtırır ve tuhaf karşılaşma beklenmedik küçük bir hediyeyle biter.")
+    if ep["title"]=="I'm MUBA":
+        raw_summary="MUBA appears. Looks around. Sees a reflection. Waves. Keeps walking."
+        raw_summary_tr="MUBA ortaya çıkar. Etrafına bakar. Yansımasını görür. Selam verir. Yürür."
+    elif ep["title"]=="The Runaway Paper":
+        raw_summary="A paper escapes. MUBA chases it. The paper stops. The cap flies away."
+        raw_summary_tr="Bir kâğıt kaçar. MUBA peşine düşer. Kâğıt durur. Şapka uçar."
+    else:
+        raw_summary="MUBA finds a box. It knocks back. The lid opens. A small surprise appears."
+        raw_summary_tr="MUBA bir kutu bulur. Kutu karşılık verir. Kapak açılır. Küçük bir sürpriz çıkar."
     reference=reference_for_day(day)
     item={
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
         "scenes":actions,"scenes_tr":actions_tr,"frame_labels":labels,"prompts":prompts,
-        "story":ep["story"],"story_tr":ep["story_tr"],
+        "story":_summary_100(raw_summary),"story_tr":_summary_100(raw_summary_tr),
         "summary":_summary_100(raw_summary),
         "summary_tr":_summary_100(raw_summary_tr),
         "previous_day":previous["day"],"previous_theme":previous["theme"],
-        "twt":ep["story"],"twt_tr":ep["story_tr"],
+        "twt":_summary_100(raw_summary),"twt_tr":_summary_100(raw_summary_tr),
         "images":image_ids(day),
         "image_reference":_image_batch(day).get("reference"),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":REFERENCE_ROLE,
