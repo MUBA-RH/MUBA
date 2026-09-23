@@ -70,6 +70,16 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
+class PackageIngestTests(unittest.TestCase):
+    def test_package_ingest_contract(self):
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn("daily_story_package_document",source)
+        self.assertIn("daily_story_waiting_package",source)
+        self.assertIn("01.png",source)
+        self.assertIn("im.width*9!=im.height*16",source)
+        self.assertIn("set_story_images",source)
+
+
 class SequentialIdentityEngineTests(unittest.TestCase):
     def test_cloudflare_uses_9b_multi_reference_contract(self):
         source=inspect.getsource(bridge)

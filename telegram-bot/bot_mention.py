@@ -648,7 +648,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if item["status"]!="published" and len(item.get("images",[]))==4:
             rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
         elif item["status"]!="published" and reference:
-            rows.append([InlineKeyboardButton("🖼 4 GÖRSELİ ÜRET",callback_data="story_generate")])
+            rows.append([InlineKeyboardButton("📦 HAZIR 4 GÖRSELİ YÜKLE",callback_data="story_package")])
             rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR",callback_data="story_reference")])
         elif item["status"]!="published":
             rows.append([InlineKeyboardButton("📷 REFERANS GÖRSEL VER",callback_data="story_reference")])
@@ -658,6 +658,15 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
         await q.edit_message_text("📷 MUBA DAILY STORY\\n\\nBu üretim için kullanacağım MUBA referans görselini şimdi fotoğraf olarak gönder. Referans gelmeden görsel üretimi açılmaz.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+    if data=="story_package":
+        if not is_dev(user_id): return
+        if not story_reference_for_day(story_draft()["day"]):
+            await q.answer("Önce bu gün için referans görsel gönder.",show_alert=True); return
+        context.user_data["daily_story_waiting_package"]=True
+        await q.edit_message_text(
+            "📦 MUBA DAILY STORY\\n\\nChatGPT tarafından hazırlanmış ZIP paketini şimdi dosya olarak gönder. Paket tam olarak 01.png, 02.png, 03.png, 04.png içermeli. Bot yeni görsel üretmez; paketi doğrular ve onayına sunar.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])
+        ); return
     if data=="story_generate":
         if not is_dev(user_id): return
         if not story_reference_for_day(story_draft()["day"]):
@@ -971,6 +980,51 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         await context.bot.send_message(chat_id=DEV_ID,text="\n".join(lines),reply_markup=markup)
     except Exception:
         logger.exception("Guardian DEV private report failed")
+
+async def daily_story_package_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """DEV-only ingest for a ChatGPT-produced four-frame Daily Story ZIP."""
+    import io, zipfile
+    from PIL import Image
+    if not is_dev(update.effective_user.id) or update.effective_chat.type!="private":
+        return
+    if not context.user_data.pop("daily_story_waiting_package",False):
+        return
+    doc=update.message.document
+    if not doc or not (doc.file_name or "").lower().endswith(".zip"):
+        await update.message.reply_text("ZIP dosyası gerekli."); return
+    tg=await doc.get_file()
+    raw=bytes(await tg.download_as_bytearray())
+    if len(raw)>25*1024*1024:
+        await update.message.reply_text("Daily Story ZIP 25 MB sınırını aşıyor."); return
+    names=[f"{i:02d}.png" for i in range(1,5)]
+    generated=[]
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            if sorted(x for x in z.namelist() if not x.endswith("/"))!=names:
+                raise ValueError("package must contain only 01.png..04.png")
+            for name in names:
+                body=z.read(name)
+                with Image.open(io.BytesIO(body)) as im:
+                    if im.width*9!=im.height*16:
+                        raise ValueError(name+" must be 16:9")
+                    im.verify()
+                generated.append((body,name))
+    except Exception:
+        logger.exception("Daily Story package validation failed")
+        await update.message.reply_text("Paket reddedildi. Yalnızca 01.png–04.png ve her biri 16:9 PNG olmalı."); return
+    ids=[]
+    item=story_draft()
+    for i,(body,name) in enumerate(generated):
+        archived=_archive_studio_output(body,"image/png",item["prompts"][i],"image","chatgpt-package")
+        if not archived:
+            raise RuntimeError("Daily Story package archive failed")
+        ids.append(archived["id"])
+    item=set_story_images(item["day"],ids)
+    await update.message.reply_text("🎬 4 hazır görsel doğrulandı. Aşağıda 1 → 4 sırasıyla gönderiyorum.")
+    for i,gid in enumerate(ids,1):
+        await update.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\\n\\n"+item["scenes"][i-1])
+    await update.message.reply_text("Dördünü kontrol et. Uygunsa Daily Story menüsünden WEB YAYINLA ile onayla.")
+
 
 async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """DEV-only: capture a fresh Telegram photo as today's one-batch Story reference."""
@@ -1569,6 +1623,7 @@ async def start_webhook_server():
         application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo), group=-4)
+    application.add_handler(MessageHandler(filters.Document.ZIP, daily_story_package_document), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
