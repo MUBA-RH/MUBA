@@ -1427,7 +1427,7 @@ def _gallery_cors_headers():
 async def _story_generate_images(item):
     """Generate four Hugging Face ZeroGPU reference-conditioned frames transactionally."""
     import aiohttp
-    from muba_story_hf import configured as story_image_configured, generate as story_image_generate
+    from muba_story_zerogpu import configured as story_image_configured, generate as story_image_generate
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
