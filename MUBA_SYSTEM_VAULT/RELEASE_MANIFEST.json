@@ -92,8 +92,8 @@
     "mode": "green-main-auto-sync",
     "source_workflow": "MUBA Vault Auto Sync",
     "last_synced_main_sha": "cf74ffe8df332aff5521a09ba18cd6280cd8ac84",
-    "last_synced_at": "2026-09-23T16:40:16.159384Z",
-    "source_run_id": "35890319856",
+    "last_synced_at": "2026-09-23T16:42:18.883926Z",
+    "source_run_id": "35890422325",
     "production_writeback": false,
     "v2_auto_activation": false
   },
