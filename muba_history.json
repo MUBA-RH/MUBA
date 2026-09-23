@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-reference-flux-size",
+      "date": "2026-09-23",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story reference input normalized",
+        "tr": "Daily Story referans girdisi normalize edildi",
+        "zh": "Daily Story 参考图输入已规范化",
+        "ar": "تمت تهيئة إدخال مرجع Daily Story",
+        "hi": "Daily Story reference input normalized"
+      },
+      "text": {
+        "en": "Telegram reference photos are now resized below Cloudflare FLUX.2's 512x512 input-image limit before generation while preserving aspect ratio and the original stored DEV reference.",
+        "tr": "Telegram referans fotoğrafları artık üretimden önce Cloudflare FLUX.2'nin 512x512 girdi sınırının altına, en-boy oranı korunarak hazırlanıyor; saklanan orijinal DEV referansı değişmiyor.",
+        "zh": "Telegram 参考图现在会在生成前按比例缩放到 Cloudflare FLUX.2 的 512x512 输入限制以下，已存储的原始 DEV 参考图保持不变。",
+        "ar": "يتم الآن تصغير صور مرجع Telegram قبل التوليد إلى أقل من حد إدخال Cloudflare FLUX.2 البالغ 512x512 مع الحفاظ على النسبة، دون تغيير مرجع DEV الأصلي المخزن.",
+        "hi": "Telegram reference photos को generation से पहले aspect ratio बनाए रखते हुए Cloudflare FLUX.2 की 512x512 input सीमा से नीचे तैयार किया जाता है; stored original DEV reference नहीं बदलता।"
+      }
+    },
+    {
       "id": "20260923-daily-story-cloudflare-filter-retry",
       "date": "2026-09-23",
       "type": "fixed",
