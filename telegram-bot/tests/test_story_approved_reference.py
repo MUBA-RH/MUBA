@@ -1,3 +1,4 @@
+import inspect
 """Daily Story V3 reference-first regression tests."""
 import ast
 import hashlib
@@ -49,6 +50,14 @@ class ReferenceFirstStateTests(unittest.TestCase):
         self.assertIn("four separate full-bleed 16:9 images",prompt)
         self.assertIn("never a collage",prompt)
         self.assertIn("FACE/IDENTITY LOCK",prompt)
+
+
+class CloudflareReferenceInputTests(unittest.TestCase):
+    def test_reference_preparation_contract_is_present(self):
+        source=inspect.getsource(bridge._prepare_reference)
+        self.assertIn("511/max_side",source)
+        self.assertIn('format="JPEG"',source)
+        self.assertIn('"image/jpeg"',source)
 
 
 class CloudflareRetryTests(unittest.TestCase):
