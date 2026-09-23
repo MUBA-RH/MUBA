@@ -70,6 +70,20 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
+class OpenAIStoryEngineTests(unittest.TestCase):
+    def test_daily_story_runtime_uses_openai_engine(self):
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn("from muba_story_openai import configured as story_image_configured, generate as story_image_generate",source)
+        self.assertNotIn("from muba_story_cloudflare import configured as cf_story_configured",source)
+
+    def test_openai_engine_preserves_reference_and_continuity(self):
+        source=(ROOT/"muba_story_openai.py").read_text(encoding="utf-8")
+        self.assertIn("gpt-image-2.5-sunburst",source)
+        self.assertIn("input_fidelity",source)
+        self.assertIn("muba-reference.png",source)
+        self.assertIn("previous-frame.png",source)
+        self.assertIn("ONE single full-frame",source)
+
 class TelegramInboxOutboxTests(unittest.TestCase):
     def test_reference_upload_auto_generates_and_previews(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
