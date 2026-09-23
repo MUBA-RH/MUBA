@@ -51,6 +51,16 @@ class ReferenceFirstStateTests(unittest.TestCase):
         self.assertIn("FACE/IDENTITY LOCK",prompt)
 
 
+class CloudflareRetryTests(unittest.TestCase):
+    def test_only_provider_flag_retries(self):
+        self.assertTrue(bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
+        self.assertFalse(bridge._flagged(500,'server error'))
+        safe=bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
+        self.assertIn('friendly fictional illustrated scene',safe)
+        self.assertIn('MUBA walks into a quiet street',safe)
+        self.assertNotIn('IDENTITY RULES',safe)
+
+
 class ProductionFunctionTests(unittest.IsolatedAsyncioTestCase):
     async def test_generation_reads_fresh_gallery_reference_and_forwards_same_bytes_four_times(self):
         tree=ast.parse((ROOT/"bot_mention.py").read_text())
