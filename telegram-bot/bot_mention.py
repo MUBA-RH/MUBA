@@ -643,7 +643,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         item=story_draft()
         reference=story_reference_for_day(item["day"])
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\\n\\n"+item.get("theme_tr",item["theme"])+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\\n\\n"+item.get("twt_tr",item["twt"])+"\\n\\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\n\n"+item.get("twt_tr",item["twt"])+"\n\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
         if item["status"]!="published" and len(item.get("images",[]))==4:
             rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
@@ -657,14 +657,14 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="story_reference":
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
-        await q.edit_message_text("📷 MUBA DAILY STORY\\n\\nBu üretim için kullanacağım MUBA referans görselini şimdi fotoğraf olarak gönder. Referans gelmeden görsel üretimi açılmaz.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        await q.edit_message_text("📷 MUBA DAILY STORY\n\nBu üretim için kullanacağım MUBA referans görselini şimdi fotoğraf olarak gönder. Referans gelmeden görsel üretimi açılmaz.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
     if data=="story_package":
         if not is_dev(user_id): return
         if not story_reference_for_day(story_draft()["day"]):
             await q.answer("Önce bu gün için referans görsel gönder.",show_alert=True); return
         context.user_data["daily_story_waiting_package"]=True
         await q.edit_message_text(
-            "📦 MUBA DAILY STORY\\n\\nChatGPT tarafından hazırlanmış ZIP paketini şimdi dosya olarak gönder. Paket tam olarak 01.png, 02.png, 03.png, 04.png içermeli. Bot yeni görsel üretmez; paketi doğrular ve onayına sunar.",
+            "📦 MUBA DAILY STORY\n\nChatGPT tarafından hazırlanmış ZIP paketini şimdi dosya olarak gönder. Paket tam olarak 01.png, 02.png, 03.png, 04.png içermeli. Bot yeni görsel üretmez; paketi doğrular ve onayına sunar.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])
         ); return
     if data=="story_generate":
@@ -1425,15 +1425,15 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four OpenAI reference-conditioned frames transactionally."""
+    """Generate four Hugging Face ZeroGPU reference-conditioned frames transactionally."""
     import aiohttp
-    from muba_story_openai import configured as story_image_configured, generate as story_image_generate
+    from muba_story_hf import configured as story_image_configured, generate as story_image_generate
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
     if not story_image_configured():
-        raise RuntimeError("OpenAI Daily Story image engine is not configured")
+        raise RuntimeError("Hugging Face ZeroGPU Daily Story engine is not configured")
 
     # Every production batch must use the fresh DEV-uploaded reference for this day.
     metadata=story_reference_for_day(item["day"])
@@ -1476,7 +1476,7 @@ async def _prepare_daily_story(application):
     if item.get("status")!="published" and not story_reference_for_day(item["day"]):
         await application.bot.send_message(
             chat_id=chat_id,
-            text="🎬 MUBA DAILY STORY — "+item["day"]+"\\n\\nBugünkü akıcı 4 bölümlük hikâye hazır. Görsel üretiminden önce referans MUBA görselini gönder; ardından 4 GÖRSELİ ÜRET düğmesi açılacak.",
+            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nBugünkü akıcı 4 bölümlük hikâye hazır. Görsel üretiminden önce referans MUBA görselini gönder; ardından 4 GÖRSELİ ÜRET düğmesi açılacak.",
         )
     return item
 
