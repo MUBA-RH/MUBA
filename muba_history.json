@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-render-asyncio-startup-fix",
+      "date": "2026-09-23",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story scheduler startup fix",
+        "tr": "Daily Story zamanlayıcı başlangıç düzeltmesi",
+        "zh": "Daily Story 调度器启动修复",
+        "ar": "إصلاح بدء مجدول Daily Story",
+        "hi": "Daily Story scheduler startup fix"
+      },
+      "text": {
+        "en": "Render startup now imports asyncio before creating the Daily Story scheduler task, preventing the NameError that stopped deployment. No Daily Story behavior or approval flow changed.",
+        "tr": "Render başlangıcında Daily Story zamanlayıcı görevi oluşturulmadan önce asyncio artık içe aktarılıyor; deploy'u durduran NameError giderildi. Daily Story davranışı veya onay akışı değiştirilmedi.",
+        "zh": "Render 启动时会在创建 Daily Story 调度任务前导入 asyncio，修复导致部署停止的 NameError。Daily Story 行为和审批流程未更改。",
+        "ar": "يتم الآن استيراد asyncio عند بدء Render قبل إنشاء مهمة مجدول Daily Story، ما يصلح خطأ NameError الذي أوقف النشر. لم يتغير سلوك Daily Story أو مسار الموافقة.",
+        "hi": "Render startup पर Daily Story scheduler task बनाने से पहले asyncio import होता है, जिससे deployment रोकने वाला NameError ठीक हुआ। Daily Story behavior या approval flow नहीं बदला।"
+      }
+    },
+    {
       "id": "20260923-daily-story-v3-rebuild",
       "date": "2026-09-23",
       "type": "updated",
