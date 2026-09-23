@@ -12,8 +12,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from muba_brain import STORE
-from muba_story_chibi import panel_prompt
-from muba_daily_story_reference import reference_metadata
+from muba_story_visual import story_identity_prompt, VISUAL_STYLE, REFERENCE_ROLE
 
 TZ=ZoneInfo("Europe/Istanbul")
 HISTORY_PATH=Path(__file__).resolve().parents[1]/"muba_history.json"
@@ -37,6 +36,8 @@ def _public_change(day):
 
 def _previous_story_context(day):
     """Return yesterday's immutable published/draft story state as today's canon."""
+    if not STORE.get("story_v3_origin_started","muba",False):
+        return {"day":"origin","theme":"Before MUBA","story":"The story has not started yet.","ending":"MUBA has not yet entered the story world."}
     current=datetime.fromisoformat(str(day)).date()
     previous=(current-timedelta(days=1)).isoformat()
     saved=STORE.get("story_canon",previous,None)
@@ -107,7 +108,7 @@ def _episode_for_day(day):
     ]
     # Bootstrap the living story with MUBA's own emergence. Later days use the
     # existing story pool and yesterday's canon for continuity.
-    if not STORE.get("story_origin_started","muba",False):
+    if not STORE.get("story_v3_origin_started","muba",False):
         return options[0]
     return options[1 + (sum(ord(x) for x in str(day)) % (len(options)-1))]
 
@@ -130,12 +131,12 @@ def draft(day=None):
         "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
     prompts=[
-        panel_prompt(theme,continuity+" "+ep["premise"],action)
+        story_identity_prompt()+" EPISODE: "+theme+". STORY CONTEXT: "+continuity+" "+ep["premise"]+" CURRENT BEAT: "+action
         for action in actions
     ]
     raw_summary=("A loose page leads MUBA through the street; when the paper finally stops, the wind steals the cap and the chase changes direction." if ep["title"]=="The Runaway Paper" else "A mysterious box answers MUBA's knock; curiosity opens the lid and the strange encounter ends with an unexpected little gift.")
     raw_summary_tr=("Kaçak bir kâğıt MUBA'yı sokakta peşinden sürükler; kâğıt sonunda durunca bu kez rüzgâr şapkayı kapar ve kovalamaca yön değiştirir." if ep["title"]=="The Runaway Paper" else "Gizemli bir kutu MUBA'nın vuruşuna karşılık verir; merak kapağı açtırır ve tuhaf karşılaşma beklenmedik küçük bir hediyeyle biter.")
-    reference=reference_metadata()
+    reference=reference_for_day(day)
     item={
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
@@ -147,22 +148,43 @@ def draft(day=None):
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
         "image_reference":_image_batch(day).get("reference"),
-        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":reference["role"],
-                 "visual_style":reference["style"],"continuity":"approved-character-and-style-plus-scene-state","frame_text_max_words":0,
-                 "visual_layer":"muba_story_chibi","character_anchor_version":reference["version"],"reference_sha256":reference["sha256"],
+        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":REFERENCE_ROLE,
+                 "visual_style":VISUAL_STYLE,"continuity":"fresh-dev-reference-plus-scene-state","frame_text_max_words":0,
+                 "visual_layer":"muba_story_visual","character_anchor_version":"daily-story-reference-first-v3","reference_sha256":(reference or {}).get("sha256"),
                  "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
     STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
     if ep["title"]=="I'm MUBA":
-        STORE.set("story_origin_started","muba",True)
+        STORE.set("story_v3_origin_started","muba",True)
     return item
+
+def set_reference(day,gallery_id,sha256,content_type):
+    """Bind a fresh DEV-uploaded reference to one production day."""
+    if is_published(day):
+        raise ValueError("Published Daily Story reference cannot be replaced")
+    metadata={"version":"daily-story-reference-first-v3","role":REFERENCE_ROLE,"style":VISUAL_STYLE,
+              "gallery_id":str(gallery_id),"sha256":str(sha256),"content_type":str(content_type)}
+    STORE.set("story_v3_reference",str(day),metadata)
+    STORE.set("story_image_batches",str(day),{})
+    return metadata
+
+def reference_for_day(day):
+    value=STORE.get("story_v3_reference",str(day),None)
+    return dict(value) if isinstance(value,dict) and value.get("gallery_id") and value.get("sha256") else None
+
+def clear_reference(day):
+    STORE.set("story_v3_reference",str(day),{})
+    return True
 
 def set_images(day,image_ids):
     if is_published(day):
         raise ValueError("Published Daily Story images cannot be replaced")
     # One state write binds images to their reference; a partial metadata write
     # must never relabel an older batch as the newly approved character.
-    STORE.set("story_image_batches",str(day),{"ids":list(image_ids)[:4],"reference":reference_metadata()})
+    reference=reference_for_day(day)
+    if not reference:
+        raise ValueError("Fresh DEV reference required before Daily Story generation")
+    STORE.set("story_image_batches",str(day),{"ids":list(image_ids)[:4],"reference":reference})
     return draft(day)
 
 def _image_batch(day):
@@ -173,7 +195,7 @@ def image_ids(day):
     # Keep published history intact. Unapproved old-style batches need a fresh
     # review; never silently mark the old portrait output as the new style.
     batch=_image_batch(day)
-    if not is_published(day) and batch.get("reference")!=reference_metadata():
+    if not is_published(day) and batch.get("reference")!=reference_for_day(day):
         return []
     ids=batch.get("ids",[]) if batch else STORE.get("story_images",str(day),[])
     return list(ids or [])[:4]
