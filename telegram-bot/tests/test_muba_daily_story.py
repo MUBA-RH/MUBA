@@ -71,7 +71,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("OPENAI_"+"API_KEY",bridge)
         self.assertIn("gpt-image-2.5-sunburst",bridge)
         self.assertIn("gpt-image-2.5-sunburst",bridge)
-        self.assertIn("input_image_0",bridge)
+        self.assertIn('form.add_field("image[]",identity',bridge)
         self.assertIn("FormData()",bridge)
         self.assertNotIn("HF_TOKEN",bridge)
         self.assertNotIn("gradio_client",bridge)
