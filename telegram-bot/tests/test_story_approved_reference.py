@@ -70,6 +70,21 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
+class SequentialIdentityEngineTests(unittest.TestCase):
+    def test_cloudflare_uses_9b_multi_reference_contract(self):
+        source=inspect.getsource(bridge)
+        self.assertIn("flux-2-klein-9b",source)
+        self.assertIn('input_image_1',source)
+        self.assertIn('guidance","5.0',source)
+        self.assertIn("exactly ONE full-bleed cinematic 16:9 image",source)
+        self.assertIn("immutable MUBA identity/style reference",source)
+
+    def test_story_generation_chains_previous_frame(self):
+        source=inspect.getsource(bot_mention._story_generate_images)
+        self.assertIn("continuity_bytes=previous_body",source)
+        self.assertIn("previous_body,previous_type=body,out_type",source)
+
+
 class CloudflareFilterIsolationTests(unittest.TestCase):
     def test_filter_diagnostic_is_text_only_and_discarded(self):
         source=inspect.getsource(bridge.generate)
