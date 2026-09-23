@@ -66,10 +66,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertNotIn("muba_story_hf",section)
         self.assertNotIn("generate_anchor",section)
 
-    def test_openai_bridge_uses_existing_workers_ai_credentials_and_reference(self):
+    def test_openai_bridge_uses_configured_credentials_and_reference(self):
         bridge=(ROOT/"muba_story_openai.py").read_text(encoding="utf-8")
-        self.assertIn("CLOUDFLARE_ACCOUNT_ID",bridge)
-        self.assertIn("CLOUDFLARE_API_TOKEN",bridge)
+        self.assertIn("OPENAI_"+"API_KEY",bridge)
+        self.assertIn("gpt-image-2.5-sunburst",bridge)
         self.assertIn("@cf/black-forest-labs/flux-2-klein-9b",bridge)
         self.assertIn("input_image_0",bridge)
         self.assertIn("FormData()",bridge)
@@ -168,7 +168,7 @@ class TestLivingStoryIsolation(unittest.TestCase):
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
         self.assertIn("muba_story_openai",story)
-        self.assertIn("OpenAI Living Story engine is not configured",story)
+        self.assertIn("OpenAI Daily Story image engine is not configured",story)
         self.assertIn("generated=[]",story)
         self.assertIn("for body,out_type,prompt in generated:",story)
         self.assertNotIn("muba_story_hf",story)
