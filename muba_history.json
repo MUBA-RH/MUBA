@@ -19,10 +19,36 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-single-frame-face-lock",
+      "date": "2026-09-23",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story single-frame face lock",
+        "tr": "Daily Story tek-kare yüz kilidi",
+        "zh": "Daily Story 单画面面部锁定",
+        "ar": "قفل الوجه والإطار الواحد في Daily Story",
+        "hi": "Daily Story single-frame face lock"
+      },
+      "text": {
+        "en": "Each Daily Story output is now explicitly one full-bleed 16:9 scene, never a panel grid or collage. The approved MUBA face geometry is locked across all four chronological images while story-required expression, gaze and pose may change. Existing reference, approval and publication safeguards are preserved.",
+        "tr": "Her Daily Story çıktısı artık açıkça tek bir tam-kare 16:9 sahnedir; panel ızgarası veya kolaj oluşturulmaz. Onaylı MUBA yüz geometrisi dört kronolojik görsel boyunca kilitli kalırken hikâyenin gerektirdiği mimik, bakış ve poz değişebilir. Mevcut referans, onay ve yayın güvenlikleri korunur.",
+        "zh": "每个 Daily Story 输出现在明确为单个全幅 16:9 场景，不生成分格或拼贴。四张连续图像中锁定已批准的 MUBA 面部几何结构，同时允许根据故事改变表情、视线和姿势。现有参考、审批和发布保护保持不变。",
+        "ar": "أصبح كل مخرج من Daily Story مشهداً واحداً كاملاً بنسبة 16:9 دون تقسيمات أو كولاج. تبقى هندسة وجه MUBA المعتمدة ثابتة عبر الصور الأربع المتسلسلة، مع السماح بتغيير التعبير والنظرة والوضعية حسب القصة. تبقى ضوابط المرجع والموافقة والنشر الحالية محفوظة.",
+        "hi": "हर Daily Story output अब स्पष्ट रूप से एक full-bleed 16:9 scene है, panel grid या collage नहीं। चारों क्रमिक images में approved MUBA face geometry लॉक रहती है, जबकि कहानी के अनुसार expression, gaze और pose बदल सकते हैं। मौजूदा reference, approval और publication safeguards सुरक्षित हैं।"
+      }
+    },
+    {
       "id": "20260923-daily-story-approved-chibi-reference",
       "date": "2026-09-23",
       "type": "updated",
-      "areas": ["daily", "telegram"],
+      "areas": [
+        "daily",
+        "telegram"
+      ],
       "title": {
         "en": "Daily Story adopts the DEV-approved drawing reference",
         "tr": "Daily Story, DEV onaylı çizim referansını kullanıyor",
