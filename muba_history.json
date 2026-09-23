@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-reference-first-v3",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story rebuilt around a fresh DEV reference",
+        "tr": "Daily Story taze DEV referansı etrafında yeniden kuruldu",
+        "zh": "Daily Story 围绕新的 DEV 参考图重建",
+        "ar": "أعيد بناء Daily Story حول مرجع DEV جديد",
+        "hi": "Daily Story fresh DEV reference के साथ rebuilt हुआ"
+      },
+      "text": {
+        "en": "Legacy Daily Story reference layers were removed. Every production now requires a fresh DEV-uploaded MUBA reference before Telegram enables four-image generation; the four separate 16:9 images follow one continuous daily story.",
+        "tr": "Eski Daily Story referans katmanları kaldırıldı. Artık her üretimden önce DEV yeni bir MUBA referans görseli yükler; ardından Telegram dört ayrı 16:9 görsellik, akıcı günlük hikâye üretimini açar.",
+        "zh": "旧的 Daily Story 参考层已移除。每次生成前 DEV 必须上传新的 MUBA 参考图，Telegram 才会启用四张独立 16:9 连贯日常故事图像的生成。",
+        "ar": "تمت إزالة طبقات المراجع القديمة. يتطلب كل إنتاج الآن رفع مرجع MUBA جديد من DEV قبل تفعيل Telegram لإنتاج أربع صور منفصلة 16:9 لقصة يومية متصلة.",
+        "hi": "पुराने Daily Story reference layers हटाए गए। अब हर production से पहले DEV नया MUBA reference upload करता है; उसके बाद Telegram चार अलग 16:9 images वाली continuous daily story generation खोलता है।"
+      }
+    },
+    {
       "id": "20260923-render-asyncio-startup-fix",
       "date": "2026-09-23",
       "type": "fixed",
