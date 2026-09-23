@@ -1,3 +1,4 @@
+import inspect
 """Daily Story V3 reference-first regression tests."""
 import ast
 import hashlib
