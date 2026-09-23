@@ -70,6 +70,14 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
+class CloudflareFilterIsolationTests(unittest.TestCase):
+    def test_filter_diagnostic_is_text_only_and_discarded(self):
+        source=inspect.getsource(bridge.generate)
+        self.assertIn("diagnostic=text-only-ok",source)
+        self.assertIn("reference-combination-flagged",source)
+        self.assertIn("A simple friendly fictional character standing in a quiet room.",source)
+
+
 class ProductionFunctionTests(unittest.IsolatedAsyncioTestCase):
     async def test_generation_reads_fresh_gallery_reference_and_forwards_same_bytes_four_times(self):
         tree=ast.parse((ROOT/"bot_mention.py").read_text())
