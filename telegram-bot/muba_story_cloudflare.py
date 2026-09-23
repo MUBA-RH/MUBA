@@ -14,7 +14,7 @@ from io import BytesIO
 
 from PIL import Image, ImageOps
 
-MODEL=os.getenv("MUBA_STORY_CF_MODEL","@cf/black-forest-labs/flux-2-klein-4b").strip()
+MODEL=os.getenv("MUBA_STORY_CF_MODEL","@cf/black-forest-labs/flux-2-klein-9b").strip()
 WIDTH=int(os.getenv("MUBA_STORY_CF_WIDTH","1024"))
 HEIGHT=int(os.getenv("MUBA_STORY_CF_HEIGHT",str(WIDTH*9//16)))
 
@@ -62,7 +62,7 @@ def _prepare_reference(reference_bytes:bytes)->tuple[bytes,str]:
     except Exception as exc:
         raise RuntimeError("Daily Story reference image could not be prepared for Cloudflare") from exc
 
-async def _request(session,prompt:str,reference_bytes:bytes|None=None,reference_type:str="image/jpeg"):
+async def _request(session,prompt:str,reference_bytes:bytes|None=None,reference_type:str="image/jpeg",continuity_bytes:bytes|None=None,continuity_type:str="image/jpeg"):
     """Issue one FLUX request; reference is optional for filter diagnostics."""
 
     form=__import__("aiohttp").FormData()
@@ -71,11 +71,14 @@ async def _request(session,prompt:str,reference_bytes:bytes|None=None,reference_
     form.add_field("height",str(HEIGHT))
     if reference_bytes is not None:
         form.add_field("input_image_0",reference_bytes,filename="muba-reference.jpg",content_type=reference_type)
+    if continuity_bytes is not None:
+        form.add_field("input_image_1",continuity_bytes,filename="previous-frame.jpg",content_type=continuity_type)
+    form.add_field("guidance","5.0")
     headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
     async with session.post(endpoint(),data=form,headers=headers,timeout=90) as response:
         return response.status,response.headers.get("Content-Type",""),await response.read()
 
-async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str="image/jpeg")->tuple[bytes,str]:
+async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str="image/jpeg",continuity_bytes:bytes|None=None,continuity_type:str="image/jpeg")->tuple[bytes,str]:
     if not configured():
         raise RuntimeError("Cloudflare Living Story engine is not configured")
     if WIDTH<=0 or HEIGHT<=0 or WIDTH*9!=HEIGHT*16:
@@ -85,12 +88,21 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
     # 512x512. Telegram photos are normally much larger, so normalize once
     # before both the primary request and any provider-filter retry.
     reference_bytes,reference_type=_prepare_reference(reference_bytes)
-    status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type)
+    if continuity_bytes is not None:
+        continuity_bytes,continuity_type=_prepare_reference(continuity_bytes)
+        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. IMAGE 1 is the immediately previous story frame. "
+                "Create exactly ONE full-bleed cinematic 16:9 image, not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+                "Continue the physical scene from IMAGE 1 while preserving MUBA from IMAGE 0: same face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions. "
+                "Only pose, expression, gaze and camera may change. "+prompt)
+    else:
+        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed cinematic 16:9 image, not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+                "Preserve the exact face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions from IMAGE 0. "+prompt)
+    status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
     if status!=200:
         detail=raw[:1000].decode("utf-8","replace")
         if _flagged(status,detail):
             retry_prompt=_safe_retry_prompt(prompt)
-            status,content_type,raw=await _request(session,retry_prompt,reference_bytes,reference_type)
+            status,content_type,raw=await _request(session,retry_prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
             if status!=200:
                 detail=raw[:1000].decode("utf-8","replace")
                 if _flagged(status,detail):
