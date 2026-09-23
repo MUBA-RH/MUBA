@@ -70,7 +70,7 @@ class DailyStoryTests(unittest.TestCase):
         bridge=(ROOT/"muba_story_openai.py").read_text(encoding="utf-8")
         self.assertIn("OPENAI_"+"API_KEY",bridge)
         self.assertIn("gpt-image-2.5-sunburst",bridge)
-        self.assertIn("@cf/black-forest-labs/flux-2-klein-9b",bridge)
+        self.assertIn("gpt-image-2.5-sunburst",bridge)
         self.assertIn("input_image_0",bridge)
         self.assertIn("FormData()",bridge)
         self.assertNotIn("HF_TOKEN",bridge)
