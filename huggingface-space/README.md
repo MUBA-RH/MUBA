@@ -11,3 +11,5 @@ suggested_hardware: zerogpu
 ---
 # MUBA Daily Story ZeroGPU
 Open-source Qwen-Image-Edit-2511 renderer for MUBA Daily Story.
+
+Daily quota is supplied by the authenticated Hugging Face ZeroGPU account.
