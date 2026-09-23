@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260923-kaggle-qwen-smoke-fix-v12",
+      "date": "2026-09-23",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Kaggle Qwen smoke-load fix",
+        "tr": "Kaggle Qwen yükleme testi düzeltmesi",
+        "zh": "Kaggle Qwen 加载测试修复",
+        "ar": "إصلاح اختبار تحميل Qwen على Kaggle",
+        "hi": "Kaggle Qwen smoke-load सुधार"
+      },
+      "text": {
+        "en": "The Kaggle Qwen smoke-load cell now imports torch locally and follows the model card's DiffusionPipeline loading path.",
+        "tr": "Kaggle Qwen yükleme testi hücresi artık torch'u kendi içinde içe aktarır ve model kartındaki DiffusionPipeline yükleme yolunu izler.",
+        "zh": "Kaggle Qwen 加载测试单元现在本地导入 torch，并遵循模型卡的 DiffusionPipeline 加载方式。",
+        "ar": "تستورد خلية اختبار Qwen على Kaggle مكتبة torch محليًا وتتبع مسار DiffusionPipeline الوارد في بطاقة النموذج.",
+        "hi": "Kaggle Qwen smoke-load cell अब torch को स्थानीय रूप से import करता है और model card के DiffusionPipeline loading path का उपयोग करता है।"
+      }
+    },
+    {
       "id": "20260923-kaggle-on-demand-v11",
       "date": "2026-09-23",
       "type": "improved",
