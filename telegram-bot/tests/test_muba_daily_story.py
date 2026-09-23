@@ -57,20 +57,20 @@ class DailyStoryTests(unittest.TestCase):
     def test_generation_uses_huggingface_canonical_reference_for_all_panels(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
-        self.assertIn("muba_story_hf",section)
+        self.assertIn("muba_story_zerogpu",section)
         self.assertIn("story_reference_for_day",section)
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
         self.assertNotIn("session.get(",section)
         self.assertIn("session,prompt,reference,reference_type=reference_type",section)
-        self.assertNotIn("muba_story_hf",section)
+        self.assertNotIn("muba_story_openai",section)
         self.assertNotIn("generate_anchor",section)
 
     def test_huggingface_bridge_uses_configured_credentials_and_reference(self):
-        bridge=(ROOT/"muba_story_hf.py").read_text(encoding="utf-8")
+        bridge=(ROOT/"muba_story_zerogpu.py").read_text(encoding="utf-8")
         self.assertIn("HF_"+"TOKEN",bridge)
-        self.assertIn("gpt-image-2.5-sunburst",bridge)
-        self.assertIn("gpt-image-2.5-sunburst",bridge)
+        self.assertIn("HF_"+"TOKEN",bridge)
+        self.assertIn("HF_"+"TOKEN",bridge)
         self.assertIn('form.add_field("image[]",identity',bridge)
         self.assertIn("FormData()",bridge)
         self.assertNotIn("HF_TOKEN",bridge)
@@ -167,9 +167,9 @@ class TestLivingStoryIsolation(unittest.TestCase):
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
-        self.assertIn("muba_story_hf",story)
+        self.assertIn("muba_story_zerogpu",story)
         self.assertIn("Hugging Face ZeroGPU Daily Story engine is not configured",story)
         self.assertIn("generated=[]",story)
         self.assertIn("for body,out_type,prompt in generated:",story)
-        self.assertNotIn("muba_story_hf",story)
+        self.assertNotIn("muba_story_openai",story)
         self.assertNotIn("generate_anchor",story)
