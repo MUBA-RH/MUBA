@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-filter-isolation",
+      "date": "2026-09-23",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story generation diagnostic",
+        "tr": "Daily Story üretim tanısı",
+        "zh": "Daily Story 生成诊断",
+        "ar": "تشخيص إنشاء Daily Story",
+        "hi": "Daily Story generation diagnostic"
+      },
+      "text": {
+        "en": "Daily Story can now distinguish a reference-specific generation rejection from a wider provider failure after normal retries are exhausted.",
+        "tr": "Daily Story artık normal yeniden denemeler bittikten sonra referansa özgü üretim reddini genel sağlayıcı hatasından ayırabiliyor.",
+        "zh": "Daily Story 现在可在常规重试结束后区分参考图特定的生成拒绝和更广泛的提供商故障。",
+        "ar": "يمكن لـ Daily Story الآن التمييز بين رفض إنشاء خاص بالمرجع وعطل أوسع لدى المزود بعد انتهاء المحاولات العادية.",
+        "hi": "Daily Story अब सामान्य retries समाप्त होने के बाद reference-specific generation rejection और व्यापक provider failure में अंतर कर सकता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-reference-flux-size",
       "date": "2026-09-23",
       "type": "fixed",
