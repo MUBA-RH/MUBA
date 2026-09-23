@@ -51,6 +51,14 @@ class ReferenceFirstStateTests(unittest.TestCase):
         self.assertIn("FACE/IDENTITY LOCK",prompt)
 
 
+class CloudflareReferenceInputTests(unittest.TestCase):
+    def test_reference_preparation_contract_is_present(self):
+        source=inspect.getsource(bridge._prepare_reference)
+        self.assertIn("511/max_side",source)
+        self.assertIn('format="JPEG"',source)
+        self.assertIn('"image/jpeg"',source)
+
+
 class CloudflareRetryTests(unittest.TestCase):
     def test_only_provider_flag_retries(self):
         self.assertTrue(bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
