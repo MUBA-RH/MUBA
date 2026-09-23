@@ -83,7 +83,7 @@ class HuggingFaceStoryEngineTests(unittest.TestCase):
         self.assertIn("reference_bytes",source)
         self.assertIn('root/"reference.png"',source)
         self.assertIn('root/"previous.png"',source)
-        self.assertIn("ONE single full-frame",source)
+        self.assertIn("continuity_bytes",source)
 
 class TelegramInboxOutboxTests(unittest.TestCase):
     def test_reference_upload_auto_generates_and_previews(self):
