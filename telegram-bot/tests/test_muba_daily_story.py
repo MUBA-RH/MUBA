@@ -73,8 +73,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("HF_"+"TOKEN",bridge)
         self.assertIn('args={"prompt":prompt,"reference":handle_file(str(ref))}',bridge)
         self.assertIn("gradio_client",bridge)
-        self.assertNotIn("HF_TOKEN",bridge)
-        self.assertNotIn("gradio_client",bridge)
+        self.assertNotIn("OPENAI_"+"API_KEY",bridge)
+        self.assertNotIn("api.openai.com",bridge)
 
     def test_technical_change_is_not_literal_story_title(self):
         item=muba_story.draft("2026-09-22")
