@@ -1330,19 +1330,19 @@ async def _story_generate_images(item):
     """Generate four Cloudflare reference-conditioned panels transactionally."""
     import aiohttp
     from muba_story_cloudflare import configured as cf_story_configured, generate as cf_story_generate
-    from muba_daily_story_reference import REFERENCE_URL as STORY_REFERENCE_URL
+    from muba_daily_story_reference import load_reference
+    if item.get("status")=="published":
+        return item
+    if len(item.get("prompts",[]))!=4:
+        raise ValueError("Daily Story requires exactly four panel prompts")
     if not cf_story_configured():
         raise RuntimeError("Cloudflare Living Story engine is not configured")
 
-    # One daily post = four panel calls. The canonical MUBA image is reused
-    # directly for every panel; no fifth anchor-generation call is required.
+    # Validate the bundled DEV-approved image before any generation/archive work.
+    # Reuse its exact bytes in all four calls; no fifth anchor call or URL fallback.
+    reference,reference_type=load_reference()
     generated=[]
     async with aiohttp.ClientSession() as session:
-        async with session.get(STORY_REFERENCE_URL,timeout=15) as response:
-            if response.status!=200:
-                raise RuntimeError("Locked MUBA Daily Story reference unavailable")
-            reference=await response.read()
-            reference_type=response.headers.get("Content-Type","image/jpeg").split(";",1)[0]
         for prompt in item["prompts"]:
             body,out_type=await cf_story_generate(session,prompt,reference,reference_type=reference_type)
             generated.append((body,out_type,prompt))

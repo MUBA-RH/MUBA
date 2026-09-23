@@ -13,7 +13,7 @@ import os
 
 MODEL=os.getenv("MUBA_STORY_CF_MODEL","@cf/black-forest-labs/flux-2-klein-4b").strip()
 WIDTH=int(os.getenv("MUBA_STORY_CF_WIDTH","1024"))
-HEIGHT=int(os.getenv("MUBA_STORY_CF_HEIGHT","1024"))
+HEIGHT=int(os.getenv("MUBA_STORY_CF_HEIGHT",str(WIDTH*9//16)))
 
 def configured()->bool:
     return bool(os.getenv("CLOUDFLARE_ACCOUNT_ID") and os.getenv("CLOUDFLARE_API_TOKEN") and MODEL)
@@ -25,6 +25,8 @@ def endpoint()->str:
 async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str="image/jpeg")->tuple[bytes,str]:
     if not configured():
         raise RuntimeError("Cloudflare Living Story engine is not configured")
+    if WIDTH<=0 or HEIGHT<=0 or WIDTH*9!=HEIGHT*16:
+        raise RuntimeError("Daily Story output dimensions must be landscape 16:9")
     form=__import__("aiohttp").FormData()
     form.add_field("prompt",prompt)
     form.add_field("width",str(WIDTH))
