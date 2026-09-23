@@ -65,7 +65,7 @@ class CloudflareRetryTests(unittest.TestCase):
     def test_only_provider_flag_retries(self):
         self.assertTrue(cloudflare_bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
         self.assertFalse(cloudflare_bridge._flagged(500,'server error'))
-        safe=bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
+        safe=cloudflare_bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
         self.assertIn('friendly fictional illustrated scene',safe)
         self.assertIn('MUBA walks into a quiet street',safe)
         self.assertNotIn('IDENTITY RULES',safe)
@@ -106,7 +106,7 @@ class PackageIngestTests(unittest.TestCase):
 
 class SequentialIdentityEngineTests(unittest.TestCase):
     def test_cloudflare_uses_9b_multi_reference_contract(self):
-        source=inspect.getsource(bridge)
+        source=inspect.getsource(cloudflare_bridge)
         self.assertIn("flux-2-klein-9b",source)
         self.assertIn('input_image_1',source)
         self.assertIn('guidance","5.0',source)
