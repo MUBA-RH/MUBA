@@ -664,9 +664,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.answer("Önce bu gün için referans görsel gönder.",show_alert=True); return
         context.user_data["daily_story_waiting_package"]=True
         await q.edit_message_text(
-            "📦 MUBA DAILY STORY
-
-ChatGPT tarafından hazırlanmış ZIP paketini şimdi dosya olarak gönder. Paket tam olarak 01.png, 02.png, 03.png, 04.png içermeli. Bot yeni görsel üretmez; paketi doğrular ve onayına sunar.",
+            "📦 MUBA DAILY STORY\\n\\nChatGPT tarafından hazırlanmış ZIP paketini şimdi dosya olarak gönder. Paket tam olarak 01.png, 02.png, 03.png, 04.png içermeli. Bot yeni görsel üretmez; paketi doğrular ve onayına sunar.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])
         ); return
     if data=="story_generate":
