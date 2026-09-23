@@ -62,12 +62,15 @@ def _prepare_reference(reference_bytes:bytes)->tuple[bytes,str]:
     except Exception as exc:
         raise RuntimeError("Daily Story reference image could not be prepared for Cloudflare") from exc
 
-async def _request(session,prompt:str,reference_bytes:bytes,reference_type:str):
+async def _request(session,prompt:str,reference_bytes:bytes|None=None,reference_type:str="image/jpeg"):
+    """Issue one FLUX request; reference is optional for filter diagnostics."""
+
     form=__import__("aiohttp").FormData()
     form.add_field("prompt",prompt)
     form.add_field("width",str(WIDTH))
     form.add_field("height",str(HEIGHT))
-    form.add_field("input_image_0",reference_bytes,filename="muba-reference.jpg",content_type=reference_type)
+    if reference_bytes is not None:
+        form.add_field("input_image_0",reference_bytes,filename="muba-reference.jpg",content_type=reference_type)
     headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
     async with session.post(endpoint(),data=form,headers=headers,timeout=90) as response:
         return response.status,response.headers.get("Content-Type",""),await response.read()
@@ -90,6 +93,24 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
             status,content_type,raw=await _request(session,retry_prompt,reference_bytes,reference_type)
             if status!=200:
                 detail=raw[:1000].decode("utf-8","replace")
+                if _flagged(status,detail):
+                    # Diagnostic isolation only: a neutral text-only probe tells us
+                    # whether the provider is rejecting the reference image itself.
+                    # Its output is discarded and is never shown/published.
+                    probe_status,_,probe_raw=await _request(
+                        session,
+                        "A simple friendly fictional character standing in a quiet room.",
+                    )
+                    if probe_status==200:
+                        raise RuntimeError(
+                            "Cloudflare Living Story reference rejected by provider filter "
+                            "(diagnostic=text-only-ok, reference-combination-flagged)"
+                        )
+                    probe_detail=probe_raw[:500].decode("utf-8","replace")
+                    raise RuntimeError(
+                        "Cloudflare Living Story provider filter unresolved "
+                        f"(diagnostic=text-only-failed:{probe_status}): {probe_detail}"
+                    )
                 raise RuntimeError(f"Cloudflare Living Story request failed after safe retry ({status}): {detail}")
         else:
             raise RuntimeError(f"Cloudflare Living Story request failed ({status}): {detail}")
