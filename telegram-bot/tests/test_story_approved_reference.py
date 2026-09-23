@@ -11,7 +11,8 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 import muba_story
 import muba_story_visual
-import muba_story_cloudflare as bridge
+import muba_story_cloudflare as cloudflare_bridge
+import muba_story_openai as bridge
 from state import MemoryRepository
 
 
@@ -54,7 +55,7 @@ class ReferenceFirstStateTests(unittest.TestCase):
 
 class CloudflareReferenceInputTests(unittest.TestCase):
     def test_reference_preparation_contract_is_present(self):
-        source=inspect.getsource(bridge._prepare_reference)
+        source=inspect.getsource(cloudflare_bridge._prepare_reference)
         self.assertIn("511/max_side",source)
         self.assertIn('format="JPEG"',source)
         self.assertIn('"image/jpeg"',source)
@@ -62,13 +63,27 @@ class CloudflareReferenceInputTests(unittest.TestCase):
 
 class CloudflareRetryTests(unittest.TestCase):
     def test_only_provider_flag_retries(self):
-        self.assertTrue(bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
-        self.assertFalse(bridge._flagged(500,'server error'))
-        safe=bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
+        self.assertTrue(cloudflare_bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
+        self.assertFalse(cloudflare_bridge._flagged(500,'server error'))
+        safe=cloudflare_bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
         self.assertIn('friendly fictional illustrated scene',safe)
         self.assertIn('MUBA walks into a quiet street',safe)
         self.assertNotIn('IDENTITY RULES',safe)
 
+
+class OpenAIStoryEngineTests(unittest.TestCase):
+    def test_daily_story_runtime_uses_openai_engine(self):
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn("from muba_story_openai import configured as story_image_configured, generate as story_image_generate",source)
+        self.assertNotIn("from muba_story_cloudflare import configured as cf_story_configured",source)
+
+    def test_openai_engine_preserves_reference_and_continuity(self):
+        source=(ROOT/"muba_story_openai.py").read_text(encoding="utf-8")
+        self.assertIn("gpt-image-2.5-sunburst",source)
+        self.assertIn("input_fidelity",source)
+        self.assertIn("muba-reference.png",source)
+        self.assertIn("previous-frame.png",source)
+        self.assertIn("ONE single full-frame",source)
 
 class TelegramInboxOutboxTests(unittest.TestCase):
     def test_reference_upload_auto_generates_and_previews(self):
@@ -91,7 +106,7 @@ class PackageIngestTests(unittest.TestCase):
 
 class SequentialIdentityEngineTests(unittest.TestCase):
     def test_cloudflare_uses_9b_multi_reference_contract(self):
-        source=inspect.getsource(bridge)
+        source=inspect.getsource(cloudflare_bridge)
         self.assertIn("flux-2-klein-9b",source)
         self.assertIn('input_image_1',source)
         self.assertIn('guidance","5.0',source)
@@ -106,7 +121,7 @@ class SequentialIdentityEngineTests(unittest.TestCase):
 
 class CloudflareFilterIsolationTests(unittest.TestCase):
     def test_filter_diagnostic_is_text_only_and_discarded(self):
-        source=inspect.getsource(bridge.generate)
+        source=inspect.getsource(cloudflare_bridge.generate)
         self.assertIn("diagnostic=text-only-ok",source)
         self.assertIn("reference-combination-flagged",source)
         self.assertIn("A simple friendly fictional character standing in a quiet room.",source)
