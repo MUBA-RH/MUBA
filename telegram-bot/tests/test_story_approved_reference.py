@@ -80,7 +80,7 @@ class SequentialIdentityEngineTests(unittest.TestCase):
         self.assertIn("immutable MUBA identity/style reference",source)
 
     def test_story_generation_chains_previous_frame(self):
-        source=inspect.getsource(bot_mention._story_generate_images)
+        source=Path(BOT).read_text(encoding="utf-8")
         self.assertIn("continuity_bytes=previous_body",source)
         self.assertIn("previous_body,previous_type=body,out_type",source)
 
