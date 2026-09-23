@@ -10,6 +10,9 @@ import base64
 import json
 import os
 import re
+from io import BytesIO
+
+from PIL import Image, ImageOps
 
 MODEL=os.getenv("MUBA_STORY_CF_MODEL","@cf/black-forest-labs/flux-2-klein-4b").strip()
 WIDTH=int(os.getenv("MUBA_STORY_CF_WIDTH","1024"))
@@ -41,6 +44,24 @@ def _safe_retry_prompt(prompt:str)->str:
         "Scene: "+beat
     )
 
+def _prepare_reference(reference_bytes:bytes)->tuple[bytes,str]:
+    """Normalize DEV reference for FLUX.2: every input image must be <512x512."""
+    try:
+        with Image.open(BytesIO(reference_bytes)) as source:
+            image=ImageOps.exif_transpose(source).convert("RGB")
+            max_side=max(image.size)
+            if max_side>=512:
+                scale=511/max_side
+                image=image.resize(
+                    (max(1,round(image.width*scale)),max(1,round(image.height*scale))),
+                    Image.Resampling.LANCZOS,
+                )
+            out=BytesIO()
+            image.save(out,format="JPEG",quality=95,optimize=True)
+            return out.getvalue(),"image/jpeg"
+    except Exception as exc:
+        raise RuntimeError("Daily Story reference image could not be prepared for Cloudflare") from exc
+
 async def _request(session,prompt:str,reference_bytes:bytes,reference_type:str):
     form=__import__("aiohttp").FormData()
     form.add_field("prompt",prompt)
@@ -57,6 +78,10 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
     if WIDTH<=0 or HEIGHT<=0 or WIDTH*9!=HEIGHT*16:
         raise RuntimeError("Daily Story output dimensions must be landscape 16:9")
 
+    # Cloudflare FLUX.2 requires every reference input to be smaller than
+    # 512x512. Telegram photos are normally much larger, so normalize once
+    # before both the primary request and any provider-filter retry.
+    reference_bytes,reference_type=_prepare_reference(reference_bytes)
     status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type)
     if status!=200:
         detail=raw[:1000].decode("utf-8","replace")
