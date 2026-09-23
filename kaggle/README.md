@@ -9,3 +9,6 @@ Kaggle is compute only. Production Telegram state, approval, publishing, Guardia
 Import `muba_daily_story_gpu_setup.ipynb` into Kaggle, enable **GPU T4 x2** and **Internet**, then run the notebook.
 
 Kaggle sessions are ephemeral. A live Telegram-to-Kaggle bridge must not be treated as stable until an externally reachable authenticated endpoint is available.
+
+## On-demand GPU rule
+The Kaggle GPU session stays OFF when Daily Story is idle. Start T4 x2 only for a production run, generate the four review frames, persist the outputs, then stop the Kaggle session immediately. No keep-alive, polling loop, background worker or idle GPU process is allowed.
