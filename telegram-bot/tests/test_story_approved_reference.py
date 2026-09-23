@@ -11,7 +11,8 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 import muba_story
 import muba_story_visual
-import muba_story_cloudflare as bridge
+import muba_story_cloudflare as cloudflare_bridge
+import muba_story_openai as bridge
 from state import MemoryRepository
 
 
@@ -120,7 +121,7 @@ class SequentialIdentityEngineTests(unittest.TestCase):
 
 class CloudflareFilterIsolationTests(unittest.TestCase):
     def test_filter_diagnostic_is_text_only_and_discarded(self):
-        source=inspect.getsource(bridge.generate)
+        source=inspect.getsource(cloudflare_bridge.generate)
         self.assertIn("diagnostic=text-only-ok",source)
         self.assertIn("reference-combination-flagged",source)
         self.assertIn("A simple friendly fictional character standing in a quiet room.",source)
