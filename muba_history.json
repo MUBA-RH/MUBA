@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-v3-rebuild",
+      "date": "2026-09-23",
+      "type": "updated",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story V3 visual contract",
+        "tr": "Daily Story V3 görsel sözleşmesi",
+        "zh": "Daily Story V3 视觉契约",
+        "ar": "عقد Daily Story V3 البصري",
+        "hi": "Daily Story V3 विज़ुअल कॉन्ट्रैक्ट"
+      },
+      "text": {
+        "en": "Daily Story visual generation now treats the current DEV-supplied MUBA reference as the immutable identity anchor and renders four connected single-scene shots with story-driven camera, light, environment, expression and motion. No silent fallback to another MUBA design is allowed.",
+        "tr": "Daily Story görsel üretimi artık DEV'in güncel MUBA referansını değişmez kimlik çapası kabul eder ve hikâyeye göre kamera, ışık, ortam, mimik ve hareket kullanan birbirine bağlı dört tek-sahne kare üretir. Başka bir MUBA tasarımına sessiz geri dönüş yasaktır.",
+        "zh": "Daily Story 视觉生成现在将 DEV 当前提供的 MUBA 参考图作为不可变身份锚点，并以故事驱动的镜头、光线、环境、表情和动作生成四个连续单场景画面。禁止静默回退到其他 MUBA 设计。",
+        "ar": "يعتمد توليد Daily Story البصري الآن مرجع MUBA الحالي المقدم من DEV كمرساة هوية ثابتة، وينتج أربع لقطات مترابطة أحادية المشهد تتبع القصة في الكاميرا والإضاءة والبيئة والتعبير والحركة. لا يُسمح بالرجوع الصامت إلى تصميم MUBA آخر.",
+        "hi": "Daily Story विज़ुअल जनरेशन अब DEV द्वारा दी गई मौजूदा MUBA रेफरेंस को स्थिर पहचान एंकर मानती है और कहानी के अनुसार कैमरा, रोशनी, वातावरण, भाव और गति के साथ चार जुड़े सिंगल-सीन शॉट बनाती है। किसी दूसरे MUBA डिज़ाइन पर साइलेंट फॉलबैक की अनुमति नहीं है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-origin-reference-gate",
       "date": "2026-09-23",
       "type": "updated",
