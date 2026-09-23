@@ -81,8 +81,8 @@ class HuggingFaceStoryEngineTests(unittest.TestCase):
         source=(ROOT/"muba_story_zerogpu.py").read_text(encoding="utf-8")
         self.assertIn("continuity_bytes",source)
         self.assertIn("reference_bytes",source)
-        self.assertIn("muba-reference.png",source)
-        self.assertIn("previous-frame.png",source)
+        self.assertIn('root/"reference.png"',source)
+        self.assertIn('root/"previous.png"',source)
         self.assertIn("ONE single full-frame",source)
 
 class TelegramInboxOutboxTests(unittest.TestCase):
