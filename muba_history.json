@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260923-kaggle-on-demand-v11",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Kaggle GPU on-demand lock",
+        "tr": "Kaggle GPU isteğe bağlı çalışma kilidi",
+        "zh": "Kaggle GPU 按需运行锁",
+        "ar": "قفل تشغيل Kaggle GPU عند الطلب",
+        "hi": "Kaggle GPU ऑन-डिमांड लॉक"
+      },
+      "text": {
+        "en": "Kaggle GPU must remain off while idle and run only for the four-frame Daily Story production window; keep-alive and idle GPU workers are prohibited.",
+        "tr": "Kaggle GPU boşta kapalı kalır ve yalnızca dört karelik Daily Story üretim penceresinde çalışır; keep-alive ve boşta GPU worker kullanımı yasaktır.",
+        "zh": "Kaggle GPU 空闲时必须关闭，仅在四帧 Daily Story 生产期间运行；禁止 keep-alive 和空闲 GPU worker。",
+        "ar": "يجب أن يبقى Kaggle GPU متوقفًا عند الخمول ويعمل فقط أثناء إنتاج أربع صور لـ Daily Story؛ يُمنع keep-alive وتشغيل GPU أثناء الخمول.",
+        "hi": "Kaggle GPU idle रहने पर बंद रहेगा और केवल चार-frame Daily Story production window में चलेगा; keep-alive और idle GPU worker निषिद्ध हैं।"
+      }
+    },
+    {
       "id": "20260923-daily-story-kaggle-t4-v10",
       "date": "2026-09-23",
       "type": "improved",
