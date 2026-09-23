@@ -13,6 +13,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 from muba_brain import STORE
 from muba_story_chibi import panel_prompt
+from muba_daily_story_reference import reference_metadata
 
 TZ=ZoneInfo("Europe/Istanbul")
 HISTORY_PATH=Path(__file__).resolve().parents[1]/"muba_history.json"
@@ -116,6 +117,7 @@ def draft(day=None):
     ]
     raw_summary=("A loose page leads MUBA through the street; when the paper finally stops, the wind steals the cap and the chase changes direction." if ep["title"]=="The Runaway Paper" else "A mysterious box answers MUBA's knock; curiosity opens the lid and the strange encounter ends with an unexpected little gift.")
     raw_summary_tr=("Kaçak bir kâğıt MUBA'yı sokakta peşinden sürükler; kâğıt sonunda durunca bu kez rüzgâr şapkayı kapar ve kovalamaca yön değiştirir." if ep["title"]=="The Runaway Paper" else "Gizemli bir kutu MUBA'nın vuruşuna karşılık verir; merak kapağı açtırır ve tuhaf karşılaşma beklenmedik küçük bir hediyeyle biter.")
+    reference=reference_metadata()
     item={
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
@@ -126,19 +128,35 @@ def draft(day=None):
         "previous_day":previous["day"],"previous_theme":previous["theme"],
         "twt":ep["story"],"twt_tr":ep["story_tr"],
         "images":image_ids(day),
-        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":"identity-only",
-                 "visual_style":"living-story-true-2d-chibi-cloudflare-flux-v1","continuity":"canonical-face-architecture-plus-canonical-reference-plus-scene-state","frame_text_max_words":0,
-                 "visual_layer":"muba_story_chibi","character_anchor_version":"muba-face-architecture-v1","reference_excludes":["purple-neon-ring","crown","background"]},
+        "image_reference":_image_batch(day).get("reference"),
+        "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":reference["role"],
+                 "visual_style":reference["style"],"continuity":"approved-character-and-style-plus-scene-state","frame_text_max_words":0,
+                 "visual_layer":"muba_story_chibi","character_anchor_version":reference["version"],"reference_sha256":reference["sha256"],
+                 "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
     STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
     return item
 
 def set_images(day,image_ids):
-    STORE.set("story_images",str(day),list(image_ids)[:4])
+    if is_published(day):
+        raise ValueError("Published Daily Story images cannot be replaced")
+    # One state write binds images to their reference; a partial metadata write
+    # must never relabel an older batch as the newly approved character.
+    STORE.set("story_image_batches",str(day),{"ids":list(image_ids)[:4],"reference":reference_metadata()})
     return draft(day)
 
+def _image_batch(day):
+    batch=STORE.get("story_image_batches",str(day),{})
+    return batch if isinstance(batch,dict) else {}
+
 def image_ids(day):
-    return list(STORE.get("story_images",str(day),[]) or [])[:4]
+    # Keep published history intact. Unapproved old-style batches need a fresh
+    # review; never silently mark the old portrait output as the new style.
+    batch=_image_batch(day)
+    if not is_published(day) and batch.get("reference")!=reference_metadata():
+        return []
+    ids=batch.get("ids",[]) if batch else STORE.get("story_images",str(day),[])
+    return list(ids or [])[:4]
 
 def is_published(day):
     return bool(STORE.get("story_publish",str(day),False))

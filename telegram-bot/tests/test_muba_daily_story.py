@@ -17,13 +17,15 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_uses_reusable_chibi_character_anchor(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("canonical muba face architecture",prompt)
+        self.assertIn("dev-approved muba 2d chibi reference",prompt)
         self.assertIn("true hand-drawn 2d japanese chibi",prompt)
         self.assertIn("identity",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"living-story-true-2d-chibi-cloudflare-flux-v1")
+        self.assertEqual(item["rules"]["visual_style"],"living-story-approved-2d-chibi-v2")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_chibi")
-        self.assertEqual(item["rules"]["continuity"],"canonical-face-architecture-plus-canonical-reference-plus-scene-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"muba-face-architecture-v1")
+        self.assertEqual(item["rules"]["continuity"],"approved-character-and-style-plus-scene-state")
+        self.assertEqual(item["rules"]["character_anchor_version"],"muba-daily-story-approved-chibi-v2")
+        self.assertEqual(item["rules"]["character_anchor"],"identity-and-style")
+        self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
         self.assertIn("no purple neon ring",prompt)
         self.assertIn("no visible text",prompt)
 
@@ -34,7 +36,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertNotIn("tiny integrated story word",joined)
         self.assertEqual(item["rules"]["frame_text_max_words"],0)
 
-    def test_canonical_face_architecture_is_hard_identity_constraint(self):
+    def test_shared_face_architecture_is_preserved_but_story_is_isolated(self):
         face=(ROOT/"muba_face_architecture.py").read_text(encoding="utf-8").lower()
         layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8").lower()
         self.assertIn("giant asymmetric bulging eyes",face)
@@ -42,6 +44,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("hanging pink tongue",face)
         self.assertIn("reject hamster",face)
         self.assertIn("identity_prompt",layer)
+        ref=(ROOT/"muba_daily_story_reference.py").read_text(encoding="utf-8")
+        self.assertNotIn("from muba_face_architecture import",ref)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
@@ -63,7 +67,8 @@ class DailyStoryTests(unittest.TestCase):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
         self.assertIn("muba_story_cloudflare",section)
-        self.assertIn("session.get(STORY_REFERENCE_URL",section)
+        self.assertIn("load_reference()",section)
+        self.assertNotIn("session.get(",section)
         self.assertIn("cf_story_generate(session,prompt,reference",section)
         self.assertNotIn("muba_story_hf",section)
         self.assertNotIn("generate_anchor",section)
@@ -122,10 +127,10 @@ class DailyStoryTests(unittest.TestCase):
         ref=(ROOT/"muba_daily_story_reference.py").read_text(encoding="utf-8")
         layer=(ROOT/"muba_story_chibi.py").read_text(encoding="utf-8")
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("muba-daily-story-reference-v1",ref)
+        self.assertIn("muba-daily-story-approved-chibi-v2",ref)
         self.assertIn("FOUR-PANEL CONTINUITY CONTRACT",ref)
         self.assertIn("story_identity_prompt",layer)
-        self.assertIn("STORY_REFERENCE_URL",bot)
+        self.assertIn("from muba_daily_story_reference import load_reference",bot)
         self.assertIn("reply_photo",bot)
         self.assertIn("1 → 2 → 3 → 4",bot)
 
