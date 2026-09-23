@@ -72,7 +72,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("HF_"+"TOKEN",bridge)
         self.assertIn("HF_"+"TOKEN",bridge)
         self.assertIn('args={"prompt":prompt,"reference":handle_file(str(ref))}',bridge)
-        self.assertIn("FormData()",bridge)
+        self.assertIn("gradio_client",bridge)
         self.assertNotIn("HF_TOKEN",bridge)
         self.assertNotIn("gradio_client",bridge)
 
