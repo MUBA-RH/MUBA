@@ -19,7 +19,7 @@ CHIBI_DNA=(
 )
 
 STORYBOARD_DNA=(
-    "SEQUENTIAL COMIC RULE: this image is one beat of the same four-scene story. Show a clear physical action, not a portrait. "
+    "SEQUENTIAL STORY RULE: this file is exactly ONE scene/beat of the same four-image story. Render ONE continuous full-bleed 16:9 scene only. Never divide the canvas into panels, frames, boxes, strips, grids, collages, before/after views or multiple moments. Show one clear physical action, not a portrait. "
     "MUBA must be full-body or nearly full-body and only about 20-35 percent of the frame. The environment and plot object dominate the frame. "
     "Use story-appropriate natural light and a clean storybook environment in a landscape 16:9 frame. ABSOLUTELY NO purple neon ring, neon circle, halo, crown, dark purple studio backdrop, "
     "character-selection thumbnails, poster layout, UI, collage or portrait framing. NO visible text except the existing MUBA lettering on the cap; "
@@ -38,5 +38,5 @@ def panel_prompt(title,premise,action,caption=None):
         f"{CHARACTER_DNA} {CHIBI_DNA} {STORYBOARD_DNA} "
         f"EPISODE: {title}. STORY CONTEXT: {premise} CURRENT BEAT: {action} "
         "The supplied reference defines MUBA identity AND drawing style, not the plot. Do not copy its background, camera, pose, lighting or composition. "
-        "Keep recurring props, street layout, time of day and character design visually consistent with the other panels."
+        "Keep recurring props, street layout and time of day visually consistent with the other images. FACE LOCK: MUBA must remain recognizably the exact same approved character in every image; do not redesign or mutate the head, eyes, pupils, muzzle, nose, cheeks, mouth/tongue, cap, fur palette or proportions. Only story-required expression, gaze and pose may change."
     )

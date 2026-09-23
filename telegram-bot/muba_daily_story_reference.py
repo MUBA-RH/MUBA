@@ -27,9 +27,9 @@ REFERENCE_RULES=(
 )
 
 CONTINUITY_RULES=(
-    "FOUR-PANEL CONTINUITY CONTRACT. First write one complete small story with a setup, action, consequence and payoff. "
-    "Then split that exact story into panels 1, 2, 3 and 4. Panel N+1 must begin from the physical state left by panel N. "
-    "Keep MUBA's clothing, face, body scale, recurring props, environment layout, time of day and lighting direction consistent. "
+    "FOUR-IMAGE CONTINUITY CONTRACT. First write one complete small story with a setup, action, consequence and payoff. Each generated file is ONE scene only: one full-bleed 16:9 image, never a comic page, split panel, grid, collage, contact sheet or multiple moments in one canvas. "
+    "Then split that exact story into four chronological single-scene images 1, 2, 3 and 4. Image N+1 must begin from the physical state left by image N. "
+    "LOCK MUBA'S FACE across all four images: same head silhouette, cream muzzle shape, eye size/spacing, pupil style, nose position, cheek patches, tongue/mouth construction, cap shape, fur colors and body proportions. Expression may change with the action, but identity geometry must not drift. Keep MUBA's clothing, body scale, recurring props, environment layout, time of day and lighting direction consistent. "
     "Do not create four unrelated illustrations. Do not reset the scene between panels. "
     "Every prompt must explicitly state the previous-panel state and the current action. "
 )
