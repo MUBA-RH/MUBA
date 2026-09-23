@@ -63,6 +63,20 @@ def _episode_for_day(day):
     """Concrete deterministic episode seed; avoids vague 'something happened' plots."""
     options=[
         {
+            "title":"I'm MUBA","title_tr":"Ben MUBA",
+            "premise":"MUBA's first beginning: an ordinary quiet city street at early morning. No mysterious box, no cookie, no pre-built legend and no other mascot. MUBA simply appears in the world for the first time. Keep the same street and morning light across all four images.",
+            "actions":[
+                "Wide establishing shot: an ordinary nearly empty street at first light. MUBA enters the frame alone for the first time, small against the environment, looking around with open curiosity. Nothing magical happens; this is simply the beginning.",
+                "Same street moments later: MUBA stops at a shop window and sees the reflection of the SAME MUBA. MUBA studies the reflection with a puzzled but amused expression. Preserve exact face, cap, hoodie and body identity.",
+                "Immediate continuation on the SAME street: MUBA turns from the reflection and notices a few ordinary people farther down the street looking back with curiosity. MUBA gives a small casual wave. No crowd, hype or signs.",
+                "Payoff in the SAME morning street: MUBA keeps walking forward with relaxed confidence while the street wakes up behind. MUBA is now simply part of the place. End on a lived-in beginning, not a grand reveal."
+            ],
+            "premise_tr":"MUBA'nın ilk başlangıcı: sabahın ilk ışıklarında sıradan ve sakin bir şehir sokağı. Gizemli kutu, kurabiye, önceden yazılmış efsane veya başka maskot yok. MUBA dünyada ilk kez yalnızca ortaya çıkar.",
+            "labels":["","","",""],
+            "story":"There was no grand entrance and no legend waiting to be told. One morning, MUBA simply appeared on an ordinary street. MUBA looked around, caught a reflection in a window, and kept walking. A few people noticed. A few looked twice. MUBA gave a small wave and carried on. Nothing had been announced, promised or explained. There was only a character, a street, and the first moment of a story that would be lived one day at a time.",
+            "story_tr":"Büyük bir giriş yoktu; anlatılmayı bekleyen bir efsane de yoktu. Bir sabah MUBA sıradan bir sokakta öylece ortaya çıktı. Etrafına baktı, bir vitrinde yansımasını gördü ve yürümeye devam etti. Birkaç kişi fark etti. Bazıları dönüp bir daha baktı. MUBA küçük bir selam verdi ve yoluna devam etti. Hiçbir şey duyurulmamış, vaat edilmemiş veya açıklanmamıştı. Yalnızca bir karakter, bir sokak ve gün gün yaşanacak bir hikâyenin ilk anı vardı."
+        },
+        {
             "title":"The Box That Knocked Back","title_tr":"Karşılık Veren Kutu",
             "premise":"A quiet narrow old-city alley in warm morning daylight: faded green shop door, stone pavement, one clay flowerpot, and one small weathered wooden box beside the door. Keep these exact landmarks in every panel.",
             "actions":[
@@ -91,7 +105,11 @@ def _episode_for_day(day):
             "story_tr":"Katlanmış bir kâğıt MUBA'nın ayaklarının önünden kayıp geçti ve tam yakalanabilecekmiş gibi durdu. Bu bir tuzaktı. MUBA her eğildiğinde rüzgâr kâğıdı aynı sokakta birkaç adım daha ileri taşıdı. Kovalamaca bir bankı, bir su birikintisini ve giderek sinirlenen bir MUBA'yı geride bıraktı. Sonunda kâğıt bir duvara yaslandı. MUBA üzerine atladı—ve tamamen boş bir sayfa açtı. Hayal kırıklığı daha yerleşemeden rüzgâr bu kez MUBA'nın şapkasını kaptı. Kâğıt yerinde kaldı. MUBA şapkanın peşinden koştu. Görünüşe göre sokak yeni bir oyun seçmişti."
         },
     ]
-    return options[sum(ord(x) for x in str(day))%len(options)]
+    # Bootstrap the living story with MUBA's own emergence. Later days use the
+    # existing story pool and yesterday's canon for continuity.
+    if not STORE.get("story_origin_started","muba",False):
+        return options[0]
+    return options[1 + (sum(ord(x) for x in str(day)) % (len(options)-1))]
 
 def draft(day=None):
     day=day or datetime.now(TZ).date().isoformat()
@@ -135,6 +153,8 @@ def draft(day=None):
                  "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
     STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
+    if ep["title"]=="I'm MUBA":
+        STORE.set("story_origin_started","muba",True)
     return item
 
 def set_images(day,image_ids):
