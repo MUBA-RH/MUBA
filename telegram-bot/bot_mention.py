@@ -60,7 +60,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
-from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -642,14 +642,26 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="story_director":
         if not is_dev(user_id): return
         item=story_draft()
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\\n\\n"+item.get("theme_tr",item["theme"])+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\\n\\n"+item.get("twt_tr",item["twt"])+"\\n\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        reference=story_reference_for_day(item["day"])
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\\n\\n"+item.get("theme_tr",item["theme"])+"\\n\\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\\n\\n"+item.get("twt_tr",item["twt"])+"\\n\\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
-        if item["status"]!="published" and len(item.get("images",[]))==4: rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        elif item["status"]!="published": rows.append([InlineKeyboardButton("🖼 4 GÖRSELİ ÜRET",callback_data="story_generate")])
+        if item["status"]!="published" and len(item.get("images",[]))==4:
+            rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
+        elif item["status"]!="published" and reference:
+            rows.append([InlineKeyboardButton("🖼 4 GÖRSELİ ÜRET",callback_data="story_generate")])
+            rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR",callback_data="story_reference")])
+        elif item["status"]!="published":
+            rows.append([InlineKeyboardButton("📷 REFERANS GÖRSEL VER",callback_data="story_reference")])
         rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
+    if data=="story_reference":
+        if not is_dev(user_id): return
+        context.user_data["daily_story_waiting_reference"]=True
+        await q.edit_message_text("📷 MUBA DAILY STORY\\n\\nBu üretim için kullanacağım MUBA referans görselini şimdi fotoğraf olarak gönder. Referans gelmeden görsel üretimi açılmaz.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
     if data=="story_generate":
         if not is_dev(user_id): return
+        if not story_reference_for_day(story_draft()["day"]):
+            await q.answer("Önce bu üretim için referans görsel gönder.",show_alert=True); return
         await q.answer("4 MUBA görseli hazırlanıyor…")
         try:
             item=await _story_generate_images(story_draft())
@@ -959,6 +971,29 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         await context.bot.send_message(chat_id=DEV_ID,text="\n".join(lines),reply_markup=markup)
     except Exception:
         logger.exception("Guardian DEV private report failed")
+
+async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """DEV-only: capture a fresh Telegram photo as today's one-batch Story reference."""
+    message=update.effective_message; user=update.effective_user; chat=update.effective_chat
+    if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not is_dev(user.id):
+        return
+    if not context.user_data.pop("daily_story_waiting_reference",False):
+        return
+    if not message.photo:
+        return
+    photo=message.photo[-1]
+    tg_file=await context.bot.get_file(photo.file_id)
+    body=bytes(await tg_file.download_as_bytearray())
+    digest=hashlib.sha256(body).hexdigest()
+    archived=archive_creation(body,"image/jpeg","MUBA Daily Story fresh DEV reference","image","telegram")
+    set_gallery_visibility(archived["id"],"hidden")
+    item=story_draft()
+    set_story_reference(item["day"],archived["id"],digest,"image/jpeg")
+    item=story_draft(item["day"])
+    await message.reply_text(
+        "✅ Referans alındı.\\n\\nBu referans yalnızca bugünkü 4 görselin kimlik ve görsel dil kaynağıdır. Şimdi üretime geçebilirsin.",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🖼 4 GÖRSELİ ÜRET",callback_data="story_generate")],[InlineKeyboardButton("⬅️ Daily Story",callback_data="story_director")]])
+    )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
@@ -1331,7 +1366,6 @@ async def _story_generate_images(item):
     """Generate four Cloudflare reference-conditioned panels transactionally."""
     import aiohttp
     from muba_story_cloudflare import configured as cf_story_configured, generate as cf_story_generate
-    from muba_daily_story_reference import load_reference
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
@@ -1339,9 +1373,16 @@ async def _story_generate_images(item):
     if not cf_story_configured():
         raise RuntimeError("Cloudflare Living Story engine is not configured")
 
-    # Validate the bundled DEV-approved image before any generation/archive work.
-    # Reuse its exact bytes in all four calls; no fifth anchor call or URL fallback.
-    reference,reference_type=load_reference()
+    # Every production batch must use the fresh DEV-uploaded reference for this day.
+    metadata=story_reference_for_day(item["day"])
+    if not metadata:
+        raise RuntimeError("Fresh DEV Daily Story reference required")
+    loaded=read_gallery_image(metadata["gallery_id"],include_nonpublic=True)
+    if not loaded:
+        raise RuntimeError("Fresh DEV Daily Story reference is unavailable")
+    reference,reference_type=loaded
+    if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
+        raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
     generated=[]
     async with aiohttp.ClientSession() as session:
         for prompt in item["prompts"]:
@@ -1358,21 +1399,13 @@ async def _story_generate_images(item):
     return set_story_images(item["day"],ids)
 
 async def _prepare_daily_story(application):
-    """Prepare once per Istanbul day; never publish without DEV approval."""
+    """Daily reminder only. V3 never generates until DEV uploads a fresh reference."""
     item=story_draft()
-    if len(item.get("images",[]))==4:
-        return item
-    item=await _story_generate_images(item)
     chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
-    await application.bot.send_message(
-        chat_id=chat_id,
-        text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nGünlük devam hikâyesi hazır. 4 görsel 1/4 → 4/4 aşağıda. WEB YAYINLA onayı verilmeden yayınlanmaz.",
-    )
-    for i,gid in enumerate(item["images"],1):
-        await application.bot.send_photo(
+    if item.get("status")!="published" and not story_reference_for_day(item["day"]):
+        await application.bot.send_message(
             chat_id=chat_id,
-            photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
-            caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1],
+            text="🎬 MUBA DAILY STORY — "+item["day"]+"\\n\\nBugünkü akıcı 4 bölümlük hikâye hazır. Görsel üretiminden önce referans MUBA görselini gönder; ardından 4 GÖRSELİ ÜRET düğmesi açılacak.",
         )
     return item
 
@@ -1394,34 +1427,14 @@ async def daily_story_scheduler(application):
             await asyncio.sleep(60)
 
 async def story_prepare_handler(request: web.Request):
-    """DEV-secret scheduler endpoint: prepare today's four images, never publish."""
+    """Protected reminder endpoint. V3 generation happens only from Telegram DEV."""
     secret=os.getenv("MUBA_STORY_SCHEDULER_SECRET","")
     supplied=request.headers.get("X-MUBA-Story-Secret","")
     if not secret or not supplied or not hashlib.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
     item=story_draft()
-    if len(item.get("images",[]))==4:
-        return web.json_response({"ok":True,"day":item["day"],"prepared":True,"cached":True})
-    try:
-        item=await _story_generate_images(item)
-    except Exception:
-        logger.exception("Scheduled Daily Story preparation failed")
-        return web.json_response({"ok":False,"day":item["day"],"prepared":False},status=503)
-    try:
-        chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
-        await request.app["telegram_application"].bot.send_message(
-            chat_id=chat_id,
-            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nSaat 11:00 öncesi taslak hazır. 4 görseli 1/4 → 4/4 kontrol et; WEB YAYINLA onayı verilmeden web'e taşınmaz.",
-        )
-        for i,gid in enumerate(item["images"],1):
-            await request.app["telegram_application"].bot.send_photo(
-                chat_id=chat_id,
-                photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
-                caption=f"🎬 MUBA DAILY STORY · {i}/4\n\n"+item["scenes"][i-1],
-            )
-    except Exception:
-        logger.exception("Scheduled Daily Story Telegram preview failed")
-    return web.json_response({"ok":True,"day":item["day"],"prepared":True,"cached":False})
+    reference=story_reference_for_day(item["day"])
+    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"generation":"telegram-dev-only"})
 
 async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
@@ -1546,6 +1559,7 @@ async def start_webhook_server():
     for guardian_name in ("start","stop","status","guardian","security","lockdown","normal","warn","mute","unmute","ban","unban","delete","help"):
         application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
     application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
