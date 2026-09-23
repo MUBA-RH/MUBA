@@ -4,6 +4,7 @@ Webhook-based local-brain version.
 No external AI service or API key is required.
 """
 
+import asyncio
 import hashlib
 import logging
 import json
