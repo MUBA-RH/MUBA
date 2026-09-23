@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-hf-zerogpu-v9",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story free ZeroGPU engine",
+        "tr": "Daily Story ücretsiz ZeroGPU motoru",
+        "zh": "Daily Story 免费 ZeroGPU 引擎",
+        "ar": "محرك ZeroGPU المجاني لـ Daily Story",
+        "hi": "Daily Story मुफ्त ZeroGPU इंजन"
+      },
+      "text": {
+        "en": "Daily Story production is prepared for a user-owned Hugging Face ZeroGPU Space running open-source Qwen Image Edit, removing the paid OpenAI image path.",
+        "tr": "Daily Story üretimi ücretli OpenAI görsel yolunu kaldırarak açık kaynak Qwen Image Edit çalıştıran kullanıcıya ait Hugging Face ZeroGPU Space için hazırlandı.",
+        "zh": "Daily Story 已准备使用用户自有的 Hugging Face ZeroGPU Space 运行开源 Qwen Image Edit，并移除付费 OpenAI 图像路径。",
+        "ar": "تم تجهيز Daily Story لاستخدام Hugging Face ZeroGPU Space مملوك للمستخدم لتشغيل Qwen Image Edit مفتوح المصدر مع إزالة مسار صور OpenAI المدفوع.",
+        "hi": "Daily Story को user-owned Hugging Face ZeroGPU Space पर open-source Qwen Image Edit चलाने के लिए तैयार किया गया है और paid OpenAI image path हटाया गया है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-short-copy-v8",
       "date": "2026-09-23",
       "type": "improved",
