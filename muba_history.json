@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260923-daily-story-openai-engine-v7",
+      "date": "2026-09-23",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story OpenAI image engine",
+        "tr": "Daily Story OpenAI görsel motoru",
+        "zh": "Daily Story OpenAI 图像引擎",
+        "ar": "محرك صور OpenAI لـ Daily Story",
+        "hi": "Daily Story OpenAI image engine"
+      },
+      "text": {
+        "en": "Daily Story production now uses OpenAI image editing with the fresh Telegram DEV reference and previous generated frame; Cloudflare is no longer in the production generation path. Telegram remains the reference inbox, four-frame review outbox, and explicit web approval gate.",
+        "tr": "Daily Story üretimi artık Telegram'dan gelen taze DEV referansı ve bir önceki üretilen kareyle OpenAI görsel düzenleme motorunu kullanır; Cloudflare üretim yolundan çıkarıldı. Telegram referans INBOX'u, dört karelik inceleme OUTBOX'u ve açık web onay kapısı olarak kalır.",
+        "zh": "Daily Story 现使用 OpenAI 图像编辑，以 Telegram 的新 DEV 参考图和上一生成帧作为输入；Cloudflare 已退出生产生成路径。Telegram 继续作为参考 INBOX、四帧审核 OUTBOX 和明确的网页发布批准门。",
+        "ar": "يستخدم Daily Story الآن تحرير الصور عبر OpenAI مع مرجع DEV الجديد من Telegram والإطار السابق؛ تمت إزالة Cloudflare من مسار الإنتاج. يبقى Telegram صندوق إدخال المرجع وصندوق مراجعة الإطارات الأربعة وبوابة الموافقة الصريحة للنشر.",
+        "hi": "Daily Story production अब Telegram के fresh DEV reference और पिछले generated frame के साथ OpenAI image editing उपयोग करता है; Cloudflare production path से हटा दिया गया है। Telegram reference INBOX, four-frame review OUTBOX और explicit web approval gate बना रहता है।"
+      }
+    },
+    {
       "id": "20260923-daily-story-telegram-inbox-outbox-v6",
       "date": "2026-09-23",
       "type": "improved",
