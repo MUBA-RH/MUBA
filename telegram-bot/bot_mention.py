@@ -1425,15 +1425,15 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four OpenAI reference-conditioned frames transactionally."""
+    """Generate four open-source Qwen reference-conditioned frames transactionally."""
     import aiohttp
-    from muba_story_openai import configured as story_image_configured, generate as story_image_generate
+    from muba_story_qwen import configured as story_image_configured, generate as story_image_generate
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
     if not story_image_configured():
-        raise RuntimeError("OpenAI Daily Story image engine is not configured")
+        raise RuntimeError("Qwen Daily Story image engine is not configured")
 
     # Every production batch must use the fresh DEV-uploaded reference for this day.
     metadata=story_reference_for_day(item["day"])
