@@ -1048,7 +1048,11 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
         "📥 DAILY STORY INBOX — Referans alındı.\\n\\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında Telegram'da 1/4 → 4/4 önizleme olarak gelecek.",
     )
     try:
-        await _story_generate_images(context,item)
+        item=await _story_generate_images(item)
+        await message.reply_text("📤 DAILY STORY OUTBOX — 4 görsel hazır. Aşağıda kontrol et.")
+        for i,gid in enumerate(item.get("image_ids",[]),1):
+            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=f"🎬 MUBA DAILY STORY · {i}/4\\n\\n"+item["scenes"][i-1])
+        await message.reply_text("Dördünü kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
         await message.reply_text("⚠️ DAILY STORY üretimi tamamlanamadı. Referans INBOX'ta korunuyor; tekrar denemek için Daily Story menüsünü aç.")
