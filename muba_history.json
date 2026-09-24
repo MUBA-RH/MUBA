@@ -1612,6 +1612,29 @@
         "ar": "يتم الآن حفظ كل مرجع Daily Story من Telegram والتحقق منه ببصمة حتمية لمصفوفة RGB وبصمة ثنائية قبل دفعة الصور الأربع، مع استمرار استبعاد مدخلات الأنماط القديمة.",
         "hi": "हर Telegram Daily Story reference अब चार-frame batch से पहले deterministic RGB pixel-matrix और binary fingerprint के साथ store और verify होता है, जबकि पुराने visual-style inputs बाहर रहते हैं।"
       }
+    },
+    {
+      "id": "20260924-daily-story-master-identity-v5",
+      "date": "2026-09-24",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story Master Identity Lock V5",
+        "tr": "Daily Story Master Kimlik Kilidi V5",
+        "zh": "Daily Story 主身份锁 V5",
+        "ar": "قفل الهوية الرئيسية Daily Story V5",
+        "hi": "Daily Story Master Identity Lock V5"
+      },
+      "text": {
+        "en": "Daily Story now combines each daily reference fingerprint with a canonical MUBA master geometry profile. Master face, eye, nose, mouth, tongue, cap and hoodie anchors are injected into every frame prompt; the master identity wins over conflicting daily-reference identity changes.",
+        "tr": "Daily Story artık her günlük referans fingerprint'ini kanonik MUBA master geometri profiliyle birleştiriyor. Master yüz, göz, burun, ağız, dil, şapka ve hoodie ankrajları her kare promptuna ekleniyor; günlük referanstaki çelişkili kimlik değişikliklerinde master kimlik öncelikli.",
+        "zh": "Daily Story 现在将每日参考指纹与规范 MUBA 主几何配置结合，并把脸、眼、鼻、嘴、舌、帽子和连帽衫锚点注入每一帧。",
+        "ar": "يجمع Daily Story الآن بصمة المرجع اليومية مع ملف هندسة MUBA الرئيسي ويحقن ثوابت الوجه والعينين والأنف والفم واللسان والقبعة والهودي في كل إطار.",
+        "hi": "Daily Story अब हर daily reference fingerprint को canonical MUBA master geometry profile से जोड़ता है और face, eyes, nose, mouth, tongue, cap तथा hoodie anchors हर frame में inject करता है।"
+      }
     }
   ]
 }
