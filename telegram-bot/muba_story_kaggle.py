@@ -5,9 +5,18 @@ from pathlib import Path
 OWNER=os.getenv("MUBA_KAGGLE_OWNER","mubarh").strip()
 KERNEL=os.getenv("MUBA_KAGGLE_KERNEL","muba-daily-story-runtime").strip()
 TIMEOUT=int(os.getenv("MUBA_KAGGLE_TIMEOUT","1800"))
-def configured(): return bool(OWNER and KERNEL and os.getenv("KAGGLE_USERNAME") and os.getenv("KAGGLE_KEY"))
+def configured():
+    token=os.getenv("KAGGLE_API_TOKEN","").strip()
+    legacy=bool(os.getenv("KAGGLE_USERNAME","").strip() and os.getenv("KAGGLE_KEY","").strip())
+    return bool(OWNER and KERNEL and (token or legacy))
 def _run(args,timeout=120):
-    p=subprocess.run([sys.executable,"-m","kaggle",*args],env=os.environ.copy(),capture_output=True,text=True,timeout=timeout)
+    env=os.environ.copy()
+    # Kaggle CLI >=1.8 supports the settings-page access token directly.
+    # Prefer it over legacy username/key credentials when both exist.
+    if env.get("KAGGLE_API_TOKEN","").strip():
+        env.pop("KAGGLE_USERNAME",None)
+        env.pop("KAGGLE_KEY",None)
+    p=subprocess.run([sys.executable,"-m","kaggle",*args],env=env,capture_output=True,text=True,timeout=timeout)
     if p.returncode: raise RuntimeError("Kaggle command failed: "+(p.stderr or p.stdout)[-1200:])
     return (p.stdout or "")+(p.stderr or "")
 def _worker_source(reference_bytes,prompts):
