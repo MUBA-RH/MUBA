@@ -17,14 +17,14 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_uses_fresh_dev_reference(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("current dev reference is the only muba identity",prompt)
+        self.assertIn("current dev reference is the canonical muba identity",prompt)
         self.assertIn("never a collage",prompt)
         self.assertIn("face/identity lock",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-reference-first-v3")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-fingerprint-v4")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
         self.assertEqual(item["rules"]["continuity"],"fresh-dev-reference-plus-scene-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-reference-first-v3")
-        self.assertEqual(item["rules"]["character_anchor"],"dev-upload-per-production")
+        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-fingerprint-v4")
+        self.assertEqual(item["rules"]["character_anchor"],"master-reference-plus-dev-upload")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
 
     def test_each_prompt_has_concrete_story_state(self):
@@ -120,7 +120,7 @@ class DailyStoryTests(unittest.TestCase):
     def test_fresh_reference_gate_drives_story_generation(self):
         layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("CURRENT DEV REFERENCE IS THE ONLY MUBA IDENTITY",layer)
+        self.assertIn("CURRENT DEV REFERENCE IS THE CANONICAL MUBA IDENTITY",layer)
         self.assertIn("FOUR-IMAGE STORY CONTRACT",layer)
         self.assertIn("📷 REFERANS GÖRSEL VER",bot)
         self.assertIn('context.user_data["daily_story_waiting_reference"]=True',bot)
