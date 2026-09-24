@@ -20,3 +20,5 @@ Never commit Kaggle credentials to GitHub. The bot fails closed if credentials a
 
 ## Safety boundary
 Kaggle is compute only. Guardian, Assistant, Gallery, Studio and web approval remain isolated. Failed Kaggle runs do not publish or replace the current Daily Story.
+
+The official Kaggle CLI is used for kernel push, status polling and PNG output retrieval.
