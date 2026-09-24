@@ -1521,6 +1521,29 @@
         "ar": "تم استبدال الغلاف العلوي غير المتاح بـ InstantX FLUX IP-Adapter مع بقاء Living Story معزولاً ومغلقاً عند الفشل دون أي رجوع إلى Studio أو Cloudflare.",
         "hi": "Unavailable upstream wrapper को InstantX FLUX IP-Adapter से बदला गया; Living Story isolated और fail-closed रहता है, Studio या Cloudflare fallback के बिना।"
       }
+    },
+    {
+      "id": "20260924-daily-story-kaggle-memory-fix",
+      "date": "2026-09-24",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story Kaggle memory loading hardened",
+        "tr": "Daily Story Kaggle bellek yüklemesi güçlendirildi",
+        "zh": "Daily Story Kaggle 内存加载已加固",
+        "ar": "تم تحسين تحميل الذاكرة في Kaggle لـ Daily Story",
+        "hi": "Daily Story Kaggle memory loading को मजबूत किया गया"
+      },
+      "text": {
+        "en": "The failing balanced BF16 Qwen loader was replaced by an FP16 CPU-offload path in both the Kaggle validation notebook and Telegram worker to prevent the reproduced GPU0 out-of-memory failure.",
+        "tr": "GPU0 üzerinde tekrarlanan bellek taşmasını önlemek için hatalı balanced BF16 Qwen yükleyicisi, Kaggle doğrulama notebooku ve Telegram worker içinde FP16 CPU-offload yolu ile değiştirildi.",
+        "zh": "为避免已复现的 GPU0 显存不足，Kaggle 验证 notebook 与 Telegram worker 中的 balanced BF16 Qwen 加载器已替换为 FP16 CPU-offload 路径。",
+        "ar": "تم استبدال محمل Qwen بنمط balanced BF16 بمسار FP16 CPU-offload في دفتر تحقق Kaggle وعامل Telegram لمنع خطأ نفاد ذاكرة GPU0 الذي تم تكراره.",
+        "hi": "दोहराए गए GPU0 out-of-memory को रोकने के लिए Kaggle validation notebook और Telegram worker दोनों में balanced BF16 Qwen loader को FP16 CPU-offload path से बदला गया।"
+      }
     }
   ]
 }
