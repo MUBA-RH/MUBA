@@ -671,14 +671,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörseller üretilemedi. Mevcut sistem korunuyor; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 görsel hazır. Aşağıda 1 → 2 → 3 → 4 sırasıyla tek tek gönderiyorum. Dördünü kontrol ettikten sonra WEB YAYINLA ile onaylayabilirsin."
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 bölüm ayrı ayrı üretildi. Her görsel yalnızca kendi bölümünü anlatıyor."
         rows=[[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]]
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows))
-        for i,gid in enumerate(item["images"],1):
-            await q.message.reply_photo(
-                photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
-                caption=item["summary"],
-            )
+        for i,(gid,chapter) in enumerate(zip(item["images"],item["chapters"]),1):
+            caption="🎬 Bölüm %s: %s (%s)\n\n%s\n\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i)
+            await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=caption)
         return
     if data=="story_publish":
         if not is_dev(user_id): return
@@ -998,9 +996,10 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     )
     try:
         item=await _story_generate_images(item)
-        await message.reply_text("📤 DAILY STORY OUTBOX — 4 görsel hazır. Aşağıda kontrol et.")
-        for i,gid in enumerate(item.get("image_ids",[]),1):
-            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=item["summary"])
+        await message.reply_text("📤 DAILY STORY OUTBOX — 4 bölüm hazır. Her bölüm ve kendi görseli aşağıda ayrı ayrı geliyor.")
+        for i,(gid,chapter) in enumerate(zip(item.get("images",[]),item["chapters"]),1):
+            caption="🎬 Bölüm %s: %s (%s)\n\n%s\n\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i)
+            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=caption)
         await message.reply_text("Dördünü kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
