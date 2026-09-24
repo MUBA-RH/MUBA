@@ -4,13 +4,13 @@ There is no bundled character/style reference. Every production batch requires
 a fresh DEV-uploaded reference image for that Istanbul calendar day.
 """
 
-VISUAL_STYLE="daily-story-reference-first-v3"
-REFERENCE_ROLE="dev-upload-per-production"
+VISUAL_STYLE="daily-story-master-fingerprint-v4"
+REFERENCE_ROLE="master-reference-plus-dev-upload"
 
 REFERENCE_RULES=(
-    "CURRENT DEV REFERENCE IS THE ONLY MUBA IDENTITY AND VISUAL-STYLE SOURCE. "
+    "CURRENT DEV REFERENCE IS THE CANONICAL MUBA IDENTITY AND VISUAL-STYLE SOURCE. Its deterministic fingerprint (source SHA-256, RGB pixel-matrix digest, dimensions, center/mean RGB and binary digest) must remain bound to the entire four-frame batch. "
     "Match the supplied MUBA reference closely: face geometry, eye construction, nose, mouth/tongue, fur/skin palette, cap, clothing, body proportions, line/render language and overall visual character. "
-    "Do not import any older MUBA drawing style, chibi template, realistic template, bundled asset or previous reference. "
+    "Do not import any older MUBA drawing style, chibi template, neon-ring/crown background, bundled legacy asset or unrelated previous reference. "
     "The reference defines identity and visual language only; the story defines pose, expression, camera, environment, lighting and action. "
 )
 
