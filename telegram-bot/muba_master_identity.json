@@ -1,0 +1,25 @@
+{
+  "version": "muba-master-identity-v1",
+  "source_sha256": "8167d0c468bf7abfc41dcc73e349711c4ff3ae9aa8567ba91fdd061a59f775e9",
+  "width": 1536,
+  "height": 1152,
+  "mode": "RGB",
+  "landmarks_norm": {
+    "left_eye_box": [0.252, 0.214, 0.465, 0.449],
+    "right_eye_box": [0.568, 0.349, 0.757, 0.636],
+    "nose_box": [0.435, 0.397, 0.548, 0.515],
+    "mouth_box": [0.330, 0.456, 0.591, 0.626],
+    "tongue_box": [0.442, 0.490, 0.548, 0.659],
+    "face_box": [0.118, 0.174, 0.823, 0.773],
+    "cap_box": [0.206, 0.032, 0.868, 0.408],
+    "hoodie_box": [0.000, 0.604, 0.771, 1.000]
+  },
+  "identity_rules": [
+    "large asymmetric expressive brown eyes",
+    "small central brown nose",
+    "pink tongue protruding downward",
+    "short dense warm tan fur",
+    "black MUBA cap",
+    "black $MUBA hoodie"
+  ]
+}
