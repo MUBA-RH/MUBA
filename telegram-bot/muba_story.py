@@ -54,11 +54,11 @@ def _continuity_bridge(previous):
         "Do not reset MUBA, teleport to an unrelated situation, or contradict yesterday's ending."
     )
 
-def _summary_100(text):
-    """Website summary: at most 100 Unicode characters, deterministic and readable."""
+def _story_150(text):
+    """Website story narration: at most 150 Unicode characters."""
     clean=" ".join(str(text or "").split())
-    if len(clean)<=100: return clean
-    return clean[:97].rstrip(" ,.;:-")+"..."
+    if len(clean)<=150: return clean
+    return clean[:147].rstrip(" ,.;:-")+"..."
 
 def _episode_for_day(day):
     """Concrete deterministic episode seed; avoids vague 'something happened' plots."""
@@ -92,18 +92,18 @@ def _episode_for_day(day):
             "story_tr":"Sessiz bir sokağın sonunda MUBA, az önce orada olmadığına emin olduğu eski bir ahşap kutu fark etti. Kapağa temkinli bir kez vurdu; içeriden aynı vuruşla cevap geldi. Elbette MUBA bir kez daha vurdu. Kutu sıçradı, kapak aralandı ve içinden neredeyse kendisi kadar büyük bir bisküvi taşıyan minik kurmalı bir kuş çıktı. Bisküviyi MUBA'nın ayaklarının önüne bıraktı, metal kanatlarını kapattı ve tekrar kutunun içine kayboldu. MUBA beklenmedik teslimata bir an baktı, sonra kutunun yanına oturup bisküviyi içeride hâlâ tıklatan her kimse—ya da her neyse—onunla paylaştı."
         },
         {
-            "title":"The Runaway Paper","title_tr":"Kaçak Kâğıt",
-            "premise":"A bright breezy neighborhood street in daytime: one wooden bench on the left, one shallow puddle near the curb, a pale yellow wall at the far end, and one folded white paper. Keep these exact landmarks in every panel.",
+            "title":"The Golden Signal","title_tr":"Altın İşaret",
+            "premise":"A four-chapter adventure. Each chapter is a distinct location and event. Generate exactly one image for the current chapter only; never preview, repeat or combine another chapter in the same image.",
             "actions":[
-                "Wide establishing shot: the folded white paper lifts from the bench and skates across the pavement in front of walking MUBA. MUBA turns toward it; bench, puddle and yellow wall are visible.",
-                "Same street moments later: MUBA runs full-body after the SAME folded paper as wind pushes it just beyond reach. MUBA splashes through the SAME puddle; the bench is behind.",
-                "Same chase at the pale yellow wall: the paper lands at the base of the wall. MUBA dives and pins it with both tiny hands, cap crooked, exhausted but triumphant.",
-                "Immediate payoff at the SAME wall: MUBA opens the caught paper and it is completely blank; a gust lifts MUBA's black cap into the air behind. MUBA twists around reaching for the flying cap while the blank paper stays under one hand."
+                "CHAPTER 1 — THE DISCOVERY. On a futuristic neon-lit city street at night, full-body MUBA finds a mysterious ancient gold coin glowing on the ground and looks at it with surprise. The coin must be clearly visible. Show only this discovery.",
+                "CHAPTER 2 — THE MAP. Inside MUBA's room, full-body MUBA opens a futuristic holographic treasure map decoded from the coin and studies its luminous route. The map must be clearly visible. Show only this map scene.",
+                "CHAPTER 3 — THE JOURNEY. Full-body MUBA follows the map through enormous ancient rocky formations and a steep mountain trail wrapped in mist, actively climbing forward. Show only this journey.",
+                "CHAPTER 4 — THE REWARD. Full-body MUBA reaches an ancient temple above the clouds and discovers a gigantic glowing $MUBA crystal ahead, facing it in awe. Show only this reward."
             ],
-            "premise_tr":"Rüzgârlı bir mahalle sokağında banktan uçan katlanmış bir kâğıt, MUBA her yaklaştığında yeniden kaçmaya başlar.",
-            "labels":["HEY.","GOTCHA—","NOPE.","FINE."],
-            "story":"A folded piece of paper skated past MUBA's shoes and stopped just long enough to look catchable. It was a trap. Every time MUBA reached down, the wind carried it a few steps farther through the same street. The chase passed one bench, one puddle and one increasingly annoyed MUBA. At last the paper landed against a wall. MUBA pounced—and unfolded a completely blank sheet. Before the disappointment could settle in, the wind lifted MUBA's cap instead. The paper stayed put. MUBA chased the cap. Apparently the street had chosen a new game.",
-            "story_tr":"Katlanmış bir kâğıt MUBA'nın ayaklarının önünden kayıp geçti ve tam yakalanabilecekmiş gibi durdu. Bu bir tuzaktı. MUBA her eğildiğinde rüzgâr kâğıdı aynı sokakta birkaç adım daha ileri taşıdı. Kovalamaca bir bankı, bir su birikintisini ve giderek sinirlenen bir MUBA'yı geride bıraktı. Sonunda kâğıt bir duvara yaslandı. MUBA üzerine atladı—ve tamamen boş bir sayfa açtı. Hayal kırıklığı daha yerleşemeden rüzgâr bu kez MUBA'nın şapkasını kaptı. Kâğıt yerinde kaldı. MUBA şapkanın peşinden koştu. Görünüşe göre sokak yeni bir oyun seçmişti."
+            "premise_tr":"Dört bölümlük macera: keşif, harita, yolculuk ve ödül. Her bölüm ayrı bir olay ve mekândır; her bölüm için yalnızca tek görsel üretilir.",
+            "labels":["The Discovery","The Map","The Journey","The Reward"],
+            "story":"MUBA finds a mysterious golden coin, deciphers its hidden map, crosses misty ancient mountains and reaches a temple above the clouds where a glowing $MUBA crystal awaits.",
+            "story_tr":"MUBA gizemli altın sikkeyi bulur, içindeki haritayı çözer, sisli antik dağları aşar ve bulutların üzerindeki tapınakta parlayan $MUBA kristaline ulaşır."
         },
     ]
     # Bootstrap the living story with MUBA's own emergence. Later days use the
@@ -131,15 +131,15 @@ def draft(day=None):
         "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
     prompts=[
-        story_identity_prompt()+" EPISODE: "+theme+". STORY CONTEXT: "+continuity+" "+ep["premise"]+" CURRENT BEAT: "+action
+        story_identity_prompt()+" EPISODE: "+theme+". FOUR-CHAPTER STORY CONTEXT: "+ep["premise"]+" CURRENT CHAPTER ONLY: "+action+" IMPORTANT: Create ONE image for THIS chapter only. Do not depict earlier or later chapters, do not make a sequence inside one image, and do not reuse a neutral standing portrait when the chapter requires an action or prop."
         for action in actions
     ]
     if ep["title"]=="I'm MUBA":
         raw_summary="MUBA appears. Looks around. Sees a reflection. Waves. Keeps walking."
         raw_summary_tr="MUBA ortaya çıkar. Etrafına bakar. Yansımasını görür. Selam verir. Yürür."
-    elif ep["title"]=="The Runaway Paper":
-        raw_summary="A paper escapes. MUBA chases it. The paper stops. The cap flies away."
-        raw_summary_tr="Bir kâğıt kaçar. MUBA peşine düşer. Kâğıt durur. Şapka uçar."
+    elif ep["title"]=="The Golden Signal":
+        raw_summary="MUBA finds a golden coin, deciphers its map, crosses misty mountains and reaches a cloud-top temple where a glowing $MUBA crystal awaits."
+        raw_summary_tr="MUBA altın sikkeyi bulur, haritasını çözer, sisli dağları aşar ve bulut üstü tapınakta parlayan $MUBA kristaline ulaşır."
     else:
         raw_summary="MUBA finds a box. It knocks back. The lid opens. A small surprise appears."
         raw_summary_tr="MUBA bir kutu bulur. Kutu karşılık verir. Kapak açılır. Küçük bir sürpriz çıkar."
@@ -148,15 +148,15 @@ def draft(day=None):
         "day":day,"status":"published" if is_published(day) else "draft",
         "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
         "scenes":actions,"scenes_tr":actions_tr,"frame_labels":labels,"prompts":prompts,
-        "story":_summary_100(raw_summary),"story_tr":_summary_100(raw_summary_tr),
-        "summary":_summary_100(raw_summary),
-        "summary_tr":_summary_100(raw_summary_tr),
+        "story":_story_150(raw_summary),"story_tr":_story_150(raw_summary_tr),
+        "summary":_story_150(raw_summary),
+        "summary_tr":_story_150(raw_summary_tr),
         "previous_day":previous["day"],"previous_theme":previous["theme"],
-        "twt":_summary_100(raw_summary),"twt_tr":_summary_100(raw_summary_tr),
+        "twt":_story_150(raw_summary),"twt_tr":_story_150(raw_summary_tr),
         "images":image_ids(day),
         "image_reference":_image_batch(day).get("reference"),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":REFERENCE_ROLE,
-                 "visual_style":VISUAL_STYLE,"continuity":"fresh-dev-reference-plus-scene-state","frame_text_max_words":0,
+                 "visual_style":VISUAL_STYLE,"continuity":"master-identity-plus-independent-chapter-scene","frame_text_max_words":0,
                  "visual_layer":"muba_story_visual","character_anchor_version":VISUAL_STYLE,"reference_sha256":(reference or {}).get("sha256"),
                  "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
