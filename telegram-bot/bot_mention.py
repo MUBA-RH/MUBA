@@ -1044,7 +1044,7 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     archived=archive_creation(body,"image/jpeg","MUBA Daily Story fresh DEV reference","image","telegram")
     set_gallery_visibility(archived["id"],"hidden")
     item=story_draft()
-    set_story_reference(item["day"],archived["id"],digest,"image/jpeg")
+    set_story_reference(item["day"],archived["id"],digest,"image/jpeg",build_story_fingerprint(body))
     item=story_draft(item["day"])
     await message.reply_text(
         "📥 DAILY STORY INBOX — Referans alındı.\n\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında dört ayrı görsel Telegram'da önizlemeye gelecek.",
