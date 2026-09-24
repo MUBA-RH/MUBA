@@ -4,8 +4,8 @@ There is no bundled character/style reference. Every production batch requires
 a fresh DEV-uploaded reference image for that Istanbul calendar day.
 """
 
-VISUAL_STYLE="daily-story-master-fingerprint-v4"
-REFERENCE_ROLE="master-reference-plus-dev-upload"
+VISUAL_STYLE="daily-story-master-identity-v5"
+REFERENCE_ROLE="master-identity-plus-daily-reference"
 
 REFERENCE_RULES=(
     "CURRENT DEV REFERENCE IS THE CANONICAL MUBA IDENTITY AND VISUAL-STYLE SOURCE. Its deterministic fingerprint (source SHA-256, RGB pixel-matrix digest, dimensions, center/mean RGB and binary digest) must remain bound to the entire four-frame batch. "
@@ -24,4 +24,5 @@ CONTINUITY_RULES=(
 )
 
 def story_identity_prompt():
-    return REFERENCE_RULES+" "+CONTINUITY_RULES
+    from muba_master_identity import identity_prompt
+    return identity_prompt()+" "+REFERENCE_RULES+" "+CONTINUITY_RULES

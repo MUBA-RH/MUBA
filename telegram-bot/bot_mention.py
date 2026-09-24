@@ -62,6 +62,7 @@ from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
+from muba_master_identity import reference_state as master_reference_state
 from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -1445,6 +1446,7 @@ async def _story_generate_images(item):
     if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
         raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
     fingerprint=metadata.get("fingerprint") or build_story_fingerprint(reference)
+    identity_state=master_reference_state(reference)
     if not story_fingerprint_matches(reference,fingerprint):
         raise RuntimeError("Daily Story reference fingerprint mismatch")
 
@@ -1455,7 +1457,7 @@ async def _story_generate_images(item):
         for prompt in item["prompts"]:
             body,out_type=await generate(
                 session,
-                prompt,
+                prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
                 reference,
                 reference_type=reference_type,
                 continuity_bytes=previous,

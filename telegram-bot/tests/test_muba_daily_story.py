@@ -20,11 +20,11 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("current dev reference is the canonical muba identity",prompt)
         self.assertIn("never a collage",prompt)
         self.assertIn("face/identity lock",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-fingerprint-v4")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v5")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
         self.assertEqual(item["rules"]["continuity"],"fresh-dev-reference-plus-scene-state")
-        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-fingerprint-v4")
-        self.assertEqual(item["rules"]["character_anchor"],"master-reference-plus-dev-upload")
+        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v5")
+        self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
 
     def test_each_prompt_has_concrete_story_state(self):
