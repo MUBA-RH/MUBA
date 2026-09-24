@@ -1451,8 +1451,6 @@ async def _story_generate_images(item):
         raise RuntimeError("Daily Story reference fingerprint mismatch")
 
     generated=[]
-    previous=None
-    previous_type="image/png"
     async with aiohttp.ClientSession() as session:
         for prompt in item["prompts"]:
             body,out_type=await generate(
@@ -1460,11 +1458,8 @@ async def _story_generate_images(item):
                 prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
                 reference,
                 reference_type=reference_type,
-                continuity_bytes=previous,
-                continuity_type=previous_type,
             )
             generated.append((body,out_type))
-            previous,previous_type=body,out_type
 
     ids=[]
     for index,(body,out_type) in enumerate(generated):

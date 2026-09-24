@@ -22,7 +22,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("face/identity lock",prompt)
         self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v5")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["continuity"],"fresh-dev-reference-plus-scene-state")
+        self.assertEqual(item["rules"]["continuity"],"master-identity-plus-independent-chapter-scene")
         self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v5")
         self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
@@ -62,7 +62,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
         self.assertNotIn("session.get(",section)
-        self.assertIn("continuity_bytes=previous",section)
+        self.assertNotIn("continuity_bytes=previous",section)
         self.assertNotIn("muba_story_openai",section)
         self.assertNotIn("generate_anchor",section)
 
@@ -134,12 +134,12 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("twitter.com/intent/tweet",web)
         self.assertIn("share.hidden=false",web)
 
-    def test_story_uses_previous_day_and_web_summary_is_100_chars(self):
+    def test_story_uses_previous_day_and_web_story_is_150_chars(self):
         item=muba_story.draft("2026-09-23")
         self.assertTrue(item["previous_day"])
-        self.assertLessEqual(len(item["summary"]),100)
-        self.assertLessEqual(len(item["summary_tr"]),100)
-        self.assertTrue(all("CONTINUITY FROM YESTERDAY:" in p for p in item["prompts"]))
+        self.assertLessEqual(len(item["summary"]),150)
+        self.assertLessEqual(len(item["summary_tr"]),150)
+        self.assertTrue(all("CURRENT CHAPTER ONLY:" in p for p in item["prompts"]))
 
     def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
         workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
