@@ -10,9 +10,7 @@ The worker is a finite batch job. It starts only when a fresh Daily Story refere
 ## Required Render secret (preferred)
 - KAGGLE_API_TOKEN — access token copied from Kaggle Settings > API Tokens
 
-Legacy fallback (not required when KAGGLE_API_TOKEN is set):
-- KAGGLE_USERNAME
-- KAGGLE_KEY
+Production Daily Story requires the modern access token. Legacy `KAGGLE_USERNAME` / `KAGGLE_KEY` values are ignored by the bridge to prevent stale credentials from masking a missing access token.
 
 Optional:
 - MUBA_KAGGLE_OWNER (default: mubarh)

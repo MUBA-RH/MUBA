@@ -5,18 +5,29 @@ from pathlib import Path
 OWNER=os.getenv("MUBA_KAGGLE_OWNER","mubarh").strip()
 KERNEL=os.getenv("MUBA_KAGGLE_KERNEL","muba-daily-story-runtime").strip()
 TIMEOUT=int(os.getenv("MUBA_KAGGLE_TIMEOUT","1800"))
+def _api_token():
+    return os.getenv("KAGGLE_API_TOKEN","").strip()
 def configured():
-    token=os.getenv("KAGGLE_API_TOKEN","").strip()
-    legacy=bool(os.getenv("KAGGLE_USERNAME","").strip() and os.getenv("KAGGLE_KEY","").strip())
-    return bool(OWNER and KERNEL and (token or legacy))
+    return bool(OWNER and KERNEL and _api_token())
 def _run(args,timeout=120):
+    token=_api_token()
+    if not token:
+        raise RuntimeError("KAGGLE_API_TOKEN is missing from the Render service environment")
     env=os.environ.copy()
-    # Kaggle CLI >=1.8 supports the settings-page access token directly.
-    # Prefer it over legacy username/key credentials when both exist.
-    if env.get("KAGGLE_API_TOKEN","").strip():
-        env.pop("KAGGLE_USERNAME",None)
-        env.pop("KAGGLE_KEY",None)
-    p=subprocess.run([sys.executable,"-m","kaggle",*args],env=env,capture_output=True,text=True,timeout=timeout)
+    env.pop("KAGGLE_USERNAME",None)
+    env.pop("KAGGLE_KEY",None)
+    # Use both official non-interactive token sources. The file avoids
+    # process/import token-consumption edge cases in Kaggle CLI releases.
+    with tempfile.TemporaryDirectory() as auth_td:
+        home=Path(auth_td)
+        kaggle_dir=home/".kaggle"
+        kaggle_dir.mkdir(mode=0o700)
+        token_file=kaggle_dir/"access_token"
+        token_file.write_text(token,encoding="utf-8")
+        token_file.chmod(0o600)
+        env["HOME"]=str(home)
+        env["KAGGLE_API_TOKEN"]=token
+        p=subprocess.run([sys.executable,"-m","kaggle",*args],env=env,capture_output=True,text=True,timeout=timeout)
     if p.returncode: raise RuntimeError("Kaggle command failed: "+(p.stderr or p.stdout)[-1200:])
     return (p.stdout or "")+(p.stderr or "")
 def _worker_source(reference_bytes,prompts):
