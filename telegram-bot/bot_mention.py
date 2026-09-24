@@ -82,7 +82,7 @@ _STUDIO_OUTPUTS = {}
 # The public endpoint is limited per client/day and only allows the official
 # GitHub Pages origin. Successful generations consume quota; failures do not.
 _WEB_STUDIO_USAGE = defaultdict(lambda: {"day":"","count":0})
-_WEB_STUDIO_DAILY_LIMIT = 3
+_WEB_STUDIO_DAILY_LIMIT = 1
 _WEB_STUDIO_ALLOWED_ORIGIN = "https://muba-rh.github.io"
 
 # Telegram may redeliver the same webhook update/message. Keep a bounded,
@@ -670,7 +670,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             item=await _story_generate_images(story_draft())
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörseller üretilemedi. Mevcut sistem korunuyor; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörsel üretim kapasitesi şu anda kullanılamıyor. Referans ve hikâye durumu korundu; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
         body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 bölüm ayrı ayrı üretildi. Her görsel yalnızca kendi bölümünü anlatıyor."
         rows=[[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]]
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows))
@@ -1003,7 +1003,7 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
         await message.reply_text("Dördünü kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
-        await message.reply_text("⚠️ DAILY STORY üretimi tamamlanamadı. Referans INBOX'ta korunuyor; tekrar denemek için Daily Story menüsünü aç.")
+        await message.reply_text("⚠️ Görsel üretim kapasitesi şu anda kullanılamıyor. Referans ve hikâye durumu INBOX'ta korunuyor; daha sonra tekrar deneyebilirsin.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
@@ -1219,7 +1219,7 @@ async def studio_generate_handler(request: web.Request):
     if not user or not user.get("id"): return web.json_response({"error":"Open Studio from Telegram."},status=401)
     uid=int(user["id"]); prompt=clean_prompt(str(data.get("prompt",""))); kind=str(data.get("kind","meme"))
     if not prompt: return web.json_response({"error":"Write something for MUBA."},status=400)
-    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily limit reached — 3/3."},status=429)
+    if not is_dev(uid) and remaining(uid)<=0: return web.json_response({"error":"Daily production allowance used — 1/1."},status=429)
     if not ai_configured(): return web.json_response({"error":"MUBA AI engine is not configured yet. No quota was used."},status=503)
     try:
         import base64, aiohttp
@@ -1313,7 +1313,7 @@ async def studio_web_generate_handler(request: web.Request):
 
     client_key=_web_studio_client_key(request)
     if _web_studio_remaining(client_key)<=0:
-        return _web_studio_json(origin,{"error":"Daily web limit reached — 3/3."},429)
+        return _web_studio_json(origin,{"error":"Daily production allowance used — 1/1."},429)
     if not ai_configured():
         return _web_studio_json(origin,{"error":"MUBA AI engine is not configured yet. No quota was used."},503)
 
@@ -1398,12 +1398,29 @@ async def _story_generate_images(item):
     ids=[]
     async with aiohttp.ClientSession() as session:
         for index,prompt in enumerate(item["prompts"]):
-            body,out_type=await generate(
-                session,
-                prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
-                reference,
-                reference_type=reference_type,
-            )
+            try:
+                body,out_type=await generate(
+                    session,
+                    prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
+                    reference,
+                    reference_type=reference_type,
+                )
+            except Exception as primary_error:
+                from muba_story_cloudflare import GenerationCapacityError
+                if not isinstance(primary_error,GenerationCapacityError):
+                    raise
+                from muba_story_fallback import configured as fallback_configured, generate as fallback_generate
+                if not fallback_configured():
+                    raise RuntimeError("Visual generation capacity is currently unavailable") from primary_error
+                logger.warning("Primary story generation capacity unavailable; using secondary reservoir")
+                body,out_type=await fallback_generate(
+                    session,
+                    prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
+                    reference,
+                    reference_type=reference_type,
+                    width=1024,
+                    height=576,
+                )
             archived=_archive_studio_output(body,out_type,prompt,"image","telegram-story-engine")
             if not archived:
                 raise RuntimeError("Daily Story image archive failed")

@@ -6,8 +6,8 @@ class StudioAI(unittest.TestCase):
  def test_dev_is_unlimited(self):
   for _ in range(20):self.assertTrue(muba_studio.consume(muba_studio.DEV_USER_ID))
   self.assertEqual(muba_studio.remaining(muba_studio.DEV_USER_ID),999)
- def test_regular_user_three(self):
-  for _ in range(3):self.assertTrue(muba_studio.consume(123456))
+ def test_regular_user_one(self):
+  self.assertTrue(muba_studio.consume(123456))
   self.assertFalse(muba_studio.consume(123456))
  def test_ai_requires_explicit_credentials(self):
   old1=os.environ.pop("CLOUDFLARE_ACCOUNT_ID",None);old2=os.environ.pop("CLOUDFLARE_API_TOKEN",None)

@@ -1730,6 +1730,30 @@
         "ar": "يستخدم Daily Story الآن أربعة فصول واضحة، ويولد كل فصل كمشهد مستقل ويربط كل صورة بنص فصلها مع تعزيز ثبات المشهد وهندسة العين.",
         "hi": "Daily Story अब चार स्पष्ट chapters उपयोग करता है; हर chapter अलग scene बनता है, Telegram में अपने text के साथ आता है और eye geometry lock मजबूत किया गया है।"
       }
+    },
+    {
+      "id": "20260925-generation-quota-fallback-v10",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "studio",
+        "telegram"
+      ],
+      "title": {
+        "en": "Generation Gate & Secondary Reservoir V10",
+        "tr": "Üretim Kapısı ve İkincil Depo V10",
+        "zh": "生成门控与备用资源池 V10",
+        "ar": "بوابة التوليد والمخزون الثانوي V10",
+        "hi": "Generation Gate और Secondary Reservoir V10"
+      },
+      "text": {
+        "en": "Normal Studio users now receive one successful generation per day while DEV remains exempt from the MUBA allowance. Primary capacity exhaustion can fail over to a secondary free generation reservoir; failed requests do not consume user allowance.",
+        "tr": "Normal Studio kullanıcıları artık günde bir başarılı üretim hakkına sahip; DEV MUBA limitinden muaf. Ana üretim kapasitesi tükendiğinde ikincil ücretsiz üretim deposuna geçilebilir; başarısız istekler kullanıcı hakkını tüketmez.",
+        "zh": "普通 Studio 用户每天可成功生成一次，DEV 不受 MUBA 配额限制；主生成容量耗尽时可切换到备用免费资源池，失败请求不扣额度。",
+        "ar": "يحصل مستخدمو Studio العاديون على توليد ناجح واحد يومياً بينما DEV معفى من حصة MUBA، ويمكن الانتقال إلى مخزون توليد مجاني ثانوي عند نفاد السعة الأساسية دون احتساب الطلبات الفاشلة.",
+        "hi": "सामान्य Studio users को प्रतिदिन एक सफल generation मिलता है, DEV MUBA allowance से मुक्त है; primary capacity खत्म होने पर secondary free reservoir उपयोग हो सकता है और failed requests quota नहीं घटाते।"
+      }
     }
   ]
 }

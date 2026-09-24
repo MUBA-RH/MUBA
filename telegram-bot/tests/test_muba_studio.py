@@ -8,11 +8,12 @@ class StudioExam(unittest.TestCase):
  def setUp(self): muba_studio._usage.clear()
  def test_prompt_is_bounded(self):
   self.assertLessEqual(len(muba_studio.clean_prompt("x"*500)),120)
- def test_daily_limit_is_three(self):
+ def test_daily_limit_is_one(self):
   uid=424242
-  self.assertEqual(muba_studio.remaining(uid),3)
-  for _ in range(3): self.assertTrue(muba_studio.consume(uid))
-  self.assertFalse(muba_studio.consume(uid)); self.assertEqual(muba_studio.remaining(uid),0)
+  self.assertEqual(muba_studio.remaining(uid),1)
+  self.assertTrue(muba_studio.consume(uid))
+  self.assertFalse(muba_studio.consume(uid))
+  self.assertEqual(muba_studio.remaining(uid),0)
  def test_render_uses_reference_without_external_ai(self):
   src=Image.new("RGB",(300,300),(120,80,50)); b=io.BytesIO(); src.save(b,"JPEG")
   out=muba_studio.render_meme(b.getvalue(),"WE LIVE HERE NOW","meme")
@@ -23,7 +24,7 @@ class StudioExam(unittest.TestCase):
   self.assertEqual(im.size,(512,512))
  def test_miniapp_has_free_prompt_and_telegram_sdk(self):
   html=muba_studio.studio_html("https://example.test")
-  self.assertIn("telegram-web-app.js",html); self.assertIn("textarea",html); self.assertIn("Daily limit: 3",html)
+  self.assertIn("telegram-web-app.js",html); self.assertIn("textarea",html); self.assertIn("Daily limit: 1",html)
  def test_no_guardian_dependency(self):
   src=(ROOT/"muba_studio.py").read_text(encoding="utf-8")
   self.assertNotIn("from guardian",src); self.assertNotIn("inspect_message",src)
