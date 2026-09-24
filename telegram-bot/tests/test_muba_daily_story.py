@@ -17,13 +17,13 @@ class DailyStoryTests(unittest.TestCase):
     def test_visual_policy_uses_fresh_dev_reference(self):
         item=muba_story.draft("2099-01-01")
         prompt=item["prompts"][0].lower()
-        self.assertIn("current dev reference is the canonical muba identity",prompt)
+        self.assertIn("canonical muba identity remains authoritative",prompt)
         self.assertIn("never a collage",prompt)
-        self.assertIn("face/identity lock",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v5")
+        self.assertIn("face/body identity lock",prompt)
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v8")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
         self.assertEqual(item["rules"]["continuity"],"master-identity-plus-independent-chapter-scene")
-        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v5")
+        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v8")
         self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
 
@@ -38,8 +38,8 @@ class DailyStoryTests(unittest.TestCase):
         self.assertFalse((ROOT/"muba_story_chibi.py").exists())
         self.assertFalse((ROOT/"muba_daily_story_reference.py").exists())
         layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8").lower()
-        self.assertIn("reference-first v3",layer)
-        self.assertIn("do not import any older muba drawing style",layer)
+        self.assertIn("master identity + chapter engine v8",layer)
+        self.assertIn("do not import older muba styles",layer)
 
     def test_web_uses_short_summary_without_panel_numbers(self):
         web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
@@ -52,7 +52,7 @@ class DailyStoryTests(unittest.TestCase):
         layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8").lower()
         self.assertIn("four separate full-bleed 16:9 images",layer)
         self.assertIn("never a collage",layer)
-        self.assertIn("face/identity lock",layer)
+        self.assertIn("face/body identity lock",layer)
 
     def test_generation_uses_cloudflare_canonical_reference_for_batch(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
@@ -120,8 +120,8 @@ class DailyStoryTests(unittest.TestCase):
     def test_fresh_reference_gate_drives_story_generation(self):
         layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("CURRENT DEV REFERENCE IS THE CANONICAL MUBA IDENTITY",layer)
-        self.assertIn("FOUR-IMAGE STORY CONTRACT",layer)
+        self.assertIn("canonical MUBA identity remains authoritative",layer)
+        self.assertIn("FOUR-CHAPTER STORY CONTRACT",layer)
         self.assertIn("📷 REFERANS GÖRSEL VER",bot)
         self.assertIn('context.user_data["daily_story_waiting_reference"]=True',bot)
         self.assertIn("daily_story_reference_photo",bot)
@@ -168,7 +168,7 @@ class TestLivingStoryIsolation(unittest.TestCase):
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
         self.assertIn("muba_story_cloudflare",story)
-        self.assertIn("Cloudflare Daily Story engine is not configured",story)
+        self.assertIn("Daily Story Visual Generation Layer is not configured",story)
         self.assertIn("body,out_type=await generate",story)
         self.assertIn("for index,(body,out_type) in enumerate(generated):",story)
         self.assertNotIn("muba_story_openai",story)
