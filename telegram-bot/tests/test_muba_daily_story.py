@@ -62,7 +62,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
         self.assertNotIn("session.get(",section)
-        self.assertIn("continuity_bytes=previous",section)
+        self.assertNotIn("continuity_bytes=previous",section)
         self.assertNotIn("muba_story_openai",section)
         self.assertNotIn("generate_anchor",section)
 
