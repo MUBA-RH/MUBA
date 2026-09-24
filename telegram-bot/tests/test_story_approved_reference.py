@@ -12,7 +12,6 @@ sys.path.insert(0,str(ROOT))
 import muba_story
 import muba_story_visual
 import muba_story_cloudflare as cloudflare_bridge
-import muba_story_kaggle as bridge
 from state import MemoryRepository
 
 
@@ -71,19 +70,18 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
-class KaggleStoryEngineTests(unittest.TestCase):
-    def test_daily_story_runtime_uses_kaggle_engine(self):
+class CloudflareStoryEngineTests(unittest.TestCase):
+    def test_daily_story_runtime_uses_cloudflare_engine(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("from muba_story_kaggle import configured as story_image_configured, generate_batch",source)
-        self.assertNotIn("from muba_story_cloudflare import configured as cf_story_configured",source)
+        self.assertIn("from muba_story_cloudflare import configured as story_image_configured, generate",source)
+        self.assertNotIn("from muba_story_kaggle import configured as story_image_configured",source)
 
-    def test_kaggle_engine_embeds_reference_and_sequential_continuity(self):
-        source=(ROOT/"muba_story_kaggle.py").read_text(encoding="utf-8")
+    def test_cloudflare_engine_uses_reference_and_sequential_continuity(self):
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         self.assertIn("previous=None",source)
-        self.assertIn("reference_bytes",source)
-        self.assertIn("base64.b64encode(reference_bytes)",source)
-        self.assertIn("[reference,previous]",source)
-        self.assertIn("01d",source) if False else self.assertIn("previous.save",source)
+        self.assertIn("reference_type=reference_type",source)
+        self.assertIn("continuity_bytes=previous",source)
+        self.assertIn("previous,previous_type=body,out_type",source)
 
 class TelegramInboxOutboxTests(unittest.TestCase):
     def test_reference_upload_auto_generates_and_previews(self):
@@ -115,8 +113,8 @@ class SequentialIdentityEngineTests(unittest.TestCase):
 
     def test_story_generation_chains_previous_frame(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("generate_batch(reference,item[\"prompts\"])",source)
-        self.assertIn("telegram-kaggle",source)
+        self.assertIn("continuity_bytes=previous",source)
+        self.assertIn("telegram-cloudflare",source)
 
 
 class CloudflareFilterIsolationTests(unittest.TestCase):
@@ -127,20 +125,19 @@ class CloudflareFilterIsolationTests(unittest.TestCase):
         self.assertIn("A simple friendly fictional character standing in a quiet room.",source)
 
 
-class ProductionFunctionTests(unittest.IsolatedAsyncioTestCase):
-    async def test_generation_reads_fresh_gallery_reference_and_forwards_batch(self):
-        tree=ast.parse((ROOT/"bot_mention.py").read_text())
-        node=next(n for n in tree.body if isinstance(n,ast.AsyncFunctionDef) and n.name=="_story_generate_images")
-        body=b"fresh-dev-reference"; digest=hashlib.sha256(body).hexdigest()
-        backend=mock.AsyncMock(return_value=[(b"g"+bytes([i]),"image/png") for i in range(4)])
-        archive=mock.Mock(side_effect=[{"id":str(i)} for i in range(4)])
-        save=mock.Mock(return_value={"images":[str(i) for i in range(4)]})
-        namespace={"_archive_studio_output":archive,"set_story_images":save,"story_reference_for_day":mock.Mock(return_value={"gallery_id":"ref","sha256":digest}),"read_gallery_image":mock.Mock(return_value=(body,"image/jpeg")),"hashlib":hashlib}
-        exec(compile(ast.Module(body=[node],type_ignores=[]),str(ROOT/"bot_mention.py"),"exec"),namespace)
-        with mock.patch.object(bridge,"configured",return_value=True), mock.patch.object(bridge,"generate_batch",backend):
-            await namespace["_story_generate_images"]({"day":"2099-03-08","status":"draft","prompts":["a","b","c","d"]})
-        backend.assert_awaited_once_with(body,["a","b","c","d"])
-        save.assert_called_once_with("2099-03-08",["0","1","2","3"])
+class ProductionFunctionTests(unittest.TestCase):
+    def test_generation_reads_fresh_gallery_reference_and_chains_frames(self):
+        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        start=source.index("async def _story_generate_images")
+        end=source.index("async def _prepare_daily_story",start)
+        section=source[start:end]
+        self.assertIn("story_reference_for_day",section)
+        self.assertIn("read_gallery_image",section)
+        self.assertIn("checksum mismatch",section)
+        self.assertIn("for prompt in item[\"prompts\"]",section)
+        self.assertIn("continuity_bytes=previous",section)
+        self.assertIn("previous,previous_type=body,out_type",section)
+        self.assertIn("set_story_images",section)
 
 
 if __name__=="__main__":

@@ -1566,6 +1566,29 @@
         "ar": "يقوم Notebook الآن بإزالة كائنات pipeline المتبقية وتنظيف ذاكرة CUDA المؤقتة على وحدتي GPU قبل تحميل NF4 Qwen باستخدام CPU offload.",
         "hi": "Notebook अब CPU offload के साथ NF4 Qwen pipeline लोड करने से पहले बचे हुए pipeline objects हटाता है और दोनों GPU की CUDA cache साफ करता है।"
       }
+    },
+    {
+      "id": "20260924-daily-story-serverless-cloudflare",
+      "date": "2026-09-24",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story moved off Kaggle GPU runtime",
+        "tr": "Daily Story Kaggle GPU çalışma hattından çıkarıldı",
+        "zh": "Daily Story 已移出 Kaggle GPU 运行链路",
+        "ar": "تم نقل Daily Story خارج مسار Kaggle GPU",
+        "hi": "Daily Story को Kaggle GPU runtime से हटाया गया"
+      },
+      "text": {
+        "en": "Daily Story now uses the existing serverless Cloudflare FLUX.2 reference-edit bridge. Fresh DEV reference, four sequential frames, Telegram review and explicit web approval remain unchanged; Kaggle is no longer a production dependency.",
+        "tr": "Daily Story artık mevcut sunucusuz Cloudflare FLUX.2 referans-düzenleme köprüsünü kullanıyor. Güncel DEV referansı, dört ardışık kare, Telegram önizleme ve açık web onayı korunuyor; Kaggle artık üretim bağımlılığı değil.",
+        "zh": "Daily Story 现在使用现有的无服务器 Cloudflare FLUX.2 参考图编辑桥。DEV 当日参考图、四张连续画面、Telegram 预览和明确网页发布审批保持不变；Kaggle 不再是生产依赖。",
+        "ar": "يستخدم Daily Story الآن جسر Cloudflare FLUX.2 الخادمي لتحرير الصور المرجعية. يبقى مرجع DEV الحديث وأربع لقطات متسلسلة ومعاينة Telegram والموافقة الصريحة للنشر كما هي، ولم يعد Kaggle اعتماداً للإنتاج.",
+        "hi": "Daily Story अब मौजूदा serverless Cloudflare FLUX.2 reference-edit bridge का उपयोग करता है। ताज़ा DEV reference, चार sequential frames, Telegram review और explicit web approval वैसे ही रहते हैं; Kaggle अब production dependency नहीं है।"
+      }
     }
   ]
 }
