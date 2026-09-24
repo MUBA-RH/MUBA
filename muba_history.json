@@ -1544,6 +1544,28 @@
         "ar": "تم استبدال محمل Qwen بنمط balanced BF16 بمسار FP16 CPU-offload في دفتر تحقق Kaggle وعامل Telegram لمنع خطأ نفاد ذاكرة GPU0 الذي تم تكراره.",
         "hi": "दोहराए गए GPU0 out-of-memory को रोकने के लिए Kaggle validation notebook और Telegram worker दोनों में balanced BF16 Qwen loader को FP16 CPU-offload path से बदला गया।"
       }
+    },
+    {
+      "id": "20260924-daily-story-kaggle-clean-runtime",
+      "date": "2026-09-24",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Kaggle Daily Story loader now clears stale GPU allocations",
+        "tr": "Kaggle Daily Story yükleyicisi artık eski GPU tahsislerini temizliyor",
+        "zh": "Kaggle Daily Story 加载器现在会清理残留 GPU 分配",
+        "ar": "أصبح محمل Kaggle Daily Story ينظف تخصيصات GPU المتبقية",
+        "hi": "Kaggle Daily Story loader अब पुराने GPU allocations साफ करता है"
+      },
+      "text": {
+        "en": "The notebook now removes retained pipeline objects and clears CUDA caches on both GPUs before loading the documented NF4 Qwen pipeline with CPU offload.",
+        "tr": "Notebook artık belgelenmiş NF4 Qwen hattını CPU offload ile yüklemeden önce tutulan pipeline nesnelerini kaldırıyor ve iki GPU üzerindeki CUDA önbelleklerini temizliyor.",
+        "zh": "Notebook 现在会在通过 CPU offload 加载 NF4 Qwen pipeline 前移除残留 pipeline 对象并清理两张 GPU 的 CUDA 缓存。",
+        "ar": "يقوم Notebook الآن بإزالة كائنات pipeline المتبقية وتنظيف ذاكرة CUDA المؤقتة على وحدتي GPU قبل تحميل NF4 Qwen باستخدام CPU offload.",
+        "hi": "Notebook अब CPU offload के साथ NF4 Qwen pipeline लोड करने से पहले बचे हुए pipeline objects हटाता है और दोनों GPU की CUDA cache साफ करता है।"
+      }
     }
   ]
 }
