@@ -1707,6 +1707,29 @@
         "ar": "يحافظ Daily Story الآن على استمرارية السرد عبر Story State دائم مع بقاء كل فصل مشهداً مستقلاً 16:9، وتمت إزالة مسار الحزمة اليدوي والتعليمات القديمة المتعارضة.",
         "hi": "Daily Story अब persistent Story State से narrative continuity रखता है, जबकि हर chapter independent 16:9 scene रहता है; पुराने manual package controls और conflicting continuity rules active flow से हटाए गए हैं।"
       }
+    },
+    {
+      "id": "20260925-daily-story-chapter-delivery-eye-lock-v9",
+      "date": "2026-09-25",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story Chapter Delivery V9",
+        "tr": "Daily Story Bölüm Akışı V9",
+        "zh": "Daily Story 分章流程 V9",
+        "ar": "تدفق فصول Daily Story V9",
+        "hi": "Daily Story Chapter Flow V9"
+      },
+      "text": {
+        "en": "Daily Story now uses four explicit chapter narratives, generates each chapter as its own scene, pairs every Telegram image with its chapter text, strengthens scene grounding, and locks canonical eye geometry.",
+        "tr": "Daily Story artık dört açık bölüm anlatısı kullanıyor; her bölümü kendi sahnesi olarak üretiyor, Telegram'da her görseli kendi bölüm metniyle eşliyor, sahne bağlamını güçlendiriyor ve kanonik göz geometrisini kilitliyor.",
+        "zh": "Daily Story 现在使用四个明确章节，每章独立生成并在 Telegram 中与对应文本配对，同时加强场景约束与眼部几何锁定。",
+        "ar": "يستخدم Daily Story الآن أربعة فصول واضحة، ويولد كل فصل كمشهد مستقل ويربط كل صورة بنص فصلها مع تعزيز ثبات المشهد وهندسة العين.",
+        "hi": "Daily Story अब चार स्पष्ट chapters उपयोग करता है; हर chapter अलग scene बनता है, Telegram में अपने text के साथ आता है और eye geometry lock मजबूत किया गया है।"
+      }
     }
   ]
 }
