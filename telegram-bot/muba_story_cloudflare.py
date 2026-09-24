@@ -97,7 +97,7 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
                 "Continue the physical scene from IMAGE 1 while preserving MUBA from IMAGE 0: same face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions. "
                 "Only pose, expression, gaze and camera may change. "+prompt)
     else:
-        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed cinematic 16:9 image, not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed cinematic 16:9 image. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
                 "Preserve the exact face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions from IMAGE 0. "+prompt)
     status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
     if status!=200:
