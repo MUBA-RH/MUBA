@@ -37,7 +37,7 @@ def _public_change(day):
 def _previous_story_context(day):
     """Return yesterday's immutable published/draft story state as today's canon."""
     if not STORE.get("story_v3_origin_started","muba",False):
-        return {"day":"origin","theme":"Before MUBA","story":"The story has not started yet.","ending":"MUBA has not yet entered the story world."}
+        return {"day":"origin","theme":"Before MUBA","story":"The story has not started yet.","ending":"MUBA has not yet entered the story world.","state":{"location":"outside the story world","important_object":None,"resolved_event":"none","unresolved_thread":"MUBA has not entered the story yet","next_day_hook":"MUBA enters the world for the first time"}}
     current=datetime.fromisoformat(str(day)).date()
     previous=(current-timedelta(days=1)).isoformat()
     saved=STORE.get("story_canon",previous,None)
@@ -45,14 +45,39 @@ def _previous_story_context(day):
         return saved
     # Backfill deterministically so continuity survives deployments/restarts.
     ep=_episode_for_day(previous)
-    return {"day":previous,"theme":ep["title"],"story":ep["story"],"ending":ep["actions"][-1]}
+    return {"day":previous,"theme":ep["title"],"story":ep["story"],"ending":ep["actions"][-1],"state":_state_from_episode(ep)}
 
 def _continuity_bridge(previous):
+    state=previous.get("state") or {}
+    compact={
+        "location":state.get("location"),
+        "important_object":state.get("important_object"),
+        "resolved_event":state.get("resolved_event"),
+        "unresolved_thread":state.get("unresolved_thread"),
+        "next_day_hook":state.get("next_day_hook"),
+    }
     return (
-        "CONTINUITY FROM YESTERDAY: "+previous["ending"]+" "
-        "Today's opening must visibly begin from this exact resolved state before a new event starts. "
-        "Do not reset MUBA, teleport to an unrelated situation, or contradict yesterday's ending."
+        "PREVIOUS STORY STATE: "+json.dumps(compact,ensure_ascii=False,sort_keys=True)+". "
+        "Chapter 1 must acknowledge the next-day hook before the new event develops. "
+        "Preserve established facts, but do not copy yesterday's camera, pose or composition."
     )
+
+def _state_from_episode(ep):
+    title=ep.get("title")
+    if title=="I'm MUBA":
+        return {"location":"ordinary waking city street","important_object":"shop-window reflection",
+                "resolved_event":"MUBA entered the world and was noticed","unresolved_thread":"where MUBA goes next",
+                "next_day_hook":"MUBA continues walking into the city"}
+    if title=="The Box That Knocked Back":
+        return {"location":"old-city alley by the faded green door","important_object":"weathered wooden box and brass bird",
+                "resolved_event":"MUBA shared the biscuit","unresolved_thread":"who or what was knocking inside the box",
+                "next_day_hook":"MUBA leaves the alley carrying the memory of the unexplained box"}
+    if title=="The Golden Signal":
+        return {"location":"ancient temple above the clouds","important_object":"glowing $MUBA crystal",
+                "resolved_event":"MUBA reached the temple and found the crystal","unresolved_thread":"what the crystal does",
+                "next_day_hook":"the glowing crystal reacts as MUBA approaches"}
+    return {"location":"current story location","important_object":None,"resolved_event":ep.get("actions",[""])[-1],
+            "unresolved_thread":"what happens next","next_day_hook":"continue directly from the final event"}
 
 def _story_150(text):
     """Website story narration: at most 150 Unicode characters."""
@@ -131,7 +156,7 @@ def draft(day=None):
         "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
     ]
     prompts=[
-        story_identity_prompt()+" EPISODE: "+theme+". FOUR-CHAPTER STORY CONTEXT: "+ep["premise"]+" CURRENT CHAPTER ONLY: "+action+" IMPORTANT: Create ONE image for THIS chapter only. Do not depict earlier or later chapters, do not make a sequence inside one image, and do not reuse a neutral standing portrait when the chapter requires an action or prop."
+        story_identity_prompt()+" "+continuity+" EPISODE: "+theme+". FOUR-CHAPTER STORY CONTEXT: "+ep["premise"]+" CURRENT CHAPTER ONLY: "+action+" IMPORTANT: Create ONE image for THIS chapter only. Do not depict earlier or later chapters, do not make a sequence inside one image, and do not reuse a neutral standing portrait when the chapter requires an action or prop."
         for action in actions
     ]
     if ep["title"]=="I'm MUBA":
@@ -151,7 +176,7 @@ def draft(day=None):
         "story":_story_150(raw_summary),"story_tr":_story_150(raw_summary_tr),
         "summary":_story_150(raw_summary),
         "summary_tr":_story_150(raw_summary_tr),
-        "previous_day":previous["day"],"previous_theme":previous["theme"],
+        "previous_day":previous["day"],"previous_theme":previous["theme"],"story_state":_state_from_episode(ep),
         "twt":_story_150(raw_summary),"twt_tr":_story_150(raw_summary_tr),
         "images":image_ids(day),
         "image_reference":_image_batch(day).get("reference"),
@@ -160,7 +185,7 @@ def draft(day=None):
                  "visual_layer":"muba_story_visual","character_anchor_version":VISUAL_STYLE,"reference_sha256":(reference or {}).get("sha256"),
                  "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
-    STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
+    STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"state":_state_from_episode(ep),"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
     if ep["title"]=="I'm MUBA":
         STORE.set("story_v3_origin_started","muba",True)
     return item
