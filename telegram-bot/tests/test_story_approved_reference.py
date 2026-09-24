@@ -27,7 +27,7 @@ class ReferenceFirstStateTests(unittest.TestCase):
         self.assertEqual(item["theme"],"I'm MUBA")
         self.assertIsNone(muba_story.reference_for_day(self.day))
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-reference-first-v3")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-fingerprint-v4")
 
     def test_fresh_reference_is_required_before_image_batch(self):
         with self.assertRaisesRegex(ValueError,"Fresh DEV reference required"):
@@ -46,7 +46,7 @@ class ReferenceFirstStateTests(unittest.TestCase):
 
     def test_visual_contract_is_four_separate_images_and_reference_only(self):
         prompt=muba_story_visual.story_identity_prompt()
-        self.assertIn("ONLY MUBA IDENTITY AND VISUAL-STYLE SOURCE",prompt)
+        self.assertIn("CANONICAL MUBA IDENTITY AND VISUAL-STYLE SOURCE",prompt)
         self.assertIn("four separate full-bleed 16:9 images",prompt)
         self.assertIn("never a collage",prompt)
         self.assertIn("FACE/IDENTITY LOCK",prompt)
