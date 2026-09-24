@@ -1425,17 +1425,14 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four Hugging Face ZeroGPU reference-conditioned frames transactionally."""
-    import aiohttp
-    from muba_story_zerogpu import configured as story_image_configured, generate as story_image_generate
+    """Run one on-demand Kaggle T4 x2 batch and archive four frames transactionally."""
+    from muba_story_kaggle import configured as story_image_configured, generate_batch
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
     if not story_image_configured():
-        raise RuntimeError("Hugging Face ZeroGPU Daily Story engine is not configured")
-
-    # Every production batch must use the fresh DEV-uploaded reference for this day.
+        raise RuntimeError("Kaggle Daily Story bridge is not configured")
     metadata=story_reference_for_day(item["day"])
     if not metadata:
         raise RuntimeError("Fresh DEV Daily Story reference required")
@@ -1445,25 +1442,10 @@ async def _story_generate_images(item):
     reference,reference_type=loaded
     if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
         raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
-    generated=[]
-    previous_body=None
-    previous_type="image/jpeg"
-    async with aiohttp.ClientSession() as session:
-        for prompt in item["prompts"]:
-            # Frame 1 uses the fresh DEV identity/style reference. Frames 2-4
-            # additionally use the immediately previous generated frame so the
-            # location, props, lighting and physical story state carry forward.
-            body,out_type=await story_image_generate(
-                session,prompt,reference,reference_type=reference_type,
-                continuity_bytes=previous_body,continuity_type=previous_type,
-            )
-            generated.append((body,out_type,prompt))
-            previous_body,previous_type=body,out_type
-
-    # Fail closed: archive/state mutation starts only after all four calls pass.
+    generated=await generate_batch(reference,item["prompts"])
     ids=[]
-    for body,out_type,prompt in generated:
-        archived=_archive_studio_output(body,out_type,prompt,"image","telegram")
+    for index,(body,out_type) in enumerate(generated):
+        archived=_archive_studio_output(body,out_type,item["prompts"][index],"image","telegram-kaggle")
         if not archived:
             raise RuntimeError("Daily Story image archive failed")
         ids.append(archived["id"])
