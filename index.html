@@ -78,8 +78,8 @@
 
 
     .story-book { max-width:900px; margin:0 auto; padding:clamp(18px,4vw,42px); background:linear-gradient(180deg,rgba(18,10,31,.96),rgba(9,5,16,.96)); }
-    .story-grid { display:grid; grid-template-columns:1.08fr .92fr; gap:clamp(8px,1.6vw,16px); margin-top:24px; }
-    .story-frame { position:relative; aspect-ratio:1; overflow:hidden; border:2px solid rgba(247,242,255,.82); background:#0a0611; box-shadow:0 8px 30px rgba(0,0,0,.28); }
+    .story-grid { display:grid; grid-template-columns:1fr; gap:clamp(12px,1.8vw,18px); margin-top:24px; }
+    .story-frame { position:relative; aspect-ratio:16/9; overflow:hidden; border:2px solid rgba(247,242,255,.82); background:#0a0611; box-shadow:0 8px 30px rgba(0,0,0,.28); }
     .story-frame:nth-child(1){ transform:rotate(-.35deg); } .story-frame:nth-child(2){ transform:rotate(.3deg); }
     .story-frame:nth-child(3){ transform:rotate(.2deg); } .story-frame:nth-child(4){ transform:rotate(-.25deg); }
     .story-frame img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -89,7 +89,7 @@
     .story-share .btn { text-decoration:none; }
     .story-copy { margin-top:24px; padding:0; border:0; box-shadow:none; background:transparent; color:#eee5f8; font-size:1.08rem; line-height:1.65; max-width:680px; }
     .story-kicker { color:var(--gold); font-weight:900; letter-spacing:.12em; font-size:.72rem; text-transform:uppercase; }
-    @media (max-width:760px){ .story-book{padding:18px 14px}.story-grid{grid-template-columns:1fr 1fr;gap:8px}.story-frame{border-width:1px}.story-copy{font-size:1rem} }
+    @media (max-width:760px){ .story-book{padding:18px 14px}.story-grid{grid-template-columns:1fr;gap:12px}.story-frame{border-width:1px}.story-copy{font-size:1rem} }
 
     header {
       position: sticky;
@@ -917,7 +917,7 @@
           document.getElementById("story-empty").textContent="This story is waiting for its four approved images.";
           return;
         }
-        grid.innerHTML=urls.slice(0,4).map((url,i)=>'<figure class="story-frame"><img src="'+url+'" alt="MUBA Living Story scene"></figure>').join("");
+        grid.innerHTML=urls.slice(0,4).map((url,i)=>`<figure class="story-frame"><img src="${url}" alt="MUBA Daily Story chapter ${i+1}"></figure>`).join("");
         const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.summary||story.twt||"";
         const shareText=story.twt||story.summary||"";
         const share=document.getElementById("story-share");

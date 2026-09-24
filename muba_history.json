@@ -1658,6 +1658,30 @@
         "ar": "تم تضمين لوحة مرجع الجسم الكامل كمرساة بصرية مدمجة ومتحقق منها، مع تثبيت نسب MUBA وملابسه وفرائه وقدميه العاريتين.",
         "hi": "Approved full-body reference board अब checksum-verified compact visual anchor के रूप में embedded है; MUBA upright biped proportions, tan/brown fur, black cap/hoodie और bare feet पर locked है।"
       }
+    },
+    {
+      "id": "20260924-daily-story-chapter-engine-v7",
+      "date": "2026-09-24",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram",
+        "web"
+      ],
+      "title": {
+        "en": "Daily Story Chapter Engine V7",
+        "tr": "Daily Story Bölüm Motoru V7",
+        "zh": "Daily Story 分章引擎 V7",
+        "ar": "محرك فصول Daily Story V7",
+        "hi": "Daily Story Chapter Engine V7"
+      },
+      "text": {
+        "en": "Daily Story now generates each of four chapters as one independent 16:9 scene from the master identity reference, preventing repeated portrait carry-over. Web story frames are true 16:9 and the narration is capped at 150 characters.",
+        "tr": "Daily Story artık dört bölümün her birini master kimlik referansından bağımsız tek bir 16:9 sahne olarak üretiyor; önceki kareden taşınan tekrar portre sorunu kaldırıldı. Web kareleri gerçek 16:9 ve hikâye anlatısı en fazla 150 karakter.",
+        "zh": "Daily Story 现在将四个章节分别从主身份参考生成独立的 16:9 场景，避免上一帧造成重复肖像；网页画面为真实 16:9，故事叙述限制为 150 字符。",
+        "ar": "ينشئ Daily Story الآن كل فصل من الفصول الأربعة كمشهد مستقل 16:9 من مرجع الهوية الرئيسي، مع منع تكرار صورة الإطار السابق، وعرض الويب 16:9 وسرد بحد 150 حرفاً.",
+        "hi": "Daily Story अब चारों chapters को master identity reference से अलग-अलग 16:9 scene के रूप में बनाता है, repeated portrait carry-over हटाता है; web frames true 16:9 हैं और narration 150 characters तक है।"
+      }
     }
   ]
 }
