@@ -141,6 +141,18 @@ class DailyStoryTests(unittest.TestCase):
         self.assertLessEqual(len(item["summary_tr"]),150)
         self.assertTrue(all("CURRENT CHAPTER ONLY:" in p for p in item["prompts"]))
 
+    def test_story_state_persists_narrative_continuity_without_frame_copying(self):
+        item=muba_story.draft("2026-09-23")
+        state=item["story_state"]
+        self.assertEqual(set(state),{"location","important_object","resolved_event","unresolved_thread","next_day_hook"})
+        self.assertTrue(state["next_day_hook"])
+        self.assertTrue(all("PREVIOUS STORY STATE:" in p for p in item["prompts"]))
+        self.assertTrue(all("CURRENT CHAPTER ONLY:" in p for p in item["prompts"]))
+        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
+        self.assertIn("CHAPTER ISOLATION",layer)
+        self.assertIn("NARRATIVE CONTINUITY comes from Story State",layer)
+        self.assertNotIn("Image N+1 begins from the physical and narrative state left by image N",layer)
+
     def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
         workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
