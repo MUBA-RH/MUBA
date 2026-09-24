@@ -1577,7 +1577,6 @@ async def start_webhook_server():
         application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo), group=-4)
-    application.add_handler(MessageHandler(filters.Document.ZIP, daily_story_package_document), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
