@@ -14,6 +14,7 @@ from collections import OrderedDict, defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import aiohttp
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent, CopyTextButton
 from telegram.constants import ChatType
@@ -1425,14 +1426,14 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Run one on-demand Kaggle T4 x2 batch and archive four frames transactionally."""
-    from muba_story_kaggle import configured as story_image_configured, generate_batch
+    """Generate four Daily Story frames serverlessly and archive them transactionally."""
+    from muba_story_cloudflare import configured as story_image_configured, generate
     if item.get("status")=="published":
         return item
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
     if not story_image_configured():
-        raise RuntimeError("Kaggle Daily Story bridge is not configured")
+        raise RuntimeError("Cloudflare Daily Story engine is not configured")
     metadata=story_reference_for_day(item["day"])
     if not metadata:
         raise RuntimeError("Fresh DEV Daily Story reference required")
@@ -1442,10 +1443,26 @@ async def _story_generate_images(item):
     reference,reference_type=loaded
     if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
         raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
-    generated=await generate_batch(reference,item["prompts"])
+
+    generated=[]
+    previous=None
+    previous_type="image/png"
+    async with aiohttp.ClientSession() as session:
+        for prompt in item["prompts"]:
+            body,out_type=await generate(
+                session,
+                prompt,
+                reference,
+                reference_type=reference_type,
+                continuity_bytes=previous,
+                continuity_type=previous_type,
+            )
+            generated.append((body,out_type))
+            previous,previous_type=body,out_type
+
     ids=[]
     for index,(body,out_type) in enumerate(generated):
-        archived=_archive_studio_output(body,out_type,item["prompts"][index],"image","telegram-kaggle")
+        archived=_archive_studio_output(body,out_type,item["prompts"][index],"image","telegram-cloudflare")
         if not archived:
             raise RuntimeError("Daily Story image archive failed")
         ids.append(archived["id"])

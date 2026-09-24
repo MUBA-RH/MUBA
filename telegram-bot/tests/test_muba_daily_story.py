@@ -54,15 +54,15 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("never a collage",layer)
         self.assertIn("face/identity lock",layer)
 
-    def test_generation_uses_kaggle_canonical_reference_for_batch(self):
+    def test_generation_uses_cloudflare_canonical_reference_for_batch(self):
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
-        self.assertIn("muba_story_kaggle",section)
+        self.assertIn("muba_story_cloudflare",section)
         self.assertIn("story_reference_for_day",section)
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
         self.assertNotIn("session.get(",section)
-        self.assertIn("generate_batch(reference,item[\"prompts\"])",section)
+        self.assertIn("continuity_bytes=previous",section)
         self.assertNotIn("muba_story_openai",section)
         self.assertNotIn("generate_anchor",section)
 
@@ -162,14 +162,14 @@ if __name__=="__main__": unittest.main()
 
 
 class TestLivingStoryIsolation(unittest.TestCase):
-    def test_story_is_kaggle_only_and_fails_closed(self):
+    def test_story_is_cloudflare_only_and_fails_closed(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         start=source.index("async def _story_generate_images")
         end=source.index("async def story_public_handler",start)
         story=source[start:end]
-        self.assertIn("muba_story_kaggle",story)
-        self.assertIn("Kaggle Daily Story bridge is not configured",story)
-        self.assertIn("generated=await generate_batch",story)
+        self.assertIn("muba_story_cloudflare",story)
+        self.assertIn("Cloudflare Daily Story engine is not configured",story)
+        self.assertIn("body,out_type=await generate",story)
         self.assertIn("for index,(body,out_type) in enumerate(generated):",story)
         self.assertNotIn("muba_story_openai",story)
         self.assertNotIn("generate_anchor",story)
