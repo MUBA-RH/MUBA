@@ -157,7 +157,7 @@ def draft(day=None):
         "image_reference":_image_batch(day).get("reference"),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":REFERENCE_ROLE,
                  "visual_style":VISUAL_STYLE,"continuity":"fresh-dev-reference-plus-scene-state","frame_text_max_words":0,
-                 "visual_layer":"muba_story_visual","character_anchor_version":"daily-story-reference-first-v3","reference_sha256":(reference or {}).get("sha256"),
+                 "visual_layer":"muba_story_visual","character_anchor_version":VISUAL_STYLE,"reference_sha256":(reference or {}).get("sha256"),
                  "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
     STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
