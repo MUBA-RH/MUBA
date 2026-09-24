@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260924-kaggle-final-loader-v15",
+      "date": "2026-09-24",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Kaggle NF4 loader hardening",
+        "tr": "Kaggle NF4 yükleyici sağlamlaştırması",
+        "zh": "Kaggle NF4 加载器强化",
+        "ar": "تحسين محمل Kaggle NF4",
+        "hi": "Kaggle NF4 लोडर सुदृढ़ीकरण"
+      },
+      "text": {
+        "en": "Daily Story Kaggle loading now disables notebook progress widgets and uses DiffusionPipeline auto-detection for the NF4 checkpoint, with an explicit runtime-ready marker.",
+        "tr": "Daily Story Kaggle yüklemesi artık notebook ilerleme widget'larını kapatır, NF4 checkpoint için DiffusionPipeline otomatik algılamasını kullanır ve açık bir çalışma-hazır işareti verir.",
+        "zh": "Daily Story Kaggle 加载现在禁用 notebook 进度组件，并使用 DiffusionPipeline 自动识别 NF4 checkpoint。",
+        "ar": "يعطل تحميل Daily Story في Kaggle أدوات التقدم ويستخدم الاكتشاف التلقائي لنموذج NF4.",
+        "hi": "Daily Story Kaggle लोडिंग अब notebook progress widgets बंद करती है और NF4 checkpoint के लिए auto-detection उपयोग करती है।"
+      }
+    },
+    {
       "id": "20260923-kaggle-qwen-nf4-v14",
       "date": "2026-09-23",
       "type": "fixed",
