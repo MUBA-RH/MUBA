@@ -12,7 +12,7 @@ sys.path.insert(0,str(ROOT))
 import muba_story
 import muba_story_visual
 import muba_story_cloudflare as cloudflare_bridge
-import muba_story_zerogpu as bridge
+import muba_story_kaggle as bridge
 from state import MemoryRepository
 
 
@@ -71,19 +71,19 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertNotIn('IDENTITY RULES',safe)
 
 
-class HuggingFaceStoryEngineTests(unittest.TestCase):
-    def test_daily_story_runtime_uses_huggingface_engine(self):
+class KaggleStoryEngineTests(unittest.TestCase):
+    def test_daily_story_runtime_uses_kaggle_engine(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("from muba_story_zerogpu import configured as story_image_configured, generate as story_image_generate",source)
+        self.assertIn("from muba_story_kaggle import configured as story_image_configured, generate_batch",source)
         self.assertNotIn("from muba_story_cloudflare import configured as cf_story_configured",source)
 
-    def test_openai_engine_preserves_reference_and_continuity(self):
-        source=(ROOT/"muba_story_zerogpu.py").read_text(encoding="utf-8")
-        self.assertIn("continuity_bytes",source)
+    def test_kaggle_engine_embeds_reference_and_sequential_continuity(self):
+        source=(ROOT/"muba_story_kaggle.py").read_text(encoding="utf-8")
+        self.assertIn("previous=None",source)
         self.assertIn("reference_bytes",source)
-        self.assertIn('root/"reference.png"',source)
-        self.assertIn('root/"previous.png"',source)
-        self.assertIn("continuity_bytes",source)
+        self.assertIn("base64.b64encode(reference_bytes)",source)
+        self.assertIn("[reference,previous]",source)
+        self.assertIn("01d",source) if False else self.assertIn("previous.save",source)
 
 class TelegramInboxOutboxTests(unittest.TestCase):
     def test_reference_upload_auto_generates_and_previews(self):
@@ -115,8 +115,8 @@ class SequentialIdentityEngineTests(unittest.TestCase):
 
     def test_story_generation_chains_previous_frame(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("continuity_bytes=previous_body",source)
-        self.assertIn("previous_body,previous_type=body,out_type",source)
+        self.assertIn("generate_batch(reference,item[\"prompts\"])",source)
+        self.assertIn("telegram-kaggle",source)
 
 
 class CloudflareFilterIsolationTests(unittest.TestCase):
@@ -128,29 +128,18 @@ class CloudflareFilterIsolationTests(unittest.TestCase):
 
 
 class ProductionFunctionTests(unittest.IsolatedAsyncioTestCase):
-    async def test_generation_reads_fresh_gallery_reference_and_forwards_same_bytes_four_times(self):
+    async def test_generation_reads_fresh_gallery_reference_and_forwards_batch(self):
         tree=ast.parse((ROOT/"bot_mention.py").read_text())
         node=next(n for n in tree.body if isinstance(n,ast.AsyncFunctionDef) and n.name=="_story_generate_images")
         body=b"fresh-dev-reference"; digest=hashlib.sha256(body).hexdigest()
-        backend=mock.AsyncMock(return_value=(b"generated","image/png"))
+        backend=mock.AsyncMock(return_value=[(b"g"+bytes([i]),"image/png") for i in range(4)])
         archive=mock.Mock(side_effect=[{"id":str(i)} for i in range(4)])
         save=mock.Mock(return_value={"images":[str(i) for i in range(4)]})
-        namespace={
-            "_archive_studio_output":archive,"set_story_images":save,
-            "story_reference_for_day":mock.Mock(return_value={"gallery_id":"ref","sha256":digest}),
-            "read_gallery_image":mock.Mock(return_value=(body,"image/jpeg")),
-            "hashlib":hashlib,
-        }
+        namespace={"_archive_studio_output":archive,"set_story_images":save,"story_reference_for_day":mock.Mock(return_value={"gallery_id":"ref","sha256":digest}),"read_gallery_image":mock.Mock(return_value=(body,"image/jpeg")),"hashlib":hashlib}
         exec(compile(ast.Module(body=[node],type_ignores=[]),str(ROOT/"bot_mention.py"),"exec"),namespace)
-        session=mock.MagicMock(); session.__aenter__.return_value=session
-        with mock.patch("aiohttp.ClientSession",return_value=session), \
-             mock.patch.object(bridge,"configured",return_value=True), \
-             mock.patch.object(bridge,"generate",backend):
+        with mock.patch.object(bridge,"configured",return_value=True), mock.patch.object(bridge,"generate_batch",backend):
             await namespace["_story_generate_images"]({"day":"2099-03-08","status":"draft","prompts":["a","b","c","d"]})
-        self.assertEqual(backend.await_count,4)
-        for call in backend.call_args_list:
-            self.assertEqual(call.args[2],body)
-            self.assertEqual(call.kwargs["reference_type"],"image/jpeg")
+        backend.assert_awaited_once_with(body,["a","b","c","d"])
         save.assert_called_once_with("2099-03-08",["0","1","2","3"])
 
 

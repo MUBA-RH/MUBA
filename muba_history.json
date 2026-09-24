@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260924-daily-story-kaggle-bridge-v16",
+      "date": "2026-09-24",
+      "type": "new",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Telegram to Kaggle Daily Story bridge",
+        "tr": "Telegram-Kaggle Daily Story köprüsü",
+        "zh": "Telegram-Kaggle Daily Story 桥接",
+        "ar": "جسر Telegram-Kaggle Daily Story",
+        "hi": "Telegram-Kaggle Daily Story ब्रिज"
+      },
+      "text": {
+        "en": "A fresh DEV reference now starts a finite Kaggle T4 x2 batch, returns exactly four sequential PNG frames to Telegram for review, and keeps web publishing behind explicit DEV approval.",
+        "tr": "Yeni DEV referansı artık sonlu bir Kaggle T4 x2 üretimini başlatır, tam dört sıralı PNG kareyi inceleme için Telegram'a döndürür ve web yayınını açık DEV onayının arkasında tutar.",
+        "zh": "新的 DEV 参考图会启动一次有限的 Kaggle T4 x2 批处理，返回四张连续 PNG 到 Telegram 审核，网页发布仍需 DEV 明确批准。",
+        "ar": "تبدأ صورة DEV المرجعية دفعة Kaggle T4 x2 محدودة وتعيد أربع صور PNG متسلسلة إلى Telegram للمراجعة، مع بقاء النشر للويب خلف موافقة DEV الصريحة.",
+        "hi": "नई DEV reference एक सीमित Kaggle T4 x2 batch शुरू करती है, चार क्रमिक PNG Telegram review में लौटाती है और web publish को DEV approval के पीछे रखती है।"
+      }
+    },
+    {
       "id": "20260924-kaggle-final-loader-v15",
       "date": "2026-09-24",
       "type": "fixed",

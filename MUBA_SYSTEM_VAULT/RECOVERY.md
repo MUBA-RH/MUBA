@@ -4,7 +4,7 @@
 Use when DEV wants the preserved current MUBA, not V2.
 
 Recovery anchor captured by this Vault:
-`b619a8a0047458f0d9461a60840019dafaf41011`
+`d78aafc74af39131e067cc3a094bc32418a27918`
 
 Steps:
 1. Do not activate V2.

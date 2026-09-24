@@ -17,3 +17,5 @@ typing_extensions==4.16.0
 yarl==1.25.1
 
 gradio_client>=2.0,<3
+
+kaggle>=2.0,<3
