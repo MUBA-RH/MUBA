@@ -1754,6 +1754,29 @@
         "ar": "يحصل مستخدمو Studio العاديون على توليد ناجح واحد يومياً بينما DEV معفى من حصة MUBA، ويمكن الانتقال إلى مخزون توليد مجاني ثانوي عند نفاد السعة الأساسية دون احتساب الطلبات الفاشلة.",
         "hi": "सामान्य Studio users को प्रतिदिन एक सफल generation मिलता है, DEV MUBA allowance से मुक्त है; primary capacity खत्म होने पर secondary free reservoir उपयोग हो सकता है और failed requests quota नहीं घटाते।"
       }
+    },
+    {
+      "id": "20260925-daily-story-private-gpu-worker-v11",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story private GPU worker",
+        "tr": "Daily Story özel GPU worker",
+        "zh": "Daily Story 私有 GPU Worker",
+        "ar": "عامل GPU الخاص بـ Daily Story",
+        "hi": "Daily Story private GPU worker"
+      },
+      "text": {
+        "en": "Daily Story now has an isolated provider-neutral GPU job and ComfyUI workflow contract for four independent 16:9 chapters while public Studio remains unchanged.",
+        "tr": "Daily Story artık dört bağımsız 16:9 bölüm için izole, sağlayıcıdan bağımsız GPU işi ve ComfyUI workflow sözleşmesine sahip; halka açık Studio değişmeden korunur.",
+        "zh": "Daily Story 现在拥有隔离且与供应商无关的 GPU 任务和 ComfyUI 工作流契约，用于四个独立的 16:9 章节；公开 Studio 保持不变。",
+        "ar": "أصبح لدى Daily Story عقد عمل GPU معزول ومحايد للمزود وتدفق ComfyUI لأربعة فصول مستقلة بنسبة 16:9، مع بقاء Studio العام دون تغيير.",
+        "hi": "Daily Story में अब चार स्वतंत्र 16:9 chapters के लिए isolated provider-neutral GPU job और ComfyUI workflow contract है, जबकि public Studio unchanged रहता है।"
+      }
     }
   ]
 }
