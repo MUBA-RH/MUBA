@@ -15,9 +15,22 @@ def main():
     checkpoint=os.getenv("MUBA_COMFY_CHECKPOINT","sd_xl_base_1.0.safetensors")
     model=COMFY/"models"/"checkpoints"/checkpoint
     if not model.exists():
-        url=os.getenv("MUBA_COMFY_CHECKPOINT_URL","").strip()
-        if not url: raise RuntimeError("Set MUBA_COMFY_CHECKPOINT_URL once to the chosen SDXL-compatible checkpoint.")
+        url=os.getenv("MUBA_COMFY_CHECKPOINT_URL","https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors").strip()
+        if not url: raise RuntimeError("Missing SDXL checkpoint URL")
         run(["wget","-q","--show-progress","-O",str(model),url])
-    print("MUBA Daily Story worker ready. Start ComfyUI with: python /kaggle/working/ComfyUI/main.py --listen 127.0.0.1 --port 8188 --lowvram")
+    # Install reference-conditioning node and its SDXL ViT-H assets.
+    nodes=COMFY/"custom_nodes"/"comfyui-ipadapter"
+    if not nodes.exists():
+        run(["git","clone","--depth","1","https://github.com/comfyorg/comfyui-ipadapter.git",str(nodes)])
+    clip_dir=COMFY/"models"/"clip_vision"; clip_dir.mkdir(parents=True,exist_ok=True)
+    ipa_dir=COMFY/"models"/"ipadapter"; ipa_dir.mkdir(parents=True,exist_ok=True)
+    clip=clip_dir/"CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
+    ipa=ipa_dir/"ip-adapter-plus_sdxl_vit-h.safetensors"
+    if not clip.exists():
+        run(["wget","-q","--show-progress","-O",str(clip),"https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors"])
+    if not ipa.exists():
+        run(["wget","-q","--show-progress","-O",str(ipa),"https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors"])
+    print("MUBA Daily Story worker ready: SDXL + IPAdapter Plus reference-conditioning assets installed.")
+    print("Start ComfyUI: python /kaggle/working/ComfyUI/main.py --listen 127.0.0.1 --port 8188 --lowvram")
 
 if __name__=="__main__": main()
