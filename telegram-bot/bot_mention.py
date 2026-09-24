@@ -1435,7 +1435,7 @@ async def _story_generate_images(item):
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
     if not story_image_configured():
-        raise RuntimeError("Cloudflare Daily Story engine is not configured")
+        raise RuntimeError("Daily Story Visual Generation Layer is not configured")
     metadata=story_reference_for_day(item["day"])
     if not metadata:
         raise RuntimeError("Fresh DEV Daily Story reference required")
@@ -1481,7 +1481,7 @@ async def _prepare_daily_story(application):
     return item
 
 async def daily_story_scheduler(application):
-    """Self-contained Render scheduler: target 10:45 Europe/Istanbul every day."""
+    """Internal Daily Story preparation scheduler. Timing details are not public story content."""
     from datetime import datetime, timedelta
     from zoneinfo import ZoneInfo
     tz=ZoneInfo("Europe/Istanbul")
