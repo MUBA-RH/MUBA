@@ -13,7 +13,7 @@ class WebStudioPublicTests(unittest.TestCase):
         self.assertIn("from collections import OrderedDict, defaultdict", BOT)
 
     def test_public_web_endpoint_is_isolated_and_rate_limited(self):
-        self.assertIn('_WEB_STUDIO_DAILY_LIMIT = 3',BOT)
+        self.assertIn('_WEB_STUDIO_DAILY_LIMIT = 1',BOT)
         self.assertIn('_WEB_STUDIO_ALLOWED_ORIGIN = "https://muba-rh.github.io"',BOT)
         self.assertIn('async def studio_web_generate_handler',BOT)
         self.assertIn('async def studio_web_options_handler',BOT)

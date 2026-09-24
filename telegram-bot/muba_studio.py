@@ -9,7 +9,7 @@ from urllib.parse import quote
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 REFERENCE_URL="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg"
-DAILY_LIMIT=3
+DAILY_LIMIT=1
 DEV_USER_ID=934598759
 AI_MODEL="@cf/black-forest-labs/flux-2-klein-4b"
 _usage=defaultdict(lambda: {"day":"","count":0})
@@ -129,7 +129,7 @@ def studio_html(base_url:str)->str:
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="https://telegram.org/js/telegram-web-app.js"></script><style>
 *{{box-sizing:border-box}}body{{margin:0;background:#07040f;color:#fff;font-family:system-ui;padding:22px}}.card{{max-width:620px;margin:auto;background:#120a1f;border:1px solid #7c3aed;border-radius:24px;padding:20px;box-shadow:0 0 35px #6d28d955}}h1{{margin:0 0 6px}}small{{color:#b8a8d4}}img{{width:150px;height:150px;object-fit:cover;border-radius:50%;border:4px solid #b026ff;display:block;margin:18px auto}}textarea{{width:100%;min-height:105px;background:#090510;color:#fff;border:1px solid #51326f;border-radius:15px;padding:14px;font-size:16px}}.types{{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}}button{{border:0;border-radius:13px;padding:13px;font-weight:700}}.type{{background:#241638;color:#ddd}}.type.on{{outline:2px solid #d946ef;color:#fff}}#go{{width:100%;background:linear-gradient(135deg,#b026ff,#7c3aed);color:#fff;font-size:17px}}#msg{{text-align:center;color:#d8c7ee;margin-top:12px}}#preview{{width:100%;height:auto;border-radius:16px;border:0;margin-top:14px;display:none}}#actions{{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}}#actions a,#actions button{{display:flex;align-items:center;justify-content:center;gap:7px;min-height:48px;text-align:center;text-decoration:none;background:linear-gradient(135deg,#2b1741,#1b102b);color:#fff;border:1px solid #8b5cf6;border-radius:14px;padding:12px 14px;font-weight:750;font-size:15px;box-shadow:0 6px 18px #0006,0 0 16px #7c3aed22;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}}#actions a:active,#actions button:active{{transform:scale(.97)}}#actions a:hover,#actions button:hover{{border-color:#d946ef;box-shadow:0 7px 22px #0008,0 0 20px #d946ef33}}</style></head><body><div class="card">
-<h1>🎭 MUBA Studio</h1><small>Create with the original MUBA. Daily limit: 3.</small>
+<h1>🎭 MUBA Studio</h1><small>Create with the original MUBA. Daily limit: 1.</small>
 <img src="{REFERENCE_URL}" alt="MUBA"><textarea id="p" maxlength="120" placeholder="Describe the MUBA visual. Add visible text only if you want words in the image."></textarea>
 <div class="types"><button class="type on" data-k="meme">🖼 Meme</button><button class="type" data-k="image">✨ Image</button><button class="type" data-k="sticker">😄 Sticker</button><button class="type" data-k="emoji">🙂 Emoji</button></div>
 <button id="go">CREATE</button><div id="msg"></div><img id="preview"><div id="actions"><a id="download" href="#" target="_blank">⬇️ Download</a><button id="copy" type="button">🔗 Copy link</button></div>
@@ -139,7 +139,7 @@ document.querySelectorAll('.type').forEach(b=>b.onclick=()=>{{document.querySele
 document.getElementById('go').onclick=async()=>{{let prompt=document.getElementById('p').value.trim();if(!prompt)return;
 let r=await fetch('{b}/studio/generate',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{initData:tg.initData,uid:new URLSearchParams(location.search).get('uid'),studioToken:new URLSearchParams(location.search).get('st'),prompt,kind}})}});
 let m=document.getElementById('msg');if(!r.ok){{m.textContent=(await r.json()).error||'Could not create.';return}}
-let outputUrl=r.headers.get('X-MUBA-Output-URL');await r.blob();if(!outputUrl){{m.textContent='Could not create a shareable output.';return}}let im=document.getElementById('preview');im.src=outputUrl;im.style.display='block';let actions=document.getElementById('actions');actions.style.display='grid';document.getElementById('download').href=outputUrl+'?download=1';document.getElementById('copy').onclick=async()=>{{try{{await navigator.clipboard.writeText(outputUrl);m.textContent='Link copied.'}}catch(e){{prompt('Copy this link:',outputUrl)}}}};let rem=r.headers.get('X-MUBA-Remaining');m.textContent='Created with MUBA AI. '+(rem==='DEV'?'DEV unlimited':rem+'/3 left today.')}};
+let outputUrl=r.headers.get('X-MUBA-Output-URL');await r.blob();if(!outputUrl){{m.textContent='Could not create a shareable output.';return}}let im=document.getElementById('preview');im.src=outputUrl;im.style.display='block';let actions=document.getElementById('actions');actions.style.display='grid';document.getElementById('download').href=outputUrl+'?download=1';document.getElementById('copy').onclick=async()=>{{try{{await navigator.clipboard.writeText(outputUrl);m.textContent='Link copied.'}}catch(e){{prompt('Copy this link:',outputUrl)}}}};let rem=r.headers.get('X-MUBA-Remaining');m.textContent='Created with MUBA AI. '+(rem==='DEV'?'DEV unlimited':rem+'/1 left today.')}};
 </script></body></html>"""
 
 def studio_token(user_id:int,bot_token:str)->str:
