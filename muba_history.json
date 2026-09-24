@@ -1682,6 +1682,31 @@
         "ar": "ينشئ Daily Story الآن كل فصل من الفصول الأربعة كمشهد مستقل 16:9 من مرجع الهوية الرئيسي، مع منع تكرار صورة الإطار السابق، وعرض الويب 16:9 وسرد بحد 150 حرفاً.",
         "hi": "Daily Story अब चारों chapters को master identity reference से अलग-अलग 16:9 scene के रूप में बनाता है, repeated portrait carry-over हटाता है; web frames true 16:9 हैं और narration 150 characters तक है।"
       }
+    },
+    {
+      "id": "20260925-ecosystem-maintenance-story-state-v8",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram",
+        "web",
+        "assistant"
+      ],
+      "title": {
+        "en": "Daily Story State & Maintenance V8",
+        "tr": "Daily Story State ve Bakım V8",
+        "zh": "Daily Story 状态与维护 V8",
+        "ar": "حالة وصيانة Daily Story V8",
+        "hi": "Daily Story State और Maintenance V8"
+      },
+      "text": {
+        "en": "Daily Story now carries narrative continuity through a persistent Story State while each chapter remains an independent 16:9 scene. Obsolete manual package controls and conflicting legacy continuity instructions were removed from the active flow; public story UI stays provider- and timezone-neutral.",
+        "tr": "Daily Story artık anlatı devamlılığını kalıcı Story State üzerinden taşırken her bölüm bağımsız bir 16:9 sahne olarak kalıyor. Eski manuel paket kontrolleri ve çelişen eski devamlılık talimatları aktif akıştan kaldırıldı; görünen hikâye arayüzü sağlayıcı ve saat dilimi ayrıntılarından bağımsız.",
+        "zh": "Daily Story 现在通过持久 Story State 保持叙事连续性，每个章节仍是独立的 16:9 场景；旧的手动包流程和冲突的连续性指令已从活动流程移除。",
+        "ar": "يحافظ Daily Story الآن على استمرارية السرد عبر Story State دائم مع بقاء كل فصل مشهداً مستقلاً 16:9، وتمت إزالة مسار الحزمة اليدوي والتعليمات القديمة المتعارضة.",
+        "hi": "Daily Story अब persistent Story State से narrative continuity रखता है, जबकि हर chapter independent 16:9 scene रहता है; पुराने manual package controls और conflicting continuity rules active flow से हटाए गए हैं।"
+      }
     }
   ]
 }
