@@ -27,7 +27,7 @@ class ReferenceFirstStateTests(unittest.TestCase):
         self.assertEqual(item["theme"],"I'm MUBA")
         self.assertIsNone(muba_story.reference_for_day(self.day))
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v5")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v8")
 
     def test_fresh_reference_is_required_before_image_batch(self):
         with self.assertRaisesRegex(ValueError,"Fresh DEV reference required"):
@@ -46,10 +46,10 @@ class ReferenceFirstStateTests(unittest.TestCase):
 
     def test_visual_contract_is_four_separate_images_and_reference_only(self):
         prompt=muba_story_visual.story_identity_prompt()
-        self.assertIn("CANONICAL MUBA IDENTITY AND VISUAL-STYLE SOURCE",prompt)
+        self.assertIn("canonical MUBA identity remains authoritative",prompt)
         self.assertIn("four separate full-bleed 16:9 images",prompt)
         self.assertIn("never a collage",prompt)
-        self.assertIn("FACE/IDENTITY LOCK",prompt)
+        self.assertIn("FACE/BODY IDENTITY LOCK",prompt)
 
 
 class CloudflareReferenceInputTests(unittest.TestCase):
@@ -92,14 +92,12 @@ class TelegramInboxOutboxTests(unittest.TestCase):
         self.assertIn('callback_data="story_publish"',source)
         self.assertIn('callback_data="story_generate"',source)
 
-class PackageIngestTests(unittest.TestCase):
-    def test_package_ingest_contract(self):
+class ActiveStoryFlowTests(unittest.TestCase):
+    def test_manual_package_entry_point_is_retired(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("daily_story_package_document",source)
-        self.assertIn("daily_story_waiting_package",source)
-        self.assertIn("01.png",source)
-        self.assertIn("im.width*9!=im.height*16",source)
-        self.assertIn("set_story_images",source)
+        self.assertNotIn("daily_story_waiting_package",source)
+        self.assertNotIn('callback_data="story_package"',source)
+        self.assertIn('callback_data="story_generate"',source)
 
 
 class SequentialIdentityEngineTests(unittest.TestCase):
@@ -114,7 +112,7 @@ class SequentialIdentityEngineTests(unittest.TestCase):
     def test_story_generation_chains_previous_frame(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
         self.assertNotIn("continuity_bytes=previous",source)
-        self.assertIn("telegram-cloudflare",source)
+        self.assertIn("telegram-story-engine",source)
 
 
 class CloudflareFilterIsolationTests(unittest.TestCase):

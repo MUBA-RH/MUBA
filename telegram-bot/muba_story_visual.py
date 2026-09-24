@@ -1,26 +1,29 @@
-"""MUBA Daily Story visual contract — reference-first V3.
+"""MUBA Daily Story visual contract — Master Identity + Chapter Engine V8.
 
-There is no bundled character/style reference. Every production batch requires
-a fresh DEV-uploaded reference image for that Istanbul calendar day.
+The master identity is immutable. A fresh DEV reference can guide the current
+production batch, while narrative continuity is carried by Story State rather
+than by copying pixels or composition from a previous generated frame.
 """
 
-VISUAL_STYLE="daily-story-master-identity-v5"
+VISUAL_STYLE="daily-story-master-identity-v8"
 REFERENCE_ROLE="master-identity-plus-daily-reference"
 
 REFERENCE_RULES=(
-    "CURRENT DEV REFERENCE IS THE CANONICAL MUBA IDENTITY AND VISUAL-STYLE SOURCE. Its deterministic fingerprint (source SHA-256, RGB pixel-matrix digest, dimensions, center/mean RGB and binary digest) must remain bound to the entire four-frame batch. "
-    "Match the supplied MUBA reference closely: face geometry, eye construction, nose, mouth/tongue, fur/skin palette, cap, clothing, body proportions, line/render language and overall visual character. "
-    "Do not import any older MUBA drawing style, chibi template, neon-ring/crown background, bundled legacy asset or unrelated previous reference. "
-    "The reference defines identity and visual language only; the story defines pose, expression, camera, environment, lighting and action. "
+    "CURRENT DEV REFERENCE is a batch visual guide; canonical MUBA identity remains authoritative. "
+    "Its deterministic fingerprint must remain bound to the entire four-chapter batch. "
+    "Match canonical face geometry, eye construction, nose, mouth/tongue, tan-brown fur, black MUBA cap, black $MUBA hoodie, upright biped proportions and bare feet. "
+    "Do not import older MUBA styles, chibi templates, neon-ring/crown backgrounds, bundled legacy assets or unrelated references. "
+    "The reference guides visual language; Story State and the current chapter define pose, expression, camera, environment, lighting and action. "
 )
 
 CONTINUITY_RULES=(
-    "FOUR-IMAGE STORY CONTRACT. Produce four separate full-bleed 16:9 images, never a collage, grid, comic page or split frame. "
-    "Together they tell one fluid daily story: 1 setup, 2 development, 3 consequence/turn, 4 payoff/ending. "
-    "Image N+1 begins from the physical and narrative state left by image N. "
-    "FACE/IDENTITY LOCK: all four images must depict the same MUBA from the current DEV reference. Identity geometry and visual language must not drift. "
-    "Expressions, gaze, pose and camera may change naturally with the story. Recurring location, props, time and lighting remain coherent. "
-    "No visible captions, speech bubbles, watermarks or invented writing; existing MUBA lettering visible in the supplied reference may remain. "
+    "FOUR-CHAPTER STORY CONTRACT. Produce four separate full-bleed 16:9 images, never a collage, grid, comic page or split frame. "
+    "Together they tell one fluid daily story: chapter 1 setup, chapter 2 development, chapter 3 consequence/turn, chapter 4 payoff/ending. "
+    "CHAPTER ISOLATION: generate exactly one image for the current chapter. Never copy a previous frame composition and never combine multiple chapters in one image. "
+    "NARRATIVE CONTINUITY comes from Story State: location, important object, resolved event, unresolved thread and next-day hook. "
+    "FACE/BODY IDENTITY LOCK: all four images depict the same canonical MUBA; identity geometry and visual language must not drift. "
+    "Expressions, gaze, pose, camera, environment and lighting may change naturally with each chapter. "
+    "No visible captions, speech bubbles, watermarks or invented writing; existing MUBA lettering from the canonical identity may remain. "
 )
 
 def story_identity_prompt():
