@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "job_id": "example",
+  "day": "2099-01-01",
+  "reference_path": "/kaggle/working/muba-reference.jpg",
+  "seed": 260925,
+  "chapters": [
+    {
+      "index": 1,
+      "prompt": "MASTER MUBA IDENTITY LOCK. CURRENT CHAPTER: 1/4. Replace with Telegram-generated chapter prompt."
+    },
+    {
+      "index": 2,
+      "prompt": "MASTER MUBA IDENTITY LOCK. CURRENT CHAPTER: 2/4. Replace with Telegram-generated chapter prompt."
+    },
+    {
+      "index": 3,
+      "prompt": "MASTER MUBA IDENTITY LOCK. CURRENT CHAPTER: 3/4. Replace with Telegram-generated chapter prompt."
+    },
+    {
+      "index": 4,
+      "prompt": "MASTER MUBA IDENTITY LOCK. CURRENT CHAPTER: 4/4. Replace with Telegram-generated chapter prompt."
+    }
+  ]
+}
