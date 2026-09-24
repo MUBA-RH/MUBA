@@ -1,18 +1,58 @@
 {
-  "version": "muba-master-identity-v1",
+  "version": "muba-master-identity-v2-body-lock",
   "source_sha256": "8167d0c468bf7abfc41dcc73e349711c4ff3ae9aa8567ba91fdd061a59f775e9",
   "width": 1536,
   "height": 1152,
   "mode": "RGB",
   "landmarks_norm": {
-    "left_eye_box": [0.252, 0.214, 0.465, 0.449],
-    "right_eye_box": [0.568, 0.349, 0.757, 0.636],
-    "nose_box": [0.435, 0.397, 0.548, 0.515],
-    "mouth_box": [0.330, 0.456, 0.591, 0.626],
-    "tongue_box": [0.442, 0.490, 0.548, 0.659],
-    "face_box": [0.118, 0.174, 0.823, 0.773],
-    "cap_box": [0.206, 0.032, 0.868, 0.408],
-    "hoodie_box": [0.000, 0.604, 0.771, 1.000]
+    "left_eye_box": [
+      0.252,
+      0.214,
+      0.465,
+      0.449
+    ],
+    "right_eye_box": [
+      0.568,
+      0.349,
+      0.757,
+      0.636
+    ],
+    "nose_box": [
+      0.435,
+      0.397,
+      0.548,
+      0.515
+    ],
+    "mouth_box": [
+      0.33,
+      0.456,
+      0.591,
+      0.626
+    ],
+    "tongue_box": [
+      0.442,
+      0.49,
+      0.548,
+      0.659
+    ],
+    "face_box": [
+      0.118,
+      0.174,
+      0.823,
+      0.773
+    ],
+    "cap_box": [
+      0.206,
+      0.032,
+      0.868,
+      0.408
+    ],
+    "hoodie_box": [
+      0,
+      0.604,
+      0.771,
+      1
+    ]
   },
   "identity_rules": [
     "large asymmetric expressive brown eyes",
@@ -20,6 +60,29 @@
     "pink tongue protruding downward",
     "short dense warm tan fur",
     "black MUBA cap",
-    "black $MUBA hoodie"
-  ]
+    "black $MUBA hoodie",
+    "upright biped body with consistent proportions",
+    "tan/brown fur on exposed body and legs",
+    "bare feet/paws, never shoes",
+    "full body visible in Daily Story compositions"
+  ],
+  "body_master": {
+    "reference_board_sha256": "f3e84997b86b084b8dacfb650aec795f8f87626c61cfba0c0a96fcf619526e7b",
+    "reference_board_size": [
+      1448,
+      1086
+    ],
+    "posture": "upright standing biped",
+    "full_body_required": true,
+    "feet": "bare, no shoes",
+    "fur": "short dense warm tan/brown fur continues across visible body and legs",
+    "clothing": "black MUBA cap and black $MUBA hoodie",
+    "proportions": {
+      "head": "large mascot head",
+      "torso": "compact under hoodie",
+      "legs": "short sturdy tan-furred legs",
+      "feet": "small bare paws/feet"
+    },
+    "pose_policy": "May walk, run, sit, lean, crouch or interact when the story requires, but anatomy must remain the same upright biped character and full body should remain visible whenever composition permits."
+  }
 }

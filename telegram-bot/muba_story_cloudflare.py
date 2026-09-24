@@ -45,13 +45,15 @@ def _safe_retry_prompt(prompt:str)->str:
     )
 
 def _prepare_reference(reference_bytes:bytes)->tuple[bytes,str]:
-    """Normalize DEV reference for FLUX.2: every input image must be <512x512."""
+    """Normalize for FLUX.2 input limit without cropping or changing aspect ratio.
+    The 511px transport copy is provider-only; canonical identity geometry remains full resolution in V6.
+    """
     try:
         with Image.open(BytesIO(reference_bytes)) as source:
             image=ImageOps.exif_transpose(source).convert("RGB")
             max_side=max(image.size)
             if max_side>=512:
-                scale=511/max_side
+                scale=511/max_side  # provider requires dimensions below 512; preserve full frame/aspect ratio
                 image=image.resize(
                     (max(1,round(image.width*scale)),max(1,round(image.height*scale))),
                     Image.Resampling.LANCZOS,
@@ -91,11 +93,11 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
     if continuity_bytes is not None:
         continuity_bytes,continuity_type=_prepare_reference(continuity_bytes)
         prompt=("IMAGE 0 is the immutable MUBA identity/style reference. IMAGE 1 is the immediately previous story frame. "
-                "Create exactly ONE full-bleed cinematic 16:9 image, not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+                "Create exactly ONE full-bleed cinematic 16:9 image. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
                 "Continue the physical scene from IMAGE 1 while preserving MUBA from IMAGE 0: same face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions. "
                 "Only pose, expression, gaze and camera may change. "+prompt)
     else:
-        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed cinematic 16:9 image, not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed cinematic 16:9 image. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
                 "Preserve the exact face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions from IMAGE 0. "+prompt)
     status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
     if status!=200:
