@@ -157,7 +157,7 @@ def draft(day=None):
         "image_reference":_image_batch(day).get("reference"),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":REFERENCE_ROLE,
                  "visual_style":VISUAL_STYLE,"continuity":"fresh-dev-reference-plus-scene-state","frame_text_max_words":0,
-                 "visual_layer":"muba_story_visual","character_anchor_version":"daily-story-reference-first-v3","reference_sha256":(reference or {}).get("sha256"),
+                 "visual_layer":"muba_story_visual","character_anchor_version":VISUAL_STYLE,"reference_sha256":(reference or {}).get("sha256"),
                  "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
     STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
@@ -165,12 +165,13 @@ def draft(day=None):
         STORE.set("story_v3_origin_started","muba",True)
     return item
 
-def set_reference(day,gallery_id,sha256,content_type):
+def set_reference(day,gallery_id,sha256,content_type,fingerprint=None):
     """Bind a fresh DEV-uploaded reference to one production day."""
     if is_published(day):
         raise ValueError("Published Daily Story reference cannot be replaced")
-    metadata={"version":"daily-story-reference-first-v3","role":REFERENCE_ROLE,"style":VISUAL_STYLE,
+    metadata={"version":"daily-story-master-fingerprint-v4","role":REFERENCE_ROLE,"style":VISUAL_STYLE,
               "gallery_id":str(gallery_id),"sha256":str(sha256),"content_type":str(content_type)}
+    if isinstance(fingerprint,dict): metadata["fingerprint"]=dict(fingerprint)
     STORE.set("story_v3_reference",str(day),metadata)
     STORE.set("story_image_batches",str(day),{})
     return metadata

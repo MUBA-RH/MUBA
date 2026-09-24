@@ -61,6 +61,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
+from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -1043,7 +1044,7 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     archived=archive_creation(body,"image/jpeg","MUBA Daily Story fresh DEV reference","image","telegram")
     set_gallery_visibility(archived["id"],"hidden")
     item=story_draft()
-    set_story_reference(item["day"],archived["id"],digest,"image/jpeg")
+    set_story_reference(item["day"],archived["id"],digest,"image/jpeg",build_story_fingerprint(body))
     item=story_draft(item["day"])
     await message.reply_text(
         "📥 DAILY STORY INBOX — Referans alındı.\n\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında dört ayrı görsel Telegram'da önizlemeye gelecek.",
@@ -1443,6 +1444,9 @@ async def _story_generate_images(item):
     reference,reference_type=loaded
     if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
         raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
+    fingerprint=metadata.get("fingerprint") or build_story_fingerprint(reference)
+    if not story_fingerprint_matches(reference,fingerprint):
+        raise RuntimeError("Daily Story reference fingerprint mismatch")
 
     generated=[]
     previous=None

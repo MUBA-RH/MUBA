@@ -1589,6 +1589,29 @@
         "ar": "يستخدم Daily Story الآن جسر Cloudflare FLUX.2 الخادمي لتحرير الصور المرجعية. يبقى مرجع DEV الحديث وأربع لقطات متسلسلة ومعاينة Telegram والموافقة الصريحة للنشر كما هي، ولم يعد Kaggle اعتماداً للإنتاج.",
         "hi": "Daily Story अब मौजूदा serverless Cloudflare FLUX.2 reference-edit bridge का उपयोग करता है। ताज़ा DEV reference, चार sequential frames, Telegram review और explicit web approval वैसे ही रहते हैं; Kaggle अब production dependency नहीं है।"
       }
+    },
+    {
+      "id": "20260924-daily-story-fingerprint-v4",
+      "date": "2026-09-24",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story reference fingerprint V4",
+        "tr": "Daily Story referans parmak izi V4",
+        "zh": "Daily Story 参考指纹 V4",
+        "ar": "بصمة مرجع Daily Story V4",
+        "hi": "Daily Story reference fingerprint V4"
+      },
+      "text": {
+        "en": "Every Telegram Daily Story reference now stores and verifies a deterministic RGB pixel-matrix and binary fingerprint before the four-frame batch, while legacy visual-style inputs remain excluded.",
+        "tr": "Telegram'dan alınan her Daily Story referansı artık dört karelik üretimden önce deterministik RGB piksel-matris ve binary parmak iziyle kaydedilip doğrulanıyor; eski görsel stil girdileri dışarıda tutuluyor.",
+        "zh": "每个 Telegram Daily Story 参考图现在都会在四帧生成前保存并验证确定性的 RGB 像素矩阵与二进制指纹，同时继续排除旧视觉风格输入。",
+        "ar": "يتم الآن حفظ كل مرجع Daily Story من Telegram والتحقق منه ببصمة حتمية لمصفوفة RGB وبصمة ثنائية قبل دفعة الصور الأربع، مع استمرار استبعاد مدخلات الأنماط القديمة.",
+        "hi": "हर Telegram Daily Story reference अब चार-frame batch से पहले deterministic RGB pixel-matrix और binary fingerprint के साथ store और verify होता है, जबकि पुराने visual-style inputs बाहर रहते हैं।"
+      }
     }
   ]
 }
