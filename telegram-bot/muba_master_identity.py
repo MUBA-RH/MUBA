@@ -25,6 +25,7 @@ def identity_prompt()->str:
       "Canonical normalized geometry anchors from the master portrait: "
       +"; ".join(f"{k}={v}" for k,v in boxes.items())+". "
       "The daily reference may change pose, camera, environment and lighting, but must not redefine MUBA identity. "
+      "EYE LANDMARK LOCK: keep exactly two canonical eyes inside their normalized eye boxes; preserve their asymmetric relative scale, spacing, iris/pupil anatomy and orientation. Expression may change through lids/brows/head pose, never by deforming eye geometry. "
       "BODY LOCK: "+json.dumps(body,sort_keys=True)+". "
       "Frame the character as a complete full-body subject from cap to bare feet whenever the scene permits; do not crop into a face-only portrait. "
       "When the daily reference conflicts with the master identity, the master identity wins."

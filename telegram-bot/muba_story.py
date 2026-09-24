@@ -86,56 +86,39 @@ def _story_150(text):
     return clean[:147].rstrip(" ,.;:-")+"..."
 
 def _episode_for_day(day):
-    """Concrete deterministic episode seed; avoids vague 'something happened' plots."""
-    options=[
-        {
-            "title":"I'm MUBA","title_tr":"Ben MUBA",
-            "premise":"MUBA's first beginning: an ordinary quiet city street at early morning. No mysterious box, no cookie, no pre-built legend and no other mascot. MUBA simply appears in the world for the first time. Keep the same street and morning light across all four images.",
-            "actions":[
-                "Wide establishing shot: an ordinary nearly empty street at first light. MUBA enters the frame alone for the first time, small against the environment, looking around with open curiosity. Nothing magical happens; this is simply the beginning.",
-                "Same street moments later: MUBA stops at a shop window and sees the reflection of the SAME MUBA. MUBA studies the reflection with a puzzled but amused expression. Preserve exact face, cap, hoodie and body identity.",
-                "Immediate continuation on the SAME street: MUBA turns from the reflection and notices a few ordinary people farther down the street looking back with curiosity. MUBA gives a small casual wave. No crowd, hype or signs.",
-                "Payoff in the SAME morning street: MUBA keeps walking forward with relaxed confidence while the street wakes up behind. MUBA is now simply part of the place. End on a lived-in beginning, not a grand reveal."
-            ],
-            "premise_tr":"MUBA'nın ilk başlangıcı: sabahın ilk ışıklarında sıradan ve sakin bir şehir sokağı. Gizemli kutu, kurabiye, önceden yazılmış efsane veya başka maskot yok. MUBA dünyada ilk kez yalnızca ortaya çıkar.",
-            "labels":["","","",""],
-            "story":"There was no grand entrance and no legend waiting to be told. One morning, MUBA simply appeared on an ordinary street. MUBA looked around, caught a reflection in a window, and kept walking. A few people noticed. A few looked twice. MUBA gave a small wave and carried on. Nothing had been announced, promised or explained. There was only a character, a street, and the first moment of a story that would be lived one day at a time.",
-            "story_tr":"Büyük bir giriş yoktu; anlatılmayı bekleyen bir efsane de yoktu. Bir sabah MUBA sıradan bir sokakta öylece ortaya çıktı. Etrafına baktı, bir vitrinde yansımasını gördü ve yürümeye devam etti. Birkaç kişi fark etti. Bazıları dönüp bir daha baktı. MUBA küçük bir selam verdi ve yoluna devam etti. Hiçbir şey duyurulmamış, vaat edilmemiş veya açıklanmamıştı. Yalnızca bir karakter, bir sokak ve gün gün yaşanacak bir hikâyenin ilk anı vardı."
-        },
-        {
-            "title":"The Box That Knocked Back","title_tr":"Karşılık Veren Kutu",
-            "premise":"A quiet narrow old-city alley in warm morning daylight: faded green shop door, stone pavement, one clay flowerpot, and one small weathered wooden box beside the door. Keep these exact landmarks in every panel.",
-            "actions":[
-                "Wide establishing shot: MUBA walks into the alley, notices the closed wooden box beside the faded green door, stops two steps away and leans forward curiously. The box is still.",
-                "Same alley seconds later: MUBA crouches beside the SAME box and taps its lid once. The lid visibly bumps upward from a knock inside; MUBA jerks backward in surprise.",
-                "Immediate continuation: the SAME box lid flips half open and a tiny brass wind-up bird springs out carrying one large round biscuit in its beak. MUBA falls backward onto the stone pavement. Keep the green door and flowerpot.",
-                "Payoff in the SAME alley: MUBA sits beside the open box and breaks the biscuit in half. The tiny brass bird perches on the box edge and receives one half. Calm warm daylight, resolved ending."
-            ],
-            "premise_tr":"Eski şehirde dar bir sokakta MUBA, kapalı bir dükkânın yanında küçük ve yıpranmış ahşap bir kutu bulur. Kapağı tıklatınca içeriden aynı şekilde karşılık gelir.",
-            "labels":["KNOCK.","KNOCK?","OH.","YOURS."],
-            "story":"At the end of a quiet alley, MUBA noticed a battered wooden box that definitely had not been there a moment ago. One cautious knock on the lid came back from inside. Naturally, MUBA knocked again. The box jumped, the lid cracked open, and a tiny wind-up bird burst out carrying a biscuit almost as large as itself. It dropped the biscuit at MUBA's feet, folded its metal wings and disappeared back into the box. MUBA stared at the unexpected delivery for a second, then sat beside the box and shared the biscuit with whoever—or whatever—was still knocking from inside.",
-            "story_tr":"Sessiz bir sokağın sonunda MUBA, az önce orada olmadığına emin olduğu eski bir ahşap kutu fark etti. Kapağa temkinli bir kez vurdu; içeriden aynı vuruşla cevap geldi. Elbette MUBA bir kez daha vurdu. Kutu sıçradı, kapak aralandı ve içinden neredeyse kendisi kadar büyük bir bisküvi taşıyan minik kurmalı bir kuş çıktı. Bisküviyi MUBA'nın ayaklarının önüne bıraktı, metal kanatlarını kapattı ve tekrar kutunun içine kayboldu. MUBA beklenmedik teslimata bir an baktı, sonra kutunun yanına oturup bisküviyi içeride hâlâ tıklatan her kimse—ya da her neyse—onunla paylaştı."
-        },
-        {
-            "title":"The Golden Signal","title_tr":"Altın İşaret",
-            "premise":"A four-chapter adventure. Each chapter is a distinct location and event. Generate exactly one image for the current chapter only; never preview, repeat or combine another chapter in the same image.",
-            "actions":[
-                "CHAPTER 1 — THE DISCOVERY. On a futuristic neon-lit city street at night, full-body MUBA finds a mysterious ancient gold coin glowing on the ground and looks at it with surprise. The coin must be clearly visible. Show only this discovery.",
-                "CHAPTER 2 — THE MAP. Inside MUBA's room, full-body MUBA opens a futuristic holographic treasure map decoded from the coin and studies its luminous route. The map must be clearly visible. Show only this map scene.",
-                "CHAPTER 3 — THE JOURNEY. Full-body MUBA follows the map through enormous ancient rocky formations and a steep mountain trail wrapped in mist, actively climbing forward. Show only this journey.",
-                "CHAPTER 4 — THE REWARD. Full-body MUBA reaches an ancient temple above the clouds and discovers a gigantic glowing $MUBA crystal ahead, facing it in awe. Show only this reward."
-            ],
-            "premise_tr":"Dört bölümlük macera: keşif, harita, yolculuk ve ödül. Her bölüm ayrı bir olay ve mekândır; her bölüm için yalnızca tek görsel üretilir.",
-            "labels":["The Discovery","The Map","The Journey","The Reward"],
-            "story":"MUBA finds a mysterious golden coin, deciphers its hidden map, crosses misty ancient mountains and reaches a temple above the clouds where a glowing $MUBA crystal awaits.",
-            "story_tr":"MUBA gizemli altın sikkeyi bulur, içindeki haritayı çözer, sisli antik dağları aşar ve bulutların üzerindeki tapınakta parlayan $MUBA kristaline ulaşır."
-        },
-    ]
-    # Bootstrap the living story with MUBA's own emergence. Later days use the
-    # existing story pool and yesterday's canon for continuity.
-    if not STORE.get("story_v3_origin_started","muba",False):
-        return options[0]
-    return options[1 + (sum(ord(x) for x in str(day)) % (len(options)-1))]
+    """Four explicit chapters. The visual generator receives exactly one chapter at a time."""
+    return {
+        "title":"The Golden Signal","title_tr":"Altın İşaret",
+        "premise":"One continuous four-chapter MUBA adventure. Each chapter has one distinct event, location and required visual subject.",
+        "chapters":[
+            {
+                "title":"The Discovery","title_tr":"Keşif",
+                "text":"MUBA walks along a neon-lit futuristic city street and discovers a mysterious ancient golden coin glowing on the ground. MUBA stops and looks at it in surprise.",
+                "text_tr":"MUBA, fütüristik şehrin neon ışıklı caddesinde yürürken yerde parıldayan gizemli, antik bir altın sikke buluyor ve şaşkınlıkla ona bakıyor.",
+                "required":["futuristic neon-lit city street","ancient glowing golden coin on the ground","MUBA visibly looking at the coin with surprise"],
+            },
+            {
+                "title":"The Map","title_tr":"Harita",
+                "text":"After decoding the secret on the coin, MUBA opens a futuristic holographic treasure map in the room and studies the luminous route with intense curiosity.",
+                "text_tr":"Sikkenin üzerindeki sırrı çözen MUBA, odasında fütüristik ve holografik bir hazine haritası açıyor. Gideceği rotayı büyük bir merakla inceliyor.",
+                "required":["MUBA's room","large luminous holographic treasure map","MUBA actively studying the route"],
+            },
+            {
+                "title":"The Journey","title_tr":"Yolculuk",
+                "text":"Following the map, MUBA travels through enormous mist-covered ancient rock formations and climbs a steep mountain trail on a major adventure.",
+                "text_tr":"Haritayı takip eden MUBA, sislerle kaplı devasa antik kayalıkların ve dik dağ patikalarının arasından geçerek büyük bir maceraya atılıyor.",
+                "required":["enormous ancient rock formations","misty steep mountain trail","MUBA actively travelling/climbing forward"],
+            },
+            {
+                "title":"The Reward","title_tr":"Ödül",
+                "text":"At the end of the journey MUBA reaches a temple above the clouds and discovers a gigantic mesmerizing glowing $MUBA crystal directly ahead.",
+                "text_tr":"Yolculuğun sonunda bulutların üzerindeki tapınağa ulaşan MUBA, karşısında devasa ve büyüleyici bir şekilde parıldayan $MUBA kristalini buluyor.",
+                "required":["ancient temple above the clouds","gigantic glowing $MUBA crystal","MUBA facing the crystal in awe"],
+            },
+        ],
+        "story":"MUBA finds a mysterious golden coin, deciphers its map, crosses misty ancient mountains and reaches a temple above the clouds where a glowing $MUBA crystal awaits.",
+        "story_tr":"MUBA gizemli altın sikkeyi bulur, haritasını çözer, sisli antik dağları aşar ve bulutların üzerindeki tapınakta parlayan $MUBA kristaline ulaşır.",
+    }
 
 def draft(day=None):
     day=day or datetime.now(TZ).date().isoformat()
@@ -145,51 +128,37 @@ def draft(day=None):
     previous=_previous_story_context(day)
     ep=_episode_for_day(day)
     continuity=_continuity_bridge(previous)
-    theme=ep["title"]
-    theme_tr=ep["title_tr"]
-    labels=ep["labels"]
-    actions=ep["actions"]
-    actions_tr=[
-        "Kare 1 — Kurulum: geniş planda MUBA'nın hikâyedeki somut nesneyi belirtilen mekânda bulduğu an gösterilir.",
-        "Kare 2 — Eylem: birkaç saniye sonrası; MUBA aynı nesneyle fiziksel olarak etkileşir ve ilk sonuç ortaya çıkar.",
-        "Kare 3 — Dönüm: ikinci karenin sonucu devam eder; hikâyedeki somut sürpriz açığa çıkar ve MUBA belirgin tepki verir.",
-        "Kare 4 — Final: olay hemen devam eder; aynı olay görsel espri ve tamamlanmış bir final kompozisyonuyla çözülür.",
-    ]
-    prompts=[
-        story_identity_prompt()+" "+continuity+" EPISODE: "+theme+". FOUR-CHAPTER STORY CONTEXT: "+ep["premise"]+" CURRENT CHAPTER ONLY: "+action+" IMPORTANT: Create ONE image for THIS chapter only. Do not depict earlier or later chapters, do not make a sequence inside one image, and do not reuse a neutral standing portrait when the chapter requires an action or prop."
-        for action in actions
-    ]
-    if ep["title"]=="I'm MUBA":
-        raw_summary="MUBA appears. Looks around. Sees a reflection. Waves. Keeps walking."
-        raw_summary_tr="MUBA ortaya çıkar. Etrafına bakar. Yansımasını görür. Selam verir. Yürür."
-    elif ep["title"]=="The Golden Signal":
-        raw_summary="MUBA finds a golden coin, deciphers its map, crosses misty mountains and reaches a cloud-top temple where a glowing $MUBA crystal awaits."
-        raw_summary_tr="MUBA altın sikkeyi bulur, haritasını çözer, sisli dağları aşar ve bulut üstü tapınakta parlayan $MUBA kristaline ulaşır."
-    else:
-        raw_summary="MUBA finds a box. It knocks back. The lid opens. A small surprise appears."
-        raw_summary_tr="MUBA bir kutu bulur. Kutu karşılık verir. Kapak açılır. Küçük bir sürpriz çıkar."
+    chapters=ep["chapters"]
+    prompts=[]
+    for index,chapter in enumerate(chapters,1):
+        required="; ".join(chapter["required"])
+        prompts.append(
+            story_identity_prompt()+" "+continuity+
+            f" CURRENT CHAPTER: {index}/4 — {chapter['title']}. "+
+            "STORY ACTION: "+chapter["text"]+" "+
+            "REQUIRED VISIBLE STORY ELEMENTS: "+required+". "+
+            "SCENE-GROUNDING GATE: the output is invalid unless every required story element is visibly present and MUBA is performing the stated action. "+
+            "Create exactly ONE full-bleed 16:9 image for this chapter only. No other chapter, no collage, no split frame, no generic standing portrait."
+        )
     reference=reference_for_day(day)
     item={
         "day":day,"status":"published" if is_published(day) else "draft",
-        "theme":theme,"theme_tr":theme_tr,"source_truth":truth,"source_truth_tr":truth_tr,
-        "scenes":actions,"scenes_tr":actions_tr,"frame_labels":labels,"prompts":prompts,
-        "story":_story_150(raw_summary),"story_tr":_story_150(raw_summary_tr),
-        "summary":_story_150(raw_summary),
-        "summary_tr":_story_150(raw_summary_tr),
+        "theme":ep["title"],"theme_tr":ep["title_tr"],"source_truth":truth,"source_truth_tr":truth_tr,
+        "chapters":chapters,
+        "scenes":[x["text"] for x in chapters],"scenes_tr":[x["text_tr"] for x in chapters],
+        "frame_labels":[x["title"] for x in chapters],"prompts":prompts,
+        "story":_story_150(ep["story"]),"story_tr":_story_150(ep["story_tr"]),
+        "summary":_story_150(ep["story"]),"summary_tr":_story_150(ep["story_tr"]),
         "previous_day":previous["day"],"previous_theme":previous["theme"],"story_state":_state_from_episode(ep),
-        "twt":_story_150(raw_summary),"twt_tr":_story_150(raw_summary_tr),
-        "images":image_ids(day),
+        "twt":_story_150(ep["story"]),"twt_tr":_story_150(ep["story_tr"]),
+        "images":image_ids(day),"image_ids":image_ids(day),
         "image_reference":_image_batch(day).get("reference"),
         "rules":{"frames":4,"human_approval_required":True,"auto_publish":False,"character_anchor":REFERENCE_ROLE,
-                 "visual_style":VISUAL_STYLE,"continuity":"master-identity-plus-independent-chapter-scene","frame_text_max_words":0,
+                 "visual_style":VISUAL_STYLE,"continuity":"story-state-plus-independent-chapter-scene","frame_text_max_words":0,
                  "visual_layer":"muba_story_visual","character_anchor_version":VISUAL_STYLE,"reference_sha256":(reference or {}).get("sha256"),
-                 "aspect_ratio":"16:9","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
+                 "aspect_ratio":"16:9","delivery":"chapter-by-chapter","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
-    STORE.set("story_canon",str(day),{"day":day,"theme":theme,"story":ep["story"],"ending":actions[-1],"state":_state_from_episode(ep),"digest":hashlib.sha256(ep["story"].encode()).hexdigest()[:16]})
-    if ep["title"]=="I'm MUBA":
-        STORE.set("story_v3_origin_started","muba",True)
     return item
-
 def set_reference(day,gallery_id,sha256,content_type,fingerprint=None):
     """Bind a fresh DEV-uploaded reference to one production day."""
     if is_published(day):
