@@ -646,7 +646,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         item=story_draft()
         reference=story_reference_for_day(item["day"])
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\n\n"+item.get("twt_tr",item["twt"])+"\n\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+"\n\n".join("🎬 Bölüm %s: %s (%s)\n%s\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i) for i,chapter in enumerate(item["chapters"],1))+"\n\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
         if item["status"]!="published" and len(item.get("images",[]))==4:
             rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
@@ -671,14 +671,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörseller üretilemedi. Mevcut sistem korunuyor; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 görsel hazır. Aşağıda 1 → 2 → 3 → 4 sırasıyla tek tek gönderiyorum. Dördünü kontrol ettikten sonra WEB YAYINLA ile onaylayabilirsin."
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 bölüm ayrı ayrı üretildi. Her görsel yalnızca kendi bölümünü anlatıyor."
         rows=[[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]]
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows))
-        for i,gid in enumerate(item["images"],1):
-            await q.message.reply_photo(
-                photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,
-                caption=item["summary"],
-            )
+        for i,(gid,chapter) in enumerate(zip(item["images"],item["chapters"]),1):
+            caption="🎬 Bölüm %s: %s (%s)\n\n%s\n\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i)
+            await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=caption)
         return
     if data=="story_publish":
         if not is_dev(user_id): return
@@ -998,9 +996,10 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     )
     try:
         item=await _story_generate_images(item)
-        await message.reply_text("📤 DAILY STORY OUTBOX — 4 görsel hazır. Aşağıda kontrol et.")
-        for i,gid in enumerate(item.get("image_ids",[]),1):
-            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=item["summary"])
+        await message.reply_text("📤 DAILY STORY OUTBOX — 4 bölüm hazır. Her bölüm ve kendi görseli aşağıda ayrı ayrı geliyor.")
+        for i,(gid,chapter) in enumerate(zip(item.get("images",[]),item["chapters"]),1):
+            caption="🎬 Bölüm %s: %s (%s)\n\n%s\n\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i)
+            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=caption)
         await message.reply_text("Dördünü kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
@@ -1396,23 +1395,19 @@ async def _story_generate_images(item):
     if not story_fingerprint_matches(reference,fingerprint):
         raise RuntimeError("Daily Story reference fingerprint mismatch")
 
-    generated=[]
+    ids=[]
     async with aiohttp.ClientSession() as session:
-        for prompt in item["prompts"]:
+        for index,prompt in enumerate(item["prompts"]):
             body,out_type=await generate(
                 session,
                 prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
                 reference,
                 reference_type=reference_type,
             )
-            generated.append((body,out_type))
-
-    ids=[]
-    for index,(body,out_type) in enumerate(generated):
-        archived=_archive_studio_output(body,out_type,item["prompts"][index],"image","telegram-story-engine")
-        if not archived:
-            raise RuntimeError("Daily Story image archive failed")
-        ids.append(archived["id"])
+            archived=_archive_studio_output(body,out_type,prompt,"image","telegram-story-engine")
+            if not archived:
+                raise RuntimeError("Daily Story image archive failed")
+            ids.append(archived["id"])
     return set_story_images(item["day"],ids)
 
 async def _prepare_daily_story(application):

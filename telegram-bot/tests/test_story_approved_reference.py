@@ -24,10 +24,10 @@ class ReferenceFirstStateTests(unittest.TestCase):
 
     def test_new_system_starts_with_muba_origin_and_no_reference(self):
         item=muba_story.draft(self.day)
-        self.assertEqual(item["theme"],"I'm MUBA")
+        self.assertEqual(item["theme"],"The Golden Signal")
         self.assertIsNone(muba_story.reference_for_day(self.day))
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v8")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v9")
 
     def test_fresh_reference_is_required_before_image_batch(self):
         with self.assertRaisesRegex(ValueError,"Fresh DEV reference required"):
@@ -132,7 +132,7 @@ class ProductionFunctionTests(unittest.TestCase):
         self.assertIn("story_reference_for_day",section)
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
-        self.assertIn("for prompt in item[\"prompts\"]",section)
+        self.assertIn('for index,prompt in enumerate(item["prompts"]):',section)
         self.assertNotIn("continuity_bytes=previous",section)
         self.assertNotIn("previous,previous_type=body,out_type",section)
         self.assertIn("set_story_images",section)
