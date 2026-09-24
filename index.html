@@ -917,7 +917,7 @@
           document.getElementById("story-empty").textContent="This story is waiting for its four approved images.";
           return;
         }
-        const scenes=Array.isArray(story.scenes)?story.scenes:[]; grid.innerHTML=urls.slice(0,4).map((url,i)=>\'<figure class="story-frame"><img src="\'+url+\'" alt="MUBA Daily Story chapter \'+(i+1)+\'"></figure>\').join("");
+        grid.innerHTML=urls.slice(0,4).map((url,i)=>`<figure class="story-frame"><img src="${url}" alt="MUBA Daily Story chapter ${i+1}"></figure>`).join("");
         const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.summary||story.twt||"";
         const shareText=story.twt||story.summary||"";
         const share=document.getElementById("story-share");
