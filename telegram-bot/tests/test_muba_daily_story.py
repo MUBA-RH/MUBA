@@ -177,6 +177,18 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("exactly two eyes",layer)
         self.assertIn("mismatched pupils",layer)
 
+    def test_v10_capacity_fallback_preserves_primary_and_story_contract(self):
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        primary=(ROOT/"muba_story_cloudflare.py").read_text(encoding="utf-8")
+        fallback=(ROOT/"muba_story_fallback.py").read_text(encoding="utf-8")
+        self.assertIn("GenerationCapacityError",primary)
+        self.assertIn("status==429",primary)
+        self.assertIn("muba_story_fallback",bot)
+        self.assertIn("secondary reservoir",bot.lower())
+        self.assertIn("1024",fallback)
+        self.assertIn("576",fallback)
+        self.assertIn("Visual generation capacity is currently unavailable",bot)
+
     def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
         workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
