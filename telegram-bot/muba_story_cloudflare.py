@@ -25,6 +25,13 @@ def endpoint()->str:
     account=os.environ["CLOUDFLARE_ACCOUNT_ID"]
     return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{MODEL}"
 
+class GenerationCapacityError(RuntimeError):
+    """Primary generation reservoir has exhausted or throttled capacity."""
+
+def _capacity_limited(status:int,detail:str)->bool:
+    text=(detail or "").lower()
+    return status==429 or "daily free allocation" in text or "quota" in text or "rate limit" in text
+
 def _flagged(status:int,detail:str)->bool:
     text=(detail or "").lower()
     return status==400 and ("flagged" in text or "prompt input image combination" in text)
@@ -102,6 +109,8 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
     status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
     if status!=200:
         detail=raw[:1000].decode("utf-8","replace")
+        if _capacity_limited(status,detail):
+            raise GenerationCapacityError("Primary generation reservoir capacity unavailable")
         if _flagged(status,detail):
             retry_prompt=_safe_retry_prompt(prompt)
             status,content_type,raw=await _request(session,retry_prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
