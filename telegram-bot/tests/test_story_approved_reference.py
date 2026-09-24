@@ -78,10 +78,10 @@ class CloudflareStoryEngineTests(unittest.TestCase):
 
     def test_cloudflare_engine_uses_reference_and_sequential_continuity(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("previous=None",source)
+        self.assertNotIn("previous=None",source)
         self.assertIn("reference_type=reference_type",source)
-        self.assertIn("continuity_bytes=previous",source)
-        self.assertIn("previous,previous_type=body,out_type",source)
+        self.assertNotIn("continuity_bytes=previous",source)
+        self.assertNotIn("previous,previous_type=body,out_type",source)
 
 class TelegramInboxOutboxTests(unittest.TestCase):
     def test_reference_upload_auto_generates_and_previews(self):
@@ -113,7 +113,7 @@ class SequentialIdentityEngineTests(unittest.TestCase):
 
     def test_story_generation_chains_previous_frame(self):
         source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("continuity_bytes=previous",source)
+        self.assertNotIn("continuity_bytes=previous",source)
         self.assertIn("telegram-cloudflare",source)
 
 
@@ -135,8 +135,8 @@ class ProductionFunctionTests(unittest.TestCase):
         self.assertIn("read_gallery_image",section)
         self.assertIn("checksum mismatch",section)
         self.assertIn("for prompt in item[\"prompts\"]",section)
-        self.assertIn("continuity_bytes=previous",section)
-        self.assertIn("previous,previous_type=body,out_type",section)
+        self.assertNotIn("continuity_bytes=previous",section)
+        self.assertNotIn("previous,previous_type=body,out_type",section)
         self.assertIn("set_story_images",section)
 
 
