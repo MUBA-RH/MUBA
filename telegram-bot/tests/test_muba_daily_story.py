@@ -189,6 +189,19 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("576",fallback)
         self.assertIn("Visual generation capacity is currently unavailable",bot)
 
+    def test_v11_gpu_worker_job_preserves_story_contract(self):
+        day="2099-02-01"
+        muba_story.unpublish(day)
+        muba_story.set_reference(day,"worker-ref","abc123","image/jpeg")
+        job=muba_story.worker_job(day,"/tmp/muba-reference.jpg")
+        self.assertEqual(len(job["chapters"]),4)
+        self.assertEqual(job["rules"]["aspect_ratio"],"16:9")
+        self.assertTrue(job["rules"]["independent_chapters"])
+        self.assertFalse(job["rules"]["previous_frame_conditioning"])
+        self.assertEqual(job["rules"]["approval"],"telegram-dev")
+        self.assertEqual(job["reference_sha256"],"abc123")
+        self.assertTrue(all("CURRENT CHAPTER:" in x["prompt"] for x in job["chapters"]))
+
     def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
         workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
         bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
