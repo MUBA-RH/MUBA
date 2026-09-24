@@ -10,9 +10,10 @@ class StudioExam(unittest.TestCase):
   self.assertLessEqual(len(muba_studio.clean_prompt("x"*500)),120)
  def test_daily_limit_is_one(self):
   uid=424242
-  self.assertEqual(muba_studio.remaining(uid),3)
-  for _ in range(3): self.assertTrue(muba_studio.consume(uid))
-  self.assertFalse(muba_studio.consume(uid)); self.assertEqual(muba_studio.remaining(uid),0)
+  self.assertEqual(muba_studio.remaining(uid),1)
+  self.assertTrue(muba_studio.consume(uid))
+  self.assertFalse(muba_studio.consume(uid))
+  self.assertEqual(muba_studio.remaining(uid),0)
  def test_render_uses_reference_without_external_ai(self):
   src=Image.new("RGB",(300,300),(120,80,50)); b=io.BytesIO(); src.save(b,"JPEG")
   out=muba_studio.render_meme(b.getvalue(),"WE LIVE HERE NOW","meme")
