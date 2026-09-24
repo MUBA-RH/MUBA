@@ -137,9 +137,9 @@ class DailyStoryTests(unittest.TestCase):
     def test_story_uses_previous_day_and_web_story_is_150_chars(self):
         item=muba_story.draft("2026-09-23")
         self.assertTrue(item["previous_day"])
-        self.assertLessEqual(len(item["summary"]),100)
-        self.assertLessEqual(len(item["summary_tr"]),100)
-        self.assertTrue(all("CONTINUITY FROM YESTERDAY:" in p for p in item["prompts"]))
+        self.assertLessEqual(len(item["summary"]),150)
+        self.assertLessEqual(len(item["summary_tr"]),150)
+        self.assertTrue(all("CURRENT CHAPTER ONLY:" in p for p in item["prompts"]))
 
     def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
         workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
