@@ -159,6 +159,25 @@ def draft(day=None):
                  "aspect_ratio":"16:9","delivery":"chapter-by-chapter","reference_excludes":["purple-neon-ring","crown","background","example-props","fixed-pose"]},
     }
     return item
+
+def worker_job(day=None,reference_path="muba-reference.jpg"):
+    """Serialize the existing Daily Story contract for an isolated GPU worker."""
+    item=draft(day)
+    reference=reference_for_day(item["day"])
+    if not reference:
+        raise ValueError("Fresh DEV reference required before worker job creation")
+    return {
+        "schema_version":1,
+        "job_id":"muba-daily-story-"+item["day"],
+        "day":item["day"],
+        "reference_path":str(reference_path),
+        "reference_sha256":reference["sha256"],
+        "story_state":item["story_state"],
+        "seed":int(hashlib.sha256(item["day"].encode()).hexdigest()[:8],16),
+        "chapters":[{"index":i,"title":ch["title"],"prompt":item["prompts"][i-1]} for i,ch in enumerate(item["chapters"],1)],
+        "rules":{"images":4,"aspect_ratio":"16:9","independent_chapters":True,"previous_frame_conditioning":False,"approval":"telegram-dev"},
+    }
+
 def set_reference(day,gallery_id,sha256,content_type,fingerprint=None):
     """Bind a fresh DEV-uploaded reference to one production day."""
     if is_published(day):
