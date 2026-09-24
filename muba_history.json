@@ -1635,6 +1635,29 @@
         "ar": "يجمع Daily Story الآن بصمة المرجع اليومية مع ملف هندسة MUBA الرئيسي ويحقن ثوابت الوجه والعينين والأنف والفم واللسان والقبعة والهودي في كل إطار.",
         "hi": "Daily Story अब हर daily reference fingerprint को canonical MUBA master geometry profile से जोड़ता है और face, eyes, nose, mouth, tongue, cap तथा hoodie anchors हर frame में inject करता है।"
       }
+    },
+    {
+      "id": "20260924-daily-story-body-master-v6",
+      "date": "2026-09-24",
+      "type": "improved",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story Full-Body Master V6",
+        "tr": "Daily Story Tam Vücut Master V6",
+        "zh": "Daily Story 全身主参考 V6",
+        "ar": "مرجع الجسم الكامل Daily Story V6",
+        "hi": "Daily Story Full-Body Master V6"
+      },
+      "text": {
+        "en": "The approved full-body reference board is now embedded as a checksum-verified compact visual anchor. MUBA is locked to upright biped proportions, tan/brown exposed fur, black cap and hoodie, and bare feet. Cloudflare's required sub-512 transport copy preserves the full frame and aspect ratio while canonical identity data remains full resolution.",
+        "tr": "Onaylı tam vücut referans panosu artık checksum doğrulamalı kompakt görsel ankraj olarak gömülü. MUBA; dik iki ayaklı oranlara, tan/kahverengi açıkta kalan tüylere, siyah şapka ve hoodie'ye ve çıplak ayaklara kilitli. Cloudflare'ın zorunlu 512 altı taşıma kopyası tam kadraj ve en-boy oranını korurken kanonik kimlik verisi tam çözünürlükte kalıyor.",
+        "zh": "已批准的全身参考板现作为校验和验证的紧凑视觉锚点嵌入。MUBA 锁定为直立双足比例、棕褐色毛发、黑帽与连帽衫及赤脚。",
+        "ar": "تم تضمين لوحة مرجع الجسم الكامل كمرساة بصرية مدمجة ومتحقق منها، مع تثبيت نسب MUBA وملابسه وفرائه وقدميه العاريتين.",
+        "hi": "Approved full-body reference board अब checksum-verified compact visual anchor के रूप में embedded है; MUBA upright biped proportions, tan/brown fur, black cap/hoodie और bare feet पर locked है।"
+      }
     }
   ]
 }
