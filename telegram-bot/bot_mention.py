@@ -14,6 +14,7 @@ from collections import OrderedDict, defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+import aiohttp
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent, CopyTextButton
 from telegram.constants import ChatType
