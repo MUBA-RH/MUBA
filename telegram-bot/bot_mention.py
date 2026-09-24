@@ -646,7 +646,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         item=story_draft()
         reference=story_reference_for_day(item["day"])
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item.get("theme_tr",item["theme"])+"\n\n"+"\\n".join(f"{i+1}. {s}" for i,s in enumerate(item.get("scenes_tr",item["scenes"])))+"\n\n"+item.get("twt_tr",item["twt"])+"\n\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+"\n\n".join("🎬 Bölüm %s: %s (%s)\n%s\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i) for i,chapter in enumerate(item["chapters"],1))+"\n\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
         rows=[]
         if item["status"]!="published" and len(item.get("images",[]))==4:
             rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
@@ -1396,23 +1396,19 @@ async def _story_generate_images(item):
     if not story_fingerprint_matches(reference,fingerprint):
         raise RuntimeError("Daily Story reference fingerprint mismatch")
 
-    generated=[]
+    ids=[]
     async with aiohttp.ClientSession() as session:
-        for prompt in item["prompts"]:
+        for index,prompt in enumerate(item["prompts"]):
             body,out_type=await generate(
                 session,
                 prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
                 reference,
                 reference_type=reference_type,
             )
-            generated.append((body,out_type))
-
-    ids=[]
-    for index,(body,out_type) in enumerate(generated):
-        archived=_archive_studio_output(body,out_type,item["prompts"][index],"image","telegram-story-engine")
-        if not archived:
-            raise RuntimeError("Daily Story image archive failed")
-        ids.append(archived["id"])
+            archived=_archive_studio_output(body,out_type,prompt,"image","telegram-story-engine")
+            if not archived:
+                raise RuntimeError("Daily Story image archive failed")
+            ids.append(archived["id"])
     return set_story_images(item["day"],ids)
 
 async def _prepare_daily_story(application):
