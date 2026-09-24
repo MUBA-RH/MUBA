@@ -7,7 +7,10 @@ Telegram fresh reference -> Render bot -> authenticated Kaggle kernel push -> T4
 
 The worker is a finite batch job. It starts only when a fresh Daily Story reference is submitted, generates exactly four sequential frames, writes 01.png through 04.png, then exits. There is no keep-alive or idle GPU process.
 
-## Required Render secrets
+## Required Render secret (preferred)
+- KAGGLE_API_TOKEN — access token copied from Kaggle Settings > API Tokens
+
+Legacy fallback (not required when KAGGLE_API_TOKEN is set):
 - KAGGLE_USERNAME
 - KAGGLE_KEY
 
