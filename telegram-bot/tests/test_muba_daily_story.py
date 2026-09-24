@@ -22,7 +22,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("face/body identity lock",prompt)
         self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v9")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["continuity"],"master-identity-plus-independent-chapter-scene")
+        self.assertEqual(item["rules"]["continuity"],"story-state-plus-independent-chapter-scene")
         self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v9")
         self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
@@ -30,7 +30,7 @@ class DailyStoryTests(unittest.TestCase):
     def test_each_prompt_has_concrete_story_state(self):
         item=muba_story.draft("2099-01-01")
         joined=" ".join(item["prompts"]).lower()
-        self.assertTrue(("same box" in joined) or ("same folded paper" in joined))
+        self.assertIn("required visible story elements:",joined)
         self.assertNotIn("tiny integrated story word",joined)
         self.assertEqual(item["rules"]["frame_text_max_words"],0)
 
@@ -139,7 +139,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertTrue(item["previous_day"])
         self.assertLessEqual(len(item["summary"]),150)
         self.assertLessEqual(len(item["summary_tr"]),150)
-        self.assertTrue(all("CURRENT CHAPTER ONLY:" in p for p in item["prompts"]))
+        self.assertTrue(all("CURRENT CHAPTER:" in p for p in item["prompts"]))
 
     def test_story_state_persists_narrative_continuity_without_frame_copying(self):
         item=muba_story.draft("2026-09-23")
@@ -147,7 +147,7 @@ class DailyStoryTests(unittest.TestCase):
         self.assertEqual(set(state),{"location","important_object","resolved_event","unresolved_thread","next_day_hook"})
         self.assertTrue(state["next_day_hook"])
         self.assertTrue(all("PREVIOUS STORY STATE:" in p for p in item["prompts"]))
-        self.assertTrue(all("CURRENT CHAPTER ONLY:" in p for p in item["prompts"]))
+        self.assertTrue(all("CURRENT CHAPTER:" in p for p in item["prompts"]))
         layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
         self.assertIn("CHAPTER ISOLATION",layer)
         self.assertIn("NARRATIVE CONTINUITY comes from Story State",layer)
@@ -206,6 +206,6 @@ class TestLivingStoryIsolation(unittest.TestCase):
         self.assertIn("muba_story_cloudflare",story)
         self.assertIn("Daily Story Visual Generation Layer is not configured",story)
         self.assertIn("body,out_type=await generate",story)
-        self.assertIn("for index,(body,out_type) in enumerate(generated):",story)
+        self.assertIn('for index,prompt in enumerate(item["prompts"]):',story)
         self.assertNotIn("muba_story_openai",story)
         self.assertNotIn("generate_anchor",story)
