@@ -20,10 +20,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("canonical muba identity remains authoritative",prompt)
         self.assertIn("never a collage",prompt)
         self.assertIn("face/body identity lock",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v8")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v9")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
         self.assertEqual(item["rules"]["continuity"],"master-identity-plus-independent-chapter-scene")
-        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v8")
+        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v9")
         self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
 
@@ -152,6 +152,30 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("CHAPTER ISOLATION",layer)
         self.assertIn("NARRATIVE CONTINUITY comes from Story State",layer)
         self.assertNotIn("Image N+1 begins from the physical and narrative state left by image N",layer)
+
+    def test_v9_chapters_are_explicit_and_scene_grounded(self):
+        item=muba_story.draft("2099-01-01")
+        self.assertEqual([x["title"] for x in item["chapters"]],["The Discovery","The Map","The Journey","The Reward"])
+        self.assertEqual([x["title_tr"] for x in item["chapters"]],["Keşif","Harita","Yolculuk","Ödül"])
+        self.assertTrue(all("REQUIRED VISIBLE STORY ELEMENTS:" in p for p in item["prompts"]))
+        self.assertTrue(all("SCENE-GROUNDING GATE:" in p for p in item["prompts"]))
+        self.assertTrue(all("No other chapter" in p for p in item["prompts"]))
+        self.assertEqual(item["rules"]["delivery"],"chapter-by-chapter")
+
+    def test_v9_telegram_pairs_each_chapter_with_own_image(self):
+        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
+        self.assertIn('zip(item["images"],item["chapters"])',bot)
+        self.assertIn('zip(item.get("images",[]),item["chapters"])',bot)
+        self.assertIn('Bölüm %s: %s (%s)',bot)
+        self.assertNotIn('caption=item["summary"]',bot)
+
+    def test_v9_eye_geometry_lock_is_explicit(self):
+        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
+        identity=(ROOT/"muba_master_identity.py").read_text(encoding="utf-8")
+        self.assertIn("EYE GEOMETRY LOCK",layer)
+        self.assertIn("EYE LANDMARK LOCK",identity)
+        self.assertIn("exactly two eyes",layer)
+        self.assertIn("mismatched pupils",layer)
 
     def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
         workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
