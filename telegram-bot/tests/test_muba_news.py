@@ -56,5 +56,24 @@ class NewsTests(unittest.TestCase):
                 self.assertIsNone(asyncio.run(news.telegram_news(row,lang,session)))
         self.assertIsNone(asyncio.run(news.telegram_news(self.row(verification_status="PENDING"),"en",session)))
 
+    def test_five_language_delivery_uses_local_labels(self):
+        session=object()
+        for lang in news.LABELS:
+            with self.subTest(lang=lang), patch.object(news,"translate",new=AsyncMock(side_effect=lambda text,locale,session: locale+":"+text)):
+                result=asyncio.run(news.telegram_news(self.row(status="UPDATED"),lang,session))
+                verified,source,time_label,update,_=news.TELEGRAM_FIELDS[lang]
+                self.assertIn(lang+":SEC Approves",result)
+                self.assertIn(lang+":Official ETF",result)
+                self.assertIn(verified,result)
+                self.assertIn(source+": SEC",result)
+                self.assertIn(time_label+":",result)
+                self.assertIn(update,result)
+
+    def test_official_crypto_update_is_important(self):
+        row=self.row(title="CFTC Updates Crypto Asset FAQs",summary="Official staff guidance on blockchain activities.",category="REGULATION")
+        self.assertTrue(news.important(row))
+        self.assertEqual(news.verified_row(row,b"<h1>CFTC Updates Crypto Asset FAQs</h1>"),"VERIFIED")
+        self.assertFalse(news.important(self.row(title="CFTC Updates FAQ",summary="Generic filing note.")))
+
 
 if __name__=="__main__": unittest.main()
