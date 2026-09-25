@@ -1285,39 +1285,99 @@
 
     const tweets = {
       iconic: [
-        "MUBA didn't arrive with a ten-page explanation.\n\nMUBA arrived.\nPeople looked.\nPeople stayed.\n\nWE LIVE HERE NOW.",
-        "Some characters need a lore thread.\n\nMUBA needs two words:\n\nI'M MUBA.",
-        "The timeline asked for an explanation.\n\nMUBA showed up instead.\n\nWE LIVE HERE NOW.",
-        "No borrowed face.\nNo borrowed story.\nNo borrowed identity.\n\nMUBA is MUBA."
+        "MUBA didn't arrive with a ten-page explanation.
+
+MUBA arrived.
+People looked.
+People stayed.
+
+WE LIVE HERE NOW.",
+        "Some characters need a lore thread.
+
+MUBA needs two words:
+
+I'M MUBA.",
+        "The timeline asked for an explanation.
+
+MUBA showed up instead.
+
+WE LIVE HERE NOW.",
+        "No borrowed face.
+No borrowed story.
+No borrowed identity.
+
+MUBA is MUBA."
       ],
       community: [
-        "A meme becomes different when people stop only watching it and start building around it.\n\nThat part belongs to the community.",
-        "MUBA has a face.\nThe community gives that face a world to live in.\n\nThat's where the story gets interesting.",
-        "You don't have to stand outside the MUBA story.\n\nMake something. Share something. Add a little chaos.",
-        "The best part of MUBA was never supposed to be one post.\n\nIt's what people keep creating after it."
+        "A meme becomes different when people stop only watching it and start building around it.
+
+That part belongs to the community.",
+        "MUBA has a face.
+The community gives that face a world to live in.
+
+That's where the story gets interesting.",
+        "You don't have to stand outside the MUBA story.
+
+Make something. Share something. Add a little chaos.",
+        "The best part of MUBA was never supposed to be one post.
+
+It's what people keep creating after it."
       ],
       story: [
-        "MUBA's story isn't waiting inside a roadmap PDF.\n\nIt happens when something actually happens.\n\nThen we keep the chapter.",
-        "Character first.\nContent next.\nCommunity after.\nCulture somewhere in the chaos.\n\nMUBA kept moving.",
-        "Some stories are written before anyone arrives.\n\nMUBA's is being lived while everyone is already here.",
-        "No need to invent yesterday to make tomorrow look bigger.\n\nMUBA keeps the real chapters."
+        "MUBA's story isn't waiting inside a roadmap PDF.
+
+It happens when something actually happens.
+
+Then we keep the chapter.",
+        "Character first.
+Content next.
+Community after.
+Culture somewhere in the chaos.
+
+MUBA kept moving.",
+        "Some stories are written before anyone arrives.
+
+MUBA's is being lived while everyone is already here.",
+        "No need to invent yesterday to make tomorrow look bigger.
+
+MUBA keeps the real chapters."
       ],
       chaos: [
-        "The meme world was already chaotic.\n\nMUBA looked around and apparently decided this was home.",
-        "Timeline: please behave normally.\n\nMUBA: absolutely not.",
+        "The meme world was already chaotic.
+
+MUBA looked around and apparently decided this was home.",
+        "Timeline: please behave normally.
+
+MUBA: absolutely not.",
         "Somewhere between memes, chaos and one very long timeline, MUBA found a place to live.",
-        "MUBA did not fix the chaos.\n\nMUBA moved in."
+        "MUBA did not fix the chaos.
+
+MUBA moved in."
       ],
       culture: [
-        "A character becomes culture when people know the face before they need the explanation.\n\nMUBA is working on the rest.",
-        "Memes disappear fast.\nCharacters last longer when people give them language, habits, jokes and a place to return to.",
-        "MUBA isn't trying to escape meme culture and become something else.\n\nThis is the place.",
-        "Create it. Remix it. Share it.\n\nCulture doesn't grow by standing still."
+        "A character becomes culture when people know the face before they need the explanation.
+
+MUBA is working on the rest.",
+        "Memes disappear fast.
+Characters last longer when people give them language, habits, jokes and a place to return to.",
+        "MUBA isn't trying to escape meme culture and become something else.
+
+This is the place.",
+        "Create it. Remix it. Share it.
+
+Culture doesn't grow by standing still."
       ],
       create: [
-        "Made something with MUBA Studio.\n\nNow it has to survive the timeline.",
-        "One MUBA idea in.\nOne new piece of chaos out.\n\nCREATE → SHARE.",
-        "The community doesn't need to wait for the next MUBA post.\n\nMake the next one.",
+        "Made something with MUBA Studio.
+
+Now it has to survive the timeline.",
+        "One MUBA idea in.
+One new piece of chaos out.
+
+CREATE → SHARE.",
+        "The community doesn't need to wait for the next MUBA post.
+
+Make the next one.",
         "A blank prompt is just a MUBA meme that hasn't happened yet."
       ]
     };
@@ -1350,7 +1410,9 @@
     }
 
     function currentTweetWithTags() {
-      return tweets[tweetCategory][tweetIndex] + "\n\n" + shareTags;
+      return tweets[tweetCategory][tweetIndex] + "
+
+" + shareTags;
     }
 
     function renderTweet() {
@@ -1421,7 +1483,8 @@
         button.setAttribute("aria-pressed",String(category===newsCategory));
         button.addEventListener("click",()=>{newsCategory=category;renderNews();});return button;
       }));
-      const filtered=newsRows.filter(row=>newsCategory==="ALL"||newsBucket(row)===newsCategory);\n      const items=filtered.slice(0,newsCategory==="ALL"?newsVisible:10);
+      const filtered=newsRows.filter(row=>newsCategory==="ALL"||newsBucket(row)===newsCategory);
+      const items=filtered.slice(0,newsCategory==="ALL"?newsVisible:10);
       list.replaceChildren(...items.map(row=>{
         const card=document.createElement("article");card.className="news-item";
         const meta=document.createElement("div");meta.className="news-meta";
@@ -1436,7 +1499,12 @@
         try { const url=new URL(row.source_url); if(url.protocol==="https:"&&sourceHosts.includes(url.hostname))link.href=url.href; } catch(_) {}
         source.append(detail,link);card.append(meta,title,summary,source);return card;
       }));
-      status.textContent=items.length?"":newsRows.length?"No verified news in this category.":"No verified news published yet.";\n      if(newsCategory==="ALL"&&items.length<filtered.length){\n        list.onscroll=()=>{\n          if(list.scrollTop+list.clientHeight>=list.scrollHeight-120){newsVisible=Math.min(newsVisible+10,filtered.length);renderNews();}\n        };\n      } else list.onscroll=null;
+      status.textContent=items.length?"":newsRows.length?"No verified news in this category.":"No verified news published yet.";
+      if(newsCategory==="ALL"&&items.length<filtered.length){
+        list.onscroll=()=>{
+          if(list.scrollTop+list.clientHeight>=list.scrollHeight-120){newsVisible=Math.min(newsVisible+10,filtered.length);renderNews();}
+        };
+      } else list.onscroll=null;
     }
     async function loadNews() {
       try {
