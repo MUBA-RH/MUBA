@@ -1931,6 +1931,29 @@
         "ar": "يعرض شريط أسعار موجز أسعار BTC وETH بالدولار بعد التحقق منها، مع تغير 24 ساعة ووقت التحديث من ذاكرة خادم مشتركة. يظل سعر MUBA غير متاح حتى تأكيد هوية الرمز الرسمية.",
         "hi": "संक्षिप्त मूल्य पट्टी साझा सर्वर कैश से सत्यापित BTC और ETH USD कीमतें, 24 घंटे का बदलाव और अपडेट समय दिखाती है। आधिकारिक टोकन पहचान मिलने तक MUBA का मूल्य अनुपलब्ध रहेगा।"
       }
+    },
+    {
+      "id": "20260925-muba-news-source-labels-v19",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "telegram",
+        "web"
+      ],
+      "title": {
+        "en": "MUBA NEWS source and language update",
+        "tr": "MUBA HABER kaynak ve dil güncellemesi",
+        "zh": "MUBA 新闻来源与语言更新",
+        "ar": "تحديث مصادر ولغات أخبار MUBA",
+        "hi": "MUBA समाचार स्रोत और भाषा अपडेट"
+      },
+      "text": {
+        "en": "Official crypto updates and the canonical Ethereum feed can now enter the verified news pool after article checks; Telegram news labels match each reader's existing language preference.",
+        "tr": "Resmî kripto güncellemeleri ve Ethereum’un doğru akış adresi, makale doğrulamasından sonra haber havuzuna girebilir; Telegram haber etiketleri okurun mevcut dil tercihine uyar.",
+        "zh": "官方加密货币更新及以太坊规范信息流经过原文核验后可进入新闻池；Telegram 新闻标签遵循读者既有的语言偏好。",
+        "ar": "يمكن إدراج تحديثات العملات المشفرة الرسمية وموجز إيثريوم المعتمد في سجل الأخبار بعد فحص المقالات؛ وتطابق تسميات أخبار Telegram لغة القارئ الحالية.",
+        "hi": "आधिकारिक क्रिप्टो अपडेट और Ethereum की मानक फ़ीड लेख जाँच के बाद सत्यापित समाचार पूल में आ सकती हैं; Telegram समाचार लेबल पाठक की मौजूदा भाषा पसंद का पालन करते हैं।"
+      }
     }
   ]
 }
