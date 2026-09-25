@@ -2006,6 +2006,29 @@
         "ar": "أصبحت أقسام اكتشاف MUBA الثلاثة تحت مدخل ASK MUBA واحد مع بقاء موضوعات ومحتوى كل قسم كما هي.",
         "hi": "तीनों MUBA खोज अनुभाग अब एक ASK MUBA प्रवेश के नीचे हैं, जबकि हर अनुभाग अपने मौजूदा विषय और सामग्री बनाए रखता है।"
       }
+    },
+    {
+      "id": "20260925-organized-assistant-menu-v22",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "Assistant menu organized into hubs",
+        "tr": "Asistan menüsü merkezlerde toplandı",
+        "zh": "助手菜单按中心整理",
+        "ar": "تنظيم قائمة المساعد ضمن مراكز",
+        "hi": "असिस्टेंट मेनू हब में व्यवस्थित"
+      },
+      "text": {
+        "en": "The main menu is simplified into ASK MUBA, MUBA DAILY, MUBA CREATE, MUBA COMMUNITY and DEV TOOLS while preserving existing functions and content.",
+        "tr": "Ana menü ASK MUBA, MUBA DAILY, MUBA CREATE, MUBA COMMUNITY ve DEV TOOLS altında sadeleştirildi; mevcut işlevler ve içerikler korunur.",
+        "zh": "主菜单整合为 ASK MUBA、MUBA DAILY、MUBA CREATE、MUBA COMMUNITY 和 DEV TOOLS，同时保留现有功能与内容。",
+        "ar": "تم تبسيط القائمة الرئيسية ضمن ASK MUBA وMUBA DAILY وMUBA CREATE وMUBA COMMUNITY وDEV TOOLS مع الحفاظ على الوظائف والمحتوى الحالي.",
+        "hi": "मुख्य मेनू ASK MUBA, MUBA DAILY, MUBA CREATE, MUBA COMMUNITY और DEV TOOLS में व्यवस्थित किया गया है, जबकि मौजूदा कार्य और सामग्री सुरक्षित हैं।"
+      }
     }
   ]
 }
