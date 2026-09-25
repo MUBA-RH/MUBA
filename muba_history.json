@@ -1843,6 +1843,26 @@
         "ar": "يوزع محرر صور Kaggle الخاص بـ Daily Story تحميل النموذج على وحدتي T4 GPU لمعالجة خطأ الذاكرة الذي ظهر في اختبار Telegram المباشر.",
         "hi": "निजी Kaggle Daily Story इमेज एडिटर लाइव Telegram टेस्ट में मिली मेमोरी समस्या के लिए मॉडल लोडिंग दोनों T4 GPU पर बाँटता है।"
       }
+    },
+    {
+      "id": "20260925-daily-story-comfy-kaggle-worker-v15",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": ["daily", "telegram"],
+      "title": {
+        "en": "Daily Story ComfyUI worker",
+        "tr": "Daily Story ComfyUI üreticisi",
+        "zh": "Daily Story ComfyUI 工作程序",
+        "ar": "عامل ComfyUI لقصة Daily Story",
+        "hi": "Daily Story ComfyUI वर्कर"
+      },
+      "text": {
+        "en": "The private Kaggle batch now starts ComfyUI with a reference-conditioned SDXL worker, generates four separate story frames and retains the Telegram DEV preview gate.",
+        "tr": "Özel Kaggle üretimi artık ComfyUI'yi referansla yönlendirilen SDXL işçisiyle başlatır, dört ayrı hikâye karesi üretir ve Telegram DEV önizleme kapısını korur.",
+        "zh": "私有 Kaggle 批次现在启动基于参考图的 SDXL ComfyUI 工作程序，生成四张独立故事画面，并保留 Telegram DEV 预览门控。",
+        "ar": "تشغّل دفعة Kaggle الخاصة الآن ComfyUI مع عامل SDXL يعتمد على الصورة المرجعية، وتنتج أربع صور قصة منفصلة مع الحفاظ على مراجعة Telegram الخاصة بالمطوّر.",
+        "hi": "निजी Kaggle बैच अब संदर्भ चित्र वाले SDXL वर्कर के साथ ComfyUI शुरू करता है, चार अलग कहानी फ़्रेम बनाता है और Telegram DEV पूर्वावलोकन अनुमति रखता है।"
+      }
     }
   ]
 }

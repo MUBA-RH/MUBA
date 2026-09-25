@@ -38,6 +38,9 @@ def install_ipadapter_node():
     shutil.move(str(extracted), str(nodes))
     shutil.rmtree(tmp, ignore_errors=True)
     archive.unlink(missing_ok=True)
+    requirements = nodes / "requirements.txt"
+    if requirements.exists():
+        run([sys.executable, "-m", "pip", "install", "-r", str(requirements)])
 
 def main():
     if not COMFY.exists():

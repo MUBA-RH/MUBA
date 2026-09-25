@@ -2,7 +2,7 @@ from __future__ import annotations
 import json, os, shutil, time, uuid
 from pathlib import Path
 import requests
-from PIL import Image
+from PIL import Image, ImageOps
 
 ROOT=Path(__file__).resolve().parent
 CFG=json.loads((ROOT/"config.json").read_text())
@@ -77,10 +77,9 @@ def run(job_path,out_dir):
         else:
             character=source.copy()
         character.convert("RGB").save(COMFY_INPUT/ref_name)
-        character.thumbnail((500,520),Image.Resampling.LANCZOS)
-        canvas=Image.new("RGB",(1024,576),(169,205,236))
-        canvas.paste(character,((1024-character.width)//2,576-character.height-15))
-        canvas.save(COMFY_INPUT/"MUBA_DAILY_STORY_INIT.png")
+        # Use a scene-sized edit input. A portrait pasted onto a flat canvas
+        # creates the very side borders rejected by the Telegram preview gate.
+        ImageOps.fit(character.convert("RGB"),(1024,576),method=Image.Resampling.LANCZOS).save(COMFY_INPUT/"MUBA_DAILY_STORY_INIT.png")
     results=[]
     base_seed=int(job.get("seed",260925))
     for i,ch in enumerate(job["chapters"],1):
