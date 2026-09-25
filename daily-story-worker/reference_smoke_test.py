@@ -2,30 +2,33 @@
 from pathlib import Path
 import json, shutil, subprocess, sys, time, uuid
 import requests
+from PIL import Image
 
 ROOT = Path("/kaggle/working/MUBA/daily-story-worker")
 COMFY = Path("/kaggle/working/ComfyUI")
 OUT = Path("/kaggle/working/muba-smoke-test")
 OUT.mkdir(parents=True, exist_ok=True)
 
-pngs = sorted(ROOT.glob("*.png"))
 contract = ROOT / "muba_master_reference_v1.json"
+sheet = ROOT / "file_00000000c20c8211bc7955d41f5b0edb.png"
 required = [
     COMFY / "models/checkpoints/sd_xl_base_1.0.safetensors",
     COMFY / "models/clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors",
     COMFY / "models/ipadapter/ip-adapter-plus_sdxl_vit-h.safetensors",
 ]
-assert len(pngs) >= 2, "Two MUBA reference PNGs are required"
+assert sheet.exists(), "MUBA master reference sheet missing"
 assert contract.exists(), "muba_master_reference_v1.json missing"
 for p in required: assert p.exists(), f"Missing required asset: {p}"
 
 identity = json.loads(contract.read_text(encoding="utf-8"))
-# Prefer the smaller clean character reference over the annotated identity sheet.
-primary = min(pngs, key=lambda p: p.stat().st_size)
 input_dir = COMFY / "input"
 input_dir.mkdir(parents=True, exist_ok=True)
 ref_name = "MUBA_MASTER_REFERENCE.png"
-shutil.copy2(primary, input_dir / ref_name)
+# IPAdapter must see only the character, not the sheet's labels, swatches and thumbnails.
+# Coordinates are tied to the checked-in 1448x1086 master reference sheet.
+with Image.open(sheet) as source:
+    assert source.size == (1448, 1086), f"Unexpected master sheet size: {source.size}"
+    source.crop((295, 0, 1045, 765)).save(input_dir / ref_name)
 
 base = "http://127.0.0.1:8188"
 def alive():
@@ -51,7 +54,8 @@ negative = (
     identity.get("negative_prompt","")
     + ", generic mascot, owl, cat, dog, sloth, round symmetrical eyes, normal sized eyes, different eye spacing, "
       "different nose, different muzzle, closed mouth, tongue missing, portrait crop, close-up, cropped feet, "
-      "collage, split frame, duplicate character, extra limbs, shoes, changed face, redesigned character, watermark"
+    "collage, split frame, character sheet, infographic, labels, captions, typography, text blocks, "
+    "duplicate character, extra limbs, shoes, changed face, redesigned character, watermark"
 )
 
 wf = {
@@ -81,10 +85,18 @@ for _ in range(300):
         for node in h[pid].get("outputs",{}).values(): imgs.extend(node.get("images",[]))
         if not imgs: raise RuntimeError("Generation finished without image: "+json.dumps(h[pid])[:1500])
         meta=imgs[-1]
-        data=requests.get(base+"/view",params={"filename":meta["filename"],"subfolder":meta.get("subfolder",""),"type":meta.get("type","output")},timeout=60).content
-        dest=OUT/"MUBA_REFERENCE_SMOKE_V2.png"; dest.write_bytes(data)
-        print("MUBA_REFERENCE_SMOKE_V2_TEST=PASS")
-        print("REFERENCE_USED:", primary.name)
+        image_response=requests.get(base+"/view",params={"filename":meta["filename"],"subfolder":meta.get("subfolder",""),"type":meta.get("type","output")},timeout=60)
+        image_response.raise_for_status()
+        dest=OUT/"MUBA_REFERENCE_SMOKE_V3.png"; dest.write_bytes(image_response.content)
+        with Image.open(dest) as result:
+            assert result.size == (768, 1024), f"Unexpected output size: {result.size}"
+            result.verify()
+        print("MUBA_REFERENCE_SMOKE_V3_TECHNICAL_TEST=PASS")
+        print("VISUAL_IDENTITY_REVIEW=REQUIRED")
+        print("REFERENCE_USED:", sheet.name, "character-only crop")
         print("OUTPUT:",dest)
         break
-    # Keep Kaggle/mobile proxies from treating the long GPU wait as an idle cell.\n    print(".", end="", flush=True)\n    time.sleep(2)\nelse: raise TimeoutError("MUBA reference V2 generation timed out")
+    # Keep Kaggle/mobile proxies from treating the long GPU wait as an idle cell.
+    print(".", end="", flush=True)
+    time.sleep(2)
+else: raise TimeoutError("MUBA reference V3 generation timed out")
