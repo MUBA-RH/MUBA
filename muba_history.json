@@ -1886,6 +1886,29 @@
         "ar": "ينتظر جسر Telegram ويعيد محاولة تنزيل مخرجات Kaggle عند تحديد معدل API دون إعادة تشغيل التوليد المكتمل على GPU.",
         "hi": "Kaggle API दर सीमा पर Telegram ब्रिज पूर्ण GPU निर्माण को फिर शुरू किए बिना प्रतीक्षा करता है और आउटपुट डाउनलोड दोहराता है।"
       }
+    },
+    {
+      "id": "20260925-muba-news-v1-v17",
+      "date": "2026-09-25",
+      "type": "new",
+      "areas": [
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA NEWS V1",
+        "tr": "MUBA HABERLER V1",
+        "zh": "MUBA 新闻 V1",
+        "ar": "أخبار MUBA V1",
+        "hi": "MUBA समाचार V1"
+      },
+      "text": {
+        "en": "MUBA NEWS reads official primary-source feeds, checks original articles and records important verified events in one durable pool for the English website and optional five-language Telegram alerts.",
+        "tr": "MUBA HABERLER resmî birincil kaynakları okur, özgün duyuruları doğrular ve önemli olayları İngilizce web ile isteğe bağlı beş dilli Telegram bildirimleri için tek kalıcı havuzda tutar.",
+        "zh": "MUBA 新闻读取官方一手信息源并核对原文，将重要的已核实事件保存到供英文网站和可选的五种语言 Telegram 提醒共用的持久池中。",
+        "ar": "تقرأ أخبار MUBA المصادر الرسمية الأولية وتتحقق من الإعلانات الأصلية، وتحفظ الأحداث المهمة الموثقة في سجل دائم مشترك للموقع الإنجليزي وتنبيهات Telegram الاختيارية بخمس لغات.",
+        "hi": "MUBA समाचार आधिकारिक प्राथमिक स्रोत पढ़ता है, मूल घोषणाएँ जाँचता है और महत्वपूर्ण सत्यापित घटनाओं को अंग्रेज़ी वेबसाइट और वैकल्पिक पाँच-भाषा Telegram सूचनाओं के लिए एक स्थायी पूल में रखता है।"
+      }
     }
   ]
 }
