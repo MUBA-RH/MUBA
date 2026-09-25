@@ -41,8 +41,7 @@ subprocess.check_call([sys.executable,"-m","pip","install","-q","-U","diffusers"
 import torch
 from PIL import Image, ImageOps
 from diffusers import DiffusionPipeline
-pipe=DiffusionPipeline.from_pretrained("seochan99/Qwen-Image-Edit-2511-bnb-nf4",torch_dtype=torch.float16,low_cpu_mem_usage=True)
-pipe.enable_model_cpu_offload(gpu_id=0)
+pipe=DiffusionPipeline.from_pretrained("seochan99/Qwen-Image-Edit-2511-bnb-nf4",dtype=torch.bfloat16,device_map="balanced",max_memory={0:"12GiB",1:"12GiB"})
 pipe.set_progress_bar_config(disable=True)
 reference=Image.open(io.BytesIO(base64.b64decode({ref!r}))).convert("RGB")
 style=Image.open(io.BytesIO(base64.b64decode({style!r}))).convert("RGB")
