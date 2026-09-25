@@ -80,11 +80,7 @@
     .story-book { max-width:900px; margin:0 auto; padding:clamp(18px,4vw,42px); background:linear-gradient(180deg,rgba(18,10,31,.96),rgba(9,5,16,.96)); }
     .news-shell { padding:20px; }
     .price-bar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-    .price-card { background:#120a1f; border:1px solid var(--line); border-radius:14px; padding:13px 16px; min-width:0; position:relative; overflow:hidden; isolation:isolate; }
-    .price-card::before { position:absolute; inset:-18%; display:grid; place-items:center; font-weight:800; line-height:1; opacity:.065; pointer-events:none; z-index:-1; transform:rotate(-8deg); }
-    .price-card[data-asset="BTC"]::before { content:"₿"; font-size:8rem; }
-    .price-card[data-asset="ETH"]::before { content:"◆"; font-size:7rem; transform:rotate(45deg); }
-    .price-card > * { position:relative; z-index:1; }
+    .price-card { background:#120a1f; border:1px solid var(--line); border-radius:14px; padding:13px 16px; min-width:0; }
     .price-card strong { display:block; font-size:1.1rem; margin:3px 0; font-variant-numeric:tabular-nums; }
     .price-card span { color:var(--muted); font-size:.77rem; }
     .price-card .positive { color:var(--success); }
@@ -1411,13 +1407,13 @@
       if(["MARKET","ETF","SECURITY","STABLECOIN"].includes(row.category))return "IMPORTANT DEVELOPMENTS";
       return "CRYPTO AGENDA";
     }
-    let newsRows=[], newsCategory="ALL", newsVisible=10;
+    let newsRows=[], newsCategory="ALL";
     function renderNews() {
       const filters=document.getElementById("news-filters"),list=document.getElementById("news-list"),status=document.getElementById("news-status");
       filters.replaceChildren(...newsCategories.map(category=>{
         const button=document.createElement("button");button.type="button";button.textContent=category;
         button.setAttribute("aria-pressed",String(category===newsCategory));
-        button.addEventListener("click",()=>{newsCategory=category;newsVisible=10;renderNews();});return button;
+        button.addEventListener("click",()=>{newsCategory=category;renderNews();});return button;
       }));
       const filtered=newsRows.filter(row=>newsCategory==="ALL"||newsBucket(row)===newsCategory);\n      const items=filtered.slice(0,newsCategory==="ALL"?newsVisible:10);
       list.replaceChildren(...items.map(row=>{
