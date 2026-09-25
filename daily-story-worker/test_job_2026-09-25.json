@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "job_id": "muba-four-frame-reference-gate-2026-09-25",
+  "day": "2026-09-25",
+  "reference_path": "/kaggle/working/MUBA/daily-story-worker/file_00000000c20c8211bc7955d41f5b0edb.png",
+  "seed": 260925,
+  "chapters": [
+    {"index": 1, "prompt": "MUBA stands alone in a quiet sunny town square and notices a blank wall. Establishing scene, warm daylight."},
+    {"index": 2, "prompt": "In the same sunny town square, MUBA draws a small playful mark on the blank wall. Show the action clearly."},
+    {"index": 3, "prompt": "In the same sunny town square, two distant silhouettes notice MUBA's mark and smile. MUBA remains the only detailed character."},
+    {"index": 4, "prompt": "In the same sunny town square, MUBA steps back to see the playful mark shared by the small gathering. A quiet beginning."}
+  ]
+}
