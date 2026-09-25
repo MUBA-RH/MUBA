@@ -1628,7 +1628,7 @@ async def news_public_handler(request: web.Request):
 
 async def price_public_handler(request: web.Request):
     payload=await live_prices(request.app["http_session"])
-    return web.json_response(payload,headers=_gallery_cors_headers()|{"Cache-Control":"public, max-age=30"})
+    return web.json_response(payload,headers=_gallery_cors_headers()|{"Cache-Control":"public, max-age=2"})
 
 
 async def news_scheduler(application,session):

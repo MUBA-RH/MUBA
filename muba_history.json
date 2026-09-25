@@ -1954,6 +1954,29 @@
         "ar": "يمكن إدراج تحديثات العملات المشفرة الرسمية وموجز إيثريوم المعتمد في سجل الأخبار بعد فحص المقالات؛ وتطابق تسميات أخبار Telegram لغة القارئ الحالية.",
         "hi": "आधिकारिक क्रिप्टो अपडेट और Ethereum की मानक फ़ीड लेख जाँच के बाद सत्यापित समाचार पूल में आ सकती हैं; Telegram समाचार लेबल पाठक की मौजूदा भाषा पसंद का पालन करते हैं।"
       }
+    },
+    {
+      "id": "20260925-muba-news-price-refresh-v20",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA NEWS feed and price refresh",
+        "tr": "MUBA HABER ve fiyat akışı yenilemesi",
+        "zh": "MUBA 新闻与价格更新",
+        "ar": "تحديث أخبار MUBA والأسعار",
+        "hi": "MUBA समाचार और मूल्य अपडेट"
+      },
+      "text": {
+        "en": "The site shows up to ten verified crypto headlines in a compact scrolling feed, expands official and independently corroborated publisher sources, and refreshes validated BTC/ETH trades every five seconds without showing stale prices as current. Price labels omit provider and UTC time.",
+        "tr": "Site, kompakt kaydırılabilir alanda en fazla on doğrulanmış kripto haberini gösterir; resmî ve bağımsız kaynaklarla doğrulanmış yayınları kapsar. BTC/ETH işlemleri beş saniyelik aralıklarla yenilenir; eski fiyat güncel diye gösterilmez. Fiyat etiketlerinde sağlayıcı veya UTC saati yer almaz.",
+        "zh": "网站在紧凑滚动区域展示最多十条已核实加密货币新闻，扩展官方及独立交叉核实的媒体来源。BTC/ETH 交易价格每五秒刷新，过期报价不会显示为当前价格；价格标签不显示供应商或 UTC 时间。",
+        "ar": "يعرض الموقع حتى عشرة أخبار عملات مشفرة موثقة في قائمة مدمجة قابلة للتمرير مع توسيع المصادر الرسمية والناشرين المؤكدين بشكل مستقل. تتجدد أسعار تداول BTC وETH كل خمس ثوان ولا تُعرض الأسعار القديمة كحالية؛ أزيل اسم المزود ووقت UTC من التسميات.",
+        "hi": "साइट संक्षिप्त स्क्रॉल सूची में दस तक सत्यापित क्रिप्टो खबरें दिखाती है और आधिकारिक तथा स्वतंत्र रूप से पुष्ट प्रकाशक स्रोत जोड़ती है। BTC/ETH ट्रेड कीमतें हर पाँच सेकंड अपडेट होती हैं; पुरानी कीमत को वर्तमान नहीं दिखाया जाता, और प्रदाता तथा UTC समय के लेबल हटाए गए हैं।"
+      }
     }
   ]
 }
