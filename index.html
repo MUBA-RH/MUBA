@@ -1407,15 +1407,15 @@
       if(["MARKET","ETF","SECURITY","STABLECOIN"].includes(row.category))return "IMPORTANT DEVELOPMENTS";
       return "CRYPTO AGENDA";
     }
-    let newsRows=[], newsCategory="ALL";
+    let newsRows=[], newsCategory="ALL", newsVisible=10;
     function renderNews() {
       const filters=document.getElementById("news-filters"),list=document.getElementById("news-list"),status=document.getElementById("news-status");
       filters.replaceChildren(...newsCategories.map(category=>{
         const button=document.createElement("button");button.type="button";button.textContent=category;
         button.setAttribute("aria-pressed",String(category===newsCategory));
-        button.addEventListener("click",()=>{newsCategory=category;renderNews();});return button;
+        button.addEventListener("click",()=>{newsCategory=category;newsVisible=10;renderNews();});return button;
       }));
-      const items=newsRows.filter(row=>newsCategory==="ALL"||newsBucket(row)===newsCategory).slice(0,10);
+      const filtered=newsRows.filter(row=>newsCategory==="ALL"||newsBucket(row)===newsCategory);\n      const items=filtered.slice(0,newsCategory==="ALL"?newsVisible:10);
       list.replaceChildren(...items.map(row=>{
         const card=document.createElement("article");card.className="news-item";
         const meta=document.createElement("div");meta.className="news-meta";
@@ -1430,7 +1430,7 @@
         try { const url=new URL(row.source_url); if(url.protocol==="https:"&&sourceHosts.includes(url.hostname))link.href=url.href; } catch(_) {}
         source.append(detail,link);card.append(meta,title,summary,source);return card;
       }));
-      status.textContent=items.length?"":newsRows.length?"No verified news in this category.":"No verified news published yet.";
+      status.textContent=items.length?"":newsRows.length?"No verified news in this category.":"No verified news published yet.";\n      if(newsCategory==="ALL"&&items.length<filtered.length){\n        list.onscroll=()=>{\n          if(list.scrollTop+list.clientHeight>=list.scrollHeight-120){newsVisible=Math.min(newsVisible+10,filtered.length);renderNews();}\n        };\n      } else list.onscroll=null;
     }
     async function loadNews() {
       try {
