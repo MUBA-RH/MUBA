@@ -28,7 +28,13 @@ ref_name = "MUBA_MASTER_REFERENCE.png"
 # Coordinates are tied to the checked-in 1448x1086 master reference sheet.
 with Image.open(sheet) as source:
     assert source.size == (1448, 1086), f"Unexpected master sheet size: {source.size}"
-    source.crop((295, 0, 1045, 765)).save(input_dir / ref_name)
+    character = source.crop((295, 0, 1045, 765))
+    character.save(input_dir / ref_name)
+    # Start img2img from the canonical pixels as well as conditioning on them.
+    # Keep the character's aspect ratio and leave room around its head and feet.
+    canvas = Image.new("RGB", (768, 1024), (169, 205, 236))
+    canvas.paste(character.resize((750, 765), Image.Resampling.LANCZOS), (9, 128))
+    canvas.save(input_dir / "MUBA_SMOKE_INIT.png")
 
 base = "http://127.0.0.1:8188"
 def alive():
@@ -65,17 +71,18 @@ wf = {
  "4":{"class_type":"IPAdapterAdvanced","inputs":{"model":["3",0],"ipadapter":["3",1],"image":["2",0],"weight":1.30,"weight_type":"linear","combine_embeds":"concat","start_at":0.0,"end_at":1.0,"embeds_scaling":"V only"}},
  "5":{"class_type":"CLIPTextEncode","inputs":{"text":prompt,"clip":["1",1]}},
  "6":{"class_type":"CLIPTextEncode","inputs":{"text":negative,"clip":["1",1]}},
- "7":{"class_type":"EmptyLatentImage","inputs":{"width":768,"height":1024,"batch_size":1}},
- "8":{"class_type":"KSampler","inputs":{"seed":260926,"steps":32,"cfg":5.0,"sampler_name":"euler","scheduler":"normal","denoise":1.0,"model":["4",0],"positive":["5",0],"negative":["6",0],"latent_image":["7",0]}},
+ "7":{"class_type":"LoadImage","inputs":{"image":"MUBA_SMOKE_INIT.png"}},
+ "11":{"class_type":"VAEEncode","inputs":{"pixels":["7",0],"vae":["1",2]}},
+ "8":{"class_type":"KSampler","inputs":{"seed":260926,"steps":32,"cfg":5.0,"sampler_name":"euler","scheduler":"normal","denoise":0.38,"model":["4",0],"positive":["5",0],"negative":["6",0],"latent_image":["11",0]}},
  "9":{"class_type":"VAEDecode","inputs":{"samples":["8",0],"vae":["1",2]}},
- "10":{"class_type":"SaveImage","inputs":{"filename_prefix":"MUBA_REFERENCE_SMOKE_V2","images":["9",0]}}
+ "10":{"class_type":"SaveImage","inputs":{"filename_prefix":"MUBA_REFERENCE_SMOKE_V4","images":["9",0]}}
 }
 client=str(uuid.uuid4())
 r=requests.post(base+"/prompt",json={"prompt":wf,"client_id":client},timeout=30)
 if not r.ok:
     raise RuntimeError("ComfyUI workflow rejected: "+r.text)
 pid=r.json()["prompt_id"]
-print("MUBA identity V2 generation queued:", pid)
+print("MUBA identity V4 generation queued:", pid)
 for _ in range(300):
     resp=requests.get(base+"/history/"+pid,timeout=30)
     resp.raise_for_status()
@@ -87,11 +94,11 @@ for _ in range(300):
         meta=imgs[-1]
         image_response=requests.get(base+"/view",params={"filename":meta["filename"],"subfolder":meta.get("subfolder",""),"type":meta.get("type","output")},timeout=60)
         image_response.raise_for_status()
-        dest=OUT/"MUBA_REFERENCE_SMOKE_V3.png"; dest.write_bytes(image_response.content)
+        dest=OUT/"MUBA_REFERENCE_SMOKE_V4.png"; dest.write_bytes(image_response.content)
         with Image.open(dest) as result:
             assert result.size == (768, 1024), f"Unexpected output size: {result.size}"
             result.verify()
-        print("MUBA_REFERENCE_SMOKE_V3_TECHNICAL_TEST=PASS")
+        print("MUBA_REFERENCE_SMOKE_V4_TECHNICAL_TEST=PASS")
         print("VISUAL_IDENTITY_REVIEW=REQUIRED")
         print("REFERENCE_USED:", sheet.name, "character-only crop")
         print("OUTPUT:",dest)
@@ -99,4 +106,4 @@ for _ in range(300):
     # Keep Kaggle/mobile proxies from treating the long GPU wait as an idle cell.
     print(".", end="", flush=True)
     time.sleep(2)
-else: raise TimeoutError("MUBA reference V3 generation timed out")
+else: raise TimeoutError("MUBA reference V4 generation timed out")
