@@ -313,25 +313,53 @@ def _legacy_area_global_index(lang,area,area_index):
     area_index=max(0,min(area_index,len(area_rows)-1))
     return _global_update_index(lang,area_rows[area_index].get("id"))
 
+def _section_back(lang,callback_data="menu"):
+    return InlineKeyboardButton(TEXT[lang]["back"],callback_data=callback_data)
+
+def daily_hub_keyboard(lang):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(DAILY_LABELS[lang]["daily"],callback_data="daily")],
+        [InlineKeyboardButton("📰 "+NEWS_LABELS[lang][0],callback_data="news")],
+        [InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")],
+        [_section_back(lang)],
+    ])
+
+def create_hub_keyboard(lang,user_id):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
+        [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
+        [_section_back(lang)],
+    ])
+
+def community_hub_keyboard(lang,user_id):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")],
+        [InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
+        [_section_back(lang)],
+    ])
+
+def dev_tools_keyboard(lang):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")],
+        [InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")],
+        [InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")],
+        [_section_back(lang)],
+    ])
+
 def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
-    labels=CATEGORY_LABELS[lang]
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
-    rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
-    rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
-    rows.append([InlineKeyboardButton("💬 ASK MUBA",callback_data="ask_muba")])
-    rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
-    rows.append([InlineKeyboardButton("📰 "+NEWS_LABELS[lang][0],callback_data="news")])
-    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
-    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
-    rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")])
-    rows.append([InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))])
-    rows.append([InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")])
+    rows=[
+        [InlineKeyboardButton(updates_label,callback_data="updates_center")],
+        [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
+        [InlineKeyboardButton("💬 ASK MUBA",callback_data="ask_muba")],
+        [InlineKeyboardButton("📰 MUBA DAILY",callback_data="daily_hub")],
+        [InlineKeyboardButton("🎨 MUBA CREATE",callback_data="create_hub")],
+        [InlineKeyboardButton("🧭 MUBA COMMUNITY",callback_data="community_hub")],
+    ]
     if is_dev(user_id):
-        rows.append([InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")])
-        rows.append([InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")])
-    rows.append([InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")])
-    rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
+        rows.append([InlineKeyboardButton("⚙️ DEV TOOLS",callback_data="dev_tools")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -640,6 +668,15 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+    if data=="daily_hub":
+        await q.edit_message_text("📰 MUBA DAILY",reply_markup=daily_hub_keyboard(lang)); return
+    if data=="create_hub":
+        await q.edit_message_text("🎨 MUBA CREATE",reply_markup=create_hub_keyboard(lang,user_id)); return
+    if data=="community_hub":
+        await q.edit_message_text("🧭 MUBA COMMUNITY",reply_markup=community_hub_keyboard(lang,user_id)); return
+    if data=="dev_tools":
+        if not is_dev(user_id): return
+        await q.edit_message_text("⚙️ DEV TOOLS",reply_markup=dev_tools_keyboard(lang)); return
     if data in ("news","news_subscribe"):
         if data=="news_subscribe":
             try: subscribe_news(user_id,lang)
