@@ -32,6 +32,18 @@ def _run(args,timeout=120):
         p=subprocess.run([sys.executable,"-m","kaggle",*args],env=env,capture_output=True,text=True,timeout=timeout)
     if p.returncode: raise RuntimeError("Kaggle command failed: "+(p.stderr or p.stdout)[-1200:])
     return (p.stdout or "")+(p.stderr or "")
+def _download_output(kernel_id,out):
+    args=["kernels","output",kernel_id,"-p",str(out),"-o","-q","--file-pattern",".*\\.png$"]
+    for delay in (30,60,120,240):
+        try:
+            return _run(args,180)
+        except RuntimeError as exc:
+            # Kaggle can rate-limit output listing just after a completed run.
+            # Retrying here preserves the finished GPU work; never push again.
+            if "429" not in str(exc) or "ListKernelSessionOutput" not in str(exc):
+                raise
+            time.sleep(delay)
+    return _run(args,180)
 def _worker_source(reference_bytes,prompts):
     names=("kaggle_bootstrap.py","worker.py","config.json","muba_master_reference_v1.json","requirements.txt")
     sources={name:base64.b64encode((WORKER/name).read_bytes()).decode("ascii") for name in names}
@@ -84,10 +96,10 @@ def _generate(reference_bytes,prompts):
             status=_run(["kernels","status",kernel_id],60).lower()
             if "complete" in status: break
             if any(x in status for x in ("error","failed","cancel")): raise RuntimeError("Kaggle Daily Story run failed: "+status[-800:])
-            time.sleep(15)
+            time.sleep(30)
         else: raise RuntimeError("Kaggle Daily Story run timed out")
         out=root/"output"; out.mkdir()
-        _run(["kernels","output",kernel_id,"-p",str(out),"-o","-q","--file-pattern",".*\\.png$"],180)
+        _download_output(kernel_id,out)
         result=[]
         for i in range(1,5):
             path=out/f"{i:02d}.png"
