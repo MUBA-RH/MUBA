@@ -101,5 +101,25 @@ class NewsTests(unittest.TestCase):
         self.assertTrue(news.relevant(row))
         self.assertIsNone(news.canonical_url("https://www.coindesk.com.evil.org/fake","www.coindesk.com"))
 
+    def test_official_and_media_reports_share_one_public_event(self):
+        official=self.row(title="Federal Reserve Board requests public comment on payment stablecoin issuers under GENIUS Act",
+                          summary="Federal Reserve Board requests public comment on payment stablecoin issuers under GENIUS Act",
+                          category="STABLECOIN",source_name="Federal Reserve",
+                          duplicate_hash="official-hash",
+                          source_url="https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260924a.htm")
+        media=self.row(id="media",title="Fed proposes new capital redemption rules for stablecoin issuers",
+                       summary="The Fed proposal sets capital requirements as regulators implement the GENIUS Act.",
+                       category="STABLECOIN",source_name="Cointelegraph",
+                       duplicate_hash="media-hash",
+                       source_url="https://cointelegraph.com/news/fed-stablecoins")
+        self.assertTrue(news.event_match(official,media))
+        with patch.object(news,"load_pool",return_value=[official,media]):
+            self.assertEqual([row["id"] for row in news.public_news()],[official["id"]])
+        unrelated=self.row(id="other",title="Stablecoin issuer announces new exchange listing",
+                           summary="A separate crypto exchange listing today.",category="STABLECOIN",
+                           source_name="Cointelegraph",source_url="https://cointelegraph.com/news/separate",
+                           duplicate_hash="other-hash")
+        self.assertFalse(news.event_match(official,unrelated))
+
 
 if __name__=="__main__": unittest.main()
