@@ -18,6 +18,7 @@ import aiohttp
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InlineQueryResultPhoto, InlineQueryResultArticle, InputTextMessageContent, CopyTextButton
 from telegram.constants import ChatType
+from telegram.error import NetworkError
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -983,8 +984,18 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     if not message.photo:
         return
     photo=message.photo[-1]
-    tg_file=await context.bot.get_file(photo.file_id)
-    body=bytes(await tg_file.download_as_bytearray())
+    # Allow photo transfer on a sleeping free instance and retry transient failures.
+    for attempt in range(3):
+        try:
+            tg_file=await context.bot.get_file(photo.file_id,read_timeout=30)
+            body=bytes(await tg_file.download_as_bytearray(read_timeout=60))
+            break
+        except NetworkError:
+            if attempt==2:
+                context.user_data["daily_story_waiting_reference"]=True
+                await message.reply_text("⚠️ Referans fotoğrafı indirilemedi. Lütfen fotoğrafı yeniden gönder.")
+                return
+            await asyncio.sleep(2*(attempt+1))
     digest=hashlib.sha256(body).hexdigest()
     archived=archive_creation(body,"image/jpeg","MUBA Daily Story fresh DEV reference","image","telegram")
     set_gallery_visibility(archived["id"],"hidden")
