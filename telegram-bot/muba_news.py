@@ -24,7 +24,7 @@ CATEGORIES=("BTC","ETH","MARKET","ETF","REGULATION","EXCHANGE","SECURITY","STABL
 SOURCES=(
     ("SEC", "https://www.sec.gov/news/pressreleases.rss", "www.sec.gov"),
     ("CFTC", "https://www.cftc.gov/RSS/RSSGP/rssgp.xml", "www.cftc.gov"),
-    ("Ethereum Foundation", "https://blog.ethereum.org/feed.xml", "blog.ethereum.org"),
+    ("Ethereum Foundation", "https://blog.ethereum.org/en/feed.xml", "blog.ethereum.org"),
 )
 TOPICS={
     "ETF":r"\betf\b|exchange.traded fund",
@@ -39,6 +39,13 @@ TOPICS={
 }
 IMPORTANT=re.compile(r"\betf\b|approval|approves|adopts|proposes|exemption|final rule|launch|upgrade|incident|hack|exploit|breach|charges|enforcement|settlement|stablecoin|tokeniz|mainnet|hard fork",re.I)
 RUMOR=re.compile(r"\brumou?r\b|unconfirmed|anonymous sources|price prediction|buy signal|sell signal",re.I)
+
+
+def important(row):
+    title=row["title"]
+    return bool(IMPORTANT.search(title+" "+row["summary"]) or
+                (re.search(r"\bcrypto(?:currency)?\b|\bblockchain\b|\bbitcoin\b|\bethereum\b",title,re.I)
+                 and re.search(r"\bupdates?\b|\breleases?\b",title,re.I)))
 
 
 def now_iso():
@@ -111,7 +118,7 @@ def duplicate_hash(row):
 def verified_row(row,article):
     if not row.get("source_url") or not row.get("published_at") or not row.get("title"):
         return "PENDING"
-    if not row.get("category") or not IMPORTANT.search(row["title"]+" "+row["summary"]):
+    if not row.get("category") or not important(row):
         return "REJECTED"
     if RUMOR.search(row["title"]+" "+row["summary"]): return "REJECTED"
     if not article: return "PENDING"
@@ -195,7 +202,7 @@ async def collect(session,fetch=None):
             continue
         for row in rows:
             if not row["source_url"] or not row["published_at"]: continue
-            if not row["category"] or not IMPORTANT.search(row["title"]+" "+row["summary"]): continue
+            if not row["category"] or not important(row): continue
             if RUMOR.search(row["title"]+" "+row["summary"]): continue
             if datetime.fromisoformat(row["published_at"])<datetime.now(timezone.utc)-timedelta(days=3): continue
             try: article=await fetch(row["source_url"])
@@ -231,6 +238,13 @@ LABELS={
     "ar":("أخبار MUBA","لا توجد أخبار موثقة بعد.","تم تفعيل التنبيهات","اقرأ المصدر","الترجمة غير متاحة حالياً."),
     "hi":("MUBA समाचार","अभी कोई सत्यापित समाचार नहीं।","सूचनाएँ चालू","स्रोत पढ़ें","अनुवाद अभी उपलब्ध नहीं है।"),
 }
+TELEGRAM_FIELDS={
+    "en":("VERIFIED","SOURCE","TIME","UPDATE","CORRECTION"),
+    "tr":("DOĞRULANDI","KAYNAK","ZAMAN","GÜNCELLEME","DÜZELTME"),
+    "zh":("已核实","来源","时间","更新","更正"),
+    "ar":("موثق","المصدر","الوقت","تحديث","تصحيح"),
+    "hi":("सत्यापित","स्रोत","समय","अपडेट","सुधार"),
+}
 
 
 async def translate(text,lang,session):
@@ -258,9 +272,10 @@ async def telegram_news(row,lang,session):
     title=await translate(row["title"],lang,session)
     summary=await translate(row["summary"],lang,session)
     if not title or not summary: return None
-    prefix="CORRECTION · " if row["status"]=="CORRECTED" else "UPDATE · " if row["status"]=="UPDATED" else ""
-    return (f"📰 {prefix}{row['category']} · VERIFIED\n\n{title}\n\n{summary}\n\n"
-            f"SOURCE: {row['source_name']}\nTIME: {row['published_at']}\n{LABELS[lang][3]}: {row['source_url']}")
+    verified,source,time_label,update,correction=TELEGRAM_FIELDS[lang]
+    prefix=correction+" · " if row["status"]=="CORRECTED" else update+" · " if row["status"]=="UPDATED" else ""
+    return (f"📰 {prefix}{row['category']} · {verified}\n\n{title}\n\n{summary}\n\n"
+            f"{source}: {row['source_name']}\n{time_label}: {row['published_at']}\n{LABELS[lang][3]}: {row['source_url']}")
 
 
 def _subscribers_path():
