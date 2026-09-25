@@ -20,10 +20,12 @@ def load_job(path):
     return job,ref
 
 def identity_prompt(prompt):
-    return prompt+" "+IDENTITY["identity_prompt"]+" IDENTITY LOCK: "+" ".join(IDENTITY["rules"])
+    return ("A single 16:9 chibi comic story panel. Thick clean outlines, soft cel shading, "
+            "large head and small body, expressive face, one continuous simple setting. "
+            + prompt + " " + IDENTITY["identity_prompt"] + " IDENTITY LOCK: " + " ".join(IDENTITY["rules"]))
 
 def workflow(prompt,seed,ref_name):
-    negative=IDENTITY["negative_prompt"]+", generic mascot, owl, cat, dog, sloth, symmetrical normal eyes, changed face, redesigned character, duplicate character, collage, split frame"
+    negative=IDENTITY["negative_prompt"]+", generic mascot, owl, cat, dog, sloth, symmetrical normal eyes, changed face, redesigned character, duplicate character, collage, split frame, character sheet, infographic, labels, subtitles, photorealism"
     return {
       "1":{"class_type":"CheckpointLoaderSimple","inputs":{"ckpt_name":CHECKPOINT}},
       "2":{"class_type":"LoadImage","inputs":{"image":ref_name}},
@@ -31,8 +33,9 @@ def workflow(prompt,seed,ref_name):
       "4":{"class_type":"IPAdapterAdvanced","inputs":{"model":["3",0],"ipadapter":["3",1],"image":["2",0],"weight":1.30,"weight_type":"linear","combine_embeds":"concat","start_at":0.0,"end_at":1.0,"embeds_scaling":"V only"}},
       "5":{"class_type":"CLIPTextEncode","inputs":{"text":identity_prompt(prompt),"clip":["1",1]}},
       "6":{"class_type":"CLIPTextEncode","inputs":{"text":negative,"clip":["1",1]}},
-      "7":{"class_type":"EmptyLatentImage","inputs":{"width":1024,"height":576,"batch_size":1}},
-      "8":{"class_type":"KSampler","inputs":{"seed":int(seed),"steps":32,"cfg":5.0,"sampler_name":"euler","scheduler":"normal","denoise":1.0,"model":["4",0],"positive":["5",0],"negative":["6",0],"latent_image":["7",0]}},
+      "7":{"class_type":"LoadImage","inputs":{"image":"MUBA_DAILY_STORY_INIT.png"}},
+      "11":{"class_type":"VAEEncode","inputs":{"pixels":["7",0],"vae":["1",2]}},
+      "8":{"class_type":"KSampler","inputs":{"seed":int(seed),"steps":32,"cfg":5.0,"sampler_name":"euler","scheduler":"normal","denoise":0.58,"model":["4",0],"positive":["5",0],"negative":["6",0],"latent_image":["11",0]}},
       "9":{"class_type":"VAEDecode","inputs":{"samples":["8",0],"vae":["1",2]}},
       "10":{"class_type":"SaveImage","inputs":{"filename_prefix":"MUBA_DAILY_STORY","images":["9",0]}}
     }
@@ -66,7 +69,18 @@ def run(job_path,out_dir):
     with Image.open(ref) as im: im.verify()
     COMFY_INPUT.mkdir(parents=True,exist_ok=True)
     ref_name="MUBA_DAILY_STORY_MASTER_REFERENCE.png"
-    shutil.copy2(ref,COMFY_INPUT/ref_name)
+    with Image.open(ref) as source:
+        # The checked-in identity sheet includes explanatory panels that must
+        # never enter the image adapter or the generated story frames.
+        if ref.name == "file_00000000c20c8211bc7955d41f5b0edb.png" and source.size == (1448,1086):
+            character=source.crop((295,0,1045,765))
+        else:
+            character=source.copy()
+        character.convert("RGB").save(COMFY_INPUT/ref_name)
+        character.thumbnail((500,520),Image.Resampling.LANCZOS)
+        canvas=Image.new("RGB",(1024,576),(169,205,236))
+        canvas.paste(character,((1024-character.width)//2,576-character.height-15))
+        canvas.save(COMFY_INPUT/"MUBA_DAILY_STORY_INIT.png")
     results=[]
     base_seed=int(job.get("seed",260925))
     for i,ch in enumerate(job["chapters"],1):
@@ -75,10 +89,10 @@ def run(job_path,out_dir):
         meta=wait(queue(workflow(prompt,base_seed+i,ref_name)))
         dest=out/f"chapter_{i:02d}.png"; fetch(meta,dest); results.append(str(dest))
         print(f"\nMUBA_DAILY_STORY_CHAPTER_{i}=PASS",flush=True)
-    result={"schema_version":2,"job_id":job["job_id"],"day":job["day"],"status":"awaiting_telegram_dev_approval","approval":"telegram-dev","images":results}
+    result={"schema_version":2,"job_id":job["job_id"],"day":job["day"],"status":"awaiting_visual_review","approval":"telegram-dev","images":results}
     (out/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
-    print("\nMUBA_DAILY_STORY_4_FRAME_TEST=PASS",flush=True)
-    print("NEXT_GATE=TELEGRAM_DEV_APPROVAL",flush=True)
+    print("\nMUBA_DAILY_STORY_4_FRAME_TECHNICAL_TEST=PASS",flush=True)
+    print("NEXT_GATE=VISUAL_REVIEW_THEN_TELEGRAM_DEV_APPROVAL",flush=True)
     return result
 
 if __name__=="__main__":
