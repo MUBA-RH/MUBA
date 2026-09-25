@@ -89,9 +89,9 @@
     .news-filters { display:flex; gap:7px; overflow-x:auto; padding-bottom:8px; margin:12px 0; }
     .news-filters button { background:#20152e; border:1px solid var(--line); border-radius:999px; color:var(--text); padding:8px 12px; white-space:nowrap; cursor:pointer; }
     .news-filters button[aria-pressed="true"] { border-color:var(--gold); color:var(--gold); }
-    .news-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:12px; }
-    .news-item { border:1px solid var(--line); border-radius:14px; padding:15px; background:#0d0717; }
-    .news-item h3 { font-size:1.1rem; margin:7px 0; line-height:1.3; }
+    .news-list { display:grid; grid-template-columns:1fr; gap:8px; max-height:570px; overflow-y:auto; }
+    .news-item { border:1px solid var(--line); border-radius:12px; padding:11px 14px; background:#0d0717; }
+    .news-item h3 { font-size:1rem; margin:5px 0; line-height:1.3; }
     .news-item p,.news-note { color:var(--muted); line-height:1.48; }
     .news-meta { color:var(--gold); font-size:.76rem; letter-spacing:.04em; font-weight:700; }
     .news-source { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-top:12px; font-size:.83rem; }
@@ -738,7 +738,6 @@
           <div class="price-card" data-asset="ETH"><span>ETH · USD</span><strong>PRICE TEMPORARILY UNAVAILABLE</strong><span class="price-detail"></span></div>
           <div class="price-card" data-asset="MUBA"><span>MUBA · USD</span><strong>PRICE NOT AVAILABLE</strong><span class="price-detail">Official token identity not published.</span></div>
         </div>
-        <p class="news-note" id="price-source">BTC / ETH: Coinbase Exchange · USD · 24H change</p>
       </div>
     </section>
 
@@ -747,7 +746,7 @@
         <div class="section-head">
           <div class="eyebrow">MUBA · VERIFIED SOURCES</div>
           <h2 class="section-title">MUBA <span>NEWS.</span></h2>
-          <p class="section-copy">Important developments from official sources, with direct links and a permanent archive.</p>
+          <p class="section-copy">Verified crypto headlines, major developments and regulation, with direct source links.</p>
         </div>
         <div class="card news-shell">
           <div class="news-filters" id="news-filters" aria-label="News categories"></div>
@@ -1385,12 +1384,12 @@
           price.textContent="PRICE NOT AVAILABLE";detail.textContent="Official token identity not published.";continue;
         }
         const value=Number(item.price_usd),change=Number(item.change_24h_pct),date=new Date(item.updated_at);
-        if(!["LIVE","STALE"].includes(item.status)||!Number.isFinite(value)||value<=0||!Number.isFinite(change)||Number.isNaN(date.valueOf())||Date.now()-date.valueOf()>600000) {
+        if(item.status!=="LIVE"||!Number.isFinite(value)||value<=0||!Number.isFinite(change)||Number.isNaN(date.valueOf())||Math.abs(Date.now()-date.valueOf())>30000) {
           price.textContent="PRICE TEMPORARILY UNAVAILABLE";detail.textContent="";continue;
         }
         price.textContent=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
         detail.className="price-detail "+(change>=0?"positive":"negative");
-        detail.textContent=(change>=0?"+":"")+change.toFixed(2)+"% 24H · "+(item.status==="STALE"?"STALE · ":"")+"LAST UPDATED "+date.toLocaleTimeString("en-GB",{timeZone:"UTC",hour:"2-digit",minute:"2-digit"})+" UTC";
+        detail.textContent=(change>=0?"+":"")+change.toFixed(2)+"% 24H";
       }
     }
     let lastPricePayload=null;
@@ -1399,8 +1398,15 @@
       try {const response=await fetch(studioApiBase+"/price",{cache:"no-store"});if(response.ok){lastPricePayload=await response.json();renderPrices(lastPricePayload);}}
       catch(_) { /* Keep the bounded previous value until its timestamp expires. */ }
     }
-    loadPrices();setInterval(loadPrices,60000);
-    const newsCategories=["ALL","BTC","ETH","MARKET","ETF","REGULATION","EXCHANGE","SECURITY","STABLECOIN","PROTOCOL","MUBA"];
+    loadPrices();setInterval(loadPrices,5000);
+    const newsCategories=["ALL","CRYPTO AGENDA","IMPORTANT DEVELOPMENTS","REGULATION","MUBA"];
+    const sourceHosts=["www.sec.gov","www.cftc.gov","blog.ethereum.org","www.federalreserve.gov","home.treasury.gov","bitcoin.org","ethereum.org","www.coindesk.com","www.theblock.co","cointelegraph.com","decrypt.co"];
+    function newsBucket(row) {
+      if(row.category==="MUBA")return "MUBA";
+      if(row.category==="REGULATION")return "REGULATION";
+      if(["MARKET","ETF","SECURITY","STABLECOIN"].includes(row.category))return "IMPORTANT DEVELOPMENTS";
+      return "CRYPTO AGENDA";
+    }
     let newsRows=[], newsCategory="ALL";
     function renderNews() {
       const filters=document.getElementById("news-filters"),list=document.getElementById("news-list"),status=document.getElementById("news-status");
@@ -1409,19 +1415,19 @@
         button.setAttribute("aria-pressed",String(category===newsCategory));
         button.addEventListener("click",()=>{newsCategory=category;renderNews();});return button;
       }));
-      const items=newsRows.filter(row=>newsCategory==="ALL"||row.category===newsCategory);
+      const items=newsRows.filter(row=>newsCategory==="ALL"||newsBucket(row)===newsCategory).slice(0,10);
       list.replaceChildren(...items.map(row=>{
         const card=document.createElement("article");card.className="news-item";
         const meta=document.createElement("div");meta.className="news-meta";
-        meta.textContent=[row.category,row.status==="ACTIVE"?"VERIFIED":row.status].join(" · ");
+        meta.textContent=row.source_name+" · "+newsBucket(row)+(row.status==="ACTIVE"?"":" · "+row.status);
         const title=document.createElement("h3");title.textContent=row.title;
         const summary=document.createElement("p");summary.textContent=row.summary;
         const source=document.createElement("div");source.className="news-source";
         const detail=document.createElement("span");
         const date=new Date(row.published_at);
-        detail.textContent=row.source_name+" · "+(Number.isNaN(date.valueOf())?"":date.toLocaleString("en-US",{timeZone:"UTC",dateStyle:"medium",timeStyle:"short"})+" UTC");
+        detail.textContent=Number.isNaN(date.valueOf())?"":date.toLocaleDateString("en-US",{timeZone:"UTC",year:"numeric",month:"short",day:"numeric"});
         const link=document.createElement("a");link.textContent="READ SOURCE";link.target="_blank";link.rel="noopener noreferrer";
-        try { const url=new URL(row.source_url); if(url.protocol==="https:"&&["www.sec.gov","www.cftc.gov","blog.ethereum.org"].includes(url.hostname))link.href=url.href; } catch(_) {}
+        try { const url=new URL(row.source_url); if(url.protocol==="https:"&&sourceHosts.includes(url.hostname))link.href=url.href; } catch(_) {}
         source.append(detail,link);card.append(meta,title,summary,source);return card;
       }));
       status.textContent=items.length?"":newsRows.length?"No verified news in this category.":"No verified news published yet.";
@@ -1431,11 +1437,12 @@
         const response=await fetch(studioApiBase+"/news",{cache:"no-store"});
         if(!response.ok)throw new Error("News unavailable");
         const payload=await response.json();
-        newsRows=Array.isArray(payload.items)?payload.items.filter(row=>row.verification_status==="VERIFIED"&&newsCategories.includes(row.category)):[];
+        newsRows=Array.isArray(payload.items)?payload.items.filter(row=>row.verification_status==="VERIFIED"&&["BTC","ETH","MARKET","ETF","REGULATION","EXCHANGE","SECURITY","STABLECOIN","PROTOCOL","MUBA"].includes(row.category)):[];
         renderNews();
       } catch(_) { document.getElementById("news-status").textContent="News temporarily unavailable."; }
     }
     loadNews();
+    setInterval(loadNews,300000);
     let galleryKind = "all";
 
     function escapeGalleryText(value) {

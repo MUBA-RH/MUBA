@@ -67,6 +67,7 @@ class NewsTests(unittest.TestCase):
                 self.assertIn(verified,result)
                 self.assertIn(source+": SEC",result)
                 self.assertIn(time_label+":",result)
+                self.assertNotIn(self.row()["published_at"][10:],result)
                 self.assertIn(update,result)
 
     def test_official_crypto_update_is_important(self):
@@ -74,6 +75,31 @@ class NewsTests(unittest.TestCase):
         self.assertTrue(news.important(row))
         self.assertEqual(news.verified_row(row,b"<h1>CFTC Updates Crypto Asset FAQs</h1>"),"VERIFIED")
         self.assertFalse(news.important(self.row(title="CFTC Updates FAQ",summary="Generic filing note.")))
+
+    def test_media_needs_independent_evidence_and_cross_source_dedup(self):
+        first=self.row(source_name="CoinDesk",source_url="https://www.coindesk.com/news/bitcoin-etf-approval-2026",
+                       title="Bitcoin ETF Approval Announced by Commission")
+        second=self.row(source_name="The Block",source_url="https://www.theblock.co/news/bitcoin-etf-approval-2026",
+                        title="Commission Announces Bitcoin ETF Approval Today")
+        third=self.row(source_name="Cointelegraph",source_url="https://cointelegraph.com/news/unrelated-exchange-hack",
+                       title="Exchange Hack Leaves Crypto Users Waiting",category="SECURITY")
+        self.assertTrue(news.corroborates(first,second))
+        self.assertFalse(news.corroborates(first,third))
+        self.assertEqual(news.primary_links(b'<a href="https://www.sec.gov/newsroom/press-releases/valid">source</a> '
+                                            b'<a href="https://sec.gov.evil.org/fake">fake</a>'),
+                         ['https://www.sec.gov/newsroom/press-releases/valid'])
+        first['duplicate_hash']=news.duplicate_hash(first)
+        second['duplicate_hash']=news.duplicate_hash(second)
+        pool=[first]
+        self.assertFalse(news.merge(pool,second))
+        self.assertEqual(len(pool),1)
+
+    def test_media_only_feed_is_never_auto_verified(self):
+        # Even a reachable article needs an independent publisher or primary document.
+        row=self.row(source_name="CoinDesk",source_url="https://www.coindesk.com/news/bitcoin-etf-approval-2026")
+        self.assertFalse(news.primary_links(b'<h1>SEC Approves Bitcoin ETF Launch</h1>'))
+        self.assertTrue(news.relevant(row))
+        self.assertIsNone(news.canonical_url("https://www.coindesk.com.evil.org/fake","www.coindesk.com"))
 
 
 if __name__=="__main__": unittest.main()
