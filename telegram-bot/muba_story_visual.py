@@ -5,7 +5,7 @@ production batch, while narrative continuity is carried by Story State rather
 than by copying pixels or composition from a previous generated frame.
 """
 
-VISUAL_STYLE="daily-story-master-identity-v9"
+VISUAL_STYLE="daily-story-approved-2d-chibi-v10"
 REFERENCE_ROLE="master-identity-plus-daily-reference"
 
 REFERENCE_RULES=(
@@ -13,7 +13,7 @@ REFERENCE_RULES=(
     "Its deterministic fingerprint must remain bound to the entire four-chapter batch. "
     "Match canonical face geometry, eye construction, nose, mouth/tongue, tan-brown fur, black MUBA cap, black $MUBA hoodie, upright biped proportions and bare feet. "
     "EYE GEOMETRY LOCK: preserve exactly two eyes with the canonical asymmetric placement, relative size, iris/pupil construction, gaze anatomy and spacing from the master landmarks. Never enlarge one eye arbitrarily, swap eye sizes, add an eye, merge eyes, create mismatched pupils, or turn the face into a generic cute mascot. "
-    "Do not import older MUBA styles, chibi templates, neon-ring/crown backgrounds, bundled legacy assets or unrelated references. "
+    "Use the DEV-approved hand-drawn 2D chibi comic style: a large head and small body, clean dark outlines, warm soft cel shading, expressive canonical eyes and simple coherent backgrounds. Avoid photorealism and 3D rendering. Do not import older MUBA styles, neon-ring/crown backgrounds, bundled legacy assets or unrelated references. "
     "The reference guides visual language; Story State and the current chapter define pose, expression, camera, environment, lighting and action. "
 )
 

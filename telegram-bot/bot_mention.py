@@ -1379,7 +1379,10 @@ async def _story_generate_images(item):
         return item
     if len(item.get("prompts",[]))!=4:
         raise ValueError("Daily Story requires exactly four panel prompts")
-    if not story_image_configured():
+    engine=os.getenv("MUBA_STORY_ENGINE","cloudflare").strip().lower()
+    if engine not in ("cloudflare","kaggle"):
+        raise RuntimeError("Unknown Daily Story image engine")
+    if engine=="cloudflare" and not story_image_configured():
         raise RuntimeError("Daily Story Visual Generation Layer is not configured")
     metadata=story_reference_for_day(item["day"])
     if not metadata:
@@ -1394,6 +1397,42 @@ async def _story_generate_images(item):
     identity_state=master_reference_state(reference)
     if not story_fingerprint_matches(reference,fingerprint):
         raise RuntimeError("Daily Story reference fingerprint mismatch")
+
+    if engine=="kaggle":
+        from muba_story_kaggle import configured as kaggle_configured, generate_batch
+        if not kaggle_configured():
+            raise RuntimeError("Kaggle Daily Story engine is not configured")
+        # Give the image editor four specific actions rather than four copies of
+        # the full story policy; the immutable identity and style images travel
+        # as separate image inputs in the batch worker.
+        prompts=[chapter["text"]+" Required visible elements: "+"; ".join(chapter["required"])
+                 for chapter in item["chapters"]]
+        frames=await generate_batch(reference,prompts)
+        if len(frames)!=4:
+            raise RuntimeError("Kaggle Daily Story returned an incomplete batch")
+        import io
+        from PIL import Image, ImageStat
+        signatures=set()
+        for i,(body,out_type) in enumerate(frames,1):
+            if out_type!="image/png": raise RuntimeError(f"Kaggle frame {i} is not PNG")
+            with Image.open(io.BytesIO(body)) as frame:
+                frame.load()
+                if frame.size!=(1024,576): raise RuntimeError(f"Kaggle frame {i} is not 16:9")
+                # The previous worker pasted one portrait into a flat canvas.
+                # Reject that failure before a preview is marked ready.
+                left=frame.crop((0,0,160,576))
+                right=frame.crop((864,0,1024,576))
+                if min(ImageStat.Stat(left).stddev[:3]+ImageStat.Stat(right).stddev[:3])<4:
+                    raise RuntimeError(f"Kaggle frame {i} has a flat side border")
+            signature=hashlib.sha256(body).hexdigest()
+            if signature in signatures: raise RuntimeError("Kaggle Daily Story repeated a frame")
+            signatures.add(signature)
+        ids=[]
+        for index,(body,out_type) in enumerate(frames):
+            archived=_archive_studio_output(body,out_type,prompts[index],"image","telegram-story-engine")
+            if not archived: raise RuntimeError("Daily Story image archive failed")
+            ids.append(archived["id"])
+        return set_story_images(item["day"],ids)
 
     ids=[]
     async with aiohttp.ClientSession() as session:
