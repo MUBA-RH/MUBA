@@ -1,10 +1,12 @@
 """On-demand Kaggle T4 x2 batch bridge for MUBA Daily Story."""
 from __future__ import annotations
-import asyncio, base64, json, os, subprocess, sys, tempfile, time
+import asyncio, base64, io, json, os, subprocess, sys, tempfile, time
 from pathlib import Path
+from PIL import Image
 OWNER=os.getenv("MUBA_KAGGLE_OWNER","mubarh").strip()
 KERNEL=os.getenv("MUBA_KAGGLE_KERNEL","muba-daily-story-runtime").strip()
 TIMEOUT=int(os.getenv("MUBA_KAGGLE_TIMEOUT","1800"))
+STYLE=Path(__file__).resolve().parent/"assets"/"muba_daily_story_approved_style.webp"
 def _api_token():
     return os.getenv("KAGGLE_API_TOKEN","").strip()
 def configured():
@@ -31,27 +33,34 @@ def _run(args,timeout=120):
     if p.returncode: raise RuntimeError("Kaggle command failed: "+(p.stderr or p.stdout)[-1200:])
     return (p.stdout or "")+(p.stderr or "")
 def _worker_source(reference_bytes,prompts):
-    ref=base64.b64encode(reference_bytes).decode("ascii"); payload=json.dumps(prompts,ensure_ascii=False)
+    ref=base64.b64encode(reference_bytes).decode("ascii")
+    style=base64.b64encode(STYLE.read_bytes()).decode("ascii")
+    payload=json.dumps(prompts,ensure_ascii=False)
     return f'''import base64,io,subprocess,sys
 subprocess.check_call([sys.executable,"-m","pip","install","-q","-U","diffusers","transformers","accelerate","sentencepiece","safetensors","huggingface_hub","bitsandbytes"])
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 from diffusers import DiffusionPipeline
 pipe=DiffusionPipeline.from_pretrained("seochan99/Qwen-Image-Edit-2511-bnb-nf4",torch_dtype=torch.float16,low_cpu_mem_usage=True)
 pipe.enable_model_cpu_offload(gpu_id=0)
 pipe.set_progress_bar_config(disable=True)
 reference=Image.open(io.BytesIO(base64.b64decode({ref!r}))).convert("RGB")
+style=Image.open(io.BytesIO(base64.b64decode({style!r}))).convert("RGB")
 prompts={payload}
-previous=None
 for index,prompt in enumerate(prompts,1):
-    inputs=[reference] if previous is None else [reference,previous]
-    previous=pipe(image=inputs,prompt=prompt,negative_prompt="collage, grid, split frame, multiple panels, text, watermark",true_cfg_scale=4.0,guidance_scale=1.0,num_inference_steps=28,num_images_per_prompt=1).images[0]
-    previous.save(f"/kaggle/working/{{index:02d}}.png")
+    instruction=("IMAGE 1 is MUBA's current identity reference. IMAGE 2 is the approved hand-drawn 2D chibi style. "
+                 "Draw one new full-bleed 16:9 scene with the same recognizable MUBA face and clothing. "
+                 "Keep the style and character; change pose, action and background to portray this chapter. "
+                 "Do not copy the example scene, make a portrait pasted onto a colored canvas, or add text. Scene: "+prompt)
+    picture=pipe(image=[reference,style],prompt=instruction,negative_prompt="photo, 3D, portrait pasted on canvas, sidebars, collage, grid, split frame, multiple panels, text, watermark",true_cfg_scale=4.0,guidance_scale=1.0,num_inference_steps=28,num_images_per_prompt=1).images[0]
+    picture=ImageOps.fit(picture.convert("RGB"),(1024,576),method=Image.Resampling.LANCZOS)
+    picture.save(f"/kaggle/working/{{index:02d}}.png")
 print("MUBA_DAILY_STORY_COMPLETE")
 '''
 def _generate(reference_bytes,prompts):
     if not configured(): raise RuntimeError("Kaggle Daily Story bridge is not configured")
     if len(prompts)!=4: raise ValueError("Daily Story requires exactly four prompts")
+    if not STYLE.is_file(): raise RuntimeError("Approved Daily Story style asset is missing")
     kernel_id=f"{OWNER}/{KERNEL}"
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)
@@ -72,6 +81,11 @@ def _generate(reference_bytes,prompts):
         for i in range(1,5):
             path=out/f"{i:02d}.png"
             if not path.exists(): raise RuntimeError(f"Kaggle output missing {i:02d}.png")
-            result.append((path.read_bytes(),"image/png"))
+            body=path.read_bytes()
+            with Image.open(io.BytesIO(body)) as im:
+                im.verify()
+            with Image.open(io.BytesIO(body)) as im:
+                if im.size!=(1024,576): raise RuntimeError(f"Kaggle frame {i} has invalid dimensions")
+            result.append((body,"image/png"))
         return result
 async def generate_batch(reference_bytes,prompts): return await asyncio.to_thread(_generate,reference_bytes,prompts)

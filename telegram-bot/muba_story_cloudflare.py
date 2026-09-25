@@ -44,7 +44,7 @@ def _safe_retry_prompt(prompt:str)->str:
     beat=text.split("CURRENT BEAT:",1)[-1].strip() if "CURRENT BEAT:" in text else text
     beat=beat[:700]
     return (
-        "Create a friendly fictional illustrated scene using the attached character reference. "
+        "Create one hand-drawn 2D chibi comic scene with clean dark outlines and soft cel shading using the attached character reference. "
         "Keep the same recognizable character appearance, clothing and proportions. "
         "Show one landscape 16:9 scene only, with no captions, logos added by the model, "
         "speech bubbles, collage, split frame or watermark. "
@@ -100,11 +100,11 @@ async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str
     if continuity_bytes is not None:
         continuity_bytes,continuity_type=_prepare_reference(continuity_bytes)
         prompt=("IMAGE 0 is the immutable MUBA identity/style reference. IMAGE 1 is the immediately previous story frame. "
-                "Create exactly ONE full-bleed cinematic 16:9 image. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+                "Create exactly ONE full-bleed hand-drawn 2D chibi comic scene in 16:9, with clean dark outlines and soft cel shading; no photorealism or 3D rendering. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
                 "Continue the physical scene from IMAGE 1 while preserving MUBA from IMAGE 0: same face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions. "
                 "Only pose, expression, gaze and camera may change. "+prompt)
     else:
-        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed cinematic 16:9 image. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
+        prompt=("IMAGE 0 is the immutable MUBA identity/style reference. Create exactly ONE full-bleed hand-drawn 2D chibi comic scene in 16:9, with clean dark outlines and soft cel shading; no photorealism or 3D rendering. Keep MUBA fully visible from cap to bare feet with upright biped anatomy and consistent tan/brown fur; never add shoes. Do not crop to a face-only portrait. Not a collage, grid, contact sheet, comic page, montage, diptych, triptych, or multi-panel layout. "
                 "Preserve the exact face geometry, eyes, muzzle, nose, mouth, fur palette, cap, clothing and body proportions from IMAGE 0. "+prompt)
     status,content_type,raw=await _request(session,prompt,reference_bytes,reference_type,continuity_bytes,continuity_type)
     if status!=200:

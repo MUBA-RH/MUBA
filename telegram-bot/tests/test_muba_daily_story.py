@@ -20,10 +20,10 @@ class DailyStoryTests(unittest.TestCase):
         self.assertIn("canonical muba identity remains authoritative",prompt)
         self.assertIn("never a collage",prompt)
         self.assertIn("face/body identity lock",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v9")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-approved-2d-chibi-v10")
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
         self.assertEqual(item["rules"]["continuity"],"story-state-plus-independent-chapter-scene")
-        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-master-identity-v9")
+        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-approved-2d-chibi-v10")
         self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
         self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
 
