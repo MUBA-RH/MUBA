@@ -356,6 +356,7 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton("💬 ASK MUBA",callback_data="ask_muba")],
         [InlineKeyboardButton("📰 MUBA DAILY",callback_data="daily_hub")],
         [InlineKeyboardButton("🎨 MUBA CREATE",callback_data="create_hub")],
+        [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton("🧭 MUBA COMMUNITY",callback_data="community_hub")],
     ]
     if is_dev(user_id):
