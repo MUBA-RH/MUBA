@@ -1,12 +1,14 @@
 from __future__ import annotations
-import json,os,time,uuid
+import json, os, shutil, time, uuid
 from pathlib import Path
 import requests
 from PIL import Image
 
 ROOT=Path(__file__).resolve().parent
-CFG=json.loads((ROOT/"config.json").read_text())\nIDENTITY=json.loads((ROOT/"muba_master_reference_v1.json").read_text(encoding="utf-8"))
+CFG=json.loads((ROOT/"config.json").read_text())
+IDENTITY=json.loads((ROOT/"muba_master_reference_v1.json").read_text(encoding="utf-8"))
 COMFY=os.getenv("MUBA_COMFY_URL","http://127.0.0.1:8188").rstrip("/")
+COMFY_INPUT=Path(os.getenv("MUBA_COMFY_INPUT","/kaggle/working/ComfyUI/input"))
 CHECKPOINT=os.getenv("MUBA_COMFY_CHECKPOINT",CFG["model"]["default_checkpoint"])
 
 def load_job(path):
@@ -17,28 +19,40 @@ def load_job(path):
     if not ref.exists(): raise FileNotFoundError(ref)
     return job,ref
 
-def identity_prompt(prompt):\n    return prompt + " " + IDENTITY["identity_prompt"] + " IDENTITY LOCK: " + " ".join(IDENTITY["rules"])\n\ndef workflow(prompt,seed):
-    wf=json.loads((ROOT/CFG["workflow"]).read_text())
-    wf["4"]["inputs"]["ckpt_name"]=CHECKPOINT
-    wf["6"]["inputs"]["text"]=identity_prompt(prompt)\n    wf["7"]["inputs"]["text"]=wf["7"]["inputs"]["text"]+", "+IDENTITY["negative_prompt"]
-    wf["3"]["inputs"]["seed"]=int(seed)
-    return wf
+def identity_prompt(prompt):
+    return prompt+" "+IDENTITY["identity_prompt"]+" IDENTITY LOCK: "+" ".join(IDENTITY["rules"])
+
+def workflow(prompt,seed,ref_name):
+    negative=IDENTITY["negative_prompt"]+", generic mascot, owl, cat, dog, sloth, symmetrical normal eyes, changed face, redesigned character, duplicate character, collage, split frame"
+    return {
+      "1":{"class_type":"CheckpointLoaderSimple","inputs":{"ckpt_name":CHECKPOINT}},
+      "2":{"class_type":"LoadImage","inputs":{"image":ref_name}},
+      "3":{"class_type":"IPAdapterUnifiedLoader","inputs":{"model":["1",0],"preset":"PLUS (high strength)"}},
+      "4":{"class_type":"IPAdapterAdvanced","inputs":{"model":["3",0],"ipadapter":["3",1],"image":["2",0],"weight":1.30,"weight_type":"linear","combine_embeds":"concat","start_at":0.0,"end_at":1.0,"embeds_scaling":"V only"}},
+      "5":{"class_type":"CLIPTextEncode","inputs":{"text":identity_prompt(prompt),"clip":["1",1]}},
+      "6":{"class_type":"CLIPTextEncode","inputs":{"text":negative,"clip":["1",1]}},
+      "7":{"class_type":"EmptyLatentImage","inputs":{"width":1024,"height":576,"batch_size":1}},
+      "8":{"class_type":"KSampler","inputs":{"seed":int(seed),"steps":32,"cfg":5.0,"sampler_name":"euler","scheduler":"normal","denoise":1.0,"model":["4",0],"positive":["5",0],"negative":["6",0],"latent_image":["7",0]}},
+      "9":{"class_type":"VAEDecode","inputs":{"samples":["8",0],"vae":["1",2]}},
+      "10":{"class_type":"SaveImage","inputs":{"filename_prefix":"MUBA_DAILY_STORY","images":["9",0]}}
+    }
 
 def queue(wf):
-    client=str(uuid.uuid4())
-    r=requests.post(COMFY+"/prompt",json={"prompt":wf,"client_id":client},timeout=30);r.raise_for_status()
+    r=requests.post(COMFY+"/prompt",json={"prompt":wf,"client_id":str(uuid.uuid4())},timeout=30)
+    if not r.ok: raise RuntimeError("ComfyUI rejected workflow: "+r.text)
     return r.json()["prompt_id"]
 
-def wait(pid,timeout=600):
+def wait(pid,timeout=900):
     end=time.time()+timeout
     while time.time()<end:
-        r=requests.get(COMFY+"/history/"+pid,timeout=30);r.raise_for_status()
+        r=requests.get(COMFY+"/history/"+pid,timeout=30); r.raise_for_status()
         data=r.json()
         if pid in data:
-            images=[]
-            for node in data[pid].get("outputs",{}).values(): images.extend(node.get("images",[]))
-            if images:return images[-1]
-        time.sleep(2)
+            imgs=[]
+            for node in data[pid].get("outputs",{}).values(): imgs.extend(node.get("images",[]))
+            if imgs:return imgs[-1]
+            raise RuntimeError("Generation completed without image")
+        print(".",end="",flush=True); time.sleep(2)
     raise TimeoutError(pid)
 
 def fetch(meta,dest):
@@ -48,18 +62,24 @@ def fetch(meta,dest):
         if im.size!=(1024,576): raise ValueError(f"Invalid output size: {im.size}")
 
 def run(job_path,out_dir):
-    job,ref=load_job(job_path); out=Path(out_dir);out.mkdir(parents=True,exist_ok=True)
-    # V11 validates the fresh reference at the worker boundary. The first low-VRAM
-    # workflow is prompt-conditioned; reference adapters can be inserted later
-    # without changing the job or Telegram contracts.
+    job,ref=load_job(job_path); out=Path(out_dir); out.mkdir(parents=True,exist_ok=True)
     with Image.open(ref) as im: im.verify()
+    COMFY_INPUT.mkdir(parents=True,exist_ok=True)
+    ref_name="MUBA_DAILY_STORY_MASTER_REFERENCE.png"
+    shutil.copy2(ref,COMFY_INPUT/ref_name)
     results=[]
+    base_seed=int(job.get("seed",260925))
     for i,ch in enumerate(job["chapters"],1):
-        prompt=ch["prompt"]+" CURRENT CHAPTER ONLY. Same canonical MUBA identity as the supplied Daily Story reference."
-        pid=queue(workflow(prompt,int(job.get("seed",260925))+i))
-        dest=out/f"chapter_{i:02d}.png";fetch(wait(pid),dest);results.append(str(dest))
-    result={"schema_version":1,"job_id":job["job_id"],"day":job["day"],"status":"complete","images":results}
-    (out/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8");return result
+        prompt=ch["prompt"]+" CURRENT CHAPTER ONLY. One scene, one frame, one canonical MUBA. Preserve the exact same face, eye geometry, muzzle, tongue, fur, cap and hoodie from the master reference."
+        print(f"\nMUBA_DAILY_STORY_CHAPTER_{i}=QUEUED",flush=True)
+        meta=wait(queue(workflow(prompt,base_seed+i,ref_name)))
+        dest=out/f"chapter_{i:02d}.png"; fetch(meta,dest); results.append(str(dest))
+        print(f"\nMUBA_DAILY_STORY_CHAPTER_{i}=PASS",flush=True)
+    result={"schema_version":2,"job_id":job["job_id"],"day":job["day"],"status":"awaiting_telegram_dev_approval","approval":"telegram-dev","images":results}
+    (out/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
+    print("\nMUBA_DAILY_STORY_4_FRAME_TEST=PASS",flush=True)
+    print("NEXT_GATE=TELEGRAM_DEV_APPROVAL",flush=True)
+    return result
 
 if __name__=="__main__":
     import argparse
