@@ -61,6 +61,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
+from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
@@ -320,6 +321,7 @@ def menu_keyboard(lang,user_id=None):
     for category in ("discover","understand","world"):
         rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
+    rows.append([InlineKeyboardButton("📰 "+NEWS_LABELS[lang][0],callback_data="news")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")])
@@ -630,6 +632,23 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+    if data in ("news","news_subscribe"):
+        if data=="news_subscribe":
+            try: subscribe_news(user_id,lang)
+            except Exception:
+                logger.exception("News subscription unavailable")
+                await q.edit_message_text(NEWS_LABELS[lang][4],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅",callback_data="menu")]])); return
+        try: items=public_news()
+        except Exception:
+            logger.exception("News archive unavailable")
+            items=[]
+        latest=next((item for item in items if item["status"]!="ARCHIVED"),None)
+        message=await telegram_news(latest,lang,context.application.bot_data["news_session"]) if latest else None
+        body=message if message else NEWS_LABELS[lang][4] if items else NEWS_LABELS[lang][1]
+        if data=="news_subscribe": body=NEWS_LABELS[lang][2]+"\n\n"+body
+        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔔 "+NEWS_LABELS[lang][2],callback_data="news_subscribe")],
+            [InlineKeyboardButton("⬅",callback_data="menu")]]),disable_web_page_preview=True); return
     if data=="updates_center":
         body,index,total=updates_center_text(lang,user_id,0)
         await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
@@ -1594,6 +1613,29 @@ async def state_health_handler(request: web.Request):
     })
 
 
+async def news_public_handler(request: web.Request):
+    category=request.query.get("category")
+    try:
+        rows=public_news(category)
+        items=[{key:row.get(key) for key in ("id","title","summary","category","source_name","source_url","published_at","collected_at","verification_status","importance","language_master","duplicate_hash","correction_of","status")}
+               for row in rows[:100]]
+    except Exception:
+        logger.exception("News archive unavailable")
+        return web.json_response({"items":[],"available":False},status=503,headers=_gallery_cors_headers())
+    return web.json_response({"items":items,"available":True},headers=_gallery_cors_headers())
+
+
+async def news_scheduler(application,session):
+    await asyncio.sleep(10)
+    while True:
+        try:
+            rows=await collect_news(session)
+            if rows: await notify_subscribers(rows,application.bot,session,get_assistant_language)
+        except Exception:
+            logger.exception("News collection unavailable; other MUBA systems remain active")
+        await asyncio.sleep(1200)
+
+
 async def webhook_handler(
     request: web.Request,
 ):
@@ -1689,10 +1731,12 @@ async def start_webhook_server():
 
     import aiohttp
     app["http_session"] = aiohttp.ClientSession()
+    application.bot_data["news_session"] = app["http_session"]
 
     app["telegram_application"] = application
 
     app["daily_story_scheduler_task"] = asyncio.create_task(daily_story_scheduler(application))
+    app["news_scheduler_task"] = asyncio.create_task(news_scheduler(application,app["http_session"]))
 
     app.router.add_get(
         "/",
@@ -1719,6 +1763,7 @@ async def start_webhook_server():
     app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
     app.router.add_get("/story", story_public_handler)
+    app.router.add_get("/news", news_public_handler)
     app.router.add_post("/story/prepare", story_prepare_handler)
     app.router.add_get("/gallery", gallery_list_handler)
     app.router.add_get("/gallery/image/{item_id}", gallery_image_handler)
@@ -1752,6 +1797,8 @@ async def start_webhook_server():
             "Stopping MUBA application."
         )
 
+        app["news_scheduler_task"].cancel()
+        await asyncio.gather(app["news_scheduler_task"],return_exceptions=True)
         await app["http_session"].close()
         await runner.cleanup()
 
