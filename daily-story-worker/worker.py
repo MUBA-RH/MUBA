@@ -5,7 +5,7 @@ import requests
 from PIL import Image
 
 ROOT=Path(__file__).resolve().parent
-CFG=json.loads((ROOT/"config.json").read_text())
+CFG=json.loads((ROOT/"config.json").read_text())\nIDENTITY=json.loads((ROOT/"muba_master_reference_v1.json").read_text(encoding="utf-8"))
 COMFY=os.getenv("MUBA_COMFY_URL","http://127.0.0.1:8188").rstrip("/")
 CHECKPOINT=os.getenv("MUBA_COMFY_CHECKPOINT",CFG["model"]["default_checkpoint"])
 
@@ -17,10 +17,10 @@ def load_job(path):
     if not ref.exists(): raise FileNotFoundError(ref)
     return job,ref
 
-def workflow(prompt,seed):
+def identity_prompt(prompt):\n    return prompt + " " + IDENTITY["identity_prompt"] + " IDENTITY LOCK: " + " ".join(IDENTITY["rules"])\n\ndef workflow(prompt,seed):
     wf=json.loads((ROOT/CFG["workflow"]).read_text())
     wf["4"]["inputs"]["ckpt_name"]=CHECKPOINT
-    wf["6"]["inputs"]["text"]=prompt
+    wf["6"]["inputs"]["text"]=identity_prompt(prompt)\n    wf["7"]["inputs"]["text"]=wf["7"]["inputs"]["text"]+", "+IDENTITY["negative_prompt"]
     wf["3"]["inputs"]["seed"]=int(seed)
     return wf
 
