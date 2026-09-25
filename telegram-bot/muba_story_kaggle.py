@@ -6,7 +6,7 @@ from PIL import Image
 OWNER=os.getenv("MUBA_KAGGLE_OWNER","mubarh").strip()
 KERNEL=os.getenv("MUBA_KAGGLE_KERNEL","muba-daily-story-runtime").strip()
 TIMEOUT=int(os.getenv("MUBA_KAGGLE_TIMEOUT","1800"))
-STYLE=Path(__file__).resolve().parent/"assets"/"muba_daily_story_approved_style.webp"
+WORKER=Path(__file__).resolve().parent.parent/"daily-story-worker"
 def _api_token():
     return os.getenv("KAGGLE_API_TOKEN","").strip()
 def configured():
@@ -33,33 +33,45 @@ def _run(args,timeout=120):
     if p.returncode: raise RuntimeError("Kaggle command failed: "+(p.stderr or p.stdout)[-1200:])
     return (p.stdout or "")+(p.stderr or "")
 def _worker_source(reference_bytes,prompts):
-    ref=base64.b64encode(reference_bytes).decode("ascii")
-    style=base64.b64encode(STYLE.read_bytes()).decode("ascii")
-    payload=json.dumps(prompts,ensure_ascii=False)
-    return f'''import base64,io,subprocess,sys
-subprocess.check_call([sys.executable,"-m","pip","install","-q","-U","diffusers","transformers","accelerate","sentencepiece","safetensors","huggingface_hub","bitsandbytes"])
-import torch
-from PIL import Image, ImageOps
-from diffusers import DiffusionPipeline
-pipe=DiffusionPipeline.from_pretrained("seochan99/Qwen-Image-Edit-2511-bnb-nf4",dtype=torch.bfloat16,device_map="balanced",max_memory={{0:"12GiB",1:"12GiB"}})
-pipe.set_progress_bar_config(disable=True)
-reference=Image.open(io.BytesIO(base64.b64decode({ref!r}))).convert("RGB")
-style=Image.open(io.BytesIO(base64.b64decode({style!r}))).convert("RGB")
-prompts={payload}
-for index,prompt in enumerate(prompts,1):
-    instruction=("IMAGE 1 is MUBA's current identity reference. IMAGE 2 is the approved hand-drawn 2D chibi style. "
-                 "Draw one new full-bleed 16:9 scene with the same recognizable MUBA face and clothing. "
-                 "Keep the style and character; change pose, action and background to portray this chapter. "
-                 "Do not copy the example scene, make a portrait pasted onto a colored canvas, or add text. Scene: "+prompt)
-    picture=pipe(image=[reference,style],prompt=instruction,negative_prompt="photo, 3D, portrait pasted on canvas, sidebars, collage, grid, split frame, multiple panels, text, watermark",true_cfg_scale=4.0,guidance_scale=1.0,num_inference_steps=28,num_images_per_prompt=1).images[0]
-    picture=ImageOps.fit(picture.convert("RGB"),(1024,576),method=Image.Resampling.LANCZOS)
-    picture.save(f"/kaggle/working/{{index:02d}}.png")
-print("MUBA_DAILY_STORY_COMPLETE")
+    names=("kaggle_bootstrap.py","worker.py","config.json","muba_master_reference_v1.json","requirements.txt")
+    sources={name:base64.b64encode((WORKER/name).read_bytes()).decode("ascii") for name in names}
+    sources["reference.png"]=base64.b64encode(reference_bytes).decode("ascii")
+    job={"job_id":"kaggle-daily-story","day":"on-demand","seed":260925,
+         "reference_path":"/kaggle/working/muba-story/reference.png",
+         "chapters":[{"prompt":prompt} for prompt in prompts]}
+    return "import base64,json,pathlib,shutil,subprocess,sys,time,urllib.request\n"+\
+           "files="+repr(sources)+"\njob="+repr(job)+"\n"+'''
+root=pathlib.Path("/kaggle/working/muba-story")
+root.mkdir(parents=True,exist_ok=True)
+for name,encoded in files.items():
+    (root/name).write_bytes(base64.b64decode(encoded))
+(root/"job.json").write_text(json.dumps(job),encoding="utf-8")
+subprocess.check_call([sys.executable,str(root/"kaggle_bootstrap.py")],timeout=1200)
+server=subprocess.Popen([sys.executable,"/kaggle/working/ComfyUI/main.py","--listen","127.0.0.1","--port","8188","--lowvram"],stdout=sys.stdout,stderr=subprocess.STDOUT)
+try:
+    for attempt in range(120):
+        if server.poll() is not None:
+            raise RuntimeError("ComfyUI exited before the API became ready")
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:8188/system_stats",timeout=2) as response:
+                if response.status==200: break
+        except Exception:
+            time.sleep(2)
+    else:
+        raise RuntimeError("ComfyUI API did not start")
+    subprocess.check_call([sys.executable,str(root/"worker.py"),str(root/"job.json"),"--out",str(root/"output")],timeout=1200)
+    for i in range(1,5):
+        shutil.copyfile(root/"output"/f"chapter_{i:02d}.png",pathlib.Path("/kaggle/working")/f"{i:02d}.png")
+    print("MUBA_DAILY_STORY_COMPLETE",flush=True)
+finally:
+    server.terminate()
+    try: server.wait(timeout=10)
+    except subprocess.TimeoutExpired: server.kill()
 '''
 def _generate(reference_bytes,prompts):
     if not configured(): raise RuntimeError("Kaggle Daily Story bridge is not configured")
     if len(prompts)!=4: raise ValueError("Daily Story requires exactly four prompts")
-    if not STYLE.is_file(): raise RuntimeError("Approved Daily Story style asset is missing")
+    if not (WORKER/"kaggle_bootstrap.py").is_file(): raise RuntimeError("ComfyUI Daily Story worker is missing")
     kernel_id=f"{OWNER}/{KERNEL}"
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)

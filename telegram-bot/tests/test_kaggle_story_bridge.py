@@ -12,12 +12,14 @@ import muba_story_kaggle as bridge
 
 
 class KaggleStoryBridgeTests(unittest.TestCase):
-    def test_worker_receives_identity_and_approved_style_for_each_chapter(self):
+    def test_worker_stages_comfyui_and_four_reference_conditioned_chapters(self):
         source=bridge._worker_source(b"reference",["one","two","three","four"])
         compile(source,"story_worker.py","exec")
-        self.assertIn("image=[reference,style]",source)
-        self.assertIn("change pose, action and background",source)
-        self.assertNotIn("previous=pipe",source)
+        self.assertIn("kaggle_bootstrap.py",source)
+        self.assertIn('"--lowvram"',source)
+        self.assertIn("reference.png",source)
+        self.assertIn("'four'",source)
+        self.assertNotIn("Qwen-Image-Edit",source)
 
     def test_incomplete_or_malformed_batch_never_succeeds(self):
         calls=[]
