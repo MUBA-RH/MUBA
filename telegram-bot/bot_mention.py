@@ -319,8 +319,7 @@ def menu_keyboard(lang,user_id=None):
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[[InlineKeyboardButton(updates_label,callback_data="updates_center")]]
     rows.append([InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")])
-    for category in ("discover","understand","world"):
-        rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
+    rows.append([InlineKeyboardButton("💬 ASK MUBA",callback_data="ask_muba")])
     rows.append([InlineKeyboardButton(DAILY_LABELS[lang]["daily"]+_combined_update_badge(lang,user_id,("daily","web","telegram")),callback_data="daily")])
     rows.append([InlineKeyboardButton("📰 "+NEWS_LABELS[lang][0],callback_data="news")])
     rows.append([InlineKeyboardButton(EXTRA_LABELS[lang]["story"],callback_data="extra:story")])
@@ -552,6 +551,14 @@ def share_keyboard(lang,index=None):
     rows.append([InlineKeyboardButton(labels["back"],callback_data="menu" if index is None else "share")])
     return InlineKeyboardMarkup(rows)
 
+def ask_muba_keyboard(lang):
+    labels=CATEGORY_LABELS[lang]
+    rows=[]
+    for category in ("discover","understand","world"):
+        rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
+    return InlineKeyboardMarkup(rows)
+
 def category_keyboard(lang,category):
     topics=CATEGORY_TOPICS[category]
     rows=[]
@@ -561,7 +568,7 @@ def category_keyboard(lang,category):
     for i,(topic,question) in enumerate(QUESTIONS[lang]):
         if topic in topics:
             rows.append([InlineKeyboardButton(question,callback_data=f"q:{i}")])
-    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="ask_muba")])
     return InlineKeyboardMarkup(rows)
 
 def topic_keyboard(lang,topic):
@@ -781,6 +788,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if items:
             i=max(0,min(i,len(items)-1))
             await q.edit_message_text(items[i][1],reply_markup=topic_keyboard(lang,topic)); return
+    if data=="ask_muba":
+        await q.edit_message_text("💬 ASK MUBA",reply_markup=ask_muba_keyboard(lang)); return
     if data.startswith("category:"):
         category=data.split(":",1)[1]
         if category in CATEGORY_TOPICS:

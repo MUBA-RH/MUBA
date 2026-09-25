@@ -1782,7 +1782,10 @@
       "id": "20260925-daily-story-approved-2d-kaggle-preview-v12",
       "date": "2026-09-25",
       "type": "improved",
-      "areas": ["daily", "telegram"],
+      "areas": [
+        "daily",
+        "telegram"
+      ],
       "title": {
         "en": "Daily Story approved 2D preview",
         "tr": "Daily Story onaylı 2D önizleme",
@@ -1848,7 +1851,10 @@
       "id": "20260925-daily-story-comfy-kaggle-worker-v15",
       "date": "2026-09-25",
       "type": "improved",
-      "areas": ["daily", "telegram"],
+      "areas": [
+        "daily",
+        "telegram"
+      ],
       "title": {
         "en": "Daily Story ComfyUI worker",
         "tr": "Daily Story ComfyUI üreticisi",
@@ -1976,6 +1982,29 @@
         "zh": "网站在紧凑滚动区域展示最多十条已核实加密货币新闻，扩展官方及独立交叉核实的媒体来源。BTC/ETH 交易价格每五秒刷新，过期报价不会显示为当前价格；价格标签不显示供应商或 UTC 时间。",
         "ar": "يعرض الموقع حتى عشرة أخبار عملات مشفرة موثقة في قائمة مدمجة قابلة للتمرير مع توسيع المصادر الرسمية والناشرين المؤكدين بشكل مستقل. تتجدد أسعار تداول BTC وETH كل خمس ثوان ولا تُعرض الأسعار القديمة كحالية؛ أزيل اسم المزود ووقت UTC من التسميات.",
         "hi": "साइट संक्षिप्त स्क्रॉल सूची में दस तक सत्यापित क्रिप्टो खबरें दिखाती है और आधिकारिक तथा स्वतंत्र रूप से पुष्ट प्रकाशक स्रोत जोड़ती है। BTC/ETH ट्रेड कीमतें हर पाँच सेकंड अपडेट होती हैं; पुरानी कीमत को वर्तमान नहीं दिखाया जाता, और प्रदाता तथा UTC समय के लेबल हटाए गए हैं।"
+      }
+    },
+    {
+      "id": "20260925-ask-muba-menu-v21",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "ASK MUBA menu consolidation",
+        "tr": "ASK MUBA menü birleştirmesi",
+        "zh": "ASK MUBA 菜单整合",
+        "ar": "دمج قائمة ASK MUBA",
+        "hi": "ASK MUBA मेनू एकीकरण"
+      },
+      "text": {
+        "en": "The three discovery sections now live under one ASK MUBA entry while each section keeps its existing topics and content.",
+        "tr": "MUBA’yı Tanı, MUBA’yı Anla ve MUBA Dünyası artık tek ASK MUBA girişinin altında yer alır; her bölüm mevcut konu ve içeriklerini korur.",
+        "zh": "三个探索分区现统一置于 ASK MUBA 入口下，同时各分区保留原有主题和内容。",
+        "ar": "أصبحت أقسام اكتشاف MUBA الثلاثة تحت مدخل ASK MUBA واحد مع بقاء موضوعات ومحتوى كل قسم كما هي.",
+        "hi": "तीनों MUBA खोज अनुभाग अब एक ASK MUBA प्रवेश के नीचे हैं, जबकि हर अनुभाग अपने मौजूदा विषय और सामग्री बनाए रखता है।"
       }
     }
   ]
