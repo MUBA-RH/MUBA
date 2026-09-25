@@ -80,7 +80,13 @@
     .story-book { max-width:900px; margin:0 auto; padding:clamp(18px,4vw,42px); background:linear-gradient(180deg,rgba(18,10,31,.96),rgba(9,5,16,.96)); }
     .news-shell { padding:20px; }
     .price-bar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-    .price-card { background:#120a1f; border:1px solid var(--line); border-radius:14px; padding:13px 16px; min-width:0; }
+    .price-card { background:#120a1f; border:1px solid var(--line); border-radius:14px; padding:13px 16px; min-width:0; position:relative; overflow:hidden; isolation:isolate; }
+    .price-card::before { content:""; position:absolute; inset:0; z-index:-1; opacity:.14; background-position:center; background-size:cover; background-repeat:no-repeat; filter:saturate(.9) contrast(1.05); }
+    .price-card[data-asset="BTC"]::before { background-image:radial-gradient(circle at 50% 50%,rgba(255,190,0,.7),transparent 42%),linear-gradient(90deg,rgba(255,165,0,.3),transparent 30%,rgba(255,190,0,.25) 70%,transparent); }
+    .price-card[data-asset="ETH"]::before { background-image:radial-gradient(circle at 50% 50%,rgba(255,190,0,.7),transparent 42%),linear-gradient(90deg,rgba(255,165,0,.3),transparent 30%,rgba(255,190,0,.25) 70%,transparent); }
+    .price-card[data-asset="BTC"]::after { content:"₿"; }
+    .price-card[data-asset="ETH"]::after { content:"◆"; }
+    .price-card[data-asset="BTC"]::after,.price-card[data-asset="ETH"]::after { position:absolute; right:7%; top:50%; transform:translateY(-50%); z-index:-1; font-size:clamp(5rem,12vw,8rem); line-height:1; color:rgba(255,190,0,.12); text-shadow:0 0 30px rgba(255,170,0,.14); }
     .price-card strong { display:block; font-size:1.1rem; margin:3px 0; font-variant-numeric:tabular-nums; }
     .price-card span { color:var(--muted); font-size:.77rem; }
     .price-card .positive { color:var(--success); }
