@@ -1797,6 +1797,29 @@
         "ar": "بعد الإعداد، يمكن لـ Daily Story إنشاء أربع صور بأسلوب 2D chibi المعتمد مع مرجع DEV جديد في مهمة Kaggle خاصة. تُفحص الصور الأربع قبل معاينتها في Telegram، ولا يتم نشرها على الويب دون موافقة DEV.",
         "hi": "कॉन्फ़िगर होने पर Daily Story ताज़ा DEV रेफ़रेंस और स्वीकृत 2D chibi शैली से निजी Kaggle बैच बना सकता है। चारों छवियों की जाँच Telegram पूर्वावलोकन से पहले होती है; वेब प्रकाशन के लिए DEV की मंज़ूरी आवश्यक है।"
       }
+    },
+    {
+      "id": "20260925-daily-story-telegram-photo-retry-v13",
+      "date": "2026-09-25",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story photo transfer retry",
+        "tr": "Daily Story fotoğraf aktarımı yeniden denemesi",
+        "zh": "Daily Story 照片传输重试",
+        "ar": "إعادة محاولة نقل صورة Daily Story",
+        "hi": "Daily Story फ़ोटो ट्रांसफ़र पुनः प्रयास"
+      },
+      "text": {
+        "en": "Telegram retries temporary timeouts while receiving a Daily Story reference photo and keeps the reference request open if all attempts fail.",
+        "tr": "Telegram, Daily Story referans fotoğrafını alırken geçici zaman aşımını yeniden dener ve tüm denemeler başarısız olursa referans isteğini açık tutar.",
+        "zh": "Telegram 在接收 Daily Story 参考照片时重试临时超时；若全部尝试失败，参考照片请求仍保持开放。",
+        "ar": "يعيد Telegram المحاولة عند انتهاء المهلة المؤقت أثناء استقبال صورة مرجعية لـ Daily Story، ويبقي طلب الصورة مفتوحاً إذا فشلت جميع المحاولات.",
+        "hi": "Daily Story संदर्भ फ़ोटो लेते समय Telegram अस्थायी टाइमआउट पर पुनः प्रयास करता है और सभी प्रयास विफल होने पर अनुरोध खुला रखता है।"
+      }
     }
   ]
 }
