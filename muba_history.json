@@ -1777,6 +1777,26 @@
         "ar": "أصبح لدى Daily Story عقد عمل GPU معزول ومحايد للمزود وتدفق ComfyUI لأربعة فصول مستقلة بنسبة 16:9، مع بقاء Studio العام دون تغيير.",
         "hi": "Daily Story में अब चार स्वतंत्र 16:9 chapters के लिए isolated provider-neutral GPU job और ComfyUI workflow contract है, जबकि public Studio unchanged रहता है।"
       }
+    },
+    {
+      "id": "20260925-daily-story-approved-2d-kaggle-preview-v12",
+      "date": "2026-09-25",
+      "type": "improved",
+      "areas": ["daily", "telegram"],
+      "title": {
+        "en": "Daily Story approved 2D preview",
+        "tr": "Daily Story onaylı 2D önizleme",
+        "zh": "Daily Story 已批准的 2D 预览",
+        "ar": "معاينة Daily Story ثنائية الأبعاد المعتمدة",
+        "hi": "Daily Story स्वीकृत 2D पूर्वावलोकन"
+      },
+      "text": {
+        "en": "Daily Story can use the approved 2D chibi style with a fresh DEV reference in a private Kaggle batch when configured. All four images must pass shape and batch checks before Telegram preview; web publication still requires DEV approval.",
+        "tr": "Daily Story, yapılandırıldığında onaylı 2D chibi tarzını yeni DEV referansıyla özel Kaggle üretiminde kullanabilir. Dört görselin tamamı Telegram önizlemesinden önce biçim ve grup kontrollerinden geçer; web yayını için yine DEV onayı gerekir.",
+        "zh": "配置后，Daily Story 可使用新的 DEV 参考图和已批准的 2D chibi 风格进行私有 Kaggle 批量生成。四张图均需通过检查后才能在 Telegram 预览；网页发布仍须 DEV 批准。",
+        "ar": "بعد الإعداد، يمكن لـ Daily Story إنشاء أربع صور بأسلوب 2D chibi المعتمد مع مرجع DEV جديد في مهمة Kaggle خاصة. تُفحص الصور الأربع قبل معاينتها في Telegram، ولا يتم نشرها على الويب دون موافقة DEV.",
+        "hi": "कॉन्फ़िगर होने पर Daily Story ताज़ा DEV रेफ़रेंस और स्वीकृत 2D chibi शैली से निजी Kaggle बैच बना सकता है। चारों छवियों की जाँच Telegram पूर्वावलोकन से पहले होती है; वेब प्रकाशन के लिए DEV की मंज़ूरी आवश्यक है।"
+      }
     }
   ]
 }
