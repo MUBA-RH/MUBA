@@ -79,6 +79,13 @@
 
     .story-book { max-width:900px; margin:0 auto; padding:clamp(18px,4vw,42px); background:linear-gradient(180deg,rgba(18,10,31,.96),rgba(9,5,16,.96)); }
     .news-shell { padding:20px; }
+    .price-bar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .price-card { background:#120a1f; border:1px solid var(--line); border-radius:14px; padding:13px 16px; min-width:0; }
+    .price-card strong { display:block; font-size:1.1rem; margin:3px 0; font-variant-numeric:tabular-nums; }
+    .price-card span { color:var(--muted); font-size:.77rem; }
+    .price-card .positive { color:var(--success); }
+    .price-card .negative { color:#fca5a5; }
+    @media (max-width:600px) { .price-bar { grid-template-columns:1fr; } }
     .news-filters { display:flex; gap:7px; overflow-x:auto; padding-bottom:8px; margin:12px 0; }
     .news-filters button { background:#20152e; border:1px solid var(--line); border-radius:999px; color:var(--text); padding:8px 12px; white-space:nowrap; cursor:pointer; }
     .news-filters button[aria-pressed="true"] { border-color:var(--gold); color:var(--gold); }
@@ -724,6 +731,17 @@
     </div>
 
 
+    <section class="section" id="live-price" aria-label="Live crypto prices">
+      <div class="shell">
+        <div class="price-bar" id="price-bar">
+          <div class="price-card" data-asset="BTC"><span>BTC · USD</span><strong>PRICE TEMPORARILY UNAVAILABLE</strong><span class="price-detail"></span></div>
+          <div class="price-card" data-asset="ETH"><span>ETH · USD</span><strong>PRICE TEMPORARILY UNAVAILABLE</strong><span class="price-detail"></span></div>
+          <div class="price-card" data-asset="MUBA"><span>MUBA · USD</span><strong>PRICE NOT AVAILABLE</strong><span class="price-detail">Official token identity not published.</span></div>
+        </div>
+        <p class="news-note" id="price-source">BTC / ETH: Coinbase Exchange · USD · 24H change</p>
+      </div>
+    </section>
+
     <section class="section" id="news">
       <div class="shell">
         <div class="section-head">
@@ -1357,6 +1375,31 @@
     document.getElementById("copy-tags").addEventListener("click", () => copyText(shareTags, "tweet-status", "MUBA tags copied."));
 
     const studioApiBase = (document.querySelector('meta[name="muba-studio-api"]')?.content || "").replace(/\/$/, "");
+    function renderPrices(payload) {
+      for(const asset of ["BTC","ETH","MUBA"]) {
+        const node=document.querySelector('[data-asset="'+asset+'"]');
+        const item=payload.assets?.find(row=>row.symbol===asset);
+        if(!node||!item)continue;
+        const price=node.querySelector("strong"),detail=node.querySelector(".price-detail");
+        if(asset==="MUBA"||item.status==="IDENTITY_UNAVAILABLE") {
+          price.textContent="PRICE NOT AVAILABLE";detail.textContent="Official token identity not published.";continue;
+        }
+        const value=Number(item.price_usd),change=Number(item.change_24h_pct),date=new Date(item.updated_at);
+        if(!["LIVE","STALE"].includes(item.status)||!Number.isFinite(value)||value<=0||!Number.isFinite(change)||Number.isNaN(date.valueOf())||Date.now()-date.valueOf()>600000) {
+          price.textContent="PRICE TEMPORARILY UNAVAILABLE";detail.textContent="";continue;
+        }
+        price.textContent=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
+        detail.className="price-detail "+(change>=0?"positive":"negative");
+        detail.textContent=(change>=0?"+":"")+change.toFixed(2)+"% 24H · "+(item.status==="STALE"?"STALE · ":"")+"LAST UPDATED "+date.toLocaleTimeString("en-GB",{timeZone:"UTC",hour:"2-digit",minute:"2-digit"})+" UTC";
+      }
+    }
+    let lastPricePayload=null;
+    async function loadPrices() {
+      if(lastPricePayload)renderPrices(lastPricePayload);
+      try {const response=await fetch(studioApiBase+"/price",{cache:"no-store"});if(response.ok){lastPricePayload=await response.json();renderPrices(lastPricePayload);}}
+      catch(_) { /* Keep the bounded previous value until its timestamp expires. */ }
+    }
+    loadPrices();setInterval(loadPrices,60000);
     const newsCategories=["ALL","BTC","ETH","MARKET","ETF","REGULATION","EXCHANGE","SECURITY","STABLECOIN","PROTOCOL","MUBA"];
     let newsRows=[], newsCategory="ALL";
     function renderNews() {

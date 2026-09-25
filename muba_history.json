@@ -1909,6 +1909,28 @@
         "ar": "تقرأ أخبار MUBA المصادر الرسمية الأولية وتتحقق من الإعلانات الأصلية، وتحفظ الأحداث المهمة الموثقة في سجل دائم مشترك للموقع الإنجليزي وتنبيهات Telegram الاختيارية بخمس لغات.",
         "hi": "MUBA समाचार आधिकारिक प्राथमिक स्रोत पढ़ता है, मूल घोषणाएँ जाँचता है और महत्वपूर्ण सत्यापित घटनाओं को अंग्रेज़ी वेबसाइट और वैकल्पिक पाँच-भाषा Telegram सूचनाओं के लिए एक स्थायी पूल में रखता है।"
       }
+    },
+    {
+      "id": "20260925-muba-price-v1-v18",
+      "date": "2026-09-25",
+      "type": "new",
+      "areas": [
+        "web"
+      ],
+      "title": {
+        "en": "MUBA LIVE PRICE V1",
+        "tr": "MUBA CANLI FİYAT V1",
+        "zh": "MUBA 实时价格 V1",
+        "ar": "أسعار MUBA المباشرة V1",
+        "hi": "MUBA लाइव मूल्य V1"
+      },
+      "text": {
+        "en": "A compact price bar shows validated BTC and ETH USD prices with 24-hour change and update time from a shared server cache. MUBA remains unavailable until its official token identity is known.",
+        "tr": "Kompakt fiyat çubuğu, ortak sunucu önbelleğinden doğrulanmış BTC ve ETH USD fiyatlarını, 24 saatlik değişimi ve güncelleme zamanını gösterir. Resmî token kimliği belirlenene dek MUBA fiyatı gösterilmez.",
+        "zh": "紧凑的价格栏通过共享服务器缓存显示经验证的 BTC 和 ETH 美元价格、24 小时涨跌及更新时间。官方代币身份确认前，MUBA 价格保持不可用。",
+        "ar": "يعرض شريط أسعار موجز أسعار BTC وETH بالدولار بعد التحقق منها، مع تغير 24 ساعة ووقت التحديث من ذاكرة خادم مشتركة. يظل سعر MUBA غير متاح حتى تأكيد هوية الرمز الرسمية.",
+        "hi": "संक्षिप्त मूल्य पट्टी साझा सर्वर कैश से सत्यापित BTC और ETH USD कीमतें, 24 घंटे का बदलाव और अपडेट समय दिखाती है। आधिकारिक टोकन पहचान मिलने तक MUBA का मूल्य अनुपलब्ध रहेगा।"
+      }
     }
   ]
 }
