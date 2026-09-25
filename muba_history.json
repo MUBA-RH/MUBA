@@ -1820,6 +1820,29 @@
         "ar": "يعيد Telegram المحاولة عند انتهاء المهلة المؤقت أثناء استقبال صورة مرجعية لـ Daily Story، ويبقي طلب الصورة مفتوحاً إذا فشلت جميع المحاولات.",
         "hi": "Daily Story संदर्भ फ़ोटो लेते समय Telegram अस्थायी टाइमआउट पर पुनः प्रयास करता है और सभी प्रयास विफल होने पर अनुरोध खुला रखता है।"
       }
+    },
+    {
+      "id": "20260925-daily-story-dual-t4-memory-v14",
+      "date": "2026-09-25",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story dual-GPU loading",
+        "tr": "Daily Story çift GPU yüklemesi",
+        "zh": "Daily Story 双 GPU 加载",
+        "ar": "تحميل Daily Story على وحدتي GPU",
+        "hi": "Daily Story दो GPU पर लोडिंग"
+      },
+      "text": {
+        "en": "The private Kaggle Daily Story image editor now distributes model loading across both T4 GPUs to address a memory failure found in the live Telegram test.",
+        "tr": "Özel Kaggle Daily Story görsel düzenleyicisi, canlı Telegram testinde görülen bellek hatasını gidermek için model yüklemesini iki T4 GPU'ya dağıtır.",
+        "zh": "私有 Kaggle Daily Story 图像编辑器现在将模型加载分配到两块 T4 GPU，以解决实时 Telegram 测试中发现的内存错误。",
+        "ar": "يوزع محرر صور Kaggle الخاص بـ Daily Story تحميل النموذج على وحدتي T4 GPU لمعالجة خطأ الذاكرة الذي ظهر في اختبار Telegram المباشر.",
+        "hi": "निजी Kaggle Daily Story इमेज एडिटर लाइव Telegram टेस्ट में मिली मेमोरी समस्या के लिए मॉडल लोडिंग दोनों T4 GPU पर बाँटता है।"
+      }
     }
   ]
 }
