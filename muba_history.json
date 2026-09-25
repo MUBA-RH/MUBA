@@ -1782,7 +1782,10 @@
       "id": "20260925-daily-story-approved-2d-kaggle-preview-v12",
       "date": "2026-09-25",
       "type": "improved",
-      "areas": ["daily", "telegram"],
+      "areas": [
+        "daily",
+        "telegram"
+      ],
       "title": {
         "en": "Daily Story approved 2D preview",
         "tr": "Daily Story onaylı 2D önizleme",
@@ -1848,7 +1851,10 @@
       "id": "20260925-daily-story-comfy-kaggle-worker-v15",
       "date": "2026-09-25",
       "type": "improved",
-      "areas": ["daily", "telegram"],
+      "areas": [
+        "daily",
+        "telegram"
+      ],
       "title": {
         "en": "Daily Story ComfyUI worker",
         "tr": "Daily Story ComfyUI üreticisi",
@@ -1862,6 +1868,29 @@
         "zh": "私有 Kaggle 批次现在启动基于参考图的 SDXL ComfyUI 工作程序，生成四张独立故事画面，并保留 Telegram DEV 预览门控。",
         "ar": "تشغّل دفعة Kaggle الخاصة الآن ComfyUI مع عامل SDXL يعتمد على الصورة المرجعية، وتنتج أربع صور قصة منفصلة مع الحفاظ على مراجعة Telegram الخاصة بالمطوّر.",
         "hi": "निजी Kaggle बैच अब संदर्भ चित्र वाले SDXL वर्कर के साथ ComfyUI शुरू करता है, चार अलग कहानी फ़्रेम बनाता है और Telegram DEV पूर्वावलोकन अनुमति रखता है।"
+      }
+    },
+    {
+      "id": "20260925-daily-story-kaggle-output-retry-v16",
+      "date": "2026-09-25",
+      "type": "fixed",
+      "areas": [
+        "daily",
+        "telegram"
+      ],
+      "title": {
+        "en": "Daily Story Kaggle output recovery",
+        "tr": "Daily Story Kaggle çıktı kurtarma",
+        "zh": "Daily Story Kaggle 输出恢复",
+        "ar": "استعادة مخرجات Kaggle في Daily Story",
+        "hi": "Daily Story Kaggle आउटपुट पुनर्प्राप्ति"
+      },
+      "text": {
+        "en": "The Telegram bridge now waits and retries Kaggle output downloads on API rate limits without restarting completed GPU generation.",
+        "tr": "Telegram köprüsü, Kaggle API hız sınırında tamamlanan GPU üretimini yeniden başlatmadan bekleyip çıktı indirmeyi tekrar dener.",
+        "zh": "Telegram 桥接在 Kaggle API 限流时等待并重试下载输出，无需重新启动已完成的 GPU 生成。",
+        "ar": "ينتظر جسر Telegram ويعيد محاولة تنزيل مخرجات Kaggle عند تحديد معدل API دون إعادة تشغيل التوليد المكتمل على GPU.",
+        "hi": "Kaggle API दर सीमा पर Telegram ब्रिज पूर्ण GPU निर्माण को फिर शुरू किए बिना प्रतीक्षा करता है और आउटपुट डाउनलोड दोहराता है।"
       }
     }
   ]
