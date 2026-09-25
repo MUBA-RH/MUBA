@@ -62,6 +62,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
+from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
@@ -1625,6 +1626,11 @@ async def news_public_handler(request: web.Request):
     return web.json_response({"items":items,"available":True},headers=_gallery_cors_headers())
 
 
+async def price_public_handler(request: web.Request):
+    payload=await live_prices(request.app["http_session"])
+    return web.json_response(payload,headers=_gallery_cors_headers()|{"Cache-Control":"public, max-age=30"})
+
+
 async def news_scheduler(application,session):
     await asyncio.sleep(10)
     while True:
@@ -1764,6 +1770,7 @@ async def start_webhook_server():
     app.router.add_get("/studio/render", studio_render_handler)
     app.router.add_get("/story", story_public_handler)
     app.router.add_get("/news", news_public_handler)
+    app.router.add_get("/price", price_public_handler)
     app.router.add_post("/story/prepare", story_prepare_handler)
     app.router.add_get("/gallery", gallery_list_handler)
     app.router.add_get("/gallery/image/{item_id}", gallery_image_handler)
