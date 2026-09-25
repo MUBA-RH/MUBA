@@ -27,7 +27,7 @@ class ReferenceFirstStateTests(unittest.TestCase):
         self.assertEqual(item["theme"],"The Golden Signal")
         self.assertIsNone(muba_story.reference_for_day(self.day))
         self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-master-identity-v9")
+        self.assertEqual(item["rules"]["visual_style"],"daily-story-approved-2d-chibi-v10")
 
     def test_fresh_reference_is_required_before_image_batch(self):
         with self.assertRaisesRegex(ValueError,"Fresh DEV reference required"):
@@ -65,7 +65,7 @@ class CloudflareRetryTests(unittest.TestCase):
         self.assertTrue(cloudflare_bridge._flagged(400,'AIError: output has been flagged. prompt input image combination'))
         self.assertFalse(cloudflare_bridge._flagged(500,'server error'))
         safe=cloudflare_bridge._safe_retry_prompt('IDENTITY RULES CURRENT BEAT: MUBA walks into a quiet street.')
-        self.assertIn('friendly fictional illustrated scene',safe)
+        self.assertIn('hand-drawn 2D chibi comic scene',safe)
         self.assertIn('MUBA walks into a quiet street',safe)
         self.assertNotIn('IDENTITY RULES',safe)
 
@@ -106,7 +106,7 @@ class SequentialIdentityEngineTests(unittest.TestCase):
         self.assertIn("flux-2-klein-9b",source)
         self.assertIn('input_image_1',source)
         self.assertIn('guidance","5.0',source)
-        self.assertIn("exactly ONE full-bleed cinematic 16:9 image",source)
+        self.assertIn("full-bleed hand-drawn 2D chibi comic scene in 16:9",source)
         self.assertIn("immutable MUBA identity/style reference",source)
 
     def test_story_generation_chains_previous_frame(self):
