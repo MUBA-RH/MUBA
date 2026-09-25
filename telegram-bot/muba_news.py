@@ -9,6 +9,7 @@ import os
 import re
 import tempfile
 import threading
+import asyncio
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -25,17 +26,28 @@ SOURCES=(
     ("SEC", "https://www.sec.gov/news/pressreleases.rss", "www.sec.gov"),
     ("CFTC", "https://www.cftc.gov/RSS/RSSGP/rssgp.xml", "www.cftc.gov"),
     ("Ethereum Foundation", "https://blog.ethereum.org/en/feed.xml", "blog.ethereum.org"),
+    ("Bitcoin.org", "https://bitcoin.org/en/rss/blog.xml", "bitcoin.org"),
+    ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_all.xml", "www.federalreserve.gov"),
+    ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss", "www.coindesk.com"),
+    ("The Block", "https://www.theblock.co/rss.xml", "www.theblock.co"),
+    ("Cointelegraph", "https://cointelegraph.com/rss", "cointelegraph.com"),
+    ("Decrypt", "https://decrypt.co/feed", "decrypt.co"),
 )
+MEDIA_HOSTS={"www.coindesk.com","www.theblock.co","cointelegraph.com","decrypt.co"}
+OFFICIAL_HOSTS={"www.sec.gov","www.cftc.gov","www.federalreserve.gov",
+                "home.treasury.gov","bitcoin.org","ethereum.org","blog.ethereum.org"}
+CRYPTO=re.compile(r"\bcrypto(?:currency)?\b|\bbitcoin\b|\bethereum\b|\bblockchain\b|\bdigital assets?\b|\bstablecoin\b|\btokeniz|\bweb3\b|\bdefi\b|\betf\b|\bbtc\b|\beth\b",re.I)
+MACRO=re.compile(r"\binterest rates?\b|\bfederal funds rate\b|\bmonetary policy\b|\brate (?:increase|cut|hike)\b",re.I)
 TOPICS={
     "ETF":r"\betf\b|exchange.traded fund",
     "SECURITY":r"\bhack\b|exploit|breach|vulnerabilit|security incident|stolen funds",
     "STABLECOIN":r"stablecoin|\busdc\b|\busdt\b",
-    "REGULATION":r"regulat|commission|rulemaking|\bsec\b|\bcftc\b|legislat",
+    "REGULATION":r"regulat|commission|rulemaking|\bsec\b|\bcftc\b|legislat|sanction",
     "EXCHANGE":r"\bexchange\b|trading platform|coinbase|kraken|binance",
     "BTC":r"\bbitcoin\b|\bbtc\b",
     "ETH":r"\bethereum\b|\b(?:eth|pectra|fusaka)\b",
     "PROTOCOL":r"protocol|network upgrade|mainnet|consensus",
-    "MARKET":r"\bmarket\b|macro|federal reserve",
+    "MARKET":r"\bmarket\b|macro|federal reserve|interest rate|monetary policy",
 }
 IMPORTANT=re.compile(r"\betf\b|approval|approves|adopts|proposes|exemption|final rule|launch|upgrade|incident|hack|exploit|breach|charges|enforcement|settlement|stablecoin|tokeniz|mainnet|hard fork",re.I)
 RUMOR=re.compile(r"\brumou?r\b|unconfirmed|anonymous sources|price prediction|buy signal|sell signal",re.I)
@@ -43,9 +55,15 @@ RUMOR=re.compile(r"\brumou?r\b|unconfirmed|anonymous sources|price prediction|bu
 
 def important(row):
     title=row["title"]
-    return bool(IMPORTANT.search(title+" "+row["summary"]) or
+    return bool(row.get("corroborated") or IMPORTANT.search(title+" "+row["summary"]) or
+                (MACRO.search(title) and row.get("source_name")=="Federal Reserve") or
                 (re.search(r"\bcrypto(?:currency)?\b|\bblockchain\b|\bbitcoin\b|\bethereum\b",title,re.I)
                  and re.search(r"\bupdates?\b|\breleases?\b",title,re.I)))
+
+
+def relevant(row):
+    return bool(CRYPTO.search(row["title"]+" "+row["summary"]) or
+                (row["source_name"]=="Federal Reserve" and MACRO.search(row["title"])))
 
 
 def now_iso():
@@ -118,13 +136,13 @@ def duplicate_hash(row):
 def verified_row(row,article):
     if not row.get("source_url") or not row.get("published_at") or not row.get("title"):
         return "PENDING"
-    if not row.get("category") or not important(row):
+    if not row.get("category") or not important(row) or not relevant(row):
         return "REJECTED"
     if RUMOR.search(row["title"]+" "+row["summary"]): return "REJECTED"
     if not article: return "PENDING"
     # The official article must repeat the core headline. A feed alone is insufficient.
     words={w for w in re.findall(r"[a-z]{4,}",row["title"].lower()) if w not in {"with","from","that","this","about","their"}}
-    body=set(re.findall(r"[a-z]{4,}",html.unescape(re.sub(r"<[^>]*>"," ",article.decode("utf-8","replace")[:200_000])).lower()))
+    body=set(re.findall(r"[a-z]{4,}",html.unescape(re.sub(r"<[^>]*>"," ",article.decode("utf-8","replace")[:800_000])).lower()))
     if len(words)<2 or len(words.intersection(body))/len(words)<0.6:
         return "PENDING"
     return "VERIFIED"
@@ -139,7 +157,31 @@ def event_match(a,b):
         return True
     words=lambda title:set(re.findall(r"[a-z0-9]{4,}",title.lower()))
     left,right=words(a["title"]),words(b["title"])
-    return len(left & right)>=4 and len(left & right)/len(left | right)>=0.78
+    return (len(left & right)>=4 and len(left & right)/len(left | right)>=0.78) or corroborates(a,b)
+
+
+def corroborates(a,b):
+    """A second independent publisher must describe the same event, not just the same coin."""
+    if a["source_name"]==b["source_name"] or a["category"]!=b["category"]: return False
+    if not a.get("published_at") or not b.get("published_at"): return False
+    if abs((datetime.fromisoformat(a["published_at"])-datetime.fromisoformat(b["published_at"])).total_seconds())>172800: return False
+    skip={"crypto","market","says","after","with","from","that","about","today","latest","news"}
+    terms=lambda row:{word for word in re.findall(r"[a-z]{4,}",row["title"].lower()) if word not in skip}
+    left,right=terms(a),terms(b)
+    return len(left & right)>=3 and len(left & right)/max(1,min(len(left),len(right)))>=0.35
+
+
+def primary_links(article):
+    if not article: return []
+    urls=re.findall(r"href\s*=\s*['\"](https://[^'\"<>\s]+)['\"]",article.decode("utf-8","replace")[:800_000],re.I)
+    result=[]
+    for raw in urls:
+        raw=html.unescape(raw)
+        host=urlparse(raw).hostname
+        if host in OFFICIAL_HOSTS:
+            url=canonical_url(raw,host)
+            if url: result.append(url)
+    return list(dict.fromkeys(result))[:6]
 
 
 def merge(pool,candidate):
@@ -191,24 +233,57 @@ async def collect(session,fetch=None):
     if not storage_status()["persistent"]: return []
     if fetch is None:
         async def fetch(url):
-            async with session.get(url,allow_redirects=False,timeout=12) as response:
+            async with session.get(url,allow_redirects=False,timeout=9) as response:
                 if response.status!=200: raise ValueError(f"Source HTTP {response.status}")
-                return await response.read()
+                is_feed=url in {source[1] for source in SOURCES}
+                data=await response.content.read(2_000_001 if is_feed else 800_000)
+                if is_feed and len(data)>2_000_000: raise ValueError("Oversized feed")
+                return data
     fresh=[]
-    for source in SOURCES:
-        try: rows=parse_feed(await fetch(source[1]),source)
+    candidates=[]
+    async def read_source(source):
+        try: return parse_feed(await fetch(source[1]),source)
         except Exception:
-            LOG.warning("Official feed unavailable: %s",source[0],exc_info=True)
-            continue
-        for row in rows:
+            LOG.warning("News feed unavailable: %s",source[0],exc_info=True)
+            return []
+    for rows in await asyncio.gather(*(read_source(source) for source in SOURCES)):
+        for row in rows[:20]:
             if not row["source_url"] or not row["published_at"]: continue
-            if not row["category"] or not important(row): continue
+            if not row["category"] or not relevant(row): continue
             if RUMOR.search(row["title"]+" "+row["summary"]): continue
             if datetime.fromisoformat(row["published_at"])<datetime.now(timezone.utc)-timedelta(days=3): continue
-            try: article=await fetch(row["source_url"])
-            except Exception: article=None
-            row["verification_status"]=verified_row(row,article)
-            if row["verification_status"]!="VERIFIED": continue
+            candidates.append(row)
+    for row in candidates:
+        if urlparse(row["source_url"]).hostname in MEDIA_HOSTS:
+            row["corroborated"]=any(corroborates(row,other) and
+                                    urlparse(other["source_url"]).hostname in MEDIA_HOSTS
+                                    for other in candidates if other is not row)
+    candidates=[row for row in candidates if important(row)]
+    semaphore=asyncio.Semaphore(6)
+    async def inspect(row):
+        async with semaphore:
+            try: return await fetch(row["source_url"])
+            except Exception: return None
+    articles=await asyncio.gather(*(inspect(row) for row in candidates))
+    official_article_cache={}
+    for row,article in zip(candidates,articles):
+        media=urlparse(row["source_url"]).hostname in MEDIA_HOSTS
+        row["verification_status"]=verified_row(row,article)
+        if media and row["verification_status"]=="VERIFIED":
+            confirmed=False
+            for official in primary_links(article)[:3]:
+                if official not in official_article_cache:
+                    try: official_article_cache[official]=await fetch(official)
+                    except Exception: official_article_cache[official]=None
+                if verified_row(row,official_article_cache[official])=="VERIFIED":
+                    confirmed=True
+                    break
+            if not confirmed:
+                confirmed=any(other_article and urlparse(other["source_url"]).hostname in MEDIA_HOSTS
+                              and corroborates(row,other) and verified_row(other,other_article)=="VERIFIED"
+                              for other,other_article in zip(candidates,articles) if other is not row)
+            if not confirmed: row["verification_status"]="PENDING"
+        if row["verification_status"]=="VERIFIED":
             row.update({"id":hashlib.sha256(row["source_url"].encode()).hexdigest()[:24],
                         "collected_at":now_iso(),"importance":"HIGH","language_master":"EN",
                         "duplicate_hash":duplicate_hash(row),"correction_of":None,"status":"ACTIVE"})
@@ -239,11 +314,11 @@ LABELS={
     "hi":("MUBA समाचार","अभी कोई सत्यापित समाचार नहीं।","सूचनाएँ चालू","स्रोत पढ़ें","अनुवाद अभी उपलब्ध नहीं है।"),
 }
 TELEGRAM_FIELDS={
-    "en":("VERIFIED","SOURCE","TIME","UPDATE","CORRECTION"),
-    "tr":("DOĞRULANDI","KAYNAK","ZAMAN","GÜNCELLEME","DÜZELTME"),
-    "zh":("已核实","来源","时间","更新","更正"),
-    "ar":("موثق","المصدر","الوقت","تحديث","تصحيح"),
-    "hi":("सत्यापित","स्रोत","समय","अपडेट","सुधार"),
+    "en":("VERIFIED","SOURCE","DATE","UPDATE","CORRECTION"),
+    "tr":("DOĞRULANDI","KAYNAK","TARİH","GÜNCELLEME","DÜZELTME"),
+    "zh":("已核实","来源","日期","更新","更正"),
+    "ar":("موثق","المصدر","التاريخ","تحديث","تصحيح"),
+    "hi":("सत्यापित","स्रोत","तारीख","अपडेट","सुधार"),
 }
 
 
@@ -275,7 +350,7 @@ async def telegram_news(row,lang,session):
     verified,source,time_label,update,correction=TELEGRAM_FIELDS[lang]
     prefix=correction+" · " if row["status"]=="CORRECTED" else update+" · " if row["status"]=="UPDATED" else ""
     return (f"📰 {prefix}{row['category']} · {verified}\n\n{title}\n\n{summary}\n\n"
-            f"{source}: {row['source_name']}\n{time_label}: {row['published_at']}\n{LABELS[lang][3]}: {row['source_url']}")
+            f"{source}: {row['source_name']}\n{time_label}: {row['published_at'][:10]}\n{LABELS[lang][3]}: {row['source_url']}")
 
 
 def _subscribers_path():
