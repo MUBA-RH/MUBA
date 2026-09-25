@@ -2,7 +2,7 @@
 
 ## Stable recovery anchor
 Repository: MUBA-RH/MUBA  
-Stable main SHA captured by this Vault: `c5f3ae9f15a7b93de41a0b928a3700e93215cc7e`  
+Stable main SHA captured by this Vault: `74435244196789e57a7e82b47d3dd6dc6c57ee18`  
 Default production branch: `main`
 
 This Vault branch contains the source snapshot through PR #103 plus passive recovery/continuity documentation. Vault remains outside the production runtime.

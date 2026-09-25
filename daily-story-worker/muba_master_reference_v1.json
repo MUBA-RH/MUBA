@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "name": "MUBA MASTER REFERENCE V1",
+  "scope": "daily-story-worker",
+  "locked": true,
+  "reference_source": "job.reference_path",
+  "identity_prompt": "MUBA, one canonical character, upright full-body, same face identity, very large expressive asymmetric brown eyes, tan/brown short dense facial fur, small brown nose, pink tongue visible, black MUBA cap unchanged, black hoodie with $MUBA, bare feet, no shoes, consistent proportions.",
+  "negative_prompt": "identity drift, different face, normal small eyes, different eye color, different fur color, different cap, missing cap, different hoodie, missing hoodie, shoes, cropped body, duplicate character, multiple characters, collage, split frame, extra limbs, malformed paws, deformed eyes, text changes, watermark",
+  "rules": [
+    "Always standing upright unless a chapter explicitly requires another pose.",
+    "Same canonical face identity in every Daily Story frame.",
+    "Big expressive brown eyes are identity-critical.",
+    "Tan/brown facial fur and short dense fur texture are identity-critical.",
+    "Black MUBA cap is locked and must not change.",
+    "Black hoodie with $MUBA is locked and must not change.",
+    "Bare feet; no shoes.",
+    "Full body must be visible for the reference smoke test.",
+    "Maintain consistent body and head proportions.",
+    "Apply this identity contract to every Daily Story visual."
+  ],
+  "reference_views": ["front", "left_3_4", "side", "back", "right_3_4"],
+  "priority": ["eyes", "face", "mouth_and_tongue", "cap", "hoodie", "fur", "feet", "proportions"]
+}
