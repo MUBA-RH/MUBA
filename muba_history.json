@@ -1782,10 +1782,7 @@
       "id": "20260925-daily-story-approved-2d-kaggle-preview-v12",
       "date": "2026-09-25",
       "type": "improved",
-      "areas": [
-        "daily",
-        "telegram"
-      ],
+      "areas": ["daily", "telegram"],
       "title": {
         "en": "Daily Story approved 2D preview",
         "tr": "Daily Story onaylı 2D önizleme",
@@ -1851,10 +1848,7 @@
       "id": "20260925-daily-story-comfy-kaggle-worker-v15",
       "date": "2026-09-25",
       "type": "improved",
-      "areas": [
-        "daily",
-        "telegram"
-      ],
+      "areas": ["daily", "telegram"],
       "title": {
         "en": "Daily Story ComfyUI worker",
         "tr": "Daily Story ComfyUI üreticisi",
