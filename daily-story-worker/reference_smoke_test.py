@@ -73,7 +73,9 @@ if not r.ok:
 pid=r.json()["prompt_id"]
 print("MUBA identity V2 generation queued:", pid)
 for _ in range(300):
-    h=requests.get(base+"/history/"+pid,timeout=30).json()
+    resp=requests.get(base+"/history/"+pid,timeout=30)
+    resp.raise_for_status()
+    h=resp.json()
     if pid in h:
         imgs=[]
         for node in h[pid].get("outputs",{}).values(): imgs.extend(node.get("images",[]))
@@ -85,5 +87,4 @@ for _ in range(300):
         print("REFERENCE_USED:", primary.name)
         print("OUTPUT:",dest)
         break
-    time.sleep(2)
-else: raise TimeoutError("MUBA reference V2 generation timed out")
+    # Keep Kaggle/mobile proxies from treating the long GPU wait as an idle cell.\n    print(".", end="", flush=True)\n    time.sleep(2)\nelse: raise TimeoutError("MUBA reference V2 generation timed out")
