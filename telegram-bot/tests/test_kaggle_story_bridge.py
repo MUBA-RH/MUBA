@@ -12,6 +12,19 @@ import muba_story_kaggle as bridge
 
 
 class KaggleStoryBridgeTests(unittest.TestCase):
+    def test_output_rate_limit_retries_without_restarting_generation(self):
+        attempts=[]
+        def fake_run(args,timeout=120):
+            attempts.append(args)
+            if len(attempts)==1:
+                raise RuntimeError("429 Client Error: Too Many Requests for url: ListKernelSessionOutput")
+            return "downloaded"
+        with patch.object(bridge,"_run",side_effect=fake_run),patch.object(bridge.time,"sleep") as pause:
+            self.assertEqual(bridge._download_output("owner/kernel",Path("/tmp/output")),"downloaded")
+        self.assertEqual(len(attempts),2)
+        self.assertEqual(attempts[0],attempts[1])
+        pause.assert_called_once_with(30)
+
     def test_worker_stages_comfyui_and_four_reference_conditioned_chapters(self):
         source=bridge._worker_source(b"reference",["one","two","three","four"])
         compile(source,"story_worker.py","exec")
