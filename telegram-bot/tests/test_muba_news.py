@@ -139,5 +139,19 @@ class NewsTests(unittest.TestCase):
         second=self.row(source_name="Decrypt",title="Bitget Hacked as $350 Million Vanishes From Crypto Exchange Wallets",category=decrypt_news,duplicate_hash="bitget-b")
         self.assertTrue(news.event_match(first,second))
 
+    def test_saved_old_categories_are_normalized_before_publishing(self):
+        first=self.row(id="old-cd",source_name="CoinDesk",
+                       title="Crypto exchange Bitget says $352 million affected in a hack, claims breach resolved",
+                       category="SECURITY",duplicate_hash="bitget-a",summary="Bitget crypto exchange hack affected funds.",
+                       source_url="https://www.coindesk.com/news/bitget-hack")
+        second=self.row(id="old-decrypt",source_name="Decrypt",
+                        title="Bitget Hacked as $350 Million Vanishes From Crypto Exchange Wallets",
+                        category="EXCHANGE",duplicate_hash="bitget-b",summary="Bitget crypto exchange wallets were hacked.",
+                        source_url="https://decrypt.co/news/bitget-hack")
+        with patch.object(news,"load_pool",return_value=[first,second]):
+            rows=news.public_news()
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]["category"],"SECURITY")
+
 
 if __name__=="__main__": unittest.main()
