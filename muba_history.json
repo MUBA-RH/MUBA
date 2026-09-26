@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-muba-run-v4-gameplay",
+      "date": "2026-09-27",
+      "type": "improved",
+      "areas": [
+        "telegram",
+        "games"
+      ],
+      "title": {
+        "en": "MUBA RUN gameplay upgraded",
+        "tr": "MUBA RUN oynanışı geliştirildi",
+        "zh": "MUBA RUN 游戏体验升级",
+        "ar": "تم تحسين أسلوب لعب MUBA RUN",
+        "hi": "MUBA RUN गेमप्ले अपग्रेड"
+      },
+      "text": {
+        "en": "MUBA RUN now has a deeper endless-runner loop with procedural obstacle patterns, object pooling, progressive difficulty, combo scoring, milestones, camera feedback and gesture-first mobile controls.",
+        "tr": "MUBA RUN artık prosedürel engel desenleri, nesne havuzu, artan zorluk, kombo puanlama, kilometre taşları, kamera geri bildirimi ve kaydırma odaklı mobil kontrollerle daha derin bir sonsuz koşu akışına sahip.",
+        "zh": "MUBA RUN 现在加入程序化障碍组合、对象池、渐进难度、连击计分、里程碑、镜头反馈和以滑动为主的移动控制。",
+        "ar": "أصبح MUBA RUN يضم مسار ركض لا نهائي أعمق مع أنماط عوائق إجرائية وتجميع للكائنات وصعوبة متدرجة ونظام كومبو ومراحل وردود فعل للكاميرا وتحكم محمول يعتمد على السحب.",
+        "hi": "MUBA RUN में अब procedural obstacle patterns, object pooling, बढ़ती difficulty, combo scoring, milestones, camera feedback और swipe-first mobile controls के साथ अधिक गहरा endless-runner loop है।"
+      }
+    },
+    {
       "id": "20260927-camera-mini-app-restored",
       "date": "2026-09-27",
       "type": "fixed",
