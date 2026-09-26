@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-native-launch-guidance",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera native launch guidance",
+        "tr": "MUBA Camera yerel açılış yönlendirmesi",
+        "zh": "MUBA Camera 原生启动引导",
+        "ar": "إرشاد تشغيل MUBA Camera الأصلي",
+        "hi": "MUBA Camera native launch guidance"
+      },
+      "text": {
+        "en": "MUBA Camera now clearly starts its native Telegram capture state and points directly to Telegram's camera control while preserving the private transformation flow.",
+        "tr": "MUBA Camera artık yerel Telegram çekim durumunu açıkça başlatıyor ve özel dönüşüm akışını koruyarak kullanıcıyı doğrudan Telegram kamera kontrolüne yönlendiriyor.",
+        "zh": "MUBA Camera 现在会清晰启动 Telegram 原生拍摄状态，并直接引导到 Telegram 相机控件，同时保留私密转换流程。",
+        "ar": "يبدأ MUBA Camera الآن حالة الالتقاط الأصلية في Telegram بوضوح ويوجه مباشرة إلى زر الكاميرا مع الحفاظ على مسار التحويل الخاص.",
+        "hi": "MUBA Camera अब native Telegram capture state को स्पष्ट रूप से शुरू करता है और private transformation flow बनाए रखते हुए सीधे Telegram camera control की ओर निर्देशित करता है।"
+      }
+    },
+    {
       "id": "20260927-camera-native-telegram-flow",
       "date": "2026-09-27",
       "type": "fixed",

@@ -817,7 +817,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
     if data=="camera_native":
         context.user_data["muba_camera_waiting_photo"]=True
-        await q.edit_message_text("📸 MUBA CAMERA\n\nTelegram mesaj alanındaki 📎 / kamera düğmesini kullanarak şimdi yeni bir fotoğraf çek ve bu özel sohbete gönder. Hazır galeriden seçmek yerine kamerayla yeni çekim yap.\n\nFotoğraf geldiğinde MUBA dönüşümü otomatik başlayacak. Günlük hak: 1 başarılı üretim; hata olursa hak düşmez.",reply_markup=InlineKeyboardMarkup([[_section_back(lang)]])); return
+        await q.answer("MUBA CAMERA hazır — aşağıdaki mavi kamera düğmesine dokun.",show_alert=False)
+        await q.edit_message_text("📸 MUBA CAMERA HAZIR ✓\n\nSağ alttaki mavi kamera düğmesine dokun → fotoğrafı çek → gönder.\n\nFotoğraf gelir gelmez MUBA dönüşümü otomatik başlar. Günlük hak: 1 başarılı üretim; hata olursa hak düşmez.",reply_markup=InlineKeyboardMarkup([[_section_back(lang)]])); return
     if data=="community_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
     if data.startswith("community_info:"):
