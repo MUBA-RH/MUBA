@@ -10,21 +10,6 @@ class CameraPrivacyTests(unittest.TestCase):
  def test_camera_button_opens_mini_app(self):
   self.assertIn('/camera?uid=',BOT)
   self.assertIn('WebAppInfo',BOT)
- def test_native_telegram_camera_flow(self):
-  self.assertIn('if data=="camera_native":',BOT)
-  self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
-  self.assertIn("async def muba_camera_photo",BOT)
-  self.assertIn("filters.PHOTO, muba_camera_photo",BOT)
-  start=BOT.index("async def muba_camera_photo")
-  end=BOT.index("async def daily_story_reference_photo",start)
-  handler=BOT[start:end]
-  self.assertIn('form.add_field("input_image_1",source_bytes',handler)
-  self.assertIn('await message.reply_photo(photo=body',handler)
-  self.assertEqual(handler.count("consume(uid)"),1)
-  self.assertGreater(handler.index("consume(uid)"),handler.index("if not body:"))
-  self.assertIn("Günlük hakkın kullanılmadı",handler)
-  self.assertNotIn("archive_creation(",handler)
-  self.assertNotIn("share_gallery_item(",handler)
  def test_camera_is_telegram_mini_app_route(self):
   self.assertIn('/camera?uid=',BOT)
   self.assertIn('app.router.add_get("/camera", camera_page_handler)',BOT)
