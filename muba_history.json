@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260926-camera-transform-progress",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera progress display",
+        "tr": "MUBA Camera ilerleme göstergesi",
+        "zh": "MUBA Camera 进度显示",
+        "ar": "عرض تقدم MUBA Camera",
+        "hi": "MUBA Camera progress display"
+      },
+      "text": {
+        "en": "MUBA Camera now shows visible transformation progress from 10 percent through completion while preserving its existing privacy behavior.",
+        "tr": "MUBA Camera artık mevcut gizlilik davranışını koruyarak dönüşüm sırasında yüzde 10'dan tamamlanmaya kadar görünür ilerleme gösteriyor.",
+        "zh": "MUBA Camera 现在会在转换过程中显示从百分之十到完成的可见进度，并保留现有隐私行为。",
+        "ar": "يعرض MUBA Camera الآن تقدم التحويل من عشرة بالمئة حتى الاكتمال مع الحفاظ على سلوك الخصوصية الحالي.",
+        "hi": "MUBA Camera अब मौजूदा privacy behavior को बनाए रखते हुए transformation के दौरान 10 percent से completion तक progress दिखाता है।"
+      }
+    },
+    {
       "id": "20260926-camera-main-menu",
       "date": "2026-09-26",
       "type": "improved",
