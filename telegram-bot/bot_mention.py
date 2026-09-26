@@ -314,6 +314,14 @@ def _legacy_area_global_index(lang,area,area_index):
     area_index=max(0,min(area_index,len(area_rows)-1))
     return _global_update_index(lang,area_rows[area_index].get("id"))
 
+ASSISTANT_UI={
+    "en":{"ask":"💬 ASK MUBA","daily":"📰 MUBA DAILY","create":"🎨 MUBA CREATE","studio":"🎭 MUBA Studio","community":"🧭 MUBA COMMUNITY","dev":"⚙️ DEV TOOLS","daily_story":"🎬 MUBA Daily Story"},
+    "tr":{"ask":"💬 MUBA'YA SOR","daily":"📰 MUBA GÜNLÜK","create":"🎨 MUBA OLUŞTUR","studio":"🎭 MUBA Stüdyo","community":"🧭 MUBA TOPLULUĞU","dev":"⚙️ DEV ARAÇLARI","daily_story":"🎬 MUBA Günlük Hikâye"},
+    "zh":{"ask":"💬 询问 MUBA","daily":"📰 MUBA 日报","create":"🎨 MUBA 创作","studio":"🎭 MUBA 工作室","community":"🧭 MUBA 社区","dev":"⚙️ DEV 工具","daily_story":"🎬 MUBA 每日故事"},
+    "ar":{"ask":"💬 اسأل MUBA","daily":"📰 يوميات MUBA","create":"🎨 أنشئ مع MUBA","studio":"🎭 استوديو MUBA","community":"🧭 مجتمع MUBA","dev":"⚙️ أدوات DEV","daily_story":"🎬 قصة MUBA اليومية"},
+    "hi":{"ask":"💬 MUBA से पूछें","daily":"📰 MUBA दैनिक","create":"🎨 MUBA बनाएँ","studio":"🎭 MUBA स्टूडियो","community":"🧭 MUBA समुदाय","dev":"⚙️ DEV उपकरण","daily_story":"🎬 MUBA दैनिक कहानी"},
+}
+
 def _section_back(lang,callback_data="menu"):
     return InlineKeyboardButton(TEXT[lang]["back"],callback_data=callback_data)
 
@@ -327,7 +335,7 @@ def daily_hub_keyboard(lang):
 
 def create_hub_keyboard(lang,user_id):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
         [_section_back(lang)],
@@ -342,7 +350,7 @@ def community_hub_keyboard(lang,user_id):
 
 def dev_tools_keyboard(lang):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["daily_story"],callback_data="story_director")],
         [InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")],
         [InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")],
         [_section_back(lang)],
@@ -354,14 +362,14 @@ def menu_keyboard(lang,user_id=None):
     rows=[
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
-        [InlineKeyboardButton("💬 ASK MUBA",callback_data="ask_muba")],
-        [InlineKeyboardButton("📰 MUBA DAILY",callback_data="daily_hub")],
-        [InlineKeyboardButton("🎨 MUBA CREATE",callback_data="create_hub")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["daily"],callback_data="daily_hub")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
-        [InlineKeyboardButton("🧭 MUBA COMMUNITY",callback_data="community_hub")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["community"],callback_data="community_hub")],
     ]
     if is_dev(user_id):
-        rows.append([InlineKeyboardButton("⚙️ DEV TOOLS",callback_data="dev_tools")])
+        rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -671,14 +679,14 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="menu":
         await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
     if data=="daily_hub":
-        await q.edit_message_text("📰 MUBA DAILY",reply_markup=daily_hub_keyboard(lang)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
-        await q.edit_message_text("🎨 MUBA CREATE",reply_markup=create_hub_keyboard(lang,user_id)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
     if data=="community_hub":
-        await q.edit_message_text("🧭 MUBA COMMUNITY",reply_markup=community_hub_keyboard(lang,user_id)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
     if data=="dev_tools":
         if not is_dev(user_id): return
-        await q.edit_message_text("⚙️ DEV TOOLS",reply_markup=dev_tools_keyboard(lang)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["dev"],reply_markup=dev_tools_keyboard(lang)); return
     if data in ("news","news_subscribe"):
         if data=="news_subscribe":
             try: subscribe_news(user_id,lang)
