@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-mini-app-restored",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera Mini App restored",
+        "tr": "MUBA Camera Mini App geri getirildi",
+        "zh": "MUBA Camera Mini App 已恢复",
+        "ar": "تمت استعادة تطبيق MUBA Camera المصغر",
+        "hi": "MUBA Camera Mini App बहाल"
+      },
+      "text": {
+        "en": "The MUBA Camera button opens the dedicated Mini App again. The existing positive flow remains: private source handling, MUBA identity reference, visible transformation progress, result preview and save, one successful production per day, and failures do not consume the allowance.",
+        "tr": "MUBA Camera butonu yeniden özel Mini App'i açıyor. Mevcut olumlu akış korunuyor: kaynak fotoğrafın özel işlenmesi, MUBA kimlik referansı, görünür dönüşüm ilerlemesi, sonuç önizleme ve kaydetme, günlük bir başarılı üretim ve hatalarda hakkın düşmemesi.",
+        "zh": "MUBA Camera 按钮再次打开专用 Mini App，并保留现有流程：私密处理源照片、MUBA 身份参考、可见转换进度、结果预览与保存、每日一次成功生成，失败不消耗额度。",
+        "ar": "يفتح زر MUBA Camera التطبيق المصغر المخصص مجدداً مع الحفاظ على التدفق الحالي: معالجة المصدر بشكل خاص ومرجع هوية MUBA وتقدم التحويل المرئي ومعاينة النتيجة وحفظها وإنتاج ناجح واحد يومياً دون احتساب المحاولات الفاشلة.",
+        "hi": "MUBA Camera बटन फिर dedicated Mini App खोलता है। मौजूदा flow बना रहता है: private source handling, MUBA identity reference, visible progress, result preview/save, प्रतिदिन एक सफल production और failure पर quota नहीं घटता।"
+      }
+    },
+    {
       "id": "20260927-camera-native-launch-guidance",
       "date": "2026-09-27",
       "type": "fixed",
