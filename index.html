@@ -102,8 +102,7 @@
     .news-source a { color:var(--gold); }
     .story-grid { display:grid; grid-template-columns:1fr; gap:clamp(12px,1.8vw,18px); margin-top:24px; }
     .story-frame { position:relative; aspect-ratio:16/9; overflow:hidden; border:2px solid rgba(247,242,255,.82); background:#0a0611; box-shadow:0 8px 30px rgba(0,0,0,.28); }
-    .story-frame:nth-child(1){ transform:rotate(-.35deg); } .story-frame:nth-child(2){ transform:rotate(.3deg); }
-    .story-frame:nth-child(3){ transform:rotate(.2deg); } .story-frame:nth-child(4){ transform:rotate(-.25deg); }
+    .story-frame { transform:none; }
     .story-frame img { width:100%; height:100%; object-fit:cover; display:block; }
     .story-empty { color:var(--muted); text-align:center; padding:28px; }
     .story-share { margin-top:18px; display:flex; gap:9px; flex-wrap:wrap; }
@@ -750,7 +749,7 @@
         <div class="section-head">
           <div class="eyebrow">MUBA · DAILY STORY</div>
           <h2 class="section-title">THE LIVING <span>STORY.</span></h2>
-          <p class="section-copy">One day. Four connected scenes. Real MUBA developments become part of the story when they matter; otherwise MUBA simply keeps living.</p>
+          <p class="section-copy">One day. One connected story. One scene from MUBA's day.</p>
         </div>
         <div class="card story-book">
           <div class="story-kicker" id="story-date">TODAY</div>
@@ -935,11 +934,13 @@
         document.getElementById("story-theme").textContent=story.theme;
         const grid=document.getElementById("story-grid");
         const urls=Array.isArray(story.image_urls)?story.image_urls:[];
-        if(urls.length!==4){
-          document.getElementById("story-empty").textContent="This story is waiting for its four approved images.";
+        if(urls.length!==1 && urls.length!==4){
+          document.getElementById("story-empty").textContent="This story is waiting for its approved image.";
           return;
         }
-        grid.innerHTML=urls.slice(0,4).map((url,i)=>`<figure class="story-frame"><img src="${url}" alt="MUBA Daily Story chapter ${i+1}"></figure>`).join("");
+        const figures=urls.map((url,i)=>{const figure=document.createElement("figure"); figure.className="story-frame";
+          const img=document.createElement("img"); img.src=url; img.alt=urls.length===1?"MUBA Daily Story scene":`MUBA Daily Story archived frame ${i+1}`;
+          figure.appendChild(img); return figure;}); grid.replaceChildren(...figures);
         const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.summary||story.twt||"";
         const shareText=story.twt||story.summary||"";
         const share=document.getElementById("story-share");
