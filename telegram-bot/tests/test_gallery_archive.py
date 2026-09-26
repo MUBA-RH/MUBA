@@ -42,6 +42,19 @@ class GalleryArchiveTests(unittest.TestCase):
             self.assertEqual(item["kind"],expected)
         self.assertEqual(len(muba_gallery.list_gallery()),5)
 
+    def test_only_explicit_shares_enter_public_gallery_without_breaking_story_images(self):
+        legacy=muba_gallery.archive_creation(b"old-story","image/png","Story frame","image","telegram")
+        fresh=muba_gallery.archive_creation(b"new-studio","image/png","A community meme","meme","web")
+        self.assertEqual(muba_gallery.list_gallery(shared_only=True),[])
+        self.assertEqual(muba_gallery.read_gallery_image(legacy["id"])[0],b"old-story")
+        published=muba_gallery.share_gallery_item(fresh["id"])
+        self.assertTrue(published["shared"])
+        self.assertEqual([row["id"] for row in muba_gallery.list_gallery(shared_only=True)],[fresh["id"]])
+        self.assertEqual(muba_gallery.share_gallery_item(fresh["id"])["id"],fresh["id"])
+        muba_gallery.set_gallery_visibility(fresh["id"],"hidden")
+        self.assertEqual(muba_gallery.list_gallery(shared_only=True),[])
+        self.assertIsNone(muba_gallery.share_gallery_item(fresh["id"]))
+
     def test_storage_reports_configured_persistence(self):
         state=muba_gallery.storage_status()
         self.assertTrue(state["persistent"])

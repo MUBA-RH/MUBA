@@ -60,7 +60,7 @@ from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANS
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
-from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility
+from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
 from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
@@ -1326,15 +1326,14 @@ async def studio_generate_handler(request: web.Request):
         logger.exception("MUBA AI generation failed")
         return web.json_response({"error":"MUBA AI could not create this image. Failed attempts do not count."},status=503)
     consume(uid)
-    gallery_item=_archive_studio_output(body,out_type,prompt,kind,"telegram")
     import secrets, time
     key=secrets.token_urlsafe(24)
-    _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time()}
+    _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time(),"prompt":prompt,"kind":kind,"source":"telegram","owner":uid}
     output_url=EXTERNAL_URL.rstrip("/")+"/studio/output/"+key
     return web.Response(body=body,content_type=out_type,headers={
         "X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid)),
         "X-MUBA-Output-URL":output_url,
-        "X-MUBA-Gallery-ID":gallery_item["id"] if gallery_item else "",
+        "X-MUBA-Gallery-ID":"",
         "Content-Disposition":'inline; filename="muba-studio.png"',
     })
 
@@ -1423,16 +1422,15 @@ async def studio_web_generate_handler(request: web.Request):
         return _web_studio_json(origin,{"error":"MUBA Studio could not create this image. Failed attempts do not count."},503)
 
     _web_studio_consume(client_key)
-    gallery_item=_archive_studio_output(body,out_type,prompt,kind,"web")
     import secrets
     key=secrets.token_urlsafe(24)
-    _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time()}
+    _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time(),"prompt":prompt,"kind":kind,"source":"web","owner":client_key}
     output_url=EXTERNAL_URL.rstrip("/")+"/studio/output/"+key
     headers=_web_studio_cors_headers(origin)
     headers.update({
         "X-MUBA-Remaining":str(_web_studio_remaining(client_key)),
         "X-MUBA-Output-URL":output_url,
-        "X-MUBA-Gallery-ID":gallery_item["id"] if gallery_item else "",
+        "X-MUBA-Gallery-ID":"",
         "Content-Disposition":'inline; filename="muba-studio.png"',
         "Cache-Control":"no-store",
     })
@@ -1595,7 +1593,7 @@ async def gallery_list_handler(request: web.Request):
     limit=int(raw_limit) if str(raw_limit).isdigit() else 60
     kind=request.query.get("kind") or None
     items=[]
-    for item in list_gallery(limit=limit,kind=kind):
+    for item in list_gallery(limit=limit,kind=kind,shared_only=True):
         items.append({
             "id":item["id"],
             "label":item["label"],
@@ -1606,6 +1604,36 @@ async def gallery_list_handler(request: web.Request):
         })
     state=storage_status()
     return web.json_response({"items":items,"persistent":state["persistent"],"writable":state["writable"],"backend":state.get("backend","unknown")},headers=_gallery_cors_headers())
+
+async def studio_share_handler(request: web.Request):
+    """Share only an explicitly selected Studio output; Story images have no share key."""
+    origin=request.headers.get("Origin","")
+    try: data=await request.json()
+    except Exception: return _web_studio_json(origin,{"error":"Invalid request."},400)
+    key=str(data.get("key", ""))
+    output=_STUDIO_OUTPUTS.get(key)
+    if not output or time.time()-output["created"]>86400:
+        return _web_studio_json(origin,{"error":"Creation expired. Create another image to share."},410)
+    if output.get("source")=="web":
+        if origin!=_WEB_STUDIO_ALLOWED_ORIGIN:
+            return _web_studio_json(origin,{"error":"Forbidden."},403)
+    elif output.get("source")=="telegram":
+        user=validate_init_data(str(data.get("initData","")),TOKEN) or validate_studio_token(data.get("uid"),data.get("studioToken"),TOKEN)
+        if not user or user.get("id")!=output.get("owner") or is_dev(int(user["id"])):
+            return web.json_response({"error":"Forbidden."},status=403)
+    else:
+        return web.json_response({"error":"Forbidden."},status=403)
+    try:
+        item=get_gallery_item(output["gallery_id"]) if output.get("gallery_id") else None
+        if not item:
+            item=archive_creation(output["body"],(output["content_type"] or "image/png").split(";",1)[0].strip(),output["prompt"],output["kind"],output["source"])
+            output["gallery_id"]=item["id"]
+        item=share_gallery_item(item["id"])
+        if not item: raise RuntimeError("Gallery item is unavailable")
+    except Exception:
+        logger.exception("Studio Gallery share failed")
+        return _web_studio_json(origin,{"error":"Gallery is temporarily unavailable. Try again later."},503)
+    return web.json_response({"id":item["id"],"shared":True},headers=_web_studio_cors_headers(origin))
 
 async def gallery_image_handler(request: web.Request):
     result=read_gallery_image(request.match_info.get("item_id",""))
@@ -1813,6 +1841,8 @@ async def start_webhook_server():
     app.router.add_post("/studio/generate", studio_generate_handler)
     app.router.add_options("/studio/web-generate", studio_web_options_handler)
     app.router.add_post("/studio/web-generate", studio_web_generate_handler)
+    app.router.add_options("/studio/share", studio_web_options_handler)
+    app.router.add_post("/studio/share", studio_share_handler)
     app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
     app.router.add_get("/story", story_public_handler)

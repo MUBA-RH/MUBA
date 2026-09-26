@@ -351,7 +351,35 @@ def set_gallery_visibility(item_id,visibility):
         return dict(item)
 
 
-def list_gallery(limit=60,kind=None,visibility="public"):
+def share_gallery_item(item_id):
+    """Explicitly publish a Studio creation; legacy and Story records stay unshared."""
+    if not _ID_RE.fullmatch(str(item_id or "")):
+        return None
+    with _LOCK:
+        if _r2_enabled():
+            rows=_r2_load_index()
+            item=_r2_find(rows,str(item_id))
+            if not item or item.get("visibility")!="public":
+                return None
+            if not item.get("shared"):
+                item["shared"]=True
+                _r2_save_index(rows)
+            return dict(item)
+
+        root,_=_local_storage_root()
+        meta_path=root/"meta"/(str(item_id)+".json")
+        item=_local_read_meta(item_id)
+        if not item or item.get("visibility")!="public":
+            return None
+        if not item.get("shared"):
+            item["shared"]=True
+            tmp_meta=meta_path.with_suffix(".json.tmp")
+            tmp_meta.write_text(json.dumps(item,ensure_ascii=False,sort_keys=True),encoding="utf-8")
+            os.replace(tmp_meta,meta_path)
+        return dict(item)
+
+
+def list_gallery(limit=60,kind=None,visibility="public",shared_only=False):
     wanted=_normalize_kind(kind) if kind else None
     if visibility is not None and visibility not in _ALLOWED_VISIBILITY:
         raise ValueError("invalid gallery visibility")
@@ -379,6 +407,8 @@ def list_gallery(limit=60,kind=None,visibility="public"):
 
     filtered=[]
     for item in rows:
+        if shared_only and item.get("shared") is not True:
+            continue
         if wanted and item.get("kind")!=wanted:
             continue
         if visibility is not None and item.get("visibility")!=visibility:
