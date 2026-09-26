@@ -42,7 +42,8 @@ class WebStudioPublicTests(unittest.TestCase):
         ):
             self.assertIn(marker,INDEX)
         self.assertIn('meta name="muba-studio-api"',INDEX)
-        self.assertIn('$MUBA #MUBA 🪶',INDEX)
+        self.assertIn('$MUBA #MUBA ',INDEX)
+        self.assertNotIn('$MUBA #MUBA 🪶',INDEX)
 
 if __name__=="__main__":
     unittest.main(verbosity=2)

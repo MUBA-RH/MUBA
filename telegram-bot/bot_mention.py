@@ -443,7 +443,7 @@ def community_hub_keyboard(lang,user_id):
         [InlineKeyboardButton(g["news"],callback_data="news")],
         [InlineKeyboardButton(g["story"],callback_data="extra:story")],
         [InlineKeyboardButton(g["create"],callback_data="create_hub")],
-        [InlineKeyboardButton(g["system"],callback_data="transparency:0")],
+        [InlineKeyboardButton(g["system"],callback_data="transparency_menu")],
         [InlineKeyboardButton(g["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
         [InlineKeyboardButton(g["devlog"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
         [_section_back(lang)],
@@ -453,7 +453,7 @@ def community_info_keyboard(lang,section):
     g=COMMUNITY_GUIDE_LABELS[lang]
     back=InlineKeyboardButton(TEXT[lang]["back"],callback_data="community_hub")
     if section=="about":
-        return InlineKeyboardMarkup([[InlineKeyboardButton(g["ask"],callback_data="ask_muba")],[InlineKeyboardButton(g["system"],callback_data="transparency:0")],[back]])
+        return InlineKeyboardMarkup([[InlineKeyboardButton(g["ask"],callback_data="ask_muba")],[InlineKeyboardButton(g["system"],callback_data="transparency_menu")],[back]])
     if section=="join":
         return InlineKeyboardMarkup([[InlineKeyboardButton(g["story"],callback_data="extra:story")],[InlineKeyboardButton(g["updates"],callback_data="updates_center")],[InlineKeyboardButton(g["create"],callback_data="create_hub")],[back]])
     return InlineKeyboardMarkup([[InlineKeyboardButton(g["web"],url="https://muba-rh.github.io/MUBA/")],[InlineKeyboardButton(g["x"],url="https://x.com/MUBA_RH")],[InlineKeyboardButton(g["telegram"],url="https://t.me/MUBA_RH")],[back]])
@@ -472,7 +472,7 @@ def menu_keyboard(lang,user_id=None):
     rows=[
         [InlineKeyboardButton(ASSISTANT_UI[lang]["community"],callback_data="community_hub")],
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
-        [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
+        [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
@@ -606,19 +606,29 @@ def gallery_admin_item_keyboard(lang,item_id):
         [InlineKeyboardButton(labels["back"],callback_data="gallery_admin")],
     ])
 
-def transparency_keyboard(lang,page):
-    nav=TRANSPARENCY_NAV[lang]
-    total=len(TRANSPARENCY_PAGES[lang])
-    rows=[]
-    pager=[]
-    if page>0:
-        pager.append(InlineKeyboardButton(nav["prev"],callback_data=f"transparency:{page-1}"))
-    if page+1<total:
-        pager.append(InlineKeyboardButton(nav["next"],callback_data=f"transparency:{page+1}"))
-    if pager:
-        rows.append(pager)
-    rows.append([InlineKeyboardButton(nav["back"],callback_data="menu")])
+TRANSPARENCY_MENU_TITLE={
+    "en":"🔎 MUBA SYSTEM TRANSPARENCY\n\nChoose a topic:",
+    "tr":"🔎 MUBA SİSTEM ŞEFFAFLIĞI\n\nBir başlık seç:",
+    "zh":"🔎 MUBA 系统透明度\n\n选择一个主题：",
+    "ar":"🔎 شفافية نظام MUBA\n\nاختر موضوعاً:",
+    "hi":"🔎 MUBA सिस्टम पारदर्शिता\n\nएक विषय चुनें:",
+}
+
+def _transparency_title(page_text):
+    return str(page_text or "").split("\n",1)[0].strip()
+
+def transparency_index_keyboard(lang):
+    rows=[
+        [InlineKeyboardButton(_transparency_title(page),callback_data=f"transparency:{index}")]
+        for index,page in enumerate(TRANSPARENCY_PAGES[lang])
+    ]
+    rows.append([InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
+
+def transparency_keyboard(lang,page):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"],callback_data="transparency_menu")]
+    ])
 
 def transparency_text(lang,page):
     pages=TRANSPARENCY_PAGES[lang]
@@ -951,6 +961,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         index=int(raw) if raw.isdigit() else 0
         body,index,total=updates_area_text(lang,user_id,area,index)
         await q.edit_message_text(body,reply_markup=updates_area_keyboard(lang,user_id,area,index),disable_web_page_preview=True); return
+    if data=="transparency_menu":
+        await q.edit_message_text(TRANSPARENCY_MENU_TITLE[lang],reply_markup=transparency_index_keyboard(lang),disable_web_page_preview=True); return
     if data.startswith("transparency:"):
         raw=data.split(":",1)[1]
         page=int(raw) if raw.isdigit() else 0
