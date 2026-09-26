@@ -48,7 +48,7 @@ def parse_ticker(symbol,data,opening,now):
 
 
 async def _get(session,product,kind):
-    async with session.get(API.format(product=product,kind=kind),timeout=5,allow_redirects=False) as response:
+    async with session.get(API.format(product=product,kind=kind),timeout=8,allow_redirects=True) as response:
         if response.status!=200: raise ValueError("Price API unavailable")
         return await response.json()
 

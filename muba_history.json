@@ -2029,6 +2029,52 @@
         "ar": "تم تبسيط القائمة الرئيسية ضمن ASK MUBA وMUBA DAILY وMUBA CREATE وMUBA COMMUNITY وDEV TOOLS مع الحفاظ على الوظائف والمحتوى الحالي.",
         "hi": "मुख्य मेनू ASK MUBA, MUBA DAILY, MUBA CREATE, MUBA COMMUNITY और DEV TOOLS में व्यवस्थित किया गया है, जबकि मौजूदा कार्य और सामग्री सुरक्षित हैं।"
       }
+    },
+    {
+      "id": "20260925-muba-news-one-event-v21",
+      "date": "2026-09-25",
+      "type": "fixed",
+      "areas": [
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA NEWS duplicate event fix",
+        "tr": "MUBA HABER tekrarlanan olay düzeltmesi",
+        "zh": "MUBA 新闻重复事件修复",
+        "ar": "إصلاح تكرار أحداث أخبار MUBA",
+        "hi": "MUBA समाचार दोहराई घटना सुधार"
+      },
+      "text": {
+        "en": "When an official announcement and a publisher cover the same verified event, the news feed retains one official source record.",
+        "tr": "Resmî duyuru ile yayıncı aynı doğrulanmış olayı aktardığında haber akışı tek bir resmî kaynak kaydını gösterir.",
+        "zh": "官方公告与媒体报道同一已核实事件时，新闻流只保留一条官方来源记录。",
+        "ar": "عندما يغطي إعلان رسمي وناشر الحدث الموثق نفسه، يحتفظ موجز الأخبار بسجل واحد للمصدر الرسمي.",
+        "hi": "जब आधिकारिक घोषणा और प्रकाशक एक ही सत्यापित घटना दिखाते हैं, समाचार फ़ीड एक आधिकारिक स्रोत रिकॉर्ड रखती है।"
+      }
+    },
+    {
+      "id": "20260926-muba-web-script-news-recovery-v22",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": [
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA price and news display recovery",
+        "tr": "MUBA fiyat ve haber görünümü onarımı",
+        "zh": "MUBA 价格与新闻显示修复",
+        "ar": "إصلاح عرض الأسعار والأخبار في MUBA",
+        "hi": "MUBA मूल्य और समाचार प्रदर्शन सुधार"
+      },
+      "text": {
+        "en": "Fix malformed line breaks in the website script so price and news widgets run again. Restore the ten-at-a-time continuous news feed and verify headlines against trusted publisher pages before showing them.",
+        "tr": "Web betiğindeki bozuk satır sonları düzeltildi; fiyat ve haber alanları yeniden çalışıyor. Onarlı kesintisiz haber kaydırması geri geldi; başlıklar güvenilir yayıncı makaleleriyle doğrulanıyor.",
+        "zh": "修复网站脚本中的错误换行，使价格和新闻组件恢复运行；恢复每次十条的连续新闻滚动，并在展示前对照可信媒体原文核验标题。",
+        "ar": "تم إصلاح فواصل الأسطر المعطوبة في نص الموقع لتعود وحدتا الأسعار والأخبار للعمل، واستُعيد تمرير الأخبار على دفعات من عشرة مع التحقق من العناوين بمقالات الناشرين الموثوقين.",
+        "hi": "वेबसाइट स्क्रिप्ट में गलत लाइन ब्रेक सुधारे गए ताकि मूल्य और समाचार विजेट फिर चलें। एक बार में दस खबरों वाली निरंतर स्क्रॉलिंग बहाल हुई और दिखाने से पहले शीर्षक विश्वसनीय प्रकाशक लेखों से मिलाए जाते हैं।"
+      }
     }
   ]
 }
