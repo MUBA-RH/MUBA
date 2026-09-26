@@ -1352,6 +1352,27 @@
     document.getElementById("copy-tweet").addEventListener("click", () => copyText(currentTweetWithTags(), "tweet-status", "MUBA TWT copied."));
     document.getElementById("copy-tags").addEventListener("click", () => copyText(shareTags, "tweet-status", "MUBA tags copied."));
 
+    document.getElementById("share-x").addEventListener("click", async (event) => {
+      if (!studioObjectUrl) return;
+      event.preventDefault();
+      const status = document.getElementById("tweet-status");
+      try {
+        const response = await fetch(studioObjectUrl);
+        const blob = await response.blob();
+        const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
+        const file = new File([blob], "muba." + extension, { type: blob.type || "image/jpeg" });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ text: currentTweetWithTags(), files: [file] });
+          status.textContent = "MUBA image and TWT opened for sharing.";
+          return;
+        }
+      } catch (error) {
+        if (error && error.name === "AbortError") return;
+      }
+      status.textContent = "Image sharing is not supported here. Opening X with the TWT.";
+      window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(currentTweetWithTags()), "_blank", "noopener");
+    });
+
     const studioApiBase = (document.querySelector('meta[name="muba-studio-api"]')?.content || "").replace(/\/$/, "");
     async function requestLive(path) {
       const controller=new AbortController();
