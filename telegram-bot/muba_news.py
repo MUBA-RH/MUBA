@@ -149,7 +149,9 @@ def verified_row(row,article):
 
 
 def event_match(a,b):
-    if a["category"]!=b["category"] or not a.get("published_at") or not b.get("published_at"):
+    category_a=category_for(a.get("title",""),a.get("summary","")) or a.get("category")
+    category_b=category_for(b.get("title",""),b.get("summary","")) or b.get("category")
+    if category_a!=category_b or not a.get("published_at") or not b.get("published_at"):
         return False
     if abs((datetime.fromisoformat(a["published_at"])-datetime.fromisoformat(b["published_at"])).total_seconds())>86400:
         return False
@@ -176,7 +178,9 @@ def official_media_match(a,b):
 
 def corroborates(a,b):
     """A second independent publisher must describe the same event, not just the same coin."""
-    if a["source_name"]==b["source_name"] or a["category"]!=b["category"]: return False
+    category_a=category_for(a.get("title",""),a.get("summary","")) or a.get("category")
+    category_b=category_for(b.get("title",""),b.get("summary","")) or b.get("category")
+    if a["source_name"]==b["source_name"] or category_a!=category_b: return False
     if not a.get("published_at") or not b.get("published_at"): return False
     if abs((datetime.fromisoformat(a["published_at"])-datetime.fromisoformat(b["published_at"])).total_seconds())>172800: return False
     skip={"crypto","market","says","after","with","from","that","about","today","latest","news"}
@@ -308,16 +312,26 @@ async def collect(session,fetch=None):
 def public_news(category=None):
     if category and category not in CATEGORIES: return []
     with LOCK: rows=load_pool()
+    # Existing saved records may predate improved topic rules; normalize on read.
+    for row in rows:
+        normalized=category_for(row.get("title",""),row.get("summary",""))
+        if normalized: row["category"]=normalized
     official_urls={r["source_url"] for r in rows if r.get("verification_status")=="VERIFIED"
                    and r.get("source_url") and urlparse(r["source_url"]).hostname in OFFICIAL_HOSTS}
-    official_rows=[r for r in rows if r.get("verification_status")=="VERIFIED"
-                   and r.get("source_url") in official_urls]
-    return sorted((r for r in rows if r.get("verification_status")=="VERIFIED"
-                   and r.get("status") in ("ACTIVE","UPDATED","CORRECTED","ARCHIVED")
-                   and r.get("corroboration_url") not in official_urls
-                   and not (urlparse(r["source_url"]).hostname in MEDIA_HOSTS
-                            and any(event_match(r,original) for original in official_rows))
-                   and (not category or r["category"]==category)),key=lambda r:r["published_at"],reverse=True)
+    candidates=sorted((r for r in rows if r.get("verification_status")=="VERIFIED"
+                       and r.get("status") in ("ACTIVE","UPDATED","CORRECTED","ARCHIVED")
+                       and r.get("corroboration_url") not in official_urls),
+                      key=lambda r:r["published_at"],reverse=True)
+    unique=[]
+    for row in candidates:
+        match=next((index for index,seen in enumerate(unique) if event_match(row,seen)),None)
+        if match is not None:
+            if (urlparse(row["source_url"]).hostname in OFFICIAL_HOSTS
+                    and urlparse(unique[match]["source_url"]).hostname in MEDIA_HOSTS):
+                unique[match]=row
+            continue
+        unique.append(row)
+    return [row for row in unique if not category or row["category"]==category]
 
 
 LABELS={
