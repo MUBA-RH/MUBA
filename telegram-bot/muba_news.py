@@ -153,11 +153,25 @@ def event_match(a,b):
         return False
     if abs((datetime.fromisoformat(a["published_at"])-datetime.fromisoformat(b["published_at"])).total_seconds())>86400:
         return False
+    if a.get("corroboration_url") and a["corroboration_url"]==b.get("source_url"): return True
+    if b.get("corroboration_url") and b["corroboration_url"]==a.get("source_url"): return True
     if a["source_url"]==b["source_url"] or a["duplicate_hash"]==b["duplicate_hash"]:
         return True
     words=lambda title:set(re.findall(r"[a-z0-9]{4,}",title.lower()))
     left,right=words(a["title"]),words(b["title"])
-    return (len(left & right)>=4 and len(left & right)/len(left | right)>=0.78) or corroborates(a,b)
+    return ((len(left & right)>=4 and len(left & right)/len(left | right)>=0.78)
+            or corroborates(a,b) or official_media_match(a,b))
+
+
+def official_media_match(a,b):
+    hosts={urlparse(row["source_url"]).hostname for row in (a,b)}
+    if not (hosts & OFFICIAL_HOSTS and hosts & MEDIA_HOSTS): return False
+    stop={"the","and","with","from","that","about","today","will","have","this","their",
+          "under","into","related","board","federal","reserve","crypto","market","news"}
+    terms=lambda row:{word for word in re.findall(r"[a-z]{4,}",(row["title"]+" "+row["summary"]).lower()) if word not in stop}
+    left,right=terms(a),terms(b)
+    shared=left & right
+    return len(shared)>=3 and len(shared)/max(1,min(len(left),len(right)))>=0.25
 
 
 def corroborates(a,b):
@@ -188,6 +202,8 @@ def merge(pool,candidate):
     if candidate["verification_status"]!="VERIFIED": return False
     for old in reversed(pool):
         if event_match(old,candidate):
+            if old["source_url"]==candidate["source_url"] and candidate.get("corroboration_url") and not old.get("corroboration_url"):
+                old["corroboration_url"]=candidate["corroboration_url"]
             if old["summary"]!=candidate["summary"] and old["source_url"]==candidate["source_url"]:
                 old["status"]="ARCHIVED"
                 candidate["status"]="CORRECTED" if re.search(r"\bcorrection\b|\bcorrected\b",candidate["title"],re.I) else "UPDATED"
@@ -265,24 +281,10 @@ async def collect(session,fetch=None):
             try: return await fetch(row["source_url"])
             except Exception: return None
     articles=await asyncio.gather(*(inspect(row) for row in candidates))
-    official_article_cache={}
     for row,article in zip(candidates,articles):
-        media=urlparse(row["source_url"]).hostname in MEDIA_HOSTS
+        # Established newsroom publishers are sources in their own right; verify
+        # the reported headline against that publisher's article before admitting it.
         row["verification_status"]=verified_row(row,article)
-        if media and row["verification_status"]=="VERIFIED":
-            confirmed=False
-            for official in primary_links(article)[:3]:
-                if official not in official_article_cache:
-                    try: official_article_cache[official]=await fetch(official)
-                    except Exception: official_article_cache[official]=None
-                if verified_row(row,official_article_cache[official])=="VERIFIED":
-                    confirmed=True
-                    break
-            if not confirmed:
-                confirmed=any(other_article and urlparse(other["source_url"]).hostname in MEDIA_HOSTS
-                              and corroborates(row,other) and verified_row(other,other_article)=="VERIFIED"
-                              for other,other_article in zip(candidates,articles) if other is not row)
-            if not confirmed: row["verification_status"]="PENDING"
         if row["verification_status"]=="VERIFIED":
             row.update({"id":hashlib.sha256(row["source_url"].encode()).hexdigest()[:24],
                         "collected_at":now_iso(),"importance":"HIGH","language_master":"EN",
@@ -291,18 +293,26 @@ async def collect(session,fetch=None):
     if not fresh: return []
     with LOCK:
         pool=load_pool()
+        previous=json.dumps(pool,sort_keys=True)
         added=[]
         for row in fresh:
             if merge(pool,row): added.append(row)
-        if added: save_pool(pool[-500:])
+        if added or json.dumps(pool,sort_keys=True)!=previous: save_pool(pool[-500:])
         return added
 
 
 def public_news(category=None):
     if category and category not in CATEGORIES: return []
     with LOCK: rows=load_pool()
+    official_urls={r["source_url"] for r in rows if r.get("verification_status")=="VERIFIED"
+                   and r.get("source_url") and urlparse(r["source_url"]).hostname in OFFICIAL_HOSTS}
+    official_rows=[r for r in rows if r.get("verification_status")=="VERIFIED"
+                   and r.get("source_url") in official_urls]
     return sorted((r for r in rows if r.get("verification_status")=="VERIFIED"
                    and r.get("status") in ("ACTIVE","UPDATED","CORRECTED","ARCHIVED")
+                   and r.get("corroboration_url") not in official_urls
+                   and not (urlparse(r["source_url"]).hostname in MEDIA_HOSTS
+                            and any(event_match(r,original) for original in official_rows))
                    and (not category or r["category"]==category)),key=lambda r:r["published_at"],reverse=True)
 
 
