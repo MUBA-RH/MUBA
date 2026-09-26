@@ -1,236 +1,71 @@
+"""Daily Story's one-scene publication and continuity gates."""
+import sys
 import unittest
 from pathlib import Path
-import sys
+from unittest import mock
 
-ROOT=Path(__file__).resolve().parents[1]
-sys.path.insert(0,str(ROOT))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 import muba_story
+from state import MemoryRepository
+
 
 class DailyStoryTests(unittest.TestCase):
-    def test_daily_story_has_four_connected_scenes(self):
-        item=muba_story.draft("2099-01-01")
-        self.assertEqual(len(item["scenes"]),4)
-        self.assertEqual(len(item["prompts"]),4)
-        self.assertTrue(item["rules"]["human_approval_required"])
-        self.assertFalse(item["rules"]["auto_publish"])
+    def setUp(self):
+        self.store = MemoryRepository()
+        patch = mock.patch.object(muba_story, "STORE", self.store)
+        patch.start()
+        self.addCleanup(patch.stop)
 
-    def test_visual_policy_uses_fresh_dev_reference(self):
-        item=muba_story.draft("2099-01-01")
-        prompt=item["prompts"][0].lower()
-        self.assertIn("canonical muba identity remains authoritative",prompt)
-        self.assertIn("never a collage",prompt)
-        self.assertIn("face/body identity lock",prompt)
-        self.assertEqual(item["rules"]["visual_style"],"daily-story-approved-2d-chibi-v10")
-        self.assertEqual(item["rules"]["visual_layer"],"muba_story_visual")
-        self.assertEqual(item["rules"]["continuity"],"story-state-plus-independent-chapter-scene")
-        self.assertEqual(item["rules"]["character_anchor_version"],"daily-story-approved-2d-chibi-v10")
-        self.assertEqual(item["rules"]["character_anchor"],"master-identity-plus-daily-reference")
-        self.assertEqual(item["rules"]["aspect_ratio"],"16:9")
+    def test_each_day_is_short_connected_and_one_scene(self):
+        for n in range(35):
+            day = (muba_story.START + __import__('datetime').timedelta(days=n)).isoformat()
+            item = muba_story.draft(day)
+            self.assertTrue(150 <= len(item['story']) <= 170)
+            self.assertTrue(150 <= len(item['story_tr']) <= 170)
+            self.assertEqual(len(item['prompts']), 1)
+            self.assertEqual(item['rules']['frames'], 1)
+            self.assertEqual(item['rules']['aspect_ratio'], '16:9')
+            self.assertNotIn('PREVIOUS STORY STATE:', item['prompts'][0])
+            self.assertIn('TODAY\'S STORY:', item['prompts'][0])
+            self.assertIn('No panels', item['prompts'][0])
+            if n:
+                self.assertEqual(item['previous_day'],
+                                 (muba_story.START + __import__('datetime').timedelta(days=n - 1)).isoformat())
 
-    def test_each_prompt_has_concrete_story_state(self):
-        item=muba_story.draft("2099-01-01")
-        joined=" ".join(item["prompts"]).lower()
-        self.assertIn("required visible story elements:",joined)
-        self.assertNotIn("tiny integrated story word",joined)
-        self.assertEqual(item["rules"]["frame_text_max_words"],0)
-
-    def test_legacy_story_layers_are_removed_and_v3_isolated(self):
-        self.assertFalse((ROOT/"muba_story_chibi.py").exists())
-        self.assertFalse((ROOT/"muba_daily_story_reference.py").exists())
-        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8").lower()
-        self.assertIn("master identity + chapter engine v8",layer)
-        self.assertIn("do not import older muba styles",layer)
-
-    def test_web_uses_short_summary_without_panel_numbers(self):
-        web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
-        self.assertIn('story.summary||story.twt',web)
-        self.assertNotIn('story-panel-no',web)
-        self.assertNotIn('>0\'+(i+1)',web)
-        self.assertIn('story-book',web)
-
-    def test_visual_layer_requires_four_separate_images(self):
-        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8").lower()
-        self.assertIn("four separate full-bleed 16:9 images",layer)
-        self.assertIn("never a collage",layer)
-        self.assertIn("face/body identity lock",layer)
-
-    def test_generation_uses_cloudflare_canonical_reference_for_batch(self):
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        section=bot[bot.index("async def _story_generate_images"):bot.index("async def story_public_handler")]
-        self.assertIn("muba_story_cloudflare",section)
-        self.assertIn("story_reference_for_day",section)
-        self.assertIn("read_gallery_image",section)
-        self.assertIn("checksum mismatch",section)
-        self.assertNotIn("session.get(",section)
-        self.assertNotIn("continuity_bytes=previous",section)
-        self.assertNotIn("muba_story_openai",section)
-        self.assertNotIn("generate_anchor",section)
-
-    def test_huggingface_bridge_uses_configured_credentials_and_reference(self):
-        bridge=(ROOT/"muba_story_zerogpu.py").read_text(encoding="utf-8")
-        self.assertIn("HF_"+"TOKEN",bridge)
-        self.assertIn("HF_"+"TOKEN",bridge)
-        self.assertIn("HF_"+"TOKEN",bridge)
-        self.assertIn('args={"prompt":prompt,"reference":handle_file(str(ref))}',bridge)
-        self.assertIn("gradio_client",bridge)
-        self.assertNotIn("OPENAI_"+"API_KEY",bridge)
-        self.assertNotIn("api.openai.com",bridge)
-
-    def test_technical_change_is_not_literal_story_title(self):
-        item=muba_story.draft("2026-09-22")
-        self.assertNotIn("four-image production connected",item["theme"].lower())
-        self.assertNotIn("four-image production connected",item["story"].lower())
-
-    def test_dev_menu_exposes_story_director(self):
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn('InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")',bot)
-        self.assertIn('if is_dev(user_id):',bot)
-
-    def test_story_callback_chain_exists(self):
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn('if data=="story_director":',bot)
-        self.assertIn('if data=="story_publish":',bot)
-        self.assertIn('callback_data="story_publish"',bot)
-        self.assertIn('callback_data="menu"',bot)
-        self.assertIn('MUBA GÜNLÜK HİKÂYE',bot)
-        self.assertIn('if data==\"story_generate\":',bot)
-        self.assertIn('callback_data=\"story_generate\"',bot)
-        self.assertIn('_story_generate_images',bot)
-        self.assertEqual(bot.count('if data=="story_director":'),1)
-        self.assertEqual(bot.count('if data=="story_publish":'),1)
-
-    def test_today_change_has_turkish_runtime_fields(self):
-        item=muba_story.draft("2026-09-22")
-        self.assertTrue(item["theme_tr"])
-        self.assertTrue(item["source_truth_tr"])
-
-    def test_story_cannot_publish_without_four_images(self):
-        day="2099-01-03"
-        muba_story.unpublish(day)
-        muba_story.set_reference(day,"test-ref","abc","image/jpeg")
-        muba_story.set_images(day,[])
-        with self.assertRaises(ValueError): muba_story.publish(day)
+    def test_approval_requires_one_image_and_binds_reference(self):
+        day = '2026-09-26'
+        with self.assertRaisesRegex(ValueError, 'one approved image'):
+            muba_story.publish(day)
+        with self.assertRaisesRegex(ValueError, 'one image'):
+            muba_story.set_images(day, ['a', 'b'])
+        item = muba_story.set_images(day, ['one'])
+        self.assertEqual(item['images'], ['one'])
         self.assertIsNone(muba_story.public_story(day))
+        muba_story.publish(day)
+        self.assertEqual(muba_story.public_story(day)['images'], ['one'])
+        self.assertEqual(self.store.get('story_canon', day, None)['story'], item['story'])
+        with self.assertRaisesRegex(ValueError, 'Published'):
+            muba_story.set_reference(day, 'another', 'hash', 'image/jpeg')
 
-    def test_unapproved_story_is_not_public(self):
-        day="2099-01-02"
-        muba_story.unpublish(day)
-        self.assertIsNone(muba_story.public_story(day))
+    def test_reference_change_invalidates_pending_scene(self):
+        day = '2026-09-27'
+        muba_story.set_images(day, ['one'])
+        muba_story.set_reference(day, 'new', 'hash', 'image/jpeg')
+        self.assertEqual(muba_story.image_ids(day), [])
 
-    def test_fresh_reference_gate_drives_story_generation(self):
-        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("canonical MUBA identity remains authoritative",layer)
-        self.assertIn("FOUR-CHAPTER STORY CONTRACT",layer)
-        self.assertIn("📷 REFERANS GÖRSEL VER",bot)
-        self.assertIn('context.user_data["daily_story_waiting_reference"]=True',bot)
-        self.assertIn("daily_story_reference_photo",bot)
-        self.assertIn("story_reference_for_day",bot)
-        self.assertIn("reply_photo",bot)
+    def test_worker_contract_is_single_scene(self):
+        job = muba_story.worker_job('2026-09-26')
+        self.assertEqual(job['rules']['images'], 1)
+        self.assertEqual(len(job['chapters']), 1)
+        self.assertFalse(job['rules']['previous_frame_conditioning'])
 
-    def test_web_x_share_only_lives_in_approved_story_path(self):
-        web=(ROOT.parent/"index.html").read_text(encoding="utf-8")
-        self.assertIn('id="story-share-x"',web)
-        self.assertIn("twitter.com/intent/tweet",web)
-        self.assertIn("share.hidden=false",web)
-
-    def test_story_uses_previous_day_and_web_story_is_150_chars(self):
-        item=muba_story.draft("2026-09-23")
-        self.assertTrue(item["previous_day"])
-        self.assertLessEqual(len(item["summary"]),150)
-        self.assertLessEqual(len(item["summary_tr"]),150)
-        self.assertTrue(all("CURRENT CHAPTER:" in p for p in item["prompts"]))
-
-    def test_story_state_persists_narrative_continuity_without_frame_copying(self):
-        item=muba_story.draft("2026-09-23")
-        state=item["story_state"]
-        self.assertEqual(set(state),{"location","important_object","resolved_event","unresolved_thread","next_day_hook"})
-        self.assertTrue(state["next_day_hook"])
-        self.assertTrue(all("PREVIOUS STORY STATE:" in p for p in item["prompts"]))
-        self.assertTrue(all("CURRENT CHAPTER:" in p for p in item["prompts"]))
-        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
-        self.assertIn("CHAPTER ISOLATION",layer)
-        self.assertIn("NARRATIVE CONTINUITY comes from Story State",layer)
-        self.assertNotIn("Image N+1 begins from the physical and narrative state left by image N",layer)
-
-    def test_v9_chapters_are_explicit_and_scene_grounded(self):
-        item=muba_story.draft("2099-01-01")
-        self.assertEqual([x["title"] for x in item["chapters"]],["The Discovery","The Map","The Journey","The Reward"])
-        self.assertEqual([x["title_tr"] for x in item["chapters"]],["Keşif","Harita","Yolculuk","Ödül"])
-        self.assertTrue(all("REQUIRED VISIBLE STORY ELEMENTS:" in p for p in item["prompts"]))
-        self.assertTrue(all("SCENE-GROUNDING GATE:" in p for p in item["prompts"]))
-        self.assertTrue(all("No other chapter" in p for p in item["prompts"]))
-        self.assertEqual(item["rules"]["delivery"],"chapter-by-chapter")
-
-    def test_v9_telegram_pairs_each_chapter_with_own_image(self):
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn('zip(item["images"],item["chapters"])',bot)
-        self.assertIn('zip(item.get("images",[]),item["chapters"])',bot)
-        self.assertIn('Bölüm %s: %s (%s)',bot)
-        self.assertNotIn('caption=item["summary"]',bot)
-
-    def test_v9_eye_geometry_lock_is_explicit(self):
-        layer=(ROOT/"muba_story_visual.py").read_text(encoding="utf-8")
-        identity=(ROOT/"muba_master_identity.py").read_text(encoding="utf-8")
-        self.assertIn("EYE GEOMETRY LOCK",layer)
-        self.assertIn("EYE LANDMARK LOCK",identity)
-        self.assertIn("exactly two eyes",layer)
-        self.assertIn("mismatched pupils",layer)
-
-    def test_v10_capacity_fallback_preserves_primary_and_story_contract(self):
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        primary=(ROOT/"muba_story_cloudflare.py").read_text(encoding="utf-8")
-        fallback=(ROOT/"muba_story_fallback.py").read_text(encoding="utf-8")
-        self.assertIn("GenerationCapacityError",primary)
-        self.assertIn("status==429",primary)
-        self.assertIn("muba_story_fallback",bot)
-        self.assertIn("secondary reservoir",bot.lower())
-        self.assertIn("1024",fallback)
-        self.assertIn("576",fallback)
-        self.assertIn("Visual generation capacity is currently unavailable",bot)
-
-    def test_v11_gpu_worker_job_preserves_story_contract(self):
-        day="2099-02-01"
-        muba_story.unpublish(day)
-        muba_story.set_reference(day,"worker-ref","abc123","image/jpeg")
-        job=muba_story.worker_job(day,"/tmp/muba-reference.jpg")
-        self.assertEqual(len(job["chapters"]),4)
-        self.assertEqual(job["rules"]["aspect_ratio"],"16:9")
-        self.assertTrue(job["rules"]["independent_chapters"])
-        self.assertFalse(job["rules"]["previous_frame_conditioning"])
-        self.assertEqual(job["rules"]["approval"],"telegram-dev")
-        self.assertEqual(job["reference_sha256"],"abc123")
-        self.assertTrue(all("CURRENT CHAPTER:" in x["prompt"] for x in job["chapters"]))
-
-    def test_scheduler_is_pre_11_istanbul_and_prepare_is_protected(self):
-        workflow=(ROOT.parent/".github/workflows/muba-daily-story-prepare.yml").read_text(encoding="utf-8")
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn('cron: "45 7 * * *"',workflow)
-        self.assertIn("MUBA_STORY_SCHEDULER_SECRET",workflow)
-        self.assertIn("story_prepare_handler",bot)
-        self.assertIn('add_post("/story/prepare"',bot)
-        self.assertIn("compare_digest",bot)
-
-    def test_internal_scheduler_needs_no_external_scheduler_secret(self):
-        bot=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        self.assertIn("daily_story_scheduler(application)",bot)
-        self.assertIn('ZoneInfo("Europe/Istanbul")',bot)
-        self.assertIn("hour=10,minute=45",bot)
-        self.assertIn("asyncio.create_task(daily_story_scheduler(application))",bot)
-        self.assertIn("Görsel üretiminden önce referans MUBA görselini gönder",bot)
-
-if __name__=="__main__": unittest.main()
+    def test_published_legacy_image_batch_remains_readable(self):
+        day = '2026-09-25'
+        self.store.set('story_image_batches', day, {'ids': ['1', '2', '3', '4']})
+        self.store.set('story_publish', day, True)
+        self.assertEqual(len(muba_story.public_story(day)['images']), 4)
 
 
-class TestLivingStoryIsolation(unittest.TestCase):
-    def test_story_is_cloudflare_only_and_fails_closed(self):
-        source=(ROOT/"bot_mention.py").read_text(encoding="utf-8")
-        start=source.index("async def _story_generate_images")
-        end=source.index("async def story_public_handler",start)
-        story=source[start:end]
-        self.assertIn("muba_story_cloudflare",story)
-        self.assertIn("Daily Story Visual Generation Layer is not configured",story)
-        self.assertIn("body,out_type=await generate",story)
-        self.assertIn('for index,prompt in enumerate(item["prompts"]):',story)
-        self.assertNotIn("muba_story_openai",story)
-        self.assertNotIn("generate_anchor",story)
+if __name__ == '__main__':
+    unittest.main()

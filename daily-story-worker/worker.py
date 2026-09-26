@@ -14,14 +14,14 @@ CHECKPOINT=os.getenv("MUBA_COMFY_CHECKPOINT",CFG["model"]["default_checkpoint"])
 def load_job(path):
     job=json.loads(Path(path).read_text(encoding="utf-8"))
     chapters=job.get("chapters") or []
-    if len(chapters)!=4: raise ValueError("Daily Story job requires exactly four chapters")
+    if len(chapters)!=1: raise ValueError("Daily Story job requires exactly one scene")
     ref=Path(job["reference_path"])
     if not ref.exists(): raise FileNotFoundError(ref)
     return job,ref
 
 def identity_prompt(prompt):
-    return ("A single 16:9 chibi comic story panel. Thick clean outlines, soft cel shading, "
-            "large head and small body, expressive face, one continuous simple setting. "
+    return ("A single bright, airy 16:9 illustrated story scene. Thick clean outlines, soft cel shading, "
+            "large head and small body, expressive face, one coherent setting. "
             + prompt + " " + IDENTITY["identity_prompt"] + " IDENTITY LOCK: " + " ".join(IDENTITY["rules"]))
 
 def workflow(prompt,seed,ref_name):
@@ -70,27 +70,29 @@ def run(job_path,out_dir):
     COMFY_INPUT.mkdir(parents=True,exist_ok=True)
     ref_name="MUBA_DAILY_STORY_MASTER_REFERENCE.png"
     with Image.open(ref) as source:
-        # The checked-in identity sheet includes explanatory panels that must
-        # never enter the image adapter or the generated story frames.
-        if ref.name == "file_00000000c20c8211bc7955d41f5b0edb.png" and source.size == (1448,1086):
-            character=source.crop((295,0,1045,765))
+        master=ROOT/"muba_daily_story_master_reference.png"
+        # Feed the character crop to the adapter; use the approved landscape
+        # image only for composition and color, without locking its location.
+        if master.is_file():
+            with Image.open(master) as sheet:
+                character=sheet.crop((310,0,1105,825)).copy()
         else:
             character=source.copy()
         character.convert("RGB").save(COMFY_INPUT/ref_name)
         # Use a scene-sized edit input. A portrait pasted onto a flat canvas
         # creates the very side borders rejected by the Telegram preview gate.
-        ImageOps.fit(character.convert("RGB"),(1024,576),method=Image.Resampling.LANCZOS).save(COMFY_INPUT/"MUBA_DAILY_STORY_INIT.png")
+        ImageOps.fit(source.convert("RGB"),(1024,576),method=Image.Resampling.LANCZOS).save(COMFY_INPUT/"MUBA_DAILY_STORY_INIT.png")
     results=[]
     base_seed=int(job.get("seed",260925))
     for i,ch in enumerate(job["chapters"],1):
-        prompt=ch["prompt"]+" CURRENT CHAPTER ONLY. One scene, one frame, one canonical MUBA. Preserve the exact same face, eye geometry, muzzle, tongue, fur, cap and hoodie from the master reference."
-        print(f"\nMUBA_DAILY_STORY_CHAPTER_{i}=QUEUED",flush=True)
+        prompt=ch["prompt"]+" TODAY'S STORY ONLY. One scene, one canonical MUBA. Preserve the face, eyes, muzzle, tongue, fur, cap and hoodie from the master reference; do not repeat yesterday's picture."
+        print("\nMUBA_DAILY_STORY_SCENE=QUEUED",flush=True)
         meta=wait(queue(workflow(prompt,base_seed+i,ref_name)))
-        dest=out/f"chapter_{i:02d}.png"; fetch(meta,dest); results.append(str(dest))
-        print(f"\nMUBA_DAILY_STORY_CHAPTER_{i}=PASS",flush=True)
+        dest=out/"scene.png"; fetch(meta,dest); results.append(str(dest))
+        print("\nMUBA_DAILY_STORY_SCENE=PASS",flush=True)
     result={"schema_version":2,"job_id":job["job_id"],"day":job["day"],"status":"awaiting_visual_review","approval":"telegram-dev","images":results}
     (out/"result.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
-    print("\nMUBA_DAILY_STORY_4_FRAME_TECHNICAL_TEST=PASS",flush=True)
+    print("\nMUBA_DAILY_STORY_SINGLE_SCENE_TECHNICAL_TEST=PASS",flush=True)
     print("NEXT_GATE=VISUAL_REVIEW_THEN_TELEGRAM_DEV_APPROVAL",flush=True)
     return result
 
