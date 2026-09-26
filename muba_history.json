@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260926-telegram-muba-camera-private-test",
+      "date": "2026-09-26",
+      "type": "new",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Private MUBA Camera test",
+        "tr": "Özel MUBA Camera testi",
+        "zh": "私密 MUBA Camera 测试",
+        "ar": "اختبار MUBA Camera الخاص",
+        "hi": "Private MUBA Camera परीक्षण"
+      },
+      "text": {
+        "en": "Telegram Create now includes a test MUBA Camera Mini App. A user explicitly captures/selects a photo, MUBA uses it only as temporary transformation input, does not intentionally persist the source selfie in Gallery, database or file storage, and returns the generated MUBA result directly. Gallery publishing is disabled for this first test.",
+        "tr": "Telegram Üret alanına test amaçlı MUBA Camera Mini App eklendi. Kullanıcı fotoğrafı açıkça çeker/seçer; MUBA kaynak selfie'yi yalnızca geçici dönüşüm girdisi olarak kullanır, Gallery, veritabanı veya dosya deposunda bilinçli olarak kalıcılaştırmaz ve üretilen MUBA sonucunu doğrudan geri verir. İlk testte Gallery yayını kapalıdır.",
+        "zh": "Telegram 创作区域新增测试版 MUBA Camera Mini App。用户明确拍摄或选择照片；MUBA 仅将源自拍作为临时转换输入，不会有意将其持久保存到 Gallery、数据库或文件存储，并直接返回生成的 MUBA 结果。首次测试禁用 Gallery 发布。",
+        "ar": "تمت إضافة MUBA Camera Mini App تجريبية إلى قسم الإنشاء في Telegram. يلتقط المستخدم الصورة أو يختارها صراحةً؛ يستخدم MUBA صورة السيلفي كمُدخل مؤقت للتحويل فقط ولا يحفظها عمداً في Gallery أو قاعدة البيانات أو تخزين الملفات، ثم يعيد نتيجة MUBA مباشرة. نشر Gallery معطل في الاختبار الأول.",
+        "hi": "Telegram Create में परीक्षण MUBA Camera Mini App जोड़ा गया है। उपयोगकर्ता स्पष्ट रूप से फोटो लेता/चुनता है; MUBA source selfie को केवल अस्थायी transformation input के रूप में उपयोग करता है, उसे Gallery, database या file storage में जानबूझकर स्थायी नहीं करता और generated MUBA result सीधे लौटाता है। पहले परीक्षण में Gallery publishing बंद है।"
+      }
+    },
+    {
       "id": "20260926-transparency-button-index",
       "date": "2026-09-26",
       "type": "improved",

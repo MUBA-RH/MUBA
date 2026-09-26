@@ -81,6 +81,17 @@ def _text_policy(prompt:str)->str:
         "Do not generate pseudo-text or random glyphs. This rule applies to Meme, Image, Sticker and Reaction formats."
     )
 
+def camera_ai_prompt()->str:
+    return (
+        "Create a new MUBA character image inspired by the user's temporary camera photo. "
+        "Use the camera photo only for pose, clothing idea, framing, scene and composition. "
+        "Do not preserve, reproduce or identify the person's face or biometric identity. "
+        "Replace the person with MUBA's canonical facial identity: exceptionally large asymmetrical glossy brown eyes, "
+        "small rounded brown nose, compact furry muzzle, playful open mouth and pink tongue, short dense tan-brown fur. "
+        "Keep the result text-free unless the source scene naturally requires no writing. "
+        "The source camera image is ephemeral input and must never be treated as gallery content."
+    )
+
 def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:
     format_hint={
         "meme":"high-quality realistic meme scene with clear visual storytelling, expressive MUBA body language and believable lighting/environment; the image itself must work without relying on text",
