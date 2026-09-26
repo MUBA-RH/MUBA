@@ -6,6 +6,7 @@ No external AI service or API key is required.
 
 import asyncio
 import hashlib
+import hmac
 import logging
 import json
 import os
@@ -99,6 +100,7 @@ _ASSISTANT_CALL_INTERVAL = 7200
 _ASSISTANT_CALLS = {}
 _ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
 _STORY_PREPARING = set()
+_STORY_QUEUED = set()
 _STORY_GENERATION_LOCK = asyncio.Lock()
 
 
@@ -1661,14 +1663,14 @@ async def daily_story_scheduler(application):
     tz=ZoneInfo("Europe/Istanbul")
     while True:
         now=datetime.now(tz)
-        target=now.replace(hour=9,minute=15,second=0,microsecond=0)
+        target=now.replace(hour=8,minute=30,second=0,microsecond=0)
         if target<=now<now.replace(hour=11,minute=0,second=0,microsecond=0):
             try:
                 await _prepare_daily_story(application)
             except Exception:
                 logger.exception("Daily Story morning catch-up failed")
             now=datetime.now(tz)
-            target=now.replace(hour=9,minute=15,second=0,microsecond=0)
+            target=now.replace(hour=8,minute=30,second=0,microsecond=0)
         if now>=target:
             target+=timedelta(days=1)
         await asyncio.sleep(max(1,(target-now).total_seconds()))
@@ -1679,14 +1681,24 @@ async def daily_story_scheduler(application):
             await asyncio.sleep(60)
 
 async def story_prepare_handler(request: web.Request):
-    """Protected status endpoint for today's prepared Daily Story."""
+    """Wake a sleeping service and queue today's private image preparation."""
     secret=os.getenv("MUBA_STORY_SCHEDULER_SECRET","")
     supplied=request.headers.get("X-MUBA-Story-Secret","")
-    if not secret or not supplied or not hashlib.compare_digest(secret,supplied):
+    if not secret or not supplied or not hmac.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
     item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
     reference=story_reference_for_day(item["day"])
-    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"image_ready":len(item["images"])==1})
+    queued=False
+    if item["status"]!="published" and not item["images"] and item["day"] not in _STORY_PREPARING and item["day"] not in _STORY_QUEUED:
+        _STORY_QUEUED.add(item["day"])
+        async def run_queued():
+            try:
+                await _prepare_daily_story(request.app["telegram_application"])
+            finally:
+                _STORY_QUEUED.discard(item["day"])
+        asyncio.create_task(run_queued())
+        queued=True
+    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"image_ready":len(item["images"])==1,"queued":queued})
 
 async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
