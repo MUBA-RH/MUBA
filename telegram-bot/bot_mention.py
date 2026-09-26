@@ -391,10 +391,24 @@ def create_hub_keyboard(lang,user_id):
         [_section_back(lang)],
     ])
 
+COMMUNITY_GUIDE_LABELS={
+    "en":{"ask":"❓ Learn about MUBA","updates":"🆕 What changed?","daily":"📰 Daily & News","create":"🎨 Create & Gallery","story":"🎬 Follow the Story","system":"🔎 How does MUBA work?","security":"🛡️ Security & Verification"},
+    "tr":{"ask":"❓ MUBA’yı merak ediyorum","updates":"🆕 Neler değişti?","daily":"📰 Günlük & Haberler","create":"🎨 Üretim & Galeri","story":"🎬 Hikâyeyi takip et","system":"🔎 MUBA nasıl çalışıyor?","security":"🛡️ Güvenlik & Doğrulama"},
+    "zh":{"ask":"❓ 了解 MUBA","updates":"🆕 有什么变化？","daily":"📰 日报与新闻","create":"🎨 创作与图库","story":"🎬 关注故事","system":"🔎 MUBA 如何运行？","security":"🛡️ 安全与验证"},
+    "ar":{"ask":"❓ تعرّف على MUBA","updates":"🆕 ما الجديد؟","daily":"📰 اليوميات والأخبار","create":"🎨 الإنشاء والمعرض","story":"🎬 تابع القصة","system":"🔎 كيف يعمل MUBA؟","security":"🛡️ الأمان والتحقق"},
+    "hi":{"ask":"❓ MUBA को जानें","updates":"🆕 क्या बदला?","daily":"📰 दैनिक और समाचार","create":"🎨 बनाएँ और गैलरी","story":"🎬 कहानी देखें","system":"🔎 MUBA कैसे काम करता है?","security":"🛡️ सुरक्षा और सत्यापन"},
+}
+
 def community_hub_keyboard(lang,user_id):
+    g=COMMUNITY_GUIDE_LABELS[lang]
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")],
-        [InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
+        [InlineKeyboardButton(g["ask"],callback_data="ask_muba")],
+        [InlineKeyboardButton(g["updates"],callback_data="updates_center")],
+        [InlineKeyboardButton(g["daily"],callback_data="daily_hub")],
+        [InlineKeyboardButton(g["create"],callback_data="create_hub")],
+        [InlineKeyboardButton(g["story"],callback_data="extra:story")],
+        [InlineKeyboardButton(g["system"],callback_data="transparency:0")],
+        [InlineKeyboardButton(g["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
         [_section_back(lang)],
     ])
 
@@ -410,13 +424,13 @@ def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["community"],callback_data="community_hub")],
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["daily"],callback_data="daily_hub")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["community"],callback_data="community_hub")],
     ]
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
