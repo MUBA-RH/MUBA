@@ -1,4 +1,4 @@
-"""The public Gallery can only receive explicit, authorized Studio shares."""
+"""Only real Studio generations enter the public Gallery; Story and DEV stay separate."""
 import asyncio
 import os
 import pathlib
@@ -47,11 +47,16 @@ class GalleryShareFlowTests(unittest.TestCase):
     def _share(self,key,origin="",**auth):
         return asyncio.run(self.bot.studio_share_handler(_Request({"key":key,**auth},origin)))
 
-    def test_generation_and_story_archive_never_publish_automatically(self):
+    def test_story_archive_stays_out_of_gallery_while_user_creation_is_published(self):
         story=muba_gallery.archive_creation(b"frame","image/png","Story frame","image","telegram")
-        self._output("visitor","web","visitor")
         self.assertEqual(muba_gallery.list_gallery(shared_only=True),[])
         self.assertEqual(muba_gallery.read_gallery_image(story["id"])[0],b"frame")
+        item=self.bot._publish_studio_creation(b"studio-image","image/png","Community MUBA","meme","web")
+        self.assertEqual(item["source"],"web")
+        self.assertEqual([row["id"] for row in muba_gallery.list_gallery(shared_only=True)],[item["id"]])
+
+    def test_legacy_explicit_share_endpoint_remains_compatible(self):
+        self._output("visitor","web","visitor")
         result=self._share("visitor",origin="https://muba-rh.github.io")
         self.assertEqual(result.status,200)
         self.assertEqual(len(muba_gallery.list_gallery(shared_only=True)),1)
@@ -61,6 +66,8 @@ class GalleryShareFlowTests(unittest.TestCase):
     def test_untrusted_origin_and_dev_previews_cannot_share(self):
         self._output("visitor","web","visitor")
         self.assertEqual(self._share("visitor",origin="https://untrusted.example").status,403)
+        self.bot._STUDIO_OUTPUTS["visitor"]["preview_only"]=True
+        self.assertEqual(self._share("visitor",origin="https://muba-rh.github.io").status,403)
         self._output("developer","telegram",934598759)
         token=self.bot.studio_token(934598759,self.bot.TOKEN)
         self.assertEqual(self._share("developer",uid=934598759,studioToken=token).status,403)
