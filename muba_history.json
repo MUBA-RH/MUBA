@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260926-price-news-reconnect",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": [
+        "prices",
+        "news"
+      ],
+      "title": {
+        "en": "Live prices and news reconnect",
+        "tr": "Canlı fiyat ve haberlerin yeniden bağlanması",
+        "zh": "实时价格与新闻自动重连",
+        "ar": "إعادة اتصال الأسعار والأخبار المباشرة",
+        "hi": "लाइव कीमतों और समाचारों का पुनः कनेक्शन"
+      },
+      "text": {
+        "en": "The BTC and ETH cards show a connecting state while live data loads, and price and verified news requests time out and retry automatically when the service wakes. Existing prices and news display after the connection succeeds.",
+        "tr": "BTC ve ETH kartları canlı veri yüklenirken bağlantı durumunu gösterir; fiyat ve doğrulanmış haber istekleri hizmet uyanırken zaman aşımından sonra otomatik yeniden denenir. Bağlantı kurulunca mevcut fiyatlar ve haberler görünür.",
+        "zh": "BTC 和 ETH 卡片在实时数据加载时显示连接状态；服务唤醒期间，价格和已核实新闻请求超时后会自动重试。连接成功后显示现有价格和新闻。",
+        "ar": "تعرض بطاقتا BTC وETH حالة الاتصال أثناء تحميل البيانات المباشرة، وتعيد طلبات الأسعار والأخبار المتحقَّق منها المحاولة تلقائيًا بعد انتهاء المهلة أثناء استيقاظ الخدمة. تظهر الأسعار والأخبار الحالية عند نجاح الاتصال.",
+        "hi": "लाइव डेटा आने तक BTC और ETH कार्ड कनेक्शन स्थिति दिखाते हैं। सेवा शुरू होने पर मूल्य और सत्यापित समाचार अनुरोध समय सीमा के बाद अपने आप दोबारा कोशिश करते हैं। कनेक्शन सफल होने पर मौजूदा कीमतें और समाचार दिखते हैं।"
+      }
+    },
+    {
       "id": "20260926-btc-eth-price-art-watermarks",
       "date": "2026-09-26",
       "type": "improved",
