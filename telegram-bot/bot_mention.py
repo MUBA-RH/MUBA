@@ -392,23 +392,26 @@ def create_hub_keyboard(lang,user_id):
     ])
 
 COMMUNITY_GUIDE_LABELS={
-    "en":{"ask":"❓ Learn about MUBA","updates":"🆕 What changed?","daily":"📰 Daily & News","create":"🎨 Create & Gallery","story":"🎬 Follow the Story","system":"🔎 How does MUBA work?","security":"🛡️ Security & Verification"},
-    "tr":{"ask":"❓ MUBA’yı merak ediyorum","updates":"🆕 Neler değişti?","daily":"📰 Günlük & Haberler","create":"🎨 Üretim & Galeri","story":"🎬 Hikâyeyi takip et","system":"🔎 MUBA nasıl çalışıyor?","security":"🛡️ Güvenlik & Doğrulama"},
-    "zh":{"ask":"❓ 了解 MUBA","updates":"🆕 有什么变化？","daily":"📰 日报与新闻","create":"🎨 创作与图库","story":"🎬 关注故事","system":"🔎 MUBA 如何运行？","security":"🛡️ 安全与验证"},
-    "ar":{"ask":"❓ تعرّف على MUBA","updates":"🆕 ما الجديد؟","daily":"📰 اليوميات والأخبار","create":"🎨 الإنشاء والمعرض","story":"🎬 تابع القصة","system":"🔎 كيف يعمل MUBA؟","security":"🛡️ الأمان والتحقق"},
-    "hi":{"ask":"❓ MUBA को जानें","updates":"🆕 क्या बदला?","daily":"📰 दैनिक और समाचार","create":"🎨 बनाएँ और गैलरी","story":"🎬 कहानी देखें","system":"🔎 MUBA कैसे काम करता है?","security":"🛡️ सुरक्षा और सत्यापन"},
+    "en":{"web":"🌐 MUBA Website · GO","x":"𝕏 MUBA X Account · GO","ask":"❓ Want to know MUBA? · ASK MUBA","updates":"🆕 What changed in MUBA? · UPDATES","news":"📰 Crypto news · NEWS","story":"🎬 Follow MUBA's story · STORY","create":"🎨 Want to create? · CREATE","system":"🔎 How does MUBA work? · TRANSPARENCY","security":"🛡️ Security / verification · CHECK","devlog":"📜 Development Log"},
+    "tr":{"web":"🌐 MUBA Web Sayfası · GİT","x":"𝕏 MUBA X Hesabı · GİT","ask":"❓ MUBA’yı tanımak ister misin? · ASK MUBA","updates":"🆕 MUBA’da neler değişti? · YENİLİKLER","news":"📰 Kripto haberleri · NEWS","story":"🎬 MUBA’nın hikâyesini takip et · HİKÂYE","create":"🎨 Bir şey üretmek ister misin? · CREATE","system":"🔎 MUBA nasıl çalışıyor? · ŞEFFAFLIK","security":"🛡️ Güvenlik / doğrulama · KONTROL","devlog":"📜 Geliştirme Günlüğü"},
+    "zh":{"web":"🌐 MUBA 网站 · 前往","x":"𝕏 MUBA X 账号 · 前往","ask":"❓ 想了解 MUBA？· ASK MUBA","updates":"🆕 MUBA 有什么变化？· 更新","news":"📰 加密新闻 · NEWS","story":"🎬 关注 MUBA 的故事 · 故事","create":"🎨 想创作吗？· CREATE","system":"🔎 MUBA 如何运行？· 透明度","security":"🛡️ 安全 / 验证 · 检查","devlog":"📜 开发日志"},
+    "ar":{"web":"🌐 موقع MUBA · اذهب","x":"𝕏 حساب MUBA على X · اذهب","ask":"❓ هل تريد معرفة MUBA؟ · ASK MUBA","updates":"🆕 ما الذي تغير في MUBA؟ · التحديثات","news":"📰 أخبار الكريبتو · NEWS","story":"🎬 تابع قصة MUBA · القصة","create":"🎨 هل تريد الإنشاء؟ · CREATE","system":"🔎 كيف يعمل MUBA؟ · الشفافية","security":"🛡️ الأمان / التحقق · فحص","devlog":"📜 سجل التطوير"},
+    "hi":{"web":"🌐 MUBA वेबसाइट · जाएँ","x":"𝕏 MUBA X अकाउंट · जाएँ","ask":"❓ MUBA को जानना चाहते हैं? · ASK MUBA","updates":"🆕 MUBA में क्या बदला? · अपडेट","news":"📰 क्रिप्टो समाचार · NEWS","story":"🎬 MUBA की कहानी देखें · कहानी","create":"🎨 कुछ बनाना चाहते हैं? · CREATE","system":"🔎 MUBA कैसे काम करता है? · पारदर्शिता","security":"🛡️ सुरक्षा / सत्यापन · जाँच","devlog":"📜 विकास लॉग"},
 }
 
 def community_hub_keyboard(lang,user_id):
     g=COMMUNITY_GUIDE_LABELS[lang]
     return InlineKeyboardMarkup([
+        [InlineKeyboardButton(g["web"],url="https://muba-rh.github.io/MUBA/")],
+        [InlineKeyboardButton(g["x"],url="https://x.com/MUBA_RH")],
         [InlineKeyboardButton(g["ask"],callback_data="ask_muba")],
-        [InlineKeyboardButton(g["updates"],callback_data="updates_center")],
-        [InlineKeyboardButton(g["daily"],callback_data="daily_hub")],
-        [InlineKeyboardButton(g["create"],callback_data="create_hub")],
+        [InlineKeyboardButton(g["updates"]+_global_update_badge(lang,user_id),callback_data="updates_center")],
+        [InlineKeyboardButton(g["news"],callback_data="news")],
         [InlineKeyboardButton(g["story"],callback_data="extra:story")],
+        [InlineKeyboardButton(g["create"],callback_data="create_hub")],
         [InlineKeyboardButton(g["system"],callback_data="transparency:0")],
         [InlineKeyboardButton(g["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
+        [InlineKeyboardButton(g["devlog"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
         [_section_back(lang)],
     ])
 
@@ -428,7 +431,6 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["daily"],callback_data="daily_hub")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
     ]
@@ -598,7 +600,7 @@ def devlog_keyboard(lang,category=None,index=0):
             [InlineKeyboardButton(labels["new"],callback_data="devlog:new:0")],
             [InlineKeyboardButton(labels["updates"],callback_data="devlog:updates:0")],
             [InlineKeyboardButton(labels["fixed"],callback_data="devlog:fixed:0")],
-            [InlineKeyboardButton(labels["back"],callback_data="daily")],
+            [InlineKeyboardButton(labels["back"],callback_data="community_hub")],
         ])
     total=len(DEVLOG[lang][category])
     pager=[]
