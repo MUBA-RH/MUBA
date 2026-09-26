@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260926-camera-main-menu",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA Camera moved to the main menu",
+        "tr": "MUBA Camera ana menüye taşındı",
+        "zh": "MUBA Camera 已移至主菜单",
+        "ar": "نقل MUBA Camera إلى القائمة الرئيسية",
+        "hi": "MUBA Camera मुख्य मेनू में"
+      },
+      "text": {
+        "en": "MUBA Camera is now directly accessible from the Assistant main menu. The existing Create-area entry remains available.",
+        "tr": "MUBA Camera artık Assistant ana menüsünden doğrudan açılabilir. Üret alanındaki mevcut giriş de korunur.",
+        "zh": "现在可从 Assistant 主菜单直接打开 MUBA Camera，同时保留创作区域中的现有入口。",
+        "ar": "يمكن الآن فتح MUBA Camera مباشرة من القائمة الرئيسية للمساعد، مع بقاء المدخل الحالي في قسم الإنشاء.",
+        "hi": "MUBA Camera अब Assistant के मुख्य मेनू से सीधे खुलता है। Create क्षेत्र का मौजूदा प्रवेश भी बना रहता है।"
+      }
+    },
+    {
       "id": "20260926-telegram-muba-camera-private-test",
       "date": "2026-09-26",
       "type": "new",
