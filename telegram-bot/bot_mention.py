@@ -57,14 +57,15 @@ from muba_daily import DAILY_LABELS, daily_text, DEVLOG_LABELS, DEVLOG, devlog_p
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check, TOPIC_PROGRESS, GUIDE_SECTIONS, SHARE_LABELS, SHARE_TWEETS
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
+from ecosystem_expansion import COMMUNITY_RECORDS, ASK_RECORDS, TRANSPARENCY_RECORDS, ARCHIVE_POLICY
 
 PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio","games")
 
 def assistant_content_count():
     """Count structured user-facing Assistant content from live registries."""
-    community_routes=len(COMMUNITY_GUIDE_LABELS.get("en",{}))
-    transparency_sections=len(TRANSPARENCY_PAGES.get("en",[]))+len(EXTRA_TRANSPARENCY_PAGES.get("en",[]))
-    ask_items=len(QUESTIONS.get("en",[]))+sum(len(items) for items in TOPIC_PROGRESS.get("en",{}).values())
+    community_routes=3+len(COMMUNITY_RECORDS.get("en",[]))
+    transparency_sections=len(TRANSPARENCY_PAGES.get("en",[]))
+    ask_items=len(QUESTIONS.get("en",[]))+sum(len(items) for items in TOPIC_PROGRESS.get("en",{}).values())+len(ASK_RECORDS.get("en",[]))
     create_areas=3
     return community_routes+transparency_sections+ask_items+create_areas
 
@@ -82,6 +83,8 @@ def assistant_menu_text(lang):
 
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
+for _lang, _records in TRANSPARENCY_RECORDS.items():
+    TRANSPARENCY_PAGES[_lang].extend(f"{title}\n\n{body}" for _,title,body in _records)
 from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
@@ -434,6 +437,7 @@ def community_hub_keyboard(lang,user_id):
         [InlineKeyboardButton(g["about"],callback_data="community_info:about")],
         [InlineKeyboardButton(g["join"],callback_data="community_info:join")],
         [InlineKeyboardButton(g["channels"],callback_data="community_info:channels")],
+        *[[InlineKeyboardButton(title,callback_data=f"community_archive:{record_id}") ] for record_id,title,_ in COMMUNITY_RECORDS.get(lang,[])],
         [InlineKeyboardButton(g["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(g["updates"]+_global_update_badge(lang,user_id),callback_data="updates_center")],
         [InlineKeyboardButton(g["news"],callback_data="news")],
@@ -696,11 +700,19 @@ def share_keyboard(lang,index=None):
     rows.append([InlineKeyboardButton(labels["back"],callback_data="menu" if index is None else "share")])
     return InlineKeyboardMarkup(rows)
 
+ASK_ARCHIVE_LABELS={"en":"🧠 MUBA Knowledge World","tr":"🧠 MUBA Bilgi Dünyası","zh":"🧠 MUBA 知识世界","ar":"🧠 عالم معرفة MUBA","hi":"🧠 MUBA ज्ञान संसार"}
+
+def ask_archive_keyboard(lang):
+    rows=[[InlineKeyboardButton(title,callback_data=f"ask_archive:{record_id}")] for record_id,title,_,_ in ASK_RECORDS.get(lang,[])]
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="ask_muba")])
+    return InlineKeyboardMarkup(rows)
+
 def ask_muba_keyboard(lang):
     labels=CATEGORY_LABELS[lang]
     rows=[]
     for category in ("discover","understand","world"):
         rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
+    rows.append([InlineKeyboardButton(ASK_ARCHIVE_LABELS[lang],callback_data="ask_archive")])
     rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
@@ -990,6 +1002,18 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if items:
             i=max(0,min(i,len(items)-1))
             await q.edit_message_text(items[i][1],reply_markup=topic_keyboard(lang,topic)); return
+    if data.startswith("community_archive:"):
+        record_id=data.split(":",1)[1]
+        item=next((x for x in COMMUNITY_RECORDS.get(lang,[]) if x[0]==record_id),None)
+        if item:
+            await q.edit_message_text(item[2],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(TEXT[lang]["back"],callback_data="community_hub")]])); return
+    if data=="ask_archive":
+        await q.edit_message_text(ASK_ARCHIVE_LABELS[lang],reply_markup=ask_archive_keyboard(lang)); return
+    if data.startswith("ask_archive:"):
+        record_id=data.split(":",1)[1]
+        item=next((x for x in ASK_RECORDS.get(lang,[]) if x[0]==record_id),None)
+        if item:
+            await q.edit_message_text(item[3],reply_markup=ask_archive_keyboard(lang)); return
     if data=="ask_muba":
         await q.edit_message_text("💬 ASK MUBA",reply_markup=ask_muba_keyboard(lang)); return
     if data.startswith("category:"):
