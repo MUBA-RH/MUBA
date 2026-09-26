@@ -1329,11 +1329,14 @@ async def studio_generate_handler(request: web.Request):
     import secrets, time
     key=secrets.token_urlsafe(24)
     _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time(),"prompt":prompt,"kind":kind,"source":"telegram","owner":uid}
+    gallery_item=_publish_studio_creation(body,out_type,prompt,kind,"telegram") if not is_dev(uid) else None
+    if gallery_item: _STUDIO_OUTPUTS[key]["gallery_id"]=gallery_item["id"]
     output_url=EXTERNAL_URL.rstrip("/")+"/studio/output/"+key
     return web.Response(body=body,content_type=out_type,headers={
         "X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid)),
         "X-MUBA-Output-URL":output_url,
-        "X-MUBA-Gallery-ID":"",
+        "X-MUBA-Gallery-ID":gallery_item["id"] if gallery_item else "",
+        "X-MUBA-Gallery-Status":"test" if is_dev(uid) else "published" if gallery_item else "unavailable",
         "Content-Disposition":'inline; filename="muba-studio.png"',
     })
 
@@ -1357,7 +1360,7 @@ def _web_studio_cors_headers(origin: str) -> dict:
         "Access-Control-Allow-Origin":origin,
         "Access-Control-Allow-Methods":"POST, OPTIONS",
         "Access-Control-Allow-Headers":"Content-Type",
-        "Access-Control-Expose-Headers":"X-MUBA-Remaining, X-MUBA-Output-URL, X-MUBA-Gallery-ID",
+        "Access-Control-Expose-Headers":"X-MUBA-Remaining, X-MUBA-Output-URL, X-MUBA-Gallery-ID, X-MUBA-Gallery-Status",
         "Vary":"Origin",
     }
 
@@ -1425,12 +1428,17 @@ async def studio_web_generate_handler(request: web.Request):
     import secrets
     key=secrets.token_urlsafe(24)
     _STUDIO_OUTPUTS[key]={"body":body,"content_type":out_type,"created":time.time(),"prompt":prompt,"kind":kind,"source":"web","owner":client_key}
+    preview_only=data.get("preview_only") is True
+    _STUDIO_OUTPUTS[key]["preview_only"]=preview_only
+    gallery_item=None if preview_only else _publish_studio_creation(body,out_type,prompt,kind,"web")
+    if gallery_item: _STUDIO_OUTPUTS[key]["gallery_id"]=gallery_item["id"]
     output_url=EXTERNAL_URL.rstrip("/")+"/studio/output/"+key
     headers=_web_studio_cors_headers(origin)
     headers.update({
         "X-MUBA-Remaining":str(_web_studio_remaining(client_key)),
         "X-MUBA-Output-URL":output_url,
-        "X-MUBA-Gallery-ID":"",
+        "X-MUBA-Gallery-ID":gallery_item["id"] if gallery_item else "",
+        "X-MUBA-Gallery-Status":"test" if preview_only else "published" if gallery_item else "unavailable",
         "Content-Disposition":'inline; filename="muba-studio.png"',
         "Cache-Control":"no-store",
     })
@@ -1442,6 +1450,16 @@ def _archive_studio_output(body,out_type,prompt,kind,source):
         return archive_creation(body,content_type,prompt,kind,source)
     except Exception:
         logger.exception("MUBA Gallery archive write failed")
+        return None
+
+def _publish_studio_creation(body,out_type,prompt,kind,source):
+    """Archive a real Studio creation, then make only that record visible."""
+    item=_archive_studio_output(body,out_type,prompt,kind,source)
+    if not item: return None
+    try:
+        return share_gallery_item(item["id"])
+    except Exception:
+        logger.exception("MUBA Gallery automatic publication failed")
         return None
 
 def _gallery_cors_headers():
@@ -1614,6 +1632,8 @@ async def studio_share_handler(request: web.Request):
     output=_STUDIO_OUTPUTS.get(key)
     if not output or time.time()-output["created"]>86400:
         return _web_studio_json(origin,{"error":"Creation expired. Create another image to share."},410)
+    if output.get("preview_only"):
+        return _web_studio_json(origin,{"error":"Test preview cannot be added to Gallery."},403)
     if output.get("source")=="web":
         if origin!=_WEB_STUDIO_ALLOWED_ORIGIN:
             return _web_studio_json(origin,{"error":"Forbidden."},403)

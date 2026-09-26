@@ -377,11 +377,21 @@
 
     .studio-grid {
       display: grid;
-      grid-template-columns: .92fr 1.08fr;
+      grid-template-columns: 1fr 1fr;
       gap: 20px;
-      align-items: stretch;
+      align-items: start;
     }
-    .studio-card { padding: 26px; }
+    .studio-workspace { padding: 26px; }
+    .studio-workspace .studio-identity { margin-bottom: 20px; }
+    .studio-workspace .studio-identity p { max-width: 800px; }
+    .studio-workspace .prompt-box, .studio-workspace .tweet-lab {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.025);
+    }
+    .studio-workspace .tweet-lab { margin-top: 0; }
     .studio-identity {
       display: grid;
       grid-template-columns: 92px 1fr;
@@ -397,33 +407,7 @@
       border: 3px solid var(--purple);
       box-shadow: 0 0 24px rgba(176,38,255,.26);
     }
-    .studio-identity h3 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 1.55rem;
-      margin-bottom: 5px;
-    }
     .studio-identity p { color: var(--muted); line-height: 1.45; }
-    .studio-flow {
-      display: grid;
-      grid-template-columns: repeat(4,1fr);
-      gap: 8px;
-      margin: 20px 0;
-    }
-    .flow-step {
-      text-align: center;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 12px 8px;
-      background: rgba(255,255,255,.025);
-      font-size: .82rem;
-      font-weight: 800;
-    }
-    .studio-note {
-      margin-top: 16px;
-      color: var(--muted);
-      font-size: .88rem;
-      line-height: 1.5;
-    }
 
     .prompt-box { padding: 26px; }
     .prompt-box h3 {
@@ -671,14 +655,15 @@
       .hero-actions { justify-content: center; }
       .hero .eyebrow { margin-inline: auto; }
       .knowledge-intro, .studio-grid { grid-template-columns: 1fr; }
-      .studio-flow, .creator-types { grid-template-columns: repeat(2,1fr); }
+      .creator-types { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 560px) {
       .shell { width: min(100% - 24px, 1180px); }
       .section { padding: 68px 0; }
       .hero { padding-top: 42px; }
       .hero h1 { font-size: clamp(3.45rem, 22vw, 5.2rem); }
-      .devlog-panel, .knowledge-shell, .studio-card, .prompt-box, .gallery-wrap, .tweet-lab { padding: 18px; }
+      .devlog-panel, .knowledge-shell, .prompt-box, .gallery-wrap, .tweet-lab, .studio-workspace { padding: 18px; }
+      .studio-workspace .prompt-box, .studio-workspace .tweet-lab { padding: 16px; }
       .official { grid-template-columns: 1fr; }
       .studio-identity { grid-template-columns: 72px 1fr; }
       .studio-identity img { width: 72px; height: 72px; }
@@ -822,31 +807,18 @@
         <div class="section-head">
           <div class="eyebrow">CREATE · REMIX · SHARE</div>
           <h2 class="section-title">MUBA <span>Studio</span></h2>
-          <p class="section-copy">Turn MUBA into content directly on the website. Create here, see the result here, then copy, download or move into MUBA TWT. Telegram Studio stays available for anyone who wants to continue there.</p>
+          <p class="section-copy">Create a MUBA visual and prepare its X post in one place. Successful community creations appear in MUBA Gallery automatically.</p>
         </div>
 
-        <div class="studio-grid">
-          <div class="studio-card card">
-            <div class="studio-identity">
-              <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
-              <div>
-                <h3>MUBA Studio</h3>
-                <p>Create MUBA memes, images, stickers and reactions on the web or continue with the Telegram Studio experience.</p>
-              </div>
-            </div>
-            <div class="studio-flow">
-              <div class="flow-step">DESCRIBE</div>
-              <div class="flow-step">CREATE</div>
-              <div class="flow-step">CHOOSE TWT</div>
-              <div class="flow-step">SHARE</div>
-            </div>
-            <a class="btn btn-primary" href="#web-studio">Create on Web</a>
-            <p class="studio-note">Web Studio gives visitors a limited public creation path. Telegram Studio remains available as the authenticated MUBA creator experience.</p>
+        <div class="studio-workspace card">
+          <div class="studio-identity">
+            <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
+            <p>Make a visual, choose an X post, then share it with the community. Telegram Studio remains available for creators who prefer it.</p>
           </div>
-
-          <div class="prompt-box card" id="web-studio">
+          <div class="studio-grid">
+          <div class="prompt-box" id="web-studio">
             <h3>Create MUBA on the web</h3>
-            <p>Write your idea, choose a format and create it here. By default, MUBA Studio creates without words or captions; ask for text only when you want visible writing. Public Web Studio limit: 3 successful creations per day.</p>
+            <p>Write your idea and choose a format. Text appears in the image only if you request it. Successful creations are added to MUBA Gallery automatically.</p>
             <textarea id="studio-prompt" maxlength="120" placeholder="Example: MUBA walks into a neon city while the timeline melts behind him."></textarea>
             <div class="creator-types" id="creator-types">
               <button class="creator-type active" type="button" data-kind="meme">Meme</button>
@@ -866,12 +838,38 @@
               <img id="studio-result-img" alt="Generated MUBA Studio creation" />
               <div class="studio-preview-tools">
                 <a class="btn btn-primary" id="download-image" href="#" download="MUBA-Studio.png">Download</a>
-                <button class="btn btn-secondary" type="button" id="use-twt">Use in MUBA TWT</button>
-                <button class="btn btn-secondary" type="button" id="share-gallery">Share to Gallery</button>
+                <button class="btn btn-secondary" type="button" id="use-twt">Use in MUBA X</button>
                 <button class="btn btn-soft" type="button" id="create-another">Create another</button>
               </div>
               <p class="studio-preview-meta" id="studio-preview-meta"></p>
             </div>
+          </div>
+
+          <div class="tweet-lab" id="twt">
+            <div class="section-head" style="margin-bottom:18px">
+              <div class="eyebrow">MUBA X</div>
+              <h3 class="section-title" style="font-size:clamp(1.8rem,4vw,2.8rem)">Give it a <span>voice.</span></h3>
+              <p class="section-copy">Choose a MUBA tone, copy a post or share it on X.</p>
+            </div>
+            <div class="tweet-tabs" id="tweet-tabs" aria-label="MUBA X categories"></div>
+            <div class="tweet-card">
+              <div class="tweet-text" id="tweet-text"></div>
+              <div>
+                <div class="tweet-tools">
+                  <button class="icon-btn" type="button" id="tweet-prev" aria-label="Previous MUBA TWT">←</button>
+                  <button class="icon-btn" type="button" id="tweet-next" aria-label="Next MUBA TWT">→</button>
+                  <span class="pager-count" id="tweet-count"></span>
+                </div>
+                <div class="tweet-tools">
+                  <button class="btn btn-secondary" type="button" id="copy-tweet">Copy TWT</button>
+                  <button class="btn btn-soft" type="button" id="copy-tags">Copy tags</button>
+                  <a class="btn btn-primary" id="share-x" href="#" target="_blank" rel="noopener">Share on X</a>
+                </div>
+                <div class="tags-box" id="share-tags">$MUBA #MUBA 🪶</div>
+                <div class="status-text" id="tweet-status" aria-live="polite"></div>
+              </div>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -879,7 +877,7 @@
           <div class="gallery-head">
             <div class="eyebrow">MUBA GALLERY</div>
             <h3>CREATE MUBA. <span>BECOME PART OF THE STORY.</span></h3>
-            <p>Creations shared by the community appear here. Your Studio image stays private until you choose to share it.</p>
+            <p>New visuals created by the community in MUBA Studio appear here automatically. Developer tests and Daily Story frames stay out of this gallery.</p>
           </div>
           <div class="gallery-filters" id="gallery-filters" aria-label="MUBA Gallery filters">
             <button class="chip active" type="button" data-gallery-kind="all">ALL</button>
@@ -892,31 +890,6 @@
           <div class="gallery-strip" id="gallery-strip" aria-label="Community MUBA creations"></div>
         </div>
 
-        <div class="tweet-lab card" id="twt">
-          <div class="section-head" style="margin-bottom:18px">
-            <div class="eyebrow">MUBA TWT</div>
-            <h3 class="section-title" style="font-size:clamp(1.8rem,4vw,2.8rem)">Give it a <span>voice.</span></h3>
-            <p class="section-copy">Choose a MUBA tone, move between ready-to-share posts, copy the text or open it directly on X.</p>
-          </div>
-          <div class="tweet-tabs" id="tweet-tabs" aria-label="MUBA TWT categories"></div>
-          <div class="tweet-card">
-            <div class="tweet-text" id="tweet-text"></div>
-            <div>
-              <div class="tweet-tools">
-                <button class="icon-btn" type="button" id="tweet-prev" aria-label="Previous MUBA TWT">←</button>
-                <button class="icon-btn" type="button" id="tweet-next" aria-label="Next MUBA TWT">→</button>
-                <span class="pager-count" id="tweet-count"></span>
-              </div>
-              <div class="tweet-tools">
-                <button class="btn btn-secondary" type="button" id="copy-tweet">Copy TWT</button>
-                <button class="btn btn-soft" type="button" id="copy-tags">Copy tags</button>
-                <a class="btn btn-primary" id="share-x" href="#" target="_blank" rel="noopener">Share on X</a>
-              </div>
-              <div class="tags-box" id="share-tags">$MUBA #MUBA 🪶</div>
-              <div class="status-text" id="tweet-status" aria-live="polite"></div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -1498,7 +1471,7 @@
         const payload=await response.json();
         const items=Array.isArray(payload.items) ? payload.items : [];
         if (!items.length) {
-          strip.innerHTML='<div class="gallery-empty">Community Gallery is ready. Create a visual in MUBA Studio and choose Share to Gallery to add it here.</div>';
+          strip.innerHTML='<div class="gallery-empty">Community Gallery is ready. New user creations will appear here automatically.</div>';
           status.textContent="";
           return;
         }
@@ -1531,7 +1504,6 @@
 
     let creatorKind = "meme";
     let studioObjectUrl = "";
-    let studioShareKey = "";
 
     function setStudioStatus(text, state = "") {
       const el = document.getElementById("studio-generate-status");
@@ -1540,10 +1512,6 @@
     }
 
     function resetStudioPreview() {
-      studioShareKey = "";
-      const shareButton = document.getElementById("share-gallery");
-      shareButton.disabled = false;
-      shareButton.textContent = "Share to Gallery";
       if (studioObjectUrl) {
         URL.revokeObjectURL(studioObjectUrl);
         studioObjectUrl = "";
@@ -1599,7 +1567,7 @@
         const response = await fetch(studioApiBase + "/studio/web-generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, kind: creatorKind })
+          body: JSON.stringify({ prompt, kind: creatorKind, preview_only: new URLSearchParams(location.search).has("studio_test") })
         });
 
         if (!response.ok) {
@@ -1612,45 +1580,23 @@
         }
 
         const blob = await response.blob();
-        const outputUrl = response.headers.get("X-MUBA-Output-URL") || "";
-        studioShareKey = outputUrl.startsWith(studioApiBase + "/studio/output/") ? outputUrl.slice((studioApiBase + "/studio/output/").length) : "";
         studioObjectUrl = URL.createObjectURL(blob);
         document.getElementById("studio-result-img").src = studioObjectUrl;
         document.getElementById("download-image").href = studioObjectUrl;
         document.getElementById("studio-preview").hidden = false;
         const remaining = response.headers.get("X-MUBA-Remaining");
+        const galleryStatus = response.headers.get("X-MUBA-Gallery-Status");
         document.getElementById("studio-preview-meta").textContent =
-          "Created with MUBA Studio." + (remaining !== null ? " " + remaining + "/3 web creations left today." : "");
-        setStudioStatus("Created. Your MUBA visual is ready.", "ok");
+          "Created with MUBA Studio." + (remaining !== null ? " " + remaining + "/1 web creations left today." : "");
+        if (galleryStatus === "published") { setStudioStatus("Created and added to MUBA Gallery.", "ok"); loadGallery(); }
+        else if (galleryStatus === "test") setStudioStatus("Test preview ready. Gallery was not changed.", "ok");
+        else setStudioStatus("Image created, but Gallery could not save it. Download your image now.", "error");
       } catch (error) {
         const message = error && error.message ? error.message : "Web Studio is unavailable right now.";
         setStudioStatus(message + " You can still use Telegram Studio.", "error");
       } finally {
         button.disabled = false;
         button.textContent = "CREATE";
-      }
-    });
-
-    document.getElementById("share-gallery").addEventListener("click", async () => {
-      const button = document.getElementById("share-gallery");
-      if (!studioShareKey) { setStudioStatus("This creation is no longer available to share. Create another image.", "error"); return; }
-      button.disabled = true;
-      setStudioStatus("Sharing your creation…", "busy");
-      try {
-        const response = await fetch(studioApiBase + "/studio/share", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: studioShareKey })
-        });
-        if (!response.ok) {
-          const payload = await response.json();
-          throw new Error(payload.error || "Gallery is temporarily unavailable.");
-        }
-        button.textContent = "Shared to Gallery";
-        setStudioStatus("Shared to MUBA Gallery.", "ok");
-        loadGallery();
-      } catch (error) {
-        button.disabled = false;
-        setStudioStatus(error.message || "Gallery is temporarily unavailable.", "error");
       }
     });
 

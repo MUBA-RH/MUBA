@@ -11,8 +11,11 @@ class GalleryAndUpdatesWiringTests(unittest.TestCase):
         self.assertIn('app.router.add_get("/gallery/image/{item_id}", gallery_image_handler)',BOT)
         self.assertIn('app.router.add_post("/studio/share", studio_share_handler)',BOT)
         self.assertIn('list_gallery(limit=limit,kind=kind,shared_only=True)',BOT)
-        self.assertNotIn('_archive_studio_output(body,out_type,prompt,kind,"web")',BOT)
-        self.assertNotIn('_archive_studio_output(body,out_type,prompt,kind,"telegram")',BOT)
+        self.assertIn('_publish_studio_creation(body,out_type,prompt,kind,"web")',BOT)
+        self.assertIn('_publish_studio_creation(body,out_type,prompt,kind,"telegram") if not is_dev(uid)',BOT)
+        self.assertIn('preview_only=data.get("preview_only") is True',BOT)
+        self.assertIn('share_gallery_item(item["id"])',BOT)
+        self.assertIn('shared_only=True',BOT)
 
     def test_public_gallery_metadata_excludes_user_identity(self):
         handler=BOT[BOT.index("async def gallery_list_handler"):BOT.index("async def studio_share_handler")]
@@ -37,6 +40,27 @@ class GalleryAndUpdatesWiringTests(unittest.TestCase):
         self.assertNotIn('id="gallery-prev"',INDEX)
         self.assertNotIn('id="gallery-next"',INDEX)
         self.assertIn('loadGallery();',INDEX)
+
+    def test_web_studio_and_x_are_one_workspace(self):
+        from html.parser import HTMLParser
+        class StudioLayout(HTMLParser):
+            def __init__(self):
+                super().__init__(); self.depth=0; self.workspace=0; self.ids=set()
+            def handle_starttag(self,tag,attrs):
+                if tag!="div": return
+                attrs=dict(attrs)
+                if "studio-workspace" in attrs.get("class","").split():
+                    self.workspace+=1; self.depth=1
+                elif self.depth: self.depth+=1
+                if self.depth and attrs.get("id"): self.ids.add(attrs["id"])
+            def handle_endtag(self,tag):
+                if tag=="div" and self.depth: self.depth-=1
+        parsed=StudioLayout(); parsed.feed(INDEX)
+        self.assertEqual(parsed.workspace,1)
+        self.assertTrue({"web-studio","twt"}.issubset(parsed.ids))
+        self.assertNotIn('class="studio-card card"',INDEX)
+        self.assertEqual(INDEX.count('class="gallery-wrap card" id="gallery"'),1)
+        self.assertNotIn('id="share-gallery"',INDEX)
 
 if __name__=="__main__":
     unittest.main(verbosity=2)
