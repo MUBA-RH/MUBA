@@ -58,7 +58,7 @@ from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 
-PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio")
+PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio","games")
 
 def assistant_content_count():
     """Count structured user-facing Assistant content from live registries."""
@@ -387,11 +387,11 @@ def _legacy_area_global_index(lang,area,area_index):
     return _global_update_index(lang,area_rows[area_index].get("id"))
 
 ASSISTANT_UI={
-    "en":{"ask":"💬 ASK MUBA","daily":"📰 MUBA DAILY","create":"🎨 MUBA CREATE","studio":"🎭 MUBA Studio","community":"🧭 MUBA COMMUNITY","dev":"⚙️ DEV TOOLS","daily_story":"🎬 MUBA Daily Story"},
-    "tr":{"ask":"💬 MUBA'YA SOR","daily":"📰 MUBA GÜNLÜK","create":"🎨 MUBA OLUŞTUR","studio":"🎭 MUBA Stüdyo","community":"🧭 MUBA TOPLULUĞU","dev":"⚙️ DEV ARAÇLARI","daily_story":"🎬 MUBA Günlük Hikâye"},
-    "zh":{"ask":"💬 询问 MUBA","daily":"📰 MUBA 日报","create":"🎨 MUBA 创作","studio":"🎭 MUBA 工作室","community":"🧭 MUBA 社区","dev":"⚙️ DEV 工具","daily_story":"🎬 MUBA 每日故事"},
-    "ar":{"ask":"💬 اسأل MUBA","daily":"📰 يوميات MUBA","create":"🎨 أنشئ مع MUBA","studio":"🎭 استوديو MUBA","community":"🧭 مجتمع MUBA","dev":"⚙️ أدوات DEV","daily_story":"🎬 قصة MUBA اليومية"},
-    "hi":{"ask":"💬 MUBA से पूछें","daily":"📰 MUBA दैनिक","create":"🎨 MUBA बनाएँ","studio":"🎭 MUBA स्टूडियो","community":"🧭 MUBA समुदाय","dev":"⚙️ DEV उपकरण","daily_story":"🎬 MUBA दैनिक कहानी"},
+    "en":{"ask":"💬 ASK MUBA","daily":"📰 MUBA DAILY","create":"🎨 MUBA CREATE","studio":"🎭 MUBA Studio","community":"🧭 MUBA COMMUNITY","dev":"⚙️ DEV TOOLS","daily_story":"🎬 MUBA Daily Story","games":"🎮 MUBA BRAIN GAMES"},
+    "tr":{"ask":"💬 MUBA'YA SOR","daily":"📰 MUBA GÜNLÜK","create":"🎨 MUBA OLUŞTUR","studio":"🎭 MUBA Stüdyo","community":"🧭 MUBA TOPLULUĞU","dev":"⚙️ DEV ARAÇLARI","daily_story":"🎬 MUBA Günlük Hikâye","games":"🎮 MUBA ZEKA OYUNLARI"},
+    "zh":{"ask":"💬 询问 MUBA","daily":"📰 MUBA 日报","create":"🎨 MUBA 创作","studio":"🎭 MUBA 工作室","community":"🧭 MUBA 社区","dev":"⚙️ DEV 工具","daily_story":"🎬 MUBA 每日故事","games":"🎮 MUBA 脑力游戏"},
+    "ar":{"ask":"💬 اسأل MUBA","daily":"📰 يوميات MUBA","create":"🎨 أنشئ مع MUBA","studio":"🎭 استوديو MUBA","community":"🧭 مجتمع MUBA","dev":"⚙️ أدوات DEV","daily_story":"🎬 قصة MUBA اليومية","games":"🎮 ألعاب MUBA الذهنية"},
+    "hi":{"ask":"💬 MUBA से पूछें","daily":"📰 MUBA दैनिक","create":"🎨 MUBA बनाएँ","studio":"🎭 MUBA स्टूडियो","community":"🧭 MUBA समुदाय","dev":"⚙️ DEV उपकरण","daily_story":"🎬 MUBA दैनिक कहानी","games":"🎮 MUBA ब्रेन गेम्स"},
 }
 
 def _section_back(lang,callback_data="menu"):
@@ -472,6 +472,7 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/"))],
     ]
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
