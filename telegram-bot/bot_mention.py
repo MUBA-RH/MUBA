@@ -1,3 +1,4 @@
+# MUBA_RUN_DEPLOY: v2-runtime-sync
 """
 MUBA Telegram Bot
 Webhook-based local-brain version.
