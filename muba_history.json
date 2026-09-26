@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-preview-result-ux",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera preview and result feedback",
+        "tr": "MUBA Camera önizleme ve sonuç bildirimi",
+        "zh": "MUBA Camera 预览与结果反馈",
+        "ar": "معاينة ونتيجة MUBA Camera",
+        "hi": "MUBA Camera preview और result feedback"
+      },
+      "text": {
+        "en": "MUBA Camera now visibly confirms the selected photo with a local preview and clearly displays the generated MUBA result after a successful transformation.",
+        "tr": "MUBA Camera artık seçilen fotoğrafı yerel önizleme ile görünür biçimde doğruluyor ve başarılı dönüşümden sonra üretilen MUBA sonucunu açıkça gösteriyor.",
+        "zh": "MUBA Camera 现在会通过本地预览明确确认所选照片，并在转换成功后清晰显示生成的 MUBA 结果。",
+        "ar": "يعرض MUBA Camera الآن معاينة محلية واضحة للصورة المختارة ويعرض نتيجة MUBA المولدة بوضوح بعد نجاح التحويل.",
+        "hi": "MUBA Camera अब चुनी गई फोटो को local preview से स्पष्ट रूप से दिखाता है और सफल transformation के बाद generated MUBA result दिखाता है।"
+      }
+    },
+    {
       "id": "20260926-camera-daily-limit",
       "date": "2026-09-26",
       "type": "improved",
