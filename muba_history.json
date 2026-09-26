@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260926-camera-daily-limit",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera daily allowance",
+        "tr": "MUBA Camera günlük üretim hakkı",
+        "zh": "MUBA Camera 每日生成额度",
+        "ar": "الحصة اليومية لـ MUBA Camera",
+        "hi": "MUBA Camera दैनिक उत्पादन सीमा"
+      },
+      "text": {
+        "en": "MUBA Camera now allows one successful production per user per day. Failed transformations do not consume the daily allowance.",
+        "tr": "MUBA Camera artık kullanıcı başına günde bir başarılı üretime izin veriyor. Başarısız dönüşümler günlük hakkı düşürmüyor.",
+        "zh": "MUBA Camera 现在每位用户每天允许一次成功生成。失败的转换不会消耗每日额度。",
+        "ar": "يسمح MUBA Camera الآن بعملية إنتاج ناجحة واحدة لكل مستخدم يومياً. التحويلات الفاشلة لا تستهلك الحصة اليومية.",
+        "hi": "MUBA Camera अब प्रति उपयोगकर्ता प्रतिदिन एक सफल उत्पादन की अनुमति देता है। असफल transformations दैनिक सीमा को कम नहीं करते।"
+      }
+    },
+    {
       "id": "20260926-camera-transform-progress",
       "date": "2026-09-26",
       "type": "improved",

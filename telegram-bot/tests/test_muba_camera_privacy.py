@@ -29,6 +29,15 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('form.add_field("input_image_1",source_bytes',handler)
   self.assertIn("camera_ai_prompt()",handler)
   self.assertNotIn("logger.",handler.split("except Exception:",1)[0])
+ def test_daily_limit_counts_only_success(self):
+  start=BOT.index("async def camera_generate_handler")
+  end=BOT.index("async def studio_generate_handler",start)
+  handler=BOT[start:end]
+  self.assertIn("remaining(uid)<=0",handler)
+  self.assertEqual(handler.count("consume(uid)"),1)
+  self.assertGreater(handler.index("consume(uid)"),handler.index("AI response contained no image"))
+  self.assertIn("Daily MUBA Camera allowance used — 1/1.",handler)
+  self.assertIn("Başarısız işlem hakkından düşmez",CAMERA)
  def test_gallery_is_explicitly_disabled_in_test_ui(self):
   self.assertIn("Gallery: yayınlanmadı",CAMERA)
   self.assertNotIn("/studio/share",CAMERA)
