@@ -67,6 +67,7 @@ from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, 
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
 from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, SCENE_REFERENCE
+from muba_story_text import prepare as prepare_story_text
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -710,7 +711,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
     if data=="story_director":
         if not is_dev(user_id): return
-        item=story_draft()
+        try: item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
+        except RuntimeError:
+            logger.exception("Daily Story text preparation unavailable")
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBugünkü hikâye henüz hazırlanamadı. Eski bölüm tekrar edilmiyor; daha sonra yeniden açabilirsin."); return
         body=("🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item["story_tr"]+
               "\n\nReferans: "+("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ")+
               "\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK"))
@@ -731,7 +735,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_dev(user_id): return
         await q.answer("MUBA hikâye görseli hazırlanıyor…")
         try:
-            item=await _story_generate_images(story_draft())
+            item=await _story_generate_images(await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat()))
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörsel üretilemedi. Mevcut sistem ve hikâye taslağı korundu; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
@@ -1060,7 +1064,11 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     digest=hashlib.sha256(body).hexdigest()
     archived=archive_creation(body,"image/jpeg","MUBA Daily Story fresh DEV reference","image","telegram")
     set_gallery_visibility(archived["id"],"hidden")
-    item=story_draft()
+    try: item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
+    except RuntimeError:
+        logger.exception("Daily Story text preparation unavailable")
+        await message.reply_text("⚠️ Bugünkü hikâye henüz hazırlanamadı. Referans alınmadı; daha sonra tekrar deneyebilirsin.")
+        return
     set_story_reference(item["day"],archived["id"],digest,"image/jpeg",build_story_fingerprint(body))
     item=story_draft(item["day"])
     await message.reply_text("📥 DAILY STORY INBOX — Referans güncellendi. Tek görsel hazırlanıyor.")
@@ -1512,7 +1520,7 @@ async def _story_generate_images(item):
 
 async def _prepare_daily_story(application):
     """Daily reminder only. V3 never generates until DEV uploads a fresh reference."""
-    item=story_draft()
+    item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
     chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
     if item.get("status")!="published":
         await application.bot.send_message(
@@ -1544,7 +1552,7 @@ async def story_prepare_handler(request: web.Request):
     supplied=request.headers.get("X-MUBA-Story-Secret","")
     if not secret or not supplied or not hashlib.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
-    item=story_draft()
+    item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
     reference=story_reference_for_day(item["day"])
     return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"generation":"telegram-dev-only"})
 
