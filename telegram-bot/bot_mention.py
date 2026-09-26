@@ -58,18 +58,18 @@ from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 
-ASSISTANT_MAIN_TOPIC_COUNT=6
+PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio")
 
 def assistant_content_count():
     """Count structured user-facing Assistant content from live registries."""
-    community_routes=10
+    community_routes=len(COMMUNITY_GUIDE_LABELS.get("en",{}))
     transparency_sections=len(TRANSPARENCY_PAGES.get("en",[]))+len(EXTRA_TRANSPARENCY_PAGES.get("en",[]))
     ask_items=len(QUESTIONS.get("en",[]))+sum(len(items) for items in TOPIC_PROGRESS.get("en",{}).values())
     create_areas=3
     return community_routes+transparency_sections+ask_items+create_areas
 
 def assistant_menu_text(lang):
-    topics=ASSISTANT_MAIN_TOPIC_COUNT
+    topics=len(PUBLIC_MAIN_AREAS)
     content=assistant_content_count()
     templates={
         "en":"MUBA Assistant — Discover MUBA.\n{topics} main topics, {content} different pieces of content. Learn about MUBA, its ecosystem and how it works, or ask your own question.",
