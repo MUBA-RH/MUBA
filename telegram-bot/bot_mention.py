@@ -479,7 +479,7 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/"))],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/?v=muba-run-v1"))],
     ]
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
