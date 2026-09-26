@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-live-capture-fix",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera live capture",
+        "tr": "MUBA Camera canlı çekim",
+        "zh": "MUBA Camera 实时拍摄",
+        "ar": "التقاط مباشر في MUBA Camera",
+        "hi": "MUBA Camera live capture"
+      },
+      "text": {
+        "en": "MUBA Camera now requests live camera access inside the Mini App, captures a frame in memory, shows the captured preview, and sends that frame to the existing private transformation flow.",
+        "tr": "MUBA Camera artık Mini App içinde canlı kamera erişimi istiyor, kareyi bellekte çekiyor, çekilen fotoğrafı gösteriyor ve bu kareyi mevcut özel dönüşüm akışına gönderiyor.",
+        "zh": "MUBA Camera 现在会在 Mini App 内请求实时相机访问，在内存中拍摄画面、显示预览，并将该画面发送到现有的私密转换流程。",
+        "ar": "يطلب MUBA Camera الآن الوصول المباشر إلى الكاميرا داخل Mini App ويلتقط الصورة في الذاكرة ويعرض معاينتها ثم يرسلها إلى مسار التحويل الخاص الحالي.",
+        "hi": "MUBA Camera अब Mini App के भीतर live camera access मांगता है, frame को memory में capture करता है, preview दिखाता है और उसे मौजूदा private transformation flow में भेजता है।"
+      }
+    },
+    {
       "id": "20260927-camera-preview-result-ux",
       "date": "2026-09-27",
       "type": "fixed",
