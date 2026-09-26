@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-native-telegram-flow",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "MUBA Camera native Telegram flow",
+        "tr": "MUBA Camera yerel Telegram akışı",
+        "zh": "MUBA Camera Telegram 原生流程",
+        "ar": "مسار Telegram الأصلي لـ MUBA Camera",
+        "hi": "MUBA Camera native Telegram flow"
+      },
+      "text": {
+        "en": "MUBA Camera now uses Telegram private-chat photo delivery instead of depending on Mini App WebView camera access. A successful transformation consumes the daily allowance; failures do not.",
+        "tr": "MUBA Camera artık Mini App WebView kamera erişimine bağlı olmak yerine Telegram özel sohbet fotoğraf gönderimini kullanıyor. Başarılı dönüşüm günlük hakkı kullanır; hatalar kullanmaz.",
+        "zh": "MUBA Camera 现在使用 Telegram 私聊照片发送，而不再依赖 Mini App WebView 相机访问。成功转换会消耗每日额度，失败不会。",
+        "ar": "يستخدم MUBA Camera الآن إرسال الصور في محادثة Telegram الخاصة بدلاً من الاعتماد على كاميرا Mini App WebView. النجاح يستهلك الحصة اليومية والفشل لا يستهلكها.",
+        "hi": "MUBA Camera अब Mini App WebView camera पर निर्भर रहने के बजाय Telegram private-chat photo delivery का उपयोग करता है। सफल transformation दैनिक सीमा उपयोग करता है; failure नहीं।"
+      }
+    },
+    {
       "id": "20260927-camera-live-capture-fix",
       "date": "2026-09-27",
       "type": "fixed",
