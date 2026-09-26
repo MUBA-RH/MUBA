@@ -49,6 +49,13 @@ BEATS = (
 
 def _episode(day):
     step = (date.fromisoformat(day) - START).days
+    if step >= len(BEATS):
+        saved = STORE.get("story_text", day, None)
+        if not isinstance(saved, dict) or not saved.get("scene"):
+            saved = STORE.get("story_canon", day, None)
+        if not isinstance(saved, dict) or not saved.get("scene"):
+            raise RuntimeError("Daily Story text is awaiting a new connected episode")
+        return saved
     title, title_tr, story, story_tr, scene = BEATS[step % len(BEATS)]
     return {"title": title, "title_tr": title_tr, "story": story,
             "story_tr": story_tr, "scene": scene, "step": step}
@@ -62,12 +69,17 @@ def _length_checked(text):
 
 
 def _previous_state(day):
-    previous = (date.fromisoformat(day) - timedelta(days=1)).isoformat()
-    saved = STORE.get("story_canon", previous, None)
-    if isinstance(saved, dict) and saved.get("story"):
-        return saved
-    ep = _episode(previous)
-    return {"day": previous, "story": ep["story"], "theme": ep["title"]}
+    previous_date = date.fromisoformat(day) - timedelta(days=1)
+    for gap in range(31):
+        previous = (previous_date - timedelta(days=gap)).isoformat()
+        saved = STORE.get("story_canon", previous, None) or STORE.get("story_text", previous, None)
+        if isinstance(saved, dict) and saved.get("story"):
+            return {"day": previous, "story": saved["story"],
+                    "theme": saved.get("theme") or saved.get("title", "MUBA Daily Story")}
+        if previous_date - timedelta(days=gap) <= START + timedelta(days=len(BEATS)-1):
+            ep = _episode(previous)
+            return {"day": previous, "story": ep["story"], "theme": ep["title"]}
+    raise RuntimeError("Daily Story needs a prior approved episode to continue")
 
 
 def draft(day=None):
@@ -98,6 +110,27 @@ def draft(day=None):
                       "character_anchor": REFERENCE_ROLE, "visual_style": VISUAL_STYLE,
                       "reference_sha256": (reference or {}).get("sha256"),
                       "continuity": "text-story-state-only", "delivery": "one-scene"}}
+
+
+def save_episode(day, episode):
+    """Freeze validated daily text before rendering its image."""
+    if is_published(day):
+        raise ValueError("Published Daily Story text cannot be replaced")
+    previous = _previous_state(day)
+    story = _length_checked(episode["story"])
+    story_tr = _length_checked(episode["story_tr"])
+    forbidden = ("robinhood", "flap", "uniswap", "binance", "listing", "price prediction")
+    if any(word in (story + " " + story_tr).casefold() for word in forbidden):
+        raise ValueError("Daily Story includes an unrelated brand or promise")
+    if story == previous["story"] or story in (beat[2] for beat in BEATS) or len(episode["scene"].strip()) < 15:
+        raise ValueError("Daily Story must advance the prior scene")
+    item = {"title": episode["title"].strip(), "title_tr": episode["title_tr"].strip(),
+            "story": story, "story_tr": story_tr, "scene": episode["scene"].strip(),
+            "step": (date.fromisoformat(day) - START).days}
+    if not item["title"] or not item["title_tr"]:
+        raise ValueError("Daily Story needs a title in both languages")
+    STORE.set("story_text", day, item)
+    return draft(day)
 
 
 def worker_job(day=None, reference_path="muba-reference.jpg"):
@@ -177,6 +210,8 @@ def publish(day):
         raise ValueError("Daily Story requires one approved image before publishing")
     item = draft(day)
     STORE.set("story_canon", str(day), {"day": day, "theme": item["theme"],
+                                         "title": item["theme"], "title_tr": item["theme_tr"],
+                                         "scene": _episode(day)["scene"], "step": _episode(day)["step"],
                                          "story": item["story"], "story_tr": item["story_tr"]})
     STORE.set("story_publish", str(day), True)
     return draft(day)
@@ -188,5 +223,8 @@ def unpublish(day):
 
 
 def public_story(day=None):
+    day = day or datetime.now(TZ).date().isoformat()
+    if not is_published(day):
+        return None
     item = draft(day)
     return item if item["status"] == "published" and len(item["images"]) in (1, 4) else None
