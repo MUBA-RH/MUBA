@@ -2324,11 +2324,11 @@
         "hi": "तैयार डेली स्टोरी छवि प्राप्त करें"
       },
       "text": {
-        "en": "A completed 16:9 scene can be reviewed without restarting Kaggle. Future output download retries resume the existing GPU job, and the worker keeps only the final image in its output.",
-        "tr": "Tamamlanmış 16:9 sahne Kaggle yeniden başlatılmadan incelenebilir. Gelecekte indirme tekrarları mevcut GPU işinden devam eder; çalışan yalnızca son görseli çıktıda tutar.",
-        "zh": "已完成的16:9场景无需重新启动Kaggle即可审核。后续下载重试会继续使用现有GPU任务，运行器只保留最终图像。",
-        "ar": "يمكن مراجعة المشهد المكتمل بنسبة 16:9 دون إعادة تشغيل Kaggle. تعيد محاولات التنزيل استخدام مهمة GPU القائمة وتحتفظ العملية بالصورة النهائية فقط.",
-        "hi": "तैयार 16:9 दृश्य को Kaggle दोबारा चलाए बिना देखा जा सकता है। डाउनलोड दोबारा करने पर वही GPU कार्य उपयोग होता है और केवल अंतिम छवि रखी जाती है।"
+        "en": "Daily Story saves its completed 16:9 image directly to the private archive. The bot reads that image without Kaggle output listing, and retries reuse the same GPU job.",
+        "tr": "Daily Story tamamlanan 16:9 görseli doğrudan özel arşive kaydeder. Bot, Kaggle çıktı listesini çağırmadan görseli alır; tekrar denemeler aynı GPU işini kullanır.",
+        "zh": "每日故事将完成的16:9图片直接保存到私人档案。机器人无需列出Kaggle输出即可读取图片，重试时会复用同一GPU任务。",
+        "ar": "تحفظ القصة اليومية صورة 16:9 المكتملة مباشرة في الأرشيف الخاص. يقرأها البوت دون سرد مخرجات Kaggle، وتعيد المحاولات استخدام مهمة GPU نفسها.",
+        "hi": "डेली स्टोरी तैयार 16:9 छवि सीधे निजी संग्रह में रखती है। बॉट Kaggle आउटपुट सूची के बिना उसे पढ़ता है और दोबारा प्रयास में वही GPU कार्य उपयोग करता है।"
       }
     }
   ]
