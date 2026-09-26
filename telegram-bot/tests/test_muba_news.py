@@ -130,5 +130,14 @@ class NewsTests(unittest.TestCase):
                            duplicate_hash="other-hash")
         self.assertFalse(news.event_match(official,unrelated))
 
+    def test_security_headline_variants_stay_in_one_category_and_deduplicate(self):
+        coinbase_news=news.category_for("Crypto exchange Bitget says $352 million affected in a hack, claims breach resolved","")
+        decrypt_news=news.category_for("Bitget Hacked as $350 Million Vanishes From Crypto Exchange Wallets","")
+        self.assertEqual(coinbase_news,"SECURITY")
+        self.assertEqual(decrypt_news,"SECURITY")
+        first=self.row(source_name="CoinDesk",title="Crypto exchange Bitget says $352 million affected in a hack, claims breach resolved",category=coinbase_news,duplicate_hash="bitget-a")
+        second=self.row(source_name="Decrypt",title="Bitget Hacked as $350 Million Vanishes From Crypto Exchange Wallets",category=decrypt_news,duplicate_hash="bitget-b")
+        self.assertTrue(news.event_match(first,second))
+
 
 if __name__=="__main__": unittest.main()
