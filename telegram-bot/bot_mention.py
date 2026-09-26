@@ -1708,7 +1708,18 @@ async def webhook_handler(
             bot=application.bot,
         )
 
-        await application.update_queue.put(update)
+        # /start is latency-sensitive and must acknowledge the user before
+        # the webhook request returns. Process only this command directly;
+        # every other Telegram update keeps the existing queue path unchanged.
+        message = update.effective_message
+        if (
+            message
+            and message.text
+            and message.text.strip().split()[0].casefold() in {"/start", f"/start@{application.bot.username}".casefold()}
+        ):
+            await application.process_update(update)
+        else:
+            await application.update_queue.put(update)
 
         return web.Response(
             text="OK",
