@@ -1356,20 +1356,30 @@
       if (!studioObjectUrl) return;
       event.preventDefault();
       const status = document.getElementById("tweet-status");
+      const shareText = currentTweetWithTags();
       try {
         const response = await fetch(studioObjectUrl);
         const blob = await response.blob();
-        const mime = blob.type && blob.type.startsWith("image/") ? blob.type : "image/jpeg";
+        const mime = blob.type && blob.type.startsWith("image/") ? blob.type.split(";", 1)[0] : "image/jpeg";
         const extension = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
         const file = new File([blob], "muba." + extension, { type: mime });
-        const payload = { text: currentTweetWithTags(), files: [file] };
+
+        // X on Android may accept EXTRA_TEXT while silently dropping a file from
+        // a combined Web Share payload. Keep the TWT ready on the clipboard and
+        // share the image as the primary native payload so X receives the media.
+        try { await navigator.clipboard.writeText(shareText); } catch (_) {}
+
         if (typeof navigator.share === "function" && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-          await navigator.share(payload);
-          status.textContent = "MUBA image and TWT opened for sharing.";
+          await navigator.share({ files: [file] });
+          status.textContent = "MUBA image opened for sharing. TWT + tags copied — paste them in X.";
           return;
         }
-        status.textContent = "This browser cannot send the image to X. Opening the TWT only.";
-        window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(currentTweetWithTags()), "_blank", "noopener");
+
+        status.textContent = "Native image sharing is unavailable. Image downloaded; TWT + tags copied.";
+        const download = document.createElement("a");
+        download.href = studioObjectUrl;
+        download.download = "muba." + extension;
+        download.click();
       } catch (error) {
         if (error && error.name === "AbortError") return;
         status.textContent = "Image share could not open. Try Share on X again.";
