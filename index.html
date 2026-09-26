@@ -738,8 +738,8 @@
     <section class="section" id="live-price" aria-label="Live crypto prices">
       <div class="shell">
         <div class="price-bar" id="price-bar">
-          <div class="price-card" data-asset="BTC"><span>BTC · USD</span><strong>PRICE TEMPORARILY UNAVAILABLE</strong><span class="price-detail"></span></div>
-          <div class="price-card" data-asset="ETH"><span>ETH · USD</span><strong>PRICE TEMPORARILY UNAVAILABLE</strong><span class="price-detail"></span></div>
+          <div class="price-card" data-asset="BTC"><span>BTC · USD</span><strong>CONNECTING TO LIVE PRICE…</strong><span class="price-detail"></span></div>
+          <div class="price-card" data-asset="ETH"><span>ETH · USD</span><strong>CONNECTING TO LIVE PRICE…</strong><span class="price-detail"></span></div>
           <div class="price-card" data-asset="MUBA"><span>MUBA · USD</span><strong>PRICE NOT AVAILABLE</strong><span class="price-detail">Official token identity not published.</span></div>
         </div>
       </div>
@@ -755,7 +755,7 @@
         <div class="card news-shell">
           <div class="news-filters" id="news-filters" aria-label="News categories"></div>
           <div class="news-list" id="news-list" aria-live="polite"></div>
-          <p class="news-note" id="news-status">Loading verified news…</p>
+          <p class="news-note" id="news-status">Connecting to verified news…</p>
         </div>
       </div>
     </section>
@@ -1378,6 +1378,15 @@
     document.getElementById("copy-tags").addEventListener("click", () => copyText(shareTags, "tweet-status", "MUBA tags copied."));
 
     const studioApiBase = (document.querySelector('meta[name="muba-studio-api"]')?.content || "").replace(/\/$/, "");
+    async function requestLive(path) {
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),20000);
+      try {
+        const response=await fetch(studioApiBase+path,{cache:"no-store",signal:controller.signal});
+        if(!response.ok)throw new Error("Live data unavailable");
+        return await response.json();
+      } finally { clearTimeout(timeout); }
+    }
     function renderPrices(payload) {
       for(const asset of ["BTC","ETH","MUBA"]) {
         const node=document.querySelector('[data-asset="'+asset+'"]');
@@ -1396,11 +1405,23 @@
         detail.textContent=(change>=0?"+":"")+change.toFixed(2)+"% 24H";
       }
     }
-    let lastPricePayload=null;
+    let lastPricePayload=null,priceRequestPending=false;
+    const priceWaitStarted=Date.now();
     async function loadPrices() {
-      if(lastPricePayload)renderPrices(lastPricePayload);
-      try {const response=await fetch(studioApiBase+"/price",{cache:"no-store"});if(response.ok){lastPricePayload=await response.json();renderPrices(lastPricePayload);}}
-      catch(_) { /* Keep the bounded previous value until its timestamp expires. */ }
+      if(priceRequestPending)return;
+      priceRequestPending=true;
+      try {
+        lastPricePayload=await requestLive("/price");
+        renderPrices(lastPricePayload);
+      } catch(_) {
+        if(lastPricePayload)renderPrices(lastPricePayload);
+        else for(const asset of ["BTC","ETH"]) {
+          const node=document.querySelector('[data-asset="'+asset+'"]');
+          if(!node)continue;
+          node.querySelector("strong").textContent=Date.now()-priceWaitStarted>45000?"PRICE TEMPORARILY UNAVAILABLE":"CONNECTING TO LIVE PRICE…";
+          node.querySelector(".price-detail").textContent="RETRYING AUTOMATICALLY";
+        }
+      } finally { priceRequestPending=false; }
     }
     loadPrices();setInterval(loadPrices,5000);
     const newsCategories=["ALL","CRYPTO AGENDA","IMPORTANT DEVELOPMENTS","REGULATION","MUBA"];
@@ -1442,14 +1463,18 @@
         };
       } else list.onscroll=null;
     }
+    let newsRequestPending=false;
     async function loadNews() {
+      if(newsRequestPending)return;
+      newsRequestPending=true;
       try {
-        const response=await fetch(studioApiBase+"/news",{cache:"no-store"});
-        if(!response.ok)throw new Error("News unavailable");
-        const payload=await response.json();
+        const payload=await requestLive("/news");
         newsRows=Array.isArray(payload.items)?payload.items.filter(row=>row.verification_status==="VERIFIED"&&["BTC","ETH","MARKET","ETF","REGULATION","EXCHANGE","SECURITY","STABLECOIN","PROTOCOL","MUBA"].includes(row.category)):[];
         renderNews();
-      } catch(_) { document.getElementById("news-status").textContent="News temporarily unavailable."; }
+      } catch(_) {
+        if(!newsRows.length)document.getElementById("news-status").textContent="Connecting to verified news; retrying automatically…";
+        setTimeout(loadNews,5000);
+      } finally { newsRequestPending=false; }
     }
     loadNews();
     setInterval(loadNews,300000);
