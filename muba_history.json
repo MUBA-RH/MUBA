@@ -19,10 +19,38 @@
   },
   "entries": [
     {
+      "id": "20260926-transparency-button-index",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "System Transparency gets a button index",
+        "tr": "Sistem Şeffaflığı buton dizinine geçti",
+        "zh": "系统透明度改为按钮索引",
+        "ar": "تحويل شفافية النظام إلى فهرس أزرار",
+        "hi": "System Transparency अब button index में"
+      },
+      "text": {
+        "en": "System Transparency topics are now opened directly from a topic-button index instead of being browsed with previous/next paging. Existing transparency records remain intact.",
+        "tr": "Sistem Şeffaflığı başlıkları artık önceki/sonraki sayfa kaydırması yerine doğrudan konu butonlarından açılıyor. Mevcut şeffaflık kayıtlarının tamamı korunuyor.",
+        "zh": "系统透明度主题现在可从主题按钮索引直接打开，不再通过上一页/下一页浏览。现有透明度记录全部保留。",
+        "ar": "يمكن الآن فتح موضوعات شفافية النظام مباشرة من فهرس أزرار بدلاً من التنقل السابق/التالي، مع الحفاظ على جميع سجلات الشفافية الحالية.",
+        "hi": "System Transparency topics अब previous/next paging के बजाय topic buttons से सीधे खुलते हैं। मौजूदा transparency records सुरक्षित रहते हैं।"
+      }
+    },
+    {
       "id": "20260926-studio-shared-identity-gallery",
       "date": "2026-09-26",
       "type": "improved",
-      "areas": ["studio", "gallery", "web", "telegram"],
+      "areas": [
+        "studio",
+        "gallery",
+        "web",
+        "telegram"
+      ],
       "title": {
         "en": "One MUBA identity across both Studios",
         "tr": "İki Studio alanında ortak MUBA kimliği",
@@ -2191,7 +2219,12 @@
       "id": "20260926-gallery-explicit-community-shares",
       "date": "2026-09-26",
       "type": "fixed",
-      "areas": ["gallery", "studio", "web", "telegram"],
+      "areas": [
+        "gallery",
+        "studio",
+        "web",
+        "telegram"
+      ],
       "title": {
         "en": "Gallery shows community shares only",
         "tr": "Galeri yalnızca topluluk paylaşımlarını gösterir",
@@ -2211,7 +2244,12 @@
       "id": "20260926-unified-studio-auto-gallery",
       "date": "2026-09-26",
       "type": "improved",
-      "areas": ["studio", "gallery", "web", "telegram"],
+      "areas": [
+        "studio",
+        "gallery",
+        "web",
+        "telegram"
+      ],
       "title": {
         "en": "One Studio space with automatic community Gallery",
         "tr": "Tek Studio alanı ve otomatik topluluk Galerisi",
@@ -2275,7 +2313,9 @@
       "id": "20260926-daily-story-nonblocking-generation",
       "date": "2026-09-26",
       "type": "fixed",
-      "areas": ["daily"],
+      "areas": [
+        "daily"
+      ],
       "title": {
         "en": "Daily Story generation runs separately from bot commands",
         "tr": "Daily Story üretimi bot komutlarından ayrı çalışıyor",
@@ -2295,7 +2335,9 @@
       "id": "20260926-daily-story-morning-wake",
       "date": "2026-09-26",
       "type": "improved",
-      "areas": ["daily"],
+      "areas": [
+        "daily"
+      ],
       "title": {
         "en": "Daily Story morning preparation",
         "tr": "Daily Story sabah hazırlığı",
