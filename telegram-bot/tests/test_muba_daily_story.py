@@ -18,7 +18,7 @@ class DailyStoryTests(unittest.TestCase):
         self.addCleanup(patch.stop)
 
     def test_each_day_is_short_connected_and_one_scene(self):
-        for n in range(35):
+        for n in range(7):
             day = (muba_story.START + __import__('datetime').timedelta(days=n)).isoformat()
             item = muba_story.draft(day)
             self.assertTrue(150 <= len(item['story']) <= 170)
@@ -32,6 +32,24 @@ class DailyStoryTests(unittest.TestCase):
             if n:
                 self.assertEqual(item['previous_day'],
                                  (muba_story.START + __import__('datetime').timedelta(days=n - 1)).isoformat())
+
+    def test_new_episode_must_be_prepared_after_first_arc_and_uses_prior_text(self):
+        day = '2026-10-03'
+        with self.assertRaisesRegex(RuntimeError, 'awaiting a new connected episode'):
+            muba_story.draft(day)
+        episode = {'title': 'A New Neighbor', 'title_tr': 'Yeni Komşu',
+                   'story': 'MUBA follows the new arrow beyond the square, where a neighbor has set out colorful paper. They fold a little boat together and send it along the stream.',
+                   'story_tr': 'MUBA yeni oku izleyip meydanı geçer; bir komşu rengârenk kâğıtlar bırakmıştır. Birlikte küçük bir kayık yapar ve onu şırıl şırıl akan dereye bırakırlar.',
+                   'scene': 'MUBA and a neighbor folding a paper boat near a sunny stream'}
+        # Validate both languages without weakening the public character gate.
+        episode['story'] += ' Everyone waves.'
+        episode['story_tr'] += ' Herkes gülümser.'
+        self.assertTrue(150 <= len(episode['story']) <= 170)
+        self.assertTrue(150 <= len(episode['story_tr']) <= 170)
+        item = muba_story.save_episode(day, episode)
+        self.assertEqual(item['previous_day'], '2026-10-02')
+        self.assertEqual(item['story'], episode['story'])
+        self.assertEqual(muba_story.draft(day)['story'], episode['story'])
 
     def test_approval_requires_one_image_and_binds_reference(self):
         day = '2026-09-26'

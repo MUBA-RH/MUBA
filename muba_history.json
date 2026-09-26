@@ -2248,6 +2248,28 @@
         "ar": "تتابع القصة اليومية أحداث اليوم السابق بنص من 150 إلى 170 حرفاً وصورة أفقية واحدة بنسبة 16:9. تبقى هوية MUBA والأسلوب المعتمد مرجعاً، ولا يتم النشر إلا بموافقة المطور.",
         "hi": "हर दैनिक कहानी पिछले दिन से जुड़ा 150–170 अक्षरों का भाग और एक 16:9 क्षैतिज चित्र दिखाती है। MUBA की पहचान और स्वीकृत दृश्य शैली संदर्भ हैं; प्रकाशन के लिए डेवलपर की मंज़ूरी जरूरी है।"
       }
+    },
+    {
+      "id": "20260926-daily-story-continuity-text",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Daily Story text continues beyond the opening arc",
+        "tr": "Daily Story metni başlangıçtan sonra da sürüyor",
+        "zh": "每日故事文字在开篇后继续",
+        "ar": "يستمر نص القصة اليومية بعد البداية",
+        "hi": "दैनिक कहानी शुरुआती भाग के बाद भी जारी रहती है"
+      },
+      "text": {
+        "en": "The Daily Story director prepares and saves a new 150–170 character episode from the previous episode after the opening arc. Invalid or unavailable text does not repeat an old story or publish an image.",
+        "tr": "Daily Story, başlangıç bölümlerinden sonra önceki bölümden yola çıkarak yeni bir 150–170 karakterlik metin hazırlar ve kaydeder. Geçersiz veya üretilemeyen metin eski hikâyeyi tekrarlamaz ve görsel yayımlamaz.",
+        "zh": "开篇之后，每日故事会根据上一集生成并保存一段新的150至170字符故事。文字无效或无法生成时，不会重复旧故事，也不会发布图片。",
+        "ar": "بعد الفصول الأولى تُعد القصة اليومية نصاً جديداً من 150 إلى 170 حرفاً انطلاقاً من القصة السابقة وتحفظه. عند تعذر إعداد نص صالح لا تتكرر قصة قديمة ولا تُنشر صورة.",
+        "hi": "शुरुआती भाग के बाद दैनिक कहानी पिछले भाग से नया 150–170 अक्षरों का पाठ तैयार कर सहेजती है। पाठ अमान्य या अनुपलब्ध होने पर पुरानी कहानी दोहराई नहीं जाती और चित्र प्रकाशित नहीं होता।"
+      }
     }
   ]
 }
