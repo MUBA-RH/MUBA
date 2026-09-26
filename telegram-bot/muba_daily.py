@@ -9,7 +9,7 @@ DAILY_LABELS={
 "tr":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 Web Sitesi","telegram":"📌 Telegram","updates":"🔔 MUBA Yenilikleri","back":"⬅️ Geri"},
 "zh":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 网站","telegram":"📌 Telegram","updates":"🔔 MUBA 更新","back":"⬅️ 返回"},
 "ar":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 الموقع","telegram":"📌 Telegram","updates":"🔔 تحديثات MUBA","back":"⬅️ رجوع"},
-"hi":{"daily":"📰 MUBA Daily","x":"🐦 X","web":"🌐 वेबसाइट","telegram":"📌 Telegram","updates":"🔔 MUBA Updates","back":"⬅️ वापस"},
+"hi":{"daily":"📰 MUBA दैनिक","x":"🐦 X","web":"🌐 वेबसाइट","telegram":"📌 Telegram","updates":"🔔 MUBA अपडेट","back":"⬅️ वापस"},
 }
 
 DAILY={
@@ -53,7 +53,7 @@ DEVLOG_LABELS={
 "tr":{"log":"📜 Geliştirme Günlüğü","new":"✨ Yenilikler","updates":"🛠 Güncellemeler","fixed":"🧩 Düzenlenenler","back":"⬅️ Geri"},
 "zh":{"log":"📜 开发日志","new":"✨ 新增","updates":"🛠 更新","fixed":"🧩 调整","back":"⬅️ 返回"},
 "ar":{"log":"📜 سجل التطوير","new":"✨ جديد","updates":"🛠 تحديثات","fixed":"🧩 تحسينات","back":"⬅️ رجوع"},
-"hi":{"log":"📜 Development Log","new":"✨ नया","updates":"🛠 अपडेट","fixed":"🧩 सुधार","back":"⬅️ वापस"}
+"hi":{"log":"📜 विकास लॉग","new":"✨ नया","updates":"🛠 अपडेट","fixed":"🧩 सुधार","back":"⬅️ वापस"}
 }
 
 DEVLOG={lang:_history_devlog(lang) for lang in ("en","tr","zh","ar","hi")}
