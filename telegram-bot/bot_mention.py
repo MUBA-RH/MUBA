@@ -1538,7 +1538,7 @@ async def camera_generate_handler(request: web.Request):
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
             if response.status!=200:
-                logger.error("MUBA Camera AI request failed status=%s",response.status)
+                # Privacy path deliberately avoids logging request/source details.
                 raise RuntimeError("AI request failed")
             if response.headers.get("Content-Type","").startswith("image/"):
                 body=raw; out_type=response.headers.get("Content-Type").split(";",1)[0]
