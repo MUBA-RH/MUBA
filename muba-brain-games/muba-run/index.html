@@ -5,6 +5,9 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
 const tg=window.Telegram&&window.Telegram.WebApp;if(tg){tg.ready();tg.expand();tg.disableVerticalSwipes&&tg.disableVerticalSwipes()}
+// V3 production runner architecture: pooled obstacles, procedural patterns, state machine, camera feedback
+const PLAYER={RUN:'run',JUMP:'jump',SLIDE:'slide',HIT:'hit'};let playerState=PLAYER.RUN;
+const PATTERNS=[[-1],[0],[1],[-1,1],[-1,0],[0,1]];const POOL_MAX=18;
 let score=0,best=+(localStorage.getItem('mubaRunBest')||0),speed=1,alive=true,runner,scoreEl=document.getElementById('score'),sx=0,sy=0,lane=0,jump=0,slide=0,spawnClock=0,obstacles=[],roadMarks=[],stars=[];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 class Run extends Phaser.Scene{
@@ -18,22 +21,23 @@ class Run extends Phaser.Scene{
  makeRunner(){let c=this.player,b=this.add.graphics();b.fillStyle(0x171719);b.fillRoundedRect(-24,9,48,61,13);b.fillStyle(0xb47a55);b.fillEllipse(0,-17,54,50);b.fillStyle(0x151519);b.fillRoundedRect(-29,-47,58,17,8);b.fillStyle(0xffffff);b.fillCircle(-11,-21,9);b.fillCircle(11,-21,9);b.fillStyle(0x39231c);b.fillCircle(-9,-20,4);b.fillCircle(9,-20,4);b.fillStyle(0xf08b96);b.fillEllipse(0,-4,15,9);b.fillStyle(0xffffff,.9);b.fillRect(-16,28,32,2);c.add(b);
   let l=this.add.graphics();l.lineStyle(8,0xb47a55,1);l.lineBetween(-12,67,-18,91);l.lineBetween(12,67,18,91);c.add(l);this.body=b;this.legs=l}
  project(l,z){let p=1-z,curve=Math.pow(p,1.65),half=lerp(this.W*.055,this.W*.52,curve);return{x:this.cx+l*half,y:lerp(this.horizon,this.bottom,curve),s:lerp(.08,1.2,curve)}}
- spawn(){let l=Phaser.Math.Between(-1,1),kind=Math.random()<.27?'bar':'crate';obstacles.push({l,z:1.02,kind,hit:false})}
- update(_,dt){if(!alive)return;dt=Math.min(dt,40);score+=dt*.018;speed=clamp(.00025+score*.00000055,.00025,.00058);scoreEl.textContent=Math.floor(score);spawnClock-=dt;if(spawnClock<=0){this.spawn();spawnClock=clamp(1180-score*1.2,560,1180)}
-  if(jump>0)jump=Math.max(0,jump-dt);if(slide>0)slide=Math.max(0,slide-dt);
+ spawn(){const pat=Phaser.Utils.Array.GetRandom(PATTERNS);for(const l of pat){let o=obstacles.find(x=>!x.active);if(!o&&obstacles.length<POOL_MAX){o={};obstacles.push(o)}if(!o)continue;Object.assign(o,{active:true,l,z:1.02,kind:Math.random()<.3?'bar':'crate',hit:false})}}
+ update(_,dt){if(!alive)return;dt=Math.min(dt,40);score+=dt*.018;speed=clamp(.00025+score*.00000055,.00025,.00058);scoreEl.textContent=Math.floor(score);spawnClock-=dt;if(spawnClock<=0){this.spawn();spawnClock=clamp(1320-score*1.15,620,1320)}
+  if(jump>0){jump=Math.max(0,jump-dt);if(!jump)playerState=PLAYER.RUN}if(slide>0){slide=Math.max(0,slide-dt);if(!slide)playerState=PLAYER.RUN}
   let targetX=this.project(lane,0).x;this.player.x=lerp(this.player.x,targetX,.18);let jp=jump?Math.sin((1-jump/620)*Math.PI)*105:0;this.player.y=this.H*.81-jp;this.player.scaleY=slide?.62:1;this.player.scaleX=slide?1.08:1;
   roadMarks.forEach(m=>{m.z-=speed*dt;if(m.z<0)m.z+=1});
-  for(let i=obstacles.length-1;i>=0;i--){let o=obstacles[i];o.z-=speed*dt;if(o.z<-.08){obstacles.splice(i,1);score+=10;continue}if(!o.hit&&o.z<.13&&o.z>.015&&o.l===lane){let safe=o.kind==='bar'?slide>0:jump>190;if(!safe){o.hit=true;endRun()}}}
+  for(let i=obstacles.length-1;i>=0;i--){let o=obstacles[i];o.z-=speed*dt;if(!o.active)continue;if(o.z<-.08){o.active=false;score+=10;continue}if(!o.hit&&o.z<.13&&o.z>.015&&o.l===lane){let safe=o.kind==='bar'?slide>0:jump>190;if(!safe){o.hit=true;playerState=PLAYER.HIT;this.cameras.main.shake(150,.012);endRun()}}}
   this.drawWorld()}
  drawWorld(){let g=this.g,W=this.W,H=this.H;g.clear();g.fillStyle(0x070912);g.fillRect(0,0,W,H);g.fillStyle(0xffffff);for(const s of stars)g.fillCircle(s.x,s.y,s.r,s.a);
   g.fillStyle(0x11131b);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.99,this.bottom);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.01,this.bottom);
   g.lineStyle(3,0x9b7fbd,.28);for(let l=-1.5;l<=1.5;l+=1){let a=this.project(l,1),b=this.project(l,0);g.lineBetween(a.x,a.y,b.x,b.y)}
   for(const m of roadMarks){let a=this.project(-.5,m.z),b=this.project(.5,m.z);g.lineStyle(Math.max(1,5*a.s),0xffffff,.16);g.lineBetween(a.x,a.y,b.x,b.y)}
-  let ordered=[...obstacles].sort((a,b)=>b.z-a.z);for(const o of ordered){let p=this.project(o.l,o.z),w=(o.kind==='bar'?90:62)*p.s,h=(o.kind==='bar'?32:75)*p.s;g.fillStyle(o.kind==='bar'?0xd7a23c:0x69427f,1);g.fillRoundedRect(p.x-w/2,p.y-h,w,h,Math.max(2,7*p.s));if(o.kind==='crate'){g.lineStyle(Math.max(1,3*p.s),0xb184c9,.6);g.strokeRect(p.x-w/2+3*p.s,p.y-h+3*p.s,w-6*p.s,h-6*p.s)}}
+  let ordered=obstacles.filter(o=>o.active).sort((a,b)=>b.z-a.z);for(const o of ordered){let p=this.project(o.l,o.z),w=(o.kind==='bar'?90:62)*p.s,h=(o.kind==='bar'?32:75)*p.s;g.fillStyle(o.kind==='bar'?0xd7a23c:0x69427f,1);g.fillRoundedRect(p.x-w/2,p.y-h,w,h,Math.max(2,7*p.s));if(o.kind==='crate'){g.lineStyle(Math.max(1,3*p.s),0xb184c9,.6);g.strokeRect(p.x-w/2+3*p.s,p.y-h+3*p.s,w-6*p.s,h-6*p.s)}}
   g.fillStyle(0x17141a);g.fillRect(0,this.bottom,W,H-this.bottom)}
 }
-function haptic(){tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred('light')}function move(d){if(!alive)return;lane=clamp(lane+d,-1,1);haptic()}function doJump(){if(!alive||jump||slide)return;jump=620;haptic()}function doSlide(){if(!alive||slide||jump)return;slide=520;haptic()}
+function haptic(){tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred('light')}function move(d){if(!alive)return;lane=clamp(lane+d,-1,1);haptic()}function doJump(){if(!alive||jump||slide)return;playerState=PLAYER.JUMP;jump=620;haptic()}function doSlide(){if(!alive||slide||jump)return;playerState=PLAYER.SLIDE;slide=520;haptic()}
 function endRun(){if(!alive)return;alive=false;best=Math.max(best,Math.floor(score));localStorage.setItem('mubaRunBest',best);document.getElementById('result').textContent='Score '+Math.floor(score)+' · Best '+best;document.getElementById('over').classList.add('show');tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('error')}
 document.getElementById('again').onclick=()=>location.reload();
+// Prefer WebGL batching on capable mobile devices; Phaser falls back automatically.
 new Phaser.Game({type:Phaser.AUTO,parent:'game',width:480,height:800,backgroundColor:'#070912',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:Run});
 </script></body></html>
