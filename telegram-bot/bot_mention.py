@@ -1075,7 +1075,7 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
 
     username=context.bot.username
     button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
-    await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
+    await message.reply_text("MUBA Assistant \nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
 
 async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
     """Best-effort localized private Guardian report to DEV; never block moderation."""
