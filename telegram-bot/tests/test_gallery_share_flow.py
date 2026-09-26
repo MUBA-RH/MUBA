@@ -55,6 +55,13 @@ class GalleryShareFlowTests(unittest.TestCase):
         self.assertEqual(item["source"],"web")
         self.assertEqual([row["id"] for row in muba_gallery.list_gallery(shared_only=True)],[item["id"]])
 
+    def test_telegram_studio_creation_is_immediately_visible_on_web(self):
+        item=self.bot._publish_studio_creation(b"telegram-image","image/png","MUBA on the moon","image","telegram")
+        self.assertEqual(item["source"],"telegram")
+        public=muba_gallery.list_gallery(shared_only=True)
+        self.assertEqual([row["id"] for row in public],[item["id"]])
+        self.assertEqual(muba_gallery.read_gallery_image(item["id"])[0],b"telegram-image")
+
     def test_legacy_explicit_share_endpoint_remains_compatible(self):
         self._output("visitor","web","visitor")
         result=self._share("visitor",origin="https://muba-rh.github.io")

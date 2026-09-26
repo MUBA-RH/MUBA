@@ -19,6 +19,26 @@
   },
   "entries": [
     {
+      "id": "20260926-studio-shared-identity-gallery",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": ["studio", "gallery", "web", "telegram"],
+      "title": {
+        "en": "One MUBA identity across both Studios",
+        "tr": "İki Studio alanında ortak MUBA kimliği",
+        "zh": "两个创作空间共用 MUBA 形象",
+        "ar": "هوية MUBA موحدة في كلا الاستوديوهين",
+        "hi": "दोनों स्टूडियो में एक ही MUBA पहचान"
+      },
+      "text": {
+        "en": "Web and Telegram Studio use the same clear MUBA portrait to keep his face recognizable while adapting poses, outfits and scenes naturally. Successful community creations from either Studio appear automatically in the web Gallery; developer tests and Daily Story frames stay separate.",
+        "tr": "Web ve Telegram Studio, MUBA'nın yüzünü tanınır tutarken poz, kıyafet ve sahneleri doğal biçimde uyarlamak için aynı net portreyi kullanır. İki Studio'daki başarılı topluluk üretimleri web Galerisi'ne otomatik gelir; geliştirici testleri ve Daily Story kareleri ayrı kalır.",
+        "zh": "网站和 Telegram 创作空间使用同一张清晰的 MUBA 参考肖像，保留面部特征并自然调整姿势、服装和场景。两个空间的社区作品自动进入网站图库；开发测试和每日故事画面保持独立。",
+        "ar": "يستخدم استوديو الويب وTelegram الصورة المرجعية الواضحة نفسها للحفاظ على ملامح وجه MUBA مع تكييف الوضعيات والملابس والمشاهد بصورة طبيعية. تظهر إبداعات المجتمع من كلا الاستوديوهين تلقائيًا في معرض الموقع، وتبقى اختبارات المطور وقصص Daily Story منفصلة.",
+        "hi": "वेब और Telegram स्टूडियो एक ही स्पष्ट MUBA संदर्भ चित्र का उपयोग करते हैं, जिससे चेहरा पहचाने जाने योग्य रहता है और मुद्राएँ, कपड़े तथा दृश्य स्वाभाविक रूप से बदलते हैं। दोनों स्टूडियो की सामुदायिक रचनाएँ वेब गैलरी में अपने आप दिखती हैं; डेवलपर परीक्षण और Daily Story अलग रहते हैं।"
+      }
+    },
+    {
       "id": "20260926-price-news-reconnect",
       "date": "2026-09-26",
       "type": "fixed",
