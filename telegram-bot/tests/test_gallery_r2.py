@@ -74,6 +74,9 @@ class GalleryR2Tests(unittest.TestCase):
 
         rows=muba_gallery.list_gallery()
         self.assertEqual([row["id"] for row in rows],[item["id"]])
+        self.assertEqual(muba_gallery.list_gallery(shared_only=True),[])
+        self.assertTrue(muba_gallery.share_gallery_item(item["id"])["shared"])
+        self.assertEqual([row["id"] for row in muba_gallery.list_gallery(shared_only=True)],[item["id"]])
 
         body,content_type=muba_gallery.read_gallery_image(item["id"])
         self.assertEqual(body,b"persistent-image")
