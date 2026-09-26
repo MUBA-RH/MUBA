@@ -85,7 +85,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 for _lang, _records in TRANSPARENCY_RECORDS.items():
     TRANSPARENCY_PAGES[_lang].extend(f"{title}\n\n{body}" for _,title,body in _records)
-from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
+from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, camera_ai_prompt, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
 from muba_price import prices as live_prices
@@ -409,8 +409,10 @@ def daily_hub_keyboard(lang):
     ])
 
 def create_hub_keyboard(lang,user_id):
+    private_token=studio_token(user_id or 0,TOKEN)
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+private_token))],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/studio?uid="+str(user_id or 0)+"&st="+private_token))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
         [_section_back(lang)],
@@ -1494,6 +1496,73 @@ async def _studio_reference(request: web.Request):
         raise RuntimeError("MUBA Studio identity reference checksum mismatch")
     return reference
 
+async def camera_page_handler(request: web.Request):
+    from muba_camera import camera_html
+    return web.Response(text=camera_html(EXTERNAL_URL),content_type="text/html",headers={"Cache-Control":"no-store"})
+
+async def camera_generate_handler(request: web.Request):
+    """AL -> ISLE -> VER: source selfie is request-memory only and is never persisted."""
+    reader=None
+    source_bytes=None
+    try:
+        reader=await request.multipart()
+        fields={}
+        source_type="image/jpeg"
+        while True:
+            part=await reader.next()
+            if part is None: break
+            if part.name=="photo":
+                source_type=(part.headers.get("Content-Type") or "image/jpeg").split(";",1)[0]
+                if source_type not in {"image/jpeg","image/png","image/webp"}:
+                    return web.json_response({"error":"Unsupported camera image."},status=415,headers={"Cache-Control":"no-store"})
+                source_bytes=await part.read(decode=False)
+                if len(source_bytes)>8*1024*1024:
+                    return web.json_response({"error":"Camera image is too large."},status=413,headers={"Cache-Control":"no-store"})
+            else:
+                fields[part.name]=(await part.text()).strip()
+        user=validate_init_data(fields.get("initData",""),TOKEN) or validate_studio_token(fields.get("uid"),fields.get("studioToken"),TOKEN)
+        if not user or not user.get("id"):
+            return web.json_response({"error":"Open MUBA Camera from Telegram."},status=401,headers={"Cache-Control":"no-store"})
+        if not source_bytes:
+            return web.json_response({"error":"Take a photo first."},status=400,headers={"Cache-Control":"no-store"})
+        if not ai_configured():
+            return web.json_response({"error":"MUBA AI engine is not configured."},status=503,headers={"Cache-Control":"no-store"})
+        import base64, aiohttp
+        muba_ref=await _studio_reference(request)
+        form=aiohttp.FormData()
+        form.add_field("prompt",camera_ai_prompt())
+        form.add_field("width","1024"); form.add_field("height","1024")
+        form.add_field("input_image_0",muba_ref,filename="muba-identity.png",content_type="image/png")
+        form.add_field("input_image_1",source_bytes,filename="camera-input",content_type=source_type)
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+            raw=await response.read()
+            if response.status!=200:
+                # Privacy path deliberately avoids logging request/source details.
+                raise RuntimeError("AI request failed")
+            if response.headers.get("Content-Type","").startswith("image/"):
+                body=raw; out_type=response.headers.get("Content-Type").split(";",1)[0]
+            else:
+                response_payload=json.loads(raw.decode("utf-8")); result=response_payload.get("result",response_payload)
+                encoded=result.get("image") if isinstance(result,dict) else None
+                if not encoded: raise RuntimeError("AI response contained no image")
+                body=base64.b64decode(encoded); out_type="image/png"
+        # Deliberately no _STUDIO_OUTPUTS, Gallery, DB, filesystem or history write here.
+        return web.Response(body=body,content_type=out_type,headers={
+            "Cache-Control":"no-store, no-cache, must-revalidate, private",
+            "Pragma":"no-cache","Expires":"0",
+            "X-MUBA-Source-Persisted":"false",
+            "X-MUBA-Gallery-Published":"false",
+            "Content-Disposition":'inline; filename="my-muba.png"',
+        })
+    except Exception:
+        logger.exception("MUBA Camera transformation failed without source payload logging")
+        return web.json_response({"error":"MUBA Camera could not create the image. The source photo was not saved."},status=503,headers={"Cache-Control":"no-store"})
+    finally:
+        # Drop our request-memory reference on every path; no source bytes are retained by MUBA.
+        source_bytes=None
+        reader=None
+
 async def studio_generate_handler(request: web.Request):
     try: data=await request.json()
     except Exception: return web.json_response({"error":"Invalid request."},status=400)
@@ -2072,6 +2141,8 @@ async def start_webhook_server():
         webhook_handler,
     )
     app.router.add_get("/studio", studio_page_handler)
+    app.router.add_get("/camera", camera_page_handler)
+    app.router.add_post("/camera/generate", camera_generate_handler)
     app.router.add_post("/studio/generate", studio_generate_handler)
     app.router.add_options("/studio/web-generate", studio_web_options_handler)
     app.router.add_post("/studio/web-generate", studio_web_generate_handler)
