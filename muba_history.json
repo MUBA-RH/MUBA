@@ -2098,6 +2098,29 @@
         "ar": "تُوحّد صيغ عناوين الحوادث الأمنية لضم تغطيات الناشرين المختلفة للاختراق نفسه ضمن حدث إخباري واحد.",
         "hi": "एक ही हैक पर अलग प्रकाशकों की खबरों को सुरक्षा श्रेणी में मिलाकर एक समाचार घटना बनाया जाता है।"
       }
+    },
+    {
+      "id": "20260926-muba-news-existing-event-repair-v24",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": [
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA NEWS saved event normalization",
+        "tr": "MUBA HABER kayıtlı olay normalleştirmesi",
+        "zh": "MUBA 新闻已存事件规范化",
+        "ar": "توحيد الأحداث المحفوظة في أخبار MUBA",
+        "hi": "MUBA NEWS संग्रहीत घटना सामान्यीकरण"
+      },
+      "text": {
+        "en": "Normalize archived headline categories when reading the pool so previously saved reports of the same hack collapse into one event after security category rules improve.",
+        "tr": "Güvenlik kategorisi kuralları iyileştiğinde daha önce kaydedilmiş aynı saldırı haberleri havuzdan okunurken yeniden sınıflandırılır ve tek olaya indirilir.",
+        "zh": "安全分类规则改进后，读取存档时会重新规范旧标题类别，将同一黑客事件合并为一条。",
+        "ar": "تُوحّد فئات العناوين المحفوظة عند قراءة السجل، فتُدمج التقارير القديمة عن الاختراق نفسه بعد تحسين قواعد تصنيف الأمن.",
+        "hi": "सुरक्षा श्रेणी नियम सुधरने पर पूल पढ़ते समय पुराने शीर्षकों का वर्गीकरण फिर से किया जाता है और एक ही हैक की खबरें एक घटना में जुड़ती हैं।"
+      }
     }
   ]
 }
