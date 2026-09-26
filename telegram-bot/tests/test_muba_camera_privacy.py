@@ -29,6 +29,13 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('form.add_field("input_image_1",source_bytes',handler)
   self.assertIn("camera_ai_prompt()",handler)
   self.assertNotIn("logger.",handler.split("except Exception:",1)[0])
+ def test_camera_shows_selected_photo_and_result(self):
+  self.assertIn('id="previewStatus">Fotoğraf alındı ✓',CAMERA)
+  self.assertIn('id="preview" alt="Selected selfie preview"',CAMERA)
+  self.assertIn('id="resultTitle">MUBA\'N HAZIR ✓',CAMERA)
+  self.assertIn('photo.onchange=',CAMERA)
+  self.assertIn('document.getElementById("resultTitle").style.display="block"',CAMERA)
+  self.assertIn('out.style.display="block"',CAMERA)
  def test_daily_limit_counts_only_success(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
