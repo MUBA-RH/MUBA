@@ -132,7 +132,7 @@ def studio_html(base_url:str)->str:
 <h1>🎭 MUBA Studio</h1><small>Create with the original MUBA. Daily limit: 1.</small>
 <img src="{REFERENCE_URL}" alt="MUBA"><textarea id="p" maxlength="120" placeholder="Describe the MUBA visual. Add visible text only if you want words in the image."></textarea>
 <div class="types"><button class="type on" data-k="meme">🖼 Meme</button><button class="type" data-k="image">✨ Image</button><button class="type" data-k="sticker">😄 Sticker</button><button class="type" data-k="emoji">🙂 Emoji</button></div>
-<button id="go">CREATE</button><div id="msg"></div><img id="preview"><div id="actions"><a id="download" href="#" target="_blank">⬇️ Download</a><button id="copy" type="button">🔗 Copy link</button><button id="gallery-share" type="button">🖼 Share to Gallery</button></div>
+<button id="go">CREATE</button><div id="msg"></div><img id="preview"><div id="actions"><a id="download" href="#" target="_blank">⬇️ Download</a><button id="copy" type="button">🔗 Copy link</button></div>
 </div><script>
 const tg=window.Telegram.WebApp;tg.ready();tg.expand();let kind='meme';
 document.querySelectorAll('.type').forEach(b=>b.onclick=()=>{{document.querySelectorAll('.type').forEach(x=>x.classList.remove('on'));b.classList.add('on');kind=b.dataset.k}});
@@ -140,8 +140,7 @@ document.getElementById('go').onclick=async()=>{{let prompt=document.getElementB
 let r=await fetch('{b}/studio/generate',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{initData:tg.initData,uid:new URLSearchParams(location.search).get('uid'),studioToken:new URLSearchParams(location.search).get('st'),prompt,kind}})}});
 let m=document.getElementById('msg');if(!r.ok){{m.textContent=(await r.json()).error||'Could not create.';return}}
 let outputUrl=r.headers.get('X-MUBA-Output-URL');await r.blob();if(!outputUrl){{m.textContent='Could not create a shareable output.';return}}let im=document.getElementById('preview');im.src=outputUrl;im.style.display='block';let actions=document.getElementById('actions');actions.style.display='grid';document.getElementById('download').href=outputUrl+'?download=1';document.getElementById('copy').onclick=async()=>{{try{{await navigator.clipboard.writeText(outputUrl);m.textContent='Link copied.'}}catch(e){{prompt('Copy this link:',outputUrl)}}}};
-let share=document.getElementById('gallery-share');share.disabled=false;share.textContent='🖼 Share to Gallery';share.onclick=async()=>{{share.disabled=true;m.textContent='Sharing to Gallery…';try{{let result=await fetch('{b}/studio/share',{{method:'POST',headers:{{'content-type':'application/json'}},body:JSON.stringify({{key:outputUrl.split('/').pop(),initData:tg.initData,uid:new URLSearchParams(location.search).get('uid'),studioToken:new URLSearchParams(location.search).get('st')}})}});if(!result.ok)throw new Error((await result.json()).error||'Gallery unavailable.');share.textContent='Shared to Gallery';m.textContent='Shared to MUBA Gallery.'}}catch(e){{share.disabled=false;m.textContent=e.message||'Gallery unavailable.'}}}};
-let rem=r.headers.get('X-MUBA-Remaining');m.textContent='Created with MUBA AI. '+(rem==='DEV'?'DEV unlimited':rem+'/1 left today.')}};
+let rem=r.headers.get('X-MUBA-Remaining');let gallery=r.headers.get('X-MUBA-Gallery-Status');m.textContent=(gallery==='published'?'Created and added to MUBA Gallery.':gallery==='test'?'Test preview ready. Gallery was not changed.':'Image created, but Gallery could not save it. Download it now.')+' '+(rem==='DEV'?'DEV unlimited':rem+'/1 left today.')}};
 </script></body></html>"""
 
 def studio_token(user_id:int,bot_token:str)->str:
