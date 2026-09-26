@@ -45,7 +45,7 @@ def _download_output(kernel_id,out):
             time.sleep(delay)
     return _run(args,180)
 def _worker_source(reference_bytes,prompts):
-    names=("kaggle_bootstrap.py","worker.py","config.json","muba_master_reference_v1.json","requirements.txt")
+    names=("kaggle_bootstrap.py","worker.py","config.json","muba_master_reference_v1.json","muba_daily_story_master_reference.png","requirements.txt")
     sources={name:base64.b64encode((WORKER/name).read_bytes()).decode("ascii") for name in names}
     sources["reference.png"]=base64.b64encode(reference_bytes).decode("ascii")
     job={"job_id":"kaggle-daily-story","day":"on-demand","seed":260925,
@@ -72,8 +72,7 @@ try:
     else:
         raise RuntimeError("ComfyUI API did not start")
     subprocess.check_call([sys.executable,str(root/"worker.py"),str(root/"job.json"),"--out",str(root/"output")],timeout=1200)
-    for i in range(1,5):
-        shutil.copyfile(root/"output"/f"chapter_{i:02d}.png",pathlib.Path("/kaggle/working")/f"{i:02d}.png")
+    shutil.copyfile(root/"output"/"scene.png",pathlib.Path("/kaggle/working")/"01.png")
     print("MUBA_DAILY_STORY_COMPLETE",flush=True)
 finally:
     server.terminate()
@@ -82,7 +81,7 @@ finally:
 '''
 def _generate(reference_bytes,prompts):
     if not configured(): raise RuntimeError("Kaggle Daily Story bridge is not configured")
-    if len(prompts)!=4: raise ValueError("Daily Story requires exactly four prompts")
+    if len(prompts)!=1: raise ValueError("Daily Story requires exactly one prompt")
     if not (WORKER/"kaggle_bootstrap.py").is_file(): raise RuntimeError("ComfyUI Daily Story worker is missing")
     kernel_id=f"{OWNER}/{KERNEL}"
     with tempfile.TemporaryDirectory() as td:
@@ -101,7 +100,7 @@ def _generate(reference_bytes,prompts):
         out=root/"output"; out.mkdir()
         _download_output(kernel_id,out)
         result=[]
-        for i in range(1,5):
+        for i in range(1,2):
             path=out/f"{i:02d}.png"
             if not path.exists(): raise RuntimeError(f"Kaggle output missing {i:02d}.png")
             body=path.read_bytes()

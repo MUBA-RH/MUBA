@@ -66,7 +66,7 @@ from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
-from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, SCENE_REFERENCE
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
 
@@ -711,44 +711,38 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="story_director":
         if not is_dev(user_id): return
         item=story_draft()
-        reference=story_reference_for_day(item["day"])
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+"\n\n".join("🎬 Bölüm %s: %s (%s)\n%s\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i) for i,chapter in enumerate(item["chapters"],1))+"\n\nReferans: "+("HAZIR" if reference else "GEREKLİ")+"\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK")
+        body=("🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item["story_tr"]+
+              "\n\nReferans: "+("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ")+
+              "\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK"))
         rows=[]
-        if item["status"]!="published" and len(item.get("images",[]))==4:
+        if item["status"]!="published" and len(item["images"])==1:
             rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        elif item["status"]!="published" and reference:
-            rows.append([InlineKeyboardButton("🎬 4 BÖLÜMÜ ÜRET",callback_data="story_generate")])
+        elif item["status"]!="published" and story_reference_for_day(item["day"]):
+            rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET",callback_data="story_generate")])
+        if item["status"]!="published":
             rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR",callback_data="story_reference")])
-        elif item["status"]!="published":
-            rows.append([InlineKeyboardButton("📷 REFERANS GÖRSEL VER",callback_data="story_reference")])
         rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
         await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
     if data=="story_reference":
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
-        await q.edit_message_text("📷 MUBA DAILY STORY\n\nBu üretim için kullanacağım MUBA referans görselini şimdi fotoğraf olarak gönder. Referans gelmeden görsel üretimi açılmaz.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        await q.edit_message_text("📷 MUBA DAILY STORY\n\nYeni referans kullanmak istersen görseli gönder. Onaylı varsayılan referans zaten hazır.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
     if data=="story_generate":
         if not is_dev(user_id): return
-        if not story_reference_for_day(story_draft()["day"]):
-            await q.answer("Önce bu üretim için referans görsel gönder.",show_alert=True); return
-        await q.answer("4 MUBA görseli hazırlanıyor…")
+        await q.answer("MUBA hikâye görseli hazırlanıyor…")
         try:
             item=await _story_generate_images(story_draft())
         except Exception:
             logger.exception("MUBA Daily Story image generation failed")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörsel üretim kapasitesi şu anda kullanılamıyor. Referans ve hikâye durumu korundu; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
-        body="🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n4 bölüm ayrı ayrı üretildi. Her görsel yalnızca kendi bölümünü anlatıyor."
-        rows=[[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]]
-        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows))
-        for i,(gid,chapter) in enumerate(zip(item["images"],item["chapters"]),1):
-            caption="🎬 Bölüm %s: %s (%s)\n\n%s\n\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i)
-            await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=caption)
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörsel üretilemedi. Mevcut sistem ve hikâye taslağı korundu; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        await q.edit_message_text("🎬 Tek 16:9 görsel hazır. Hikâyeyi ve görseli incele.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
+        await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
         return
     if data=="story_publish":
         if not is_dev(user_id): return
         try: item=publish_story(story_draft()["day"])
         except ValueError:
-            await q.answer("Önce 4 hikâye görseli hazırlanmalı.",show_alert=True); return
+            await q.answer("Önce tek hikâye görseli hazırlanmalı.",show_alert=True); return
         await q.edit_message_text("🎬 MUBA Günlük Hikâye\n\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
     if data=="gallery_admin":
         if not is_dev(user_id): return
@@ -1069,19 +1063,14 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     item=story_draft()
     set_story_reference(item["day"],archived["id"],digest,"image/jpeg",build_story_fingerprint(body))
     item=story_draft(item["day"])
-    await message.reply_text(
-        "📥 DAILY STORY INBOX — Referans alındı.\n\nMUBA kimliği bu görsele kilitlendi. 4 kare şimdi üretim katmanına gönderiliyor; tamamlandığında dört ayrı görsel Telegram'da önizlemeye gelecek.",
-    )
+    await message.reply_text("📥 DAILY STORY INBOX — Referans güncellendi. Tek görsel hazırlanıyor.")
     try:
         item=await _story_generate_images(item)
-        await message.reply_text("📤 DAILY STORY OUTBOX — 4 bölüm hazır. Her bölüm ve kendi görseli aşağıda ayrı ayrı geliyor.")
-        for i,(gid,chapter) in enumerate(zip(item.get("images",[]),item["chapters"]),1):
-            caption="🎬 Bölüm %s: %s (%s)\n\n%s\n\nBu Bölüm: %s. Görsel"%(i,chapter["title_tr"],chapter["title"],chapter["text_tr"],i)
-            await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+gid,caption=caption)
-        await message.reply_text("Dördünü kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
+        await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
+        await message.reply_text("Görseli kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
-        await message.reply_text("⚠️ Görsel üretim kapasitesi şu anda kullanılamıyor. Referans ve hikâye durumu INBOX'ta korunuyor; daha sonra tekrar deneyebilirsin.")
+        await message.reply_text("⚠️ Görsel üretilemedi. Mevcut sistem ve hikâye taslağı korundu; daha sonra tekrar deneyebilirsin.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _claim_message(update):
@@ -1472,107 +1461,63 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
-    """Generate four Daily Story frames serverlessly and archive them transactionally."""
-    from muba_story_cloudflare import configured as story_image_configured, generate
-    if item.get("status")=="published":
-        return item
-    if len(item.get("prompts",[]))!=4:
-        raise ValueError("Daily Story requires exactly four panel prompts")
+    """Generate and archive one 16:9 Daily Story image; publishing remains DEV-only."""
+    from muba_story_cloudflare import configured as story_image_configured, generate, GenerationCapacityError
+    if item.get("status")=="published": return item
+    if len(item.get("prompts",[]))!=1: raise ValueError("Daily Story requires one scene prompt")
     engine=os.getenv("MUBA_STORY_ENGINE","cloudflare").strip().lower()
-    if engine not in ("cloudflare","kaggle"):
-        raise RuntimeError("Unknown Daily Story image engine")
+    if engine not in ("cloudflare","kaggle"): raise RuntimeError("Unknown Daily Story image engine")
     if engine=="cloudflare" and not story_image_configured():
         raise RuntimeError("Daily Story Visual Generation Layer is not configured")
     metadata=story_reference_for_day(item["day"])
-    if not metadata:
-        raise RuntimeError("Fresh DEV Daily Story reference required")
-    loaded=read_gallery_image(metadata["gallery_id"],include_nonpublic=True)
-    if not loaded:
-        raise RuntimeError("Fresh DEV Daily Story reference is unavailable")
-    reference,reference_type=loaded
+    if not metadata: raise RuntimeError("Daily Story reference required")
+    if metadata.get("file"):
+        reference=SCENE_REFERENCE.read_bytes()
+        reference_type="image/jpeg"
+    else:
+        loaded=read_gallery_image(metadata["gallery_id"],include_nonpublic=True)
+        if not loaded: raise RuntimeError("Daily Story reference unavailable")
+        reference,reference_type=loaded
     if hashlib.sha256(reference).hexdigest()!=metadata["sha256"]:
-        raise RuntimeError("Fresh DEV Daily Story reference checksum mismatch")
-    fingerprint=metadata.get("fingerprint") or build_story_fingerprint(reference)
-    identity_state=master_reference_state(reference)
-    if not story_fingerprint_matches(reference,fingerprint):
+        raise RuntimeError("Daily Story reference checksum mismatch")
+    fingerprint=metadata.get("fingerprint")
+    if fingerprint and not story_fingerprint_matches(reference,fingerprint):
         raise RuntimeError("Daily Story reference fingerprint mismatch")
-
+    prompt=item["prompts"][0]
     if engine=="kaggle":
         from muba_story_kaggle import configured as kaggle_configured, generate_batch
-        if not kaggle_configured():
-            raise RuntimeError("Kaggle Daily Story engine is not configured")
-        # Give the image editor four specific actions rather than four copies of
-        # the full story policy; the immutable identity and style images travel
-        # as separate image inputs in the batch worker.
-        prompts=[chapter["text"]+" Required visible elements: "+"; ".join(chapter["required"])
-                 for chapter in item["chapters"]]
-        frames=await generate_batch(reference,prompts)
-        if len(frames)!=4:
-            raise RuntimeError("Kaggle Daily Story returned an incomplete batch")
-        import io
-        from PIL import Image, ImageStat
-        signatures=set()
-        for i,(body,out_type) in enumerate(frames,1):
-            if out_type!="image/png": raise RuntimeError(f"Kaggle frame {i} is not PNG")
-            with Image.open(io.BytesIO(body)) as frame:
-                frame.load()
-                if frame.size!=(1024,576): raise RuntimeError(f"Kaggle frame {i} is not 16:9")
-                # The previous worker pasted one portrait into a flat canvas.
-                # Reject that failure before a preview is marked ready.
-                left=frame.crop((0,0,160,576))
-                right=frame.crop((864,0,1024,576))
-                if min(ImageStat.Stat(left).stddev[:3]+ImageStat.Stat(right).stddev[:3])<4:
-                    raise RuntimeError(f"Kaggle frame {i} has a flat side border")
-            signature=hashlib.sha256(body).hexdigest()
-            if signature in signatures: raise RuntimeError("Kaggle Daily Story repeated a frame")
-            signatures.add(signature)
-        ids=[]
-        for index,(body,out_type) in enumerate(frames):
-            archived=_archive_studio_output(body,out_type,prompts[index],"image","telegram-story-engine")
-            if not archived: raise RuntimeError("Daily Story image archive failed")
-            ids.append(archived["id"])
-        return set_story_images(item["day"],ids)
-
-    ids=[]
-    async with aiohttp.ClientSession() as session:
-        for index,prompt in enumerate(item["prompts"]):
+        if not kaggle_configured(): raise RuntimeError("Kaggle Daily Story engine is not configured")
+        frames=await generate_batch(reference,[prompt])
+        if len(frames)!=1: raise RuntimeError("Kaggle Daily Story returned an incomplete batch")
+        body,out_type=frames[0]
+    else:
+        async with aiohttp.ClientSession() as session:
             try:
-                body,out_type=await generate(
-                    session,
-                    prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
-                    reference,
-                    reference_type=reference_type,
-                )
-            except Exception as primary_error:
-                from muba_story_cloudflare import GenerationCapacityError
-                if not isinstance(primary_error,GenerationCapacityError):
-                    raise
+                body,out_type=await generate(session,prompt,reference,reference_type=reference_type)
+            except GenerationCapacityError as primary_error:
                 from muba_story_fallback import configured as fallback_configured, generate as fallback_generate
                 if not fallback_configured():
                     raise RuntimeError("Visual generation capacity is currently unavailable") from primary_error
                 logger.warning("Primary story generation capacity unavailable; using secondary reservoir")
-                body,out_type=await fallback_generate(
-                    session,
-                    prompt+" MASTER IDENTITY STATE: "+json.dumps(identity_state,sort_keys=True),
-                    reference,
-                    reference_type=reference_type,
-                    width=1024,
-                    height=576,
-                )
-            archived=_archive_studio_output(body,out_type,prompt,"image","telegram-story-engine")
-            if not archived:
-                raise RuntimeError("Daily Story image archive failed")
-            ids.append(archived["id"])
-    return set_story_images(item["day"],ids)
+                body,out_type=await fallback_generate(session,prompt,reference,reference_type=reference_type,width=1024,height=576)
+    import io
+    from PIL import Image
+    with Image.open(io.BytesIO(body)) as generated:
+        generated.load()
+        if generated.width*9!=generated.height*16:
+            raise RuntimeError("Daily Story output must be 16:9")
+    archived=_archive_studio_output(body,out_type,prompt,"image","telegram-story-engine")
+    if not archived: raise RuntimeError("Daily Story image archive failed")
+    return set_story_images(item["day"],[archived["id"]])
 
 async def _prepare_daily_story(application):
     """Daily reminder only. V3 never generates until DEV uploads a fresh reference."""
     item=story_draft()
     chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
-    if item.get("status")!="published" and not story_reference_for_day(item["day"]):
+    if item.get("status")!="published":
         await application.bot.send_message(
             chat_id=chat_id,
-            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nBugünkü akıcı 4 bölümlük hikâye hazır. Görsel üretiminden önce referans MUBA görselini gönder; ardından 4 GÖRSELİ ÜRET düğmesi açılacak.",
+            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nBugünkü 150–170 karakterlik hikâye taslağı hazır. Tek 16:9 görseli üretmek için Daily Story menüsünü aç.",
         )
     return item
 

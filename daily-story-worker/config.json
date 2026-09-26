@@ -2,7 +2,7 @@
   "schema_version": 2,
   "engine": "comfyui",
   "output": {"width": 1024, "height": 576, "format": "png"},
-  "chapters": 4,
+  "chapters": 1,
   "independent_chapters": true,
   "previous_frame_conditioning": false,
   "approval": "telegram-dev",
@@ -10,5 +10,5 @@
   "workflow": "workflow/muba_daily_story_api.json",
   "model": {"family":"sdxl","checkpoint_env":"MUBA_COMFY_CHECKPOINT","default_checkpoint":"sd_xl_base_1.0.safetensors"},
   "identity": {"source":"job.reference_path","adapter":"IPAdapter PLUS high strength","weight":1.30,"prompt_contract":"job.chapters[].prompt"},
-  "gates": ["reference","four-frame-generation","telegram-dev-approval","web-publish"]
+  "gates": ["reference","one-scene-generation","telegram-dev-approval","web-publish"]
 }

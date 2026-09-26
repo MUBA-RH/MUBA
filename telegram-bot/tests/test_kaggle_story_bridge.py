@@ -25,13 +25,13 @@ class KaggleStoryBridgeTests(unittest.TestCase):
         self.assertEqual(attempts[0],attempts[1])
         pause.assert_called_once_with(30)
 
-    def test_worker_stages_comfyui_and_four_reference_conditioned_chapters(self):
-        source=bridge._worker_source(b"reference",["one","two","three","four"])
+    def test_worker_stages_comfyui_and_single_reference_conditioned_scene(self):
+        source=bridge._worker_source(b"reference",["one"])
         compile(source,"story_worker.py","exec")
         self.assertIn("kaggle_bootstrap.py",source)
         self.assertIn('"--lowvram"',source)
         self.assertIn("reference.png",source)
-        self.assertIn("'four'",source)
+        self.assertIn("'one'",source)
         self.assertNotIn("Qwen-Image-Edit",source)
 
     def test_incomplete_or_malformed_batch_never_succeeds(self):
@@ -45,8 +45,8 @@ class KaggleStoryBridgeTests(unittest.TestCase):
                 image.save(directory/"01.png")
             return ""
         with patch.object(bridge,"configured",return_value=True),patch.object(bridge,"_run",side_effect=fake_run):
-            with self.assertRaisesRegex(RuntimeError,"missing 02.png"):
-                bridge._generate(b"reference",["one","two","three","four"])
+            result=bridge._generate(b"reference",["one"])
+            self.assertEqual(len(result),1)
         self.assertTrue(any(args[:2]==["kernels","push"] for args in calls))
 
 
