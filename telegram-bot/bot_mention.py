@@ -1526,6 +1526,9 @@ async def camera_generate_handler(request: web.Request):
             return web.json_response({"error":"Open MUBA Camera from Telegram."},status=401,headers={"Cache-Control":"no-store"})
         if not source_bytes:
             return web.json_response({"error":"Take a photo first."},status=400,headers={"Cache-Control":"no-store"})
+        uid=int(user["id"])
+        if not is_dev(uid) and remaining(uid)<=0:
+            return web.json_response({"error":"Daily MUBA Camera allowance used — 1/1."},status=429,headers={"Cache-Control":"no-store","X-MUBA-Remaining":"0"})
         if not ai_configured():
             return web.json_response({"error":"MUBA AI engine is not configured."},status=503,headers={"Cache-Control":"no-store"})
         import base64, aiohttp
@@ -1548,12 +1551,15 @@ async def camera_generate_handler(request: web.Request):
                 encoded=result.get("image") if isinstance(result,dict) else None
                 if not encoded: raise RuntimeError("AI response contained no image")
                 body=base64.b64decode(encoded); out_type="image/png"
+        # Count only a successfully generated result; every failure path above remains free.
+        consume(uid)
         # Deliberately no _STUDIO_OUTPUTS, Gallery, DB, filesystem or history write here.
         return web.Response(body=body,content_type=out_type,headers={
             "Cache-Control":"no-store, no-cache, must-revalidate, private",
             "Pragma":"no-cache","Expires":"0",
             "X-MUBA-Source-Persisted":"false",
             "X-MUBA-Gallery-Published":"false",
+            "X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid)),
             "Content-Disposition":'inline; filename="my-muba.png"',
         })
     except Exception:
