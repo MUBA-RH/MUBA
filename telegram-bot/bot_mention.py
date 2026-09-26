@@ -392,18 +392,26 @@ def create_hub_keyboard(lang,user_id):
     ])
 
 COMMUNITY_GUIDE_LABELS={
-    "en":{"web":"🌐 MUBA Website · GO","x":"𝕏 MUBA X Account · GO","ask":"❓ Want to know MUBA? · ASK MUBA","updates":"🆕 What changed in MUBA? · UPDATES","news":"📰 Crypto news · NEWS","story":"🎬 Follow MUBA's story · STORY","create":"🎨 Want to create? · CREATE","system":"🔎 How does MUBA work? · TRANSPARENCY","security":"🛡️ Security / verification · CHECK","devlog":"📜 Development Log"},
-    "tr":{"web":"🌐 MUBA Web Sayfası · GİT","x":"𝕏 MUBA X Hesabı · GİT","ask":"❓ MUBA’yı tanımak ister misin? · ASK MUBA","updates":"🆕 MUBA’da neler değişti? · YENİLİKLER","news":"📰 Kripto haberleri · NEWS","story":"🎬 MUBA’nın hikâyesini takip et · HİKÂYE","create":"🎨 Bir şey üretmek ister misin? · CREATE","system":"🔎 MUBA nasıl çalışıyor? · ŞEFFAFLIK","security":"🛡️ Güvenlik / doğrulama · KONTROL","devlog":"📜 Geliştirme Günlüğü"},
-    "zh":{"web":"🌐 MUBA 网站 · 前往","x":"𝕏 MUBA X 账号 · 前往","ask":"❓ 想了解 MUBA？· ASK MUBA","updates":"🆕 MUBA 有什么变化？· 更新","news":"📰 加密新闻 · NEWS","story":"🎬 关注 MUBA 的故事 · 故事","create":"🎨 想创作吗？· CREATE","system":"🔎 MUBA 如何运行？· 透明度","security":"🛡️ 安全 / 验证 · 检查","devlog":"📜 开发日志"},
-    "ar":{"web":"🌐 موقع MUBA · اذهب","x":"𝕏 حساب MUBA على X · اذهب","ask":"❓ هل تريد معرفة MUBA؟ · ASK MUBA","updates":"🆕 ما الذي تغير في MUBA؟ · التحديثات","news":"📰 أخبار الكريبتو · NEWS","story":"🎬 تابع قصة MUBA · القصة","create":"🎨 هل تريد الإنشاء؟ · CREATE","system":"🔎 كيف يعمل MUBA؟ · الشفافية","security":"🛡️ الأمان / التحقق · فحص","devlog":"📜 سجل التطوير"},
-    "hi":{"web":"🌐 MUBA वेबसाइट · जाएँ","x":"𝕏 MUBA X अकाउंट · जाएँ","ask":"❓ MUBA को जानना चाहते हैं? · ASK MUBA","updates":"🆕 MUBA में क्या बदला? · अपडेट","news":"📰 क्रिप्टो समाचार · NEWS","story":"🎬 MUBA की कहानी देखें · कहानी","create":"🎨 कुछ बनाना चाहते हैं? · CREATE","system":"🔎 MUBA कैसे काम करता है? · पारदर्शिता","security":"🛡️ सुरक्षा / सत्यापन · जाँच","devlog":"📜 विकास लॉग"},
+    "en":{"about":"🌍 Community","join":"🤝 Join","channels":"📢 Official Channels","web":"🌐 Website","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 Updates","news":"📰 News","story":"🎬 Story","create":"🎨 Create","system":"🔎 Transparency","security":"🛡️ Safety","devlog":"📜 Development Log"},
+    "tr":{"about":"🌍 Topluluk","join":"🤝 Katıl","channels":"📢 Resmî Kanallar","web":"🌐 Web","x":"𝕏 X","telegram":"Telegram","ask":"💬 MUBA'YA SOR","updates":"🆕 Yenilikler","news":"📰 Haberler","story":"🎬 Hikâye","create":"🎨 Üret","system":"🔎 Şeffaflık","security":"🛡️ Güvenlik","devlog":"📜 Geliştirme Günlüğü"},
+    "zh":{"about":"🌍 社区","join":"🤝 参与","channels":"📢 官方渠道","web":"🌐 网站","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 更新","news":"📰 新闻","story":"🎬 故事","create":"🎨 创作","system":"🔎 透明度","security":"🛡️ 安全","devlog":"📜 开发日志"},
+    "ar":{"about":"🌍 المجتمع","join":"🤝 شارك","channels":"📢 القنوات الرسمية","web":"🌐 الموقع","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 التحديثات","news":"📰 الأخبار","story":"🎬 القصة","create":"🎨 أنشئ","system":"🔎 الشفافية","security":"🛡️ الأمان","devlog":"📜 سجل التطوير"},
+    "hi":{"about":"🌍 समुदाय","join":"🤝 जुड़ें","channels":"📢 आधिकारिक चैनल","web":"🌐 वेबसाइट","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 अपडेट","news":"📰 समाचार","story":"🎬 कहानी","create":"🎨 बनाएँ","system":"🔎 पारदर्शिता","security":"🛡️ सुरक्षा","devlog":"📜 विकास लॉग"},
+}
+COMMUNITY_INFO={
+    "en":{"about":"MUBA Community is the starting point for discovering MUBA, its culture and ecosystem.","join":"Explore MUBA, follow its story and updates, and participate through its creation tools.","channels":"Follow MUBA through its official public channels."},
+    "tr":{"about":"MUBA Topluluğu; MUBA'yı, kültürünü ve ekosistemini keşfetmek için başlangıç merkezidir.","join":"MUBA'yı keşfet, hikâyesini ve yeniliklerini takip et, üretim araçlarıyla topluluğa katıl.","channels":"MUBA'yı resmî ve doğrulanmış kanallarından takip et."},
+    "zh":{"about":"MUBA 社区是探索 MUBA、其文化和生态系统的起点。","join":"探索 MUBA，关注故事与更新，并通过创作工具参与社区。","channels":"通过 MUBA 的官方公开渠道关注 MUBA。"},
+    "ar":{"about":"مجتمع MUBA هو نقطة البداية لاكتشاف MUBA وثقافته ونظامه البيئي.","join":"اكتشف MUBA وتابع قصته وتحديثاته وشارك عبر أدوات الإنشاء.","channels":"تابع MUBA عبر قنواته العامة الرسمية."},
+    "hi":{"about":"MUBA Community, MUBA, उसकी culture और ecosystem को जानने का शुरुआती केंद्र है।","join":"MUBA को जानें, story और updates follow करें और creation tools से community में भाग लें।","channels":"MUBA को उसके official public channels पर follow करें।"},
 }
 
 def community_hub_keyboard(lang,user_id):
     g=COMMUNITY_GUIDE_LABELS[lang]
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(g["web"],url="https://muba-rh.github.io/MUBA/")],
-        [InlineKeyboardButton(g["x"],url="https://x.com/MUBA_RH")],
+        [InlineKeyboardButton(g["about"],callback_data="community_info:about")],
+        [InlineKeyboardButton(g["join"],callback_data="community_info:join")],
+        [InlineKeyboardButton(g["channels"],callback_data="community_info:channels")],
         [InlineKeyboardButton(g["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(g["updates"]+_global_update_badge(lang,user_id),callback_data="updates_center")],
         [InlineKeyboardButton(g["news"],callback_data="news")],
@@ -414,6 +422,15 @@ def community_hub_keyboard(lang,user_id):
         [InlineKeyboardButton(g["devlog"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
         [_section_back(lang)],
     ])
+
+def community_info_keyboard(lang,section):
+    g=COMMUNITY_GUIDE_LABELS[lang]
+    back=InlineKeyboardButton(TEXT[lang]["back"],callback_data="community_hub")
+    if section=="about":
+        return InlineKeyboardMarkup([[InlineKeyboardButton(g["ask"],callback_data="ask_muba")],[InlineKeyboardButton(g["system"],callback_data="transparency:0")],[back]])
+    if section=="join":
+        return InlineKeyboardMarkup([[InlineKeyboardButton(g["story"],callback_data="extra:story")],[InlineKeyboardButton(g["updates"],callback_data="updates_center")],[InlineKeyboardButton(g["create"],callback_data="create_hub")],[back]])
+    return InlineKeyboardMarkup([[InlineKeyboardButton(g["web"],url="https://muba-rh.github.io/MUBA/")],[InlineKeyboardButton(g["x"],url="https://x.com/MUBA_RH")],[InlineKeyboardButton(g["telegram"],url="https://t.me/MUBA_RH")],[back]])
 
 def dev_tools_keyboard(lang):
     return InlineKeyboardMarkup([
@@ -751,6 +768,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
     if data=="community_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
+    if data.startswith("community_info:"):
+        section=data.split(":",1)[1]
+        if section not in COMMUNITY_INFO[lang]: return
+        await q.edit_message_text(COMMUNITY_INFO[lang][section],reply_markup=community_info_keyboard(lang,section),disable_web_page_preview=True); return
     if data=="dev_tools":
         if not is_dev(user_id): return
         await q.edit_message_text(ASSISTANT_UI[lang]["dev"],reply_markup=dev_tools_keyboard(lang)); return
