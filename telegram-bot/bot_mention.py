@@ -411,7 +411,7 @@ def daily_hub_keyboard(lang):
 def create_hub_keyboard(lang,user_id):
     private_token=studio_token(user_id or 0,TOKEN)
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+private_token))],
+        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/studio?uid="+str(user_id or 0)+"&st="+private_token))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
@@ -477,7 +477,7 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
-        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/?v=muba-run-v2"))],
     ]
@@ -814,6 +814,9 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
+    if data=="camera_native":
+        context.user_data["muba_camera_waiting_photo"]=True
+        await q.edit_message_text("📸 MUBA CAMERA\n\nTelegram mesaj alanındaki 📎 / kamera düğmesini kullanarak şimdi yeni bir fotoğraf çek ve bu özel sohbete gönder. Hazır galeriden seçmek yerine kamerayla yeni çekim yap.\n\nFotoğraf geldiğinde MUBA dönüşümü otomatik başlayacak. Günlük hak: 1 başarılı üretim; hata olursa hak düşmez.",reply_markup=InlineKeyboardMarkup([[_section_back(lang)]])); return
     if data=="community_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
     if data.startswith("community_info:"):
@@ -1243,6 +1246,69 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         await context.bot.send_message(chat_id=DEV_ID,text="\n".join(lines),reply_markup=markup)
     except Exception:
         logger.exception("Guardian DEV private report failed")
+
+async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Private native Telegram photo -> ephemeral MUBA transformation -> Telegram result."""
+    message=update.effective_message; user=update.effective_user; chat=update.effective_chat
+    if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not message.photo:
+        return
+    if not context.user_data.get("muba_camera_waiting_photo",False):
+        return
+    uid=int(user.id)
+    if not is_dev(uid) and remaining(uid)<=0:
+        context.user_data.pop("muba_camera_waiting_photo",None)
+        await message.reply_text("📸 Günlük MUBA CAMERA hakkın kullanıldı — 1/1.")
+        return
+    if not ai_configured():
+        await message.reply_text("⚠️ MUBA AI şu anda hazır değil. Günlük hakkın kullanılmadı.")
+        return
+    status=await message.reply_text("MUBA DÖNÜŞ %10\nAL → Fotoğraf alındı ✓")
+    source_bytes=None
+    try:
+        tg_file=await context.bot.get_file(message.photo[-1].file_id,read_timeout=30)
+        source_bytes=bytes(await tg_file.download_as_bytearray(read_timeout=60))
+        await status.edit_text("MUBA DÖNÜŞ %35\nİŞLE → MUBA hazırlanıyor...")
+        if len(source_bytes)>8*1024*1024:
+            raise RuntimeError("Fotoğraf çok büyük.")
+        ref_path=STUDIO_REFERENCE_FILE
+        if not ref_path.exists():
+            raise RuntimeError("MUBA kimlik referansı bulunamadı.")
+        muba_ref=ref_path.read_bytes()
+        form=aiohttp.FormData()
+        form.add_field("prompt",camera_ai_prompt())
+        form.add_field("width","1024"); form.add_field("height","1024")
+        form.add_field("input_image_0",muba_ref,filename="muba-identity.png",content_type="image/png")
+        form.add_field("input_image_1",source_bytes,filename="camera-input.jpg",content_type="image/jpeg")
+        headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        session=context.application.bot_data.get("news_session")
+        if session is None:
+            raise RuntimeError("MUBA image session hazır değil.")
+        await status.edit_text("MUBA DÖNÜŞ %70\nİŞLE → Görsel üretiliyor...")
+        async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+            raw=await response.read()
+            if response.status!=200:
+                raise RuntimeError("AI üretimi başarısız.")
+            if response.headers.get("Content-Type","").startswith("image/"):
+                body=raw
+            else:
+                import base64
+                payload=json.loads(raw.decode("utf-8")); result=payload.get("result",payload)
+                encoded=result.get("image") if isinstance(result,dict) else None
+                if not encoded:
+                    raise RuntimeError("AI sonucu görsel içermiyor.")
+                body=base64.b64decode(encoded)
+        if not body:
+            raise RuntimeError("Üretim sonucu boş.")
+        if not is_dev(uid) and not consume(uid):
+            raise RuntimeError("Günlük hak doğrulanamadı.")
+        context.user_data.pop("muba_camera_waiting_photo",None)
+        await status.edit_text("MUBA DÖNÜŞ %100 ✓\nVER → MUBA'N HAZIR ✓")
+        await message.reply_photo(photo=body,caption="📸 MUBA'N HAZIR ✓\nKaynak fotoğraf MUBA tarafından kalıcı kaydedilmedi. Gallery'ye yayınlanmadı.")
+    except Exception:
+        logger.exception("Native MUBA Camera transformation failed without source payload logging")
+        await status.edit_text("⚠️ MUBA DÖNÜŞ başarısız. Günlük hakkın kullanılmadı. Yeni bir fotoğraf göndererek tekrar deneyebilirsin.")
+    finally:
+        source_bytes=None
 
 async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """DEV-only: capture a fresh Telegram photo as today's one-batch Story reference."""
@@ -2071,6 +2137,7 @@ async def start_webhook_server():
     # /start and other bot commands can continue responding.
     application.add_handler(CallbackQueryHandler(callback_handler, pattern=r"^story_(?:director|generate|prepare_tomorrow)$|^story_day:", block=False))
     application.add_handler(CallbackQueryHandler(callback_handler))
+    application.add_handler(MessageHandler(filters.PHOTO, muba_camera_photo, block=False), group=-5)
     application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo, block=False), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
