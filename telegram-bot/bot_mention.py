@@ -1666,7 +1666,7 @@ async def _story_generate_images_unlocked(item):
     if engine=="kaggle":
         from muba_story_kaggle import configured as kaggle_configured, generate_batch
         if not kaggle_configured(): raise RuntimeError("Kaggle Daily Story engine is not configured")
-        frames=await generate_batch(reference,[prompt])
+        frames=await generate_batch(reference,[prompt],day=item["day"],fresh=bool(item["images"]))
         if len(frames)!=1: raise RuntimeError("Kaggle Daily Story returned an incomplete batch")
         body,out_type=frames[0]
     else:

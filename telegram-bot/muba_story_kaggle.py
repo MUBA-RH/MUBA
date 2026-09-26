@@ -1,6 +1,6 @@
 """On-demand Kaggle T4 x2 batch bridge for MUBA Daily Story."""
 from __future__ import annotations
-import asyncio, base64, io, json, os, subprocess, sys, tempfile, time
+import asyncio, base64, hashlib, io, json, os, subprocess, sys, tempfile, time
 from pathlib import Path
 from PIL import Image
 OWNER=os.getenv("MUBA_KAGGLE_OWNER","mubarh").strip()
@@ -34,7 +34,7 @@ def _run(args,timeout=120):
     return (p.stdout or "")+(p.stderr or "")
 def _download_output(kernel_id,out):
     args=["kernels","output",kernel_id,"-p",str(out),"-o","-q","--file-pattern",".*\\.png$"]
-    for delay in (30,60,120,240):
+    for delay in (10,20,30):
         try:
             return _run(args,180)
         except RuntimeError as exc:
@@ -73,23 +73,42 @@ try:
         raise RuntimeError("ComfyUI API did not start")
     subprocess.check_call([sys.executable,str(root/"worker.py"),str(root/"job.json"),"--out",str(root/"output")],timeout=1200)
     shutil.copyfile(root/"output"/"scene.png",pathlib.Path("/kaggle/working")/"01.png")
-    print("MUBA_DAILY_STORY_COMPLETE",flush=True)
 finally:
     server.terminate()
     try: server.wait(timeout=10)
     except subprocess.TimeoutExpired: server.kill()
+# Kaggle otherwise publishes hundreds of ComfyUI/model files as kernel output.
+# Keep only the scene so the output listing stays small and the GPU work is reusable.
+shutil.rmtree(root,ignore_errors=True)
+shutil.rmtree("/kaggle/working/ComfyUI",ignore_errors=True)
+for unused in pathlib.Path("/kaggle/working").glob("comfyui-*.zip"):
+    unused.unlink(missing_ok=True)
+print("MUBA_DAILY_STORY_COMPLETE",flush=True)
 '''
-def _generate(reference_bytes,prompts):
+def _generate(reference_bytes,prompts,day=None,fresh=False):
     if not configured(): raise RuntimeError("Kaggle Daily Story bridge is not configured")
     if len(prompts)!=1: raise ValueError("Daily Story requires exactly one prompt")
     if not (WORKER/"kaggle_bootstrap.py").is_file(): raise RuntimeError("ComfyUI Daily Story worker is missing")
     kernel_id=f"{OWNER}/{KERNEL}"
+    signature=hashlib.sha256(reference_bytes+prompts[0].encode("utf-8")).hexdigest()
+    from muba_story import STORE
+    saved=STORE.get("story_kaggle_job",day,None) if day and not fresh else None
+    reuse=isinstance(saved,dict) and saved.get("signature")==signature and saved.get("kernel")==kernel_id
+    # Today's completed run predates durable job tracking. Adopt it once so a
+    # retry downloads its scene instead of starting a second GPU job.
+    if day=="2026-09-26" and not fresh and not reuse:
+        previous_status=_run(["kernels","status",kernel_id],60).lower()
+        if "complete" in previous_status:
+            reuse=True
+            STORE.set("story_kaggle_job",day,{"signature":signature,"kernel":kernel_id})
     with tempfile.TemporaryDirectory() as td:
         root=Path(td)
-        (root/"story_worker.py").write_text(_worker_source(reference_bytes,prompts),encoding="utf-8")
-        meta={"id":kernel_id,"title":"MUBA Daily Story Runtime","code_file":"story_worker.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","dataset_sources":[],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
-        (root/"kernel-metadata.json").write_text(json.dumps(meta),encoding="utf-8")
-        _run(["kernels","push","-p",str(root),"--accelerator","NvidiaTeslaT4","-t",str(TIMEOUT)],180)
+        if not reuse:
+            (root/"story_worker.py").write_text(_worker_source(reference_bytes,prompts),encoding="utf-8")
+            meta={"id":kernel_id,"title":"MUBA Daily Story Runtime","code_file":"story_worker.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","dataset_sources":[],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
+            (root/"kernel-metadata.json").write_text(json.dumps(meta),encoding="utf-8")
+            _run(["kernels","push","-p",str(root),"--accelerator","NvidiaTeslaT4","-t",str(TIMEOUT)],180)
+            if day: STORE.set("story_kaggle_job",day,{"signature":signature,"kernel":kernel_id})
         deadline=time.time()+TIMEOUT
         while time.time()<deadline:
             status=_run(["kernels","status",kernel_id],60).lower()
@@ -110,4 +129,5 @@ def _generate(reference_bytes,prompts):
                 if im.size!=(1024,576): raise RuntimeError(f"Kaggle frame {i} has invalid dimensions")
             result.append((body,"image/png"))
         return result
-async def generate_batch(reference_bytes,prompts): return await asyncio.to_thread(_generate,reference_bytes,prompts)
+async def generate_batch(reference_bytes,prompts,day=None,fresh=False):
+    return await asyncio.to_thread(_generate,reference_bytes,prompts,day,fresh)
