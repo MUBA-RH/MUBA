@@ -2226,6 +2226,28 @@
         "ar": "يجتمع Web Studio وMUBA X في مساحة واحدة. تُضاف إبداعات المستخدمين الناجحة إلى المعرض تلقائيًا، بينما تبقى معاينات المطور وصور Daily Story خارجه. لا يضيف رابط الاختبار صورًا إلى المعرض.",
         "hi": "Web Studio और MUBA X अब एक ही स्थान में हैं। उपयोगकर्ताओं की सफल रचनाएं अपने आप गैलरी में आती हैं; डेवलपर पूर्वावलोकन और Daily Story की तस्वीरें अलग रहती हैं। परीक्षण लिंक गैलरी में सामग्री नहीं जोड़ता।"
       }
+    },
+    {
+      "id": "20260926-daily-story-single-scene",
+      "date": "2026-09-26",
+      "type": "updated",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Daily Story now uses one illustrated scene",
+        "tr": "Daily Story artık tek resimli sahne kullanıyor",
+        "zh": "每日故事现采用单幅插画场景",
+        "ar": "القصة اليومية تستخدم الآن مشهداً مصوراً واحداً",
+        "hi": "दैनिक कहानी में अब एक चित्रित दृश्य है"
+      },
+      "text": {
+        "en": "Each Daily Story has a connected 150–170 character episode and one landscape 16:9 illustration. MUBA identity and the approved scene style are the references; publication still requires DEV approval.",
+        "tr": "Her Daily Story, önceki günün devamı olan 150–170 karakterlik bir bölüm ve tek bir yatay 16:9 görsel içerir. MUBA kimliği ve onaylanan sahne tarzı referanstır; yayın için DEV onayı gerekir.",
+        "zh": "每天的故事延续前一天，以150至170个字符的短文和一张16:9横幅插画呈现。角色形象与已认可的画风作为参考，发布仍需开发者批准。",
+        "ar": "تتابع القصة اليومية أحداث اليوم السابق بنص من 150 إلى 170 حرفاً وصورة أفقية واحدة بنسبة 16:9. تبقى هوية MUBA والأسلوب المعتمد مرجعاً، ولا يتم النشر إلا بموافقة المطور.",
+        "hi": "हर दैनिक कहानी पिछले दिन से जुड़ा 150–170 अक्षरों का भाग और एक 16:9 क्षैतिज चित्र दिखाती है। MUBA की पहचान और स्वीकृत दृश्य शैली संदर्भ हैं; प्रकाशन के लिए डेवलपर की मंज़ूरी जरूरी है।"
+      }
     }
   ]
 }
