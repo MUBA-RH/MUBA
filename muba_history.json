@@ -2186,6 +2186,26 @@
         "ar": "تُزال البطاقات القديمة من المعرض العام مع الاحتفاظ بملفات Story. تبقى صور Studio في المعاينة حتى يختار المستخدم مشاركتها في المعرض. لا تضيف اختبارات المطور أو اعتماد Story بطاقات إلى المعرض.",
         "hi": "Story की तस्वीरें सुरक्षित रखते हुए पुराने कार्ड सार्वजनिक गैलरी से हटते हैं। Studio की रचनाएं उपयोगकर्ता के गैलरी में साझा करने तक केवल पूर्वावलोकन में रहती हैं। डेवलपर परीक्षण और Story की स्वीकृति गैलरी में कार्ड नहीं जोड़ते।"
       }
+    },
+    {
+      "id": "20260926-unified-studio-auto-gallery",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": ["studio", "gallery", "web", "telegram"],
+      "title": {
+        "en": "One Studio space with automatic community Gallery",
+        "tr": "Tek Studio alanı ve otomatik topluluk Galerisi",
+        "zh": "统一 Studio 工作区与自动社区画廊",
+        "ar": "مساحة Studio موحدة ومعرض مجتمع تلقائي",
+        "hi": "एक Studio स्थान और स्वचालित समुदाय गैलरी"
+      },
+      "text": {
+        "en": "Web Studio and MUBA X now share one workspace. Successful user creations appear in Gallery automatically; developer previews and Daily Story frames stay out. A test URL keeps Web Studio previews out of Gallery.",
+        "tr": "Web Studio ve MUBA X artık tek çalışma alanında. Başarılı kullanıcı görselleri Galeriye otomatik eklenir; geliştirici önizlemeleri ve Daily Story kareleri ayrı kalır. Test bağlantısı web önizlemelerini Galeriden uzak tutar.",
+        "zh": "Web Studio 与 MUBA X 共用一个工作区。用户成功生成的作品自动加入画廊；开发者预览和 Daily Story 画面保持独立。测试链接不会向画廊添加作品。",
+        "ar": "يجتمع Web Studio وMUBA X في مساحة واحدة. تُضاف إبداعات المستخدمين الناجحة إلى المعرض تلقائيًا، بينما تبقى معاينات المطور وصور Daily Story خارجه. لا يضيف رابط الاختبار صورًا إلى المعرض.",
+        "hi": "Web Studio और MUBA X अब एक ही स्थान में हैं। उपयोगकर्ताओं की सफल रचनाएं अपने आप गैलरी में आती हैं; डेवलपर पूर्वावलोकन और Daily Story की तस्वीरें अलग रहती हैं। परीक्षण लिंक गैलरी में सामग्री नहीं जोड़ता।"
+      }
     }
   ]
 }
