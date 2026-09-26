@@ -9,11 +9,13 @@ class GalleryAndUpdatesWiringTests(unittest.TestCase):
     def test_gallery_routes_and_both_studio_sources_are_wired(self):
         self.assertIn('app.router.add_get("/gallery", gallery_list_handler)',BOT)
         self.assertIn('app.router.add_get("/gallery/image/{item_id}", gallery_image_handler)',BOT)
-        self.assertIn('_archive_studio_output(body,out_type,prompt,kind,"telegram")',BOT)
-        self.assertIn('_archive_studio_output(body,out_type,prompt,kind,"web")',BOT)
+        self.assertIn('app.router.add_post("/studio/share", studio_share_handler)',BOT)
+        self.assertIn('list_gallery(limit=limit,kind=kind,shared_only=True)',BOT)
+        self.assertNotIn('_archive_studio_output(body,out_type,prompt,kind,"web")',BOT)
+        self.assertNotIn('_archive_studio_output(body,out_type,prompt,kind,"telegram")',BOT)
 
     def test_public_gallery_metadata_excludes_user_identity(self):
-        handler=BOT[BOT.index("async def gallery_list_handler"):BOT.index("async def gallery_image_handler")]
+        handler=BOT[BOT.index("async def gallery_list_handler"):BOT.index("async def studio_share_handler")]
         self.assertNotIn('"user_id"',handler)
         self.assertNotIn('"username"',handler)
         self.assertNotIn('"prompt"',handler)
