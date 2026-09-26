@@ -410,7 +410,6 @@ def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[
-        [InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")],
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
@@ -421,6 +420,7 @@ def menu_keyboard(lang,user_id=None):
     ]
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
+    rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
