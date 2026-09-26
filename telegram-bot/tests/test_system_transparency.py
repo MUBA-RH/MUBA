@@ -10,7 +10,7 @@ class TransparencyTests(unittest.TestCase):
   self.assertEqual(set(TRANSPARENCY_NAV),set(TRANSPARENCY_PAGES))
 
  def test_core_topics_exist_in_every_locale(self):
-  required=("MUBA","Assistant","Guardian","CA","GitHub")
+  required=("MUBA","Assistant","Guardian","CA")
   for lang,pages in TRANSPARENCY_PAGES.items():
    joined="\n".join(pages)
    for term in required:

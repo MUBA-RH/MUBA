@@ -19,10 +19,38 @@
   },
   "entries": [
     {
+      "id": "20260926-transparency-button-index",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "telegram"
+      ],
+      "title": {
+        "en": "System Transparency gets a button index",
+        "tr": "Sistem Şeffaflığı buton dizinine geçti",
+        "zh": "系统透明度改为按钮索引",
+        "ar": "تحويل شفافية النظام إلى فهرس أزرار",
+        "hi": "System Transparency अब button index में"
+      },
+      "text": {
+        "en": "System Transparency topics are now opened directly from a topic-button index instead of being browsed with previous/next paging. Existing transparency records remain intact.",
+        "tr": "Sistem Şeffaflığı başlıkları artık önceki/sonraki sayfa kaydırması yerine doğrudan konu butonlarından açılıyor. Mevcut şeffaflık kayıtlarının tamamı korunuyor.",
+        "zh": "系统透明度主题现在可从主题按钮索引直接打开，不再通过上一页/下一页浏览。现有透明度记录全部保留。",
+        "ar": "يمكن الآن فتح موضوعات شفافية النظام مباشرة من فهرس أزرار بدلاً من التنقل السابق/التالي، مع الحفاظ على جميع سجلات الشفافية الحالية.",
+        "hi": "System Transparency topics अब previous/next paging के बजाय topic buttons से सीधे खुलते हैं। मौजूदा transparency records सुरक्षित रहते हैं।"
+      }
+    },
+    {
       "id": "20260926-studio-shared-identity-gallery",
       "date": "2026-09-26",
       "type": "improved",
-      "areas": ["studio", "gallery", "web", "telegram"],
+      "areas": [
+        "studio",
+        "gallery",
+        "web",
+        "telegram"
+      ],
       "title": {
         "en": "One MUBA identity across both Studios",
         "tr": "İki Studio alanında ortak MUBA kimliği",
@@ -2191,7 +2219,12 @@
       "id": "20260926-gallery-explicit-community-shares",
       "date": "2026-09-26",
       "type": "fixed",
-      "areas": ["gallery", "studio", "web", "telegram"],
+      "areas": [
+        "gallery",
+        "studio",
+        "web",
+        "telegram"
+      ],
       "title": {
         "en": "Gallery shows community shares only",
         "tr": "Galeri yalnızca topluluk paylaşımlarını gösterir",
@@ -2211,7 +2244,12 @@
       "id": "20260926-unified-studio-auto-gallery",
       "date": "2026-09-26",
       "type": "improved",
-      "areas": ["studio", "gallery", "web", "telegram"],
+      "areas": [
+        "studio",
+        "gallery",
+        "web",
+        "telegram"
+      ],
       "title": {
         "en": "One Studio space with automatic community Gallery",
         "tr": "Tek Studio alanı ve otomatik topluluk Galerisi",
@@ -2269,6 +2307,50 @@
         "zh": "开篇之后，每日故事会根据上一集生成并保存一段新的150至170字符故事。文字无效或无法生成时，不会重复旧故事，也不会发布图片。",
         "ar": "بعد الفصول الأولى تُعد القصة اليومية نصاً جديداً من 150 إلى 170 حرفاً انطلاقاً من القصة السابقة وتحفظه. عند تعذر إعداد نص صالح لا تتكرر قصة قديمة ولا تُنشر صورة.",
         "hi": "शुरुआती भाग के बाद दैनिक कहानी पिछले भाग से नया 150–170 अक्षरों का पाठ तैयार कर सहेजती है। पाठ अमान्य या अनुपलब्ध होने पर पुरानी कहानी दोहराई नहीं जाती और चित्र प्रकाशित नहीं होता।"
+      }
+    },
+    {
+      "id": "20260926-daily-story-nonblocking-generation",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Daily Story generation runs separately from bot commands",
+        "tr": "Daily Story üretimi bot komutlarından ayrı çalışıyor",
+        "zh": "每日故事生成与机器人命令分开运行",
+        "ar": "يعمل إنشاء القصة اليومية بمعزل عن أوامر البوت",
+        "hi": "दैनिक कहानी निर्माण बॉट आदेशों से अलग चलता है"
+      },
+      "text": {
+        "en": "Daily Story image generation, reference photos and story preparation no longer hold the Telegram update queue while waiting for external services.",
+        "tr": "Daily Story görsel üretimi, referans fotoğrafları ve hikâye hazırlığı dış hizmetleri beklerken Telegram komut kuyruğunu tutmaz.",
+        "zh": "每日故事图像生成、参考照片及故事准备在等待外部服务时不再占用 Telegram 命令队列。",
+        "ar": "لم تعد صور القصة اليومية والصور المرجعية وإعداد النص تحجز طابور أوامر تلغرام أثناء انتظار الخدمات الخارجية.",
+        "hi": "दैनिक कहानी की तस्वीर, संदर्भ फोटो और कहानी तैयार करते समय बाहरी सेवाओं की प्रतीक्षा में Telegram कमांड कतार अब नहीं रुकती।"
+      }
+    },
+    {
+      "id": "20260926-daily-story-morning-wake",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Daily Story morning preparation",
+        "tr": "Daily Story sabah hazırlığı",
+        "zh": "每日故事早间准备",
+        "ar": "التحضير الصباحي للقصة اليومية",
+        "hi": "डेली स्टोरी की सुबह की तैयारी"
+      },
+      "text": {
+        "en": "The scheduled Daily Story request wakes the service at 08:30 Istanbul time and starts preparing today's single image for review before 11:00.",
+        "tr": "Zamanlanmış Daily Story çağrısı servisi İstanbul saatiyle 08.30'da uyandırır ve bugünün tek görselini 11.00 öncesindeki inceleme için hazırlamaya başlar.",
+        "zh": "预定的每日故事请求会在伊斯坦布尔时间08:30唤醒服务，并开始准备当天供11:00前审核的单张图片。",
+        "ar": "يوقظ طلب القصة اليومية المجدول الخدمة عند الساعة 08:30 بتوقيت إسطنبول ويبدأ إعداد صورة اليوم الوحيدة للمراجعة قبل الساعة 11:00.",
+        "hi": "तय डेली स्टोरी अनुरोध इस्तांबुल समयानुसार सुबह 08:30 बजे सेवा जगाता है और 11:00 बजे से पहले समीक्षा के लिए आज की एक छवि तैयार करना शुरू करता है।"
       }
     }
   ]

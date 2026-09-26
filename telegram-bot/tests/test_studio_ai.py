@@ -33,7 +33,8 @@ class StudioAI(unittest.TestCase):
   for kind in ("meme","image","sticker","emoji"):
    p=muba_studio.ai_payload("MUBA denizde olsun",kind,"data:image/jpeg;base64,abc")
    self.assertIn("ABSOLUTELY NO visible words",p["prompt"])
-   self.assertIn("Do not write MUBA on a cap",p["prompt"])
+   self.assertIn("ABSOLUTELY NO visible words",p["prompt"])
+   self.assertIn("IDENTITY MARK:",p["prompt"])
    self.assertNotIn("leave clean space for a short caption",p["prompt"])
  def test_explicit_visible_text_request_is_allowed(self):
   samples=(

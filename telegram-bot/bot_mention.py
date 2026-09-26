@@ -6,12 +6,13 @@ No external AI service or API key is required.
 
 import asyncio
 import hashlib
+import hmac
 import logging
 import json
 import os
 import time
 from collections import OrderedDict, defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import aiohttp
@@ -56,9 +57,34 @@ from muba_daily import DAILY_LABELS, daily_text, DEVLOG_LABELS, DEVLOG, devlog_p
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check, TOPIC_PROGRESS, GUIDE_SECTIONS, SHARE_LABELS, SHARE_TWEETS
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
+from ecosystem_expansion import COMMUNITY_RECORDS, ASK_RECORDS, TRANSPARENCY_RECORDS, ARCHIVE_POLICY
+
+PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio","games")
+
+def assistant_content_count():
+    """Count structured user-facing Assistant content from live registries."""
+    community_routes=3+len(COMMUNITY_RECORDS.get("en",[]))
+    transparency_sections=len(TRANSPARENCY_PAGES.get("en",[]))
+    ask_items=len(QUESTIONS.get("en",[]))+sum(len(items) for items in TOPIC_PROGRESS.get("en",{}).values())+len(ASK_RECORDS.get("en",[]))
+    create_areas=3
+    return community_routes+transparency_sections+ask_items+create_areas
+
+def assistant_menu_text(lang):
+    topics=len(PUBLIC_MAIN_AREAS)
+    content=assistant_content_count()
+    templates={
+        "en":"MUBA Assistant — Discover MUBA.\n{topics} main topics, {content} different pieces of content. Learn about MUBA, its ecosystem and how it works, or ask your own question.",
+        "tr":"MUBA Assistant — MUBA’yı keşfet.\n{topics} ana başlık, {content} farklı içerik. MUBA’yı, ekosistemini ve nasıl çalıştığını öğren veya kendi sorunu sor.",
+        "zh":"MUBA Assistant — 探索 MUBA。\n{topics} 个主要主题，{content} 项不同内容。了解 MUBA、其生态系统及其运作方式，或提出你自己的问题。",
+        "ar":"MUBA Assistant — اكتشف MUBA.\n{topics} مواضيع رئيسية و{content} محتوى مختلفاً. تعرّف على MUBA ونظامه البيئي وكيف يعمل، أو اطرح سؤالك الخاص.",
+        "hi":"MUBA Assistant — MUBA को जानें।\n{topics} मुख्य विषय, {content} अलग-अलग सामग्री। MUBA, उसके ecosystem और उसके काम करने के तरीके को जानें, या अपना सवाल पूछें。",
+    }
+    return templates.get(lang,templates["en"]).format(topics=topics,content=content)
 
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
+for _lang, _records in TRANSPARENCY_RECORDS.items():
+    TRANSPARENCY_PAGES[_lang].extend(f"{title}\n\n{body}" for _,title,body in _records)
 from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
@@ -66,7 +92,7 @@ from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
-from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, SCENE_REFERENCE
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, review_approved as story_review_approved, approve_tomorrow as story_approve_tomorrow, preview_requested as story_preview_requested, request_preview as story_request_preview, START as STORY_START, SCENE_REFERENCE
 from muba_story_text import prepare as prepare_story_text
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -98,6 +124,55 @@ _ASSISTANT_DAILY_LIMIT = 7
 _ASSISTANT_CALL_INTERVAL = 7200
 _ASSISTANT_CALLS = {}
 _ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
+_STORY_PREPARING = set()
+_STORY_QUEUED = set()
+_STORY_GENERATION_LOCK = asyncio.Lock()
+
+
+def _story_today():
+    return datetime.now(_ISTANBUL_TZ).date()
+
+
+def _story_director_panel(item):
+    day = date.fromisoformat(item["day"])
+    today = _story_today()
+    if day > today:
+        status = ("YARIN İÇİN ONAYLI" if story_review_approved(item["day"]) else
+                  "GÖRSEL HAZIR — DEV ONAYI BEKLİYOR" if item["images"] else
+                  "HAZIRLANIYOR" if item["day"] in _STORY_PREPARING else "TASLAK — GÖRSEL HAZIR DEĞİL")
+    else:
+        status = "YAYINDA" if item["status"] == "published" else "TASLAK"
+    body = ("🎬 MUBA GÜNLÜK HİKÂYE — " + item["day"] + "\n\n" + item["story_tr"] +
+            "\n\nReferans: " + ("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ") +
+            "\nGörsel: " + ("HAZIR" if len(item["images"]) == 1 else "HAZIRLANIYOR" if item["day"] in _STORY_PREPARING else "HAZIR DEĞİL") +
+            "\nDurum: " + status)
+    rows = []
+    if len(item["images"]) == 1:
+        rows.append([InlineKeyboardButton("🖼️ GÖRSELİ GÖR", callback_data="story_preview:" + item["day"])])
+    if day == today and item["status"] != "published" and len(item["images"]) == 1:
+        rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish")])
+    if day == today and item["status"] != "published" and not item["images"] and item["day"] not in _STORY_PREPARING:
+        rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET", callback_data="story_generate")])
+    if day == today + timedelta(days=1) and len(item["images"]) == 1 and not story_review_approved(item["day"]):
+        rows.append([InlineKeyboardButton("✅ YARIN İÇİN UYGUN", callback_data="story_approve:" + item["day"])])
+    if day == today and item["status"] != "published":
+        rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR", callback_data="story_reference")])
+    if day == today and item["day"] not in _STORY_PREPARING:
+        rows.append([InlineKeyboardButton("⏭️ YARINI HAZIRLA", callback_data="story_prepare_tomorrow")])
+    pager = []
+    if day > STORY_START:
+        pager.append(InlineKeyboardButton("⬅️ Önceki gün", callback_data="story_day:" + (day - timedelta(days=1)).isoformat()))
+    if day < today or (day == today and _story_tomorrow_available()):
+        pager.append(InlineKeyboardButton("Sonraki gün ➡️", callback_data="story_day:" + (day + timedelta(days=1)).isoformat()))
+    if pager:
+        rows.append(pager)
+    rows.append([InlineKeyboardButton("⬅️ Geri", callback_data="menu")])
+    return body, InlineKeyboardMarkup(rows)
+
+
+def _story_tomorrow_available():
+    day = (_story_today() + timedelta(days=1)).isoformat()
+    return story_preview_requested(day) or day in _STORY_PREPARING
 
 
 def _claim_message(update: Update) -> bool:
@@ -314,6 +389,14 @@ def _legacy_area_global_index(lang,area,area_index):
     area_index=max(0,min(area_index,len(area_rows)-1))
     return _global_update_index(lang,area_rows[area_index].get("id"))
 
+ASSISTANT_UI={
+    "en":{"ask":"💬 ASK MUBA","daily":"📰 MUBA DAILY","create":"🎨 MUBA CREATE","studio":"🎭 MUBA Studio","community":"🧭 MUBA COMMUNITY","dev":"⚙️ DEV TOOLS","daily_story":"🎬 MUBA Daily Story","games":"🎮 MUBA BRAIN GAMES"},
+    "tr":{"ask":"💬 MUBA'YA SOR","daily":"📰 MUBA GÜNLÜK","create":"🎨 MUBA OLUŞTUR","studio":"🎭 MUBA Stüdyo","community":"🧭 MUBA TOPLULUĞU","dev":"⚙️ DEV ARAÇLARI","daily_story":"🎬 MUBA Günlük Hikâye","games":"🎮 MUBA ZEKA OYUNLARI"},
+    "zh":{"ask":"💬 询问 MUBA","daily":"📰 MUBA 日报","create":"🎨 MUBA 创作","studio":"🎭 MUBA 工作室","community":"🧭 MUBA 社区","dev":"⚙️ DEV 工具","daily_story":"🎬 MUBA 每日故事","games":"🎮 MUBA 脑力游戏"},
+    "ar":{"ask":"💬 اسأل MUBA","daily":"📰 يوميات MUBA","create":"🎨 أنشئ مع MUBA","studio":"🎭 استوديو MUBA","community":"🧭 مجتمع MUBA","dev":"⚙️ أدوات DEV","daily_story":"🎬 قصة MUBA اليومية","games":"🎮 ألعاب MUBA الذهنية"},
+    "hi":{"ask":"💬 MUBA से पूछें","daily":"📰 MUBA दैनिक","create":"🎨 MUBA बनाएँ","studio":"🎭 MUBA स्टूडियो","community":"🧭 MUBA समुदाय","dev":"⚙️ DEV उपकरण","daily_story":"🎬 MUBA दैनिक कहानी","games":"🎮 MUBA ब्रेन गेम्स"},
+}
+
 def _section_back(lang,callback_data="menu"):
     return InlineKeyboardButton(TEXT[lang]["back"],callback_data=callback_data)
 
@@ -327,22 +410,57 @@ def daily_hub_keyboard(lang):
 
 def create_hub_keyboard(lang,user_id):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
         [_section_back(lang)],
     ])
 
+COMMUNITY_GUIDE_LABELS={
+    "en":{"about":"🌍 Community","join":"🤝 Join","channels":"📢 Official Channels","web":"🌐 Website","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 Updates","news":"📰 News","story":"🎬 Story","create":"🎨 Create","system":"🔎 Transparency","security":"🛡️ Safety","devlog":"📜 Development Log"},
+    "tr":{"about":"🌍 Topluluk","join":"🤝 Katıl","channels":"📢 Resmî Kanallar","web":"🌐 Web","x":"𝕏 X","telegram":"Telegram","ask":"💬 MUBA'YA SOR","updates":"🆕 Yenilikler","news":"📰 Haberler","story":"🎬 Hikâye","create":"🎨 Üret","system":"🔎 Şeffaflık","security":"🛡️ Güvenlik","devlog":"📜 Geliştirme Günlüğü"},
+    "zh":{"about":"🌍 社区","join":"🤝 参与","channels":"📢 官方渠道","web":"🌐 网站","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 更新","news":"📰 新闻","story":"🎬 故事","create":"🎨 创作","system":"🔎 透明度","security":"🛡️ 安全","devlog":"📜 开发日志"},
+    "ar":{"about":"🌍 المجتمع","join":"🤝 شارك","channels":"📢 القنوات الرسمية","web":"🌐 الموقع","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 التحديثات","news":"📰 الأخبار","story":"🎬 القصة","create":"🎨 أنشئ","system":"🔎 الشفافية","security":"🛡️ الأمان","devlog":"📜 سجل التطوير"},
+    "hi":{"about":"🌍 समुदाय","join":"🤝 जुड़ें","channels":"📢 आधिकारिक चैनल","web":"🌐 वेबसाइट","x":"𝕏 X","telegram":"Telegram","ask":"💬 ASK MUBA","updates":"🆕 अपडेट","news":"📰 समाचार","story":"🎬 कहानी","create":"🎨 बनाएँ","system":"🔎 पारदर्शिता","security":"🛡️ सुरक्षा","devlog":"📜 विकास लॉग"},
+}
+COMMUNITY_INFO={
+    "en":{"about":"MUBA Community is the starting point for discovering MUBA, its culture and ecosystem.","join":"Explore MUBA, follow its story and updates, and participate through its creation tools.","channels":"Follow MUBA through its official public channels."},
+    "tr":{"about":"MUBA Topluluğu; MUBA'yı, kültürünü ve ekosistemini keşfetmek için başlangıç merkezidir.","join":"MUBA'yı keşfet, hikâyesini ve yeniliklerini takip et, üretim araçlarıyla topluluğa katıl.","channels":"MUBA'yı resmî ve doğrulanmış kanallarından takip et."},
+    "zh":{"about":"MUBA 社区是探索 MUBA、其文化和生态系统的起点。","join":"探索 MUBA，关注故事与更新，并通过创作工具参与社区。","channels":"通过 MUBA 的官方公开渠道关注 MUBA。"},
+    "ar":{"about":"مجتمع MUBA هو نقطة البداية لاكتشاف MUBA وثقافته ونظامه البيئي.","join":"اكتشف MUBA وتابع قصته وتحديثاته وشارك عبر أدوات الإنشاء.","channels":"تابع MUBA عبر قنواته العامة الرسمية."},
+    "hi":{"about":"MUBA Community, MUBA, उसकी culture और ecosystem को जानने का शुरुआती केंद्र है।","join":"MUBA को जानें, story और updates follow करें और creation tools से community में भाग लें।","channels":"MUBA को उसके official public channels पर follow करें।"},
+}
+
 def community_hub_keyboard(lang,user_id):
+    g=COMMUNITY_GUIDE_LABELS[lang]
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(EXTRA_LABELS[lang]["guide"],callback_data="extra:guide")],
-        [InlineKeyboardButton(EXTRA_LABELS[lang]["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
+        [InlineKeyboardButton(g["about"],callback_data="community_info:about")],
+        [InlineKeyboardButton(g["join"],callback_data="community_info:join")],
+        [InlineKeyboardButton(g["channels"],callback_data="community_info:channels")],
+        *[[InlineKeyboardButton(title,callback_data=f"community_archive:{record_id}") ] for record_id,title,_ in COMMUNITY_RECORDS.get(lang,[])],
+        [InlineKeyboardButton(g["ask"],callback_data="ask_muba")],
+        [InlineKeyboardButton(g["updates"]+_global_update_badge(lang,user_id),callback_data="updates_center")],
+        [InlineKeyboardButton(g["news"],callback_data="news")],
+        [InlineKeyboardButton(g["story"],callback_data="extra:story")],
+        [InlineKeyboardButton(g["create"],callback_data="create_hub")],
+        [InlineKeyboardButton(g["system"],callback_data="transparency_menu")],
+        [InlineKeyboardButton(g["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
+        [InlineKeyboardButton(g["devlog"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
         [_section_back(lang)],
     ])
 
+def community_info_keyboard(lang,section):
+    g=COMMUNITY_GUIDE_LABELS[lang]
+    back=InlineKeyboardButton(TEXT[lang]["back"],callback_data="community_hub")
+    if section=="about":
+        return InlineKeyboardMarkup([[InlineKeyboardButton(g["ask"],callback_data="ask_muba")],[InlineKeyboardButton(g["system"],callback_data="transparency_menu")],[back]])
+    if section=="join":
+        return InlineKeyboardMarkup([[InlineKeyboardButton(g["story"],callback_data="extra:story")],[InlineKeyboardButton(g["updates"],callback_data="updates_center")],[InlineKeyboardButton(g["create"],callback_data="create_hub")],[back]])
+    return InlineKeyboardMarkup([[InlineKeyboardButton(g["web"],url="https://muba-rh.github.io/MUBA/")],[InlineKeyboardButton(g["x"],url="https://x.com/MUBA_RH")],[InlineKeyboardButton(g["telegram"],url="https://t.me/MUBA_RH")],[back]])
+
 def dev_tools_keyboard(lang):
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🎬 MUBA Daily Story",callback_data="story_director")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["daily_story"],callback_data="story_director")],
         [InlineKeyboardButton(GALLERY_ADMIN_LABELS[lang]["menu"],callback_data="gallery_admin")],
         [InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")],
         [_section_back(lang)],
@@ -352,16 +470,17 @@ def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["community"],callback_data="community_hub")],
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
-        [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency:0")],
-        [InlineKeyboardButton("💬 ASK MUBA",callback_data="ask_muba")],
-        [InlineKeyboardButton("📰 MUBA DAILY",callback_data="daily_hub")],
-        [InlineKeyboardButton("🎨 MUBA CREATE",callback_data="create_hub")],
+        [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
-        [InlineKeyboardButton("🧭 MUBA COMMUNITY",callback_data="community_hub")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/"))],
     ]
     if is_dev(user_id):
-        rows.append([InlineKeyboardButton("⚙️ DEV TOOLS",callback_data="dev_tools")])
+        rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
+    rows.append([InlineKeyboardButton(TRANSLATOR_NOTE_LABELS[lang],callback_data="translator_note")])
     rows.append([InlineKeyboardButton(TEXT[lang]["language"],callback_data="language")])
     return InlineKeyboardMarkup(rows)
 
@@ -487,19 +606,29 @@ def gallery_admin_item_keyboard(lang,item_id):
         [InlineKeyboardButton(labels["back"],callback_data="gallery_admin")],
     ])
 
-def transparency_keyboard(lang,page):
-    nav=TRANSPARENCY_NAV[lang]
-    total=len(TRANSPARENCY_PAGES[lang])
-    rows=[]
-    pager=[]
-    if page>0:
-        pager.append(InlineKeyboardButton(nav["prev"],callback_data=f"transparency:{page-1}"))
-    if page+1<total:
-        pager.append(InlineKeyboardButton(nav["next"],callback_data=f"transparency:{page+1}"))
-    if pager:
-        rows.append(pager)
-    rows.append([InlineKeyboardButton(nav["back"],callback_data="menu")])
+TRANSPARENCY_MENU_TITLE={
+    "en":"🔎 MUBA SYSTEM TRANSPARENCY\n\nChoose a topic:",
+    "tr":"🔎 MUBA SİSTEM ŞEFFAFLIĞI\n\nBir başlık seç:",
+    "zh":"🔎 MUBA 系统透明度\n\n选择一个主题：",
+    "ar":"🔎 شفافية نظام MUBA\n\nاختر موضوعاً:",
+    "hi":"🔎 MUBA सिस्टम पारदर्शिता\n\nएक विषय चुनें:",
+}
+
+def _transparency_title(page_text):
+    return str(page_text or "").split("\n",1)[0].strip()
+
+def transparency_index_keyboard(lang):
+    rows=[
+        [InlineKeyboardButton(_transparency_title(page),callback_data=f"transparency:{index}")]
+        for index,page in enumerate(TRANSPARENCY_PAGES[lang])
+    ]
+    rows.append([InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
+
+def transparency_keyboard(lang,page):
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"],callback_data="transparency_menu")]
+    ])
 
 def transparency_text(lang,page):
     pages=TRANSPARENCY_PAGES[lang]
@@ -525,7 +654,7 @@ def devlog_keyboard(lang,category=None,index=0):
             [InlineKeyboardButton(labels["new"],callback_data="devlog:new:0")],
             [InlineKeyboardButton(labels["updates"],callback_data="devlog:updates:0")],
             [InlineKeyboardButton(labels["fixed"],callback_data="devlog:fixed:0")],
-            [InlineKeyboardButton(labels["back"],callback_data="daily")],
+            [InlineKeyboardButton(labels["back"],callback_data="community_hub")],
         ])
     total=len(DEVLOG[lang][category])
     pager=[]
@@ -581,11 +710,19 @@ def share_keyboard(lang,index=None):
     rows.append([InlineKeyboardButton(labels["back"],callback_data="menu" if index is None else "share")])
     return InlineKeyboardMarkup(rows)
 
+ASK_ARCHIVE_LABELS={"en":"🧠 MUBA Knowledge World","tr":"🧠 MUBA Bilgi Dünyası","zh":"🧠 MUBA 知识世界","ar":"🧠 عالم معرفة MUBA","hi":"🧠 MUBA ज्ञान संसार"}
+
+def ask_archive_keyboard(lang):
+    rows=[[InlineKeyboardButton(title,callback_data=f"ask_archive:{record_id}")] for record_id,title,_,_ in ASK_RECORDS.get(lang,[])]
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="ask_muba")])
+    return InlineKeyboardMarkup(rows)
+
 def ask_muba_keyboard(lang):
     labels=CATEGORY_LABELS[lang]
     rows=[]
     for category in ("discover","understand","world"):
         rows.append([InlineKeyboardButton(labels[category],callback_data=f"category:{category}")])
+    rows.append([InlineKeyboardButton(ASK_ARCHIVE_LABELS[lang],callback_data="ask_archive")])
     rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
@@ -661,7 +798,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
             clear_conversation(user_id)
-            await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id))
+            await q.edit_message_text(assistant_menu_text(lang),reply_markup=menu_keyboard(lang,user_id))
         return
     lang=get_assistant_language(user_id)
     if not lang:
@@ -669,16 +806,20 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="language":
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
-        await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+        await q.edit_message_text(assistant_menu_text(lang),reply_markup=menu_keyboard(lang,user_id)); return
     if data=="daily_hub":
-        await q.edit_message_text("📰 MUBA DAILY",reply_markup=daily_hub_keyboard(lang)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
-        await q.edit_message_text("🎨 MUBA CREATE",reply_markup=create_hub_keyboard(lang,user_id)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
     if data=="community_hub":
-        await q.edit_message_text("🧭 MUBA COMMUNITY",reply_markup=community_hub_keyboard(lang,user_id)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
+    if data.startswith("community_info:"):
+        section=data.split(":",1)[1]
+        if section not in COMMUNITY_INFO[lang]: return
+        await q.edit_message_text(COMMUNITY_INFO[lang][section],reply_markup=community_info_keyboard(lang,section),disable_web_page_preview=True); return
     if data=="dev_tools":
         if not is_dev(user_id): return
-        await q.edit_message_text("⚙️ DEV TOOLS",reply_markup=dev_tools_keyboard(lang)); return
+        await q.edit_message_text(ASSISTANT_UI[lang]["dev"],reply_markup=dev_tools_keyboard(lang)); return
     if data in ("news","news_subscribe"):
         if data=="news_subscribe":
             try: subscribe_news(user_id,lang)
@@ -709,36 +850,83 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         index=_latest_area_global_index(lang,area)
         body,index,total=updates_center_text(lang,user_id,index)
         await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
-    if data=="story_director":
+    if data=="story_director" or data.startswith("story_day:"):
         if not is_dev(user_id): return
-        try: item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
-        except RuntimeError:
-            logger.exception("Daily Story text preparation unavailable")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBugünkü hikâye henüz hazırlanamadı. Eski bölüm tekrar edilmiyor; daha sonra yeniden açabilirsin."); return
-        body=("🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item["story_tr"]+
-              "\n\nReferans: "+("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ")+
-              "\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK"))
-        rows=[]
-        if item["status"]!="published" and len(item["images"])==1:
-            rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        elif item["status"]!="published" and story_reference_for_day(item["day"]):
-            rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET",callback_data="story_generate")])
-        if item["status"]!="published":
-            rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR",callback_data="story_reference")])
-        rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
-        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
+        day=_story_today().isoformat() if data=="story_director" else data.split(":",1)[1]
+        try:
+            chosen=date.fromisoformat(day)
+            if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
+            if chosen>_story_today() and not _story_tomorrow_available(): raise ValueError("Tomorrow not prepared")
+            item=await prepare_story_text(day) if chosen==_story_today() else story_draft(day)
+            body,markup=_story_director_panel(item)
+        except (RuntimeError,ValueError):
+            logger.exception("Daily Story day unavailable")
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBu günün hikâyesi henüz hazır değil.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        await q.edit_message_text(body,reply_markup=markup); return
+    if data.startswith("story_preview:"):
+        if not is_dev(user_id): return
+        day=data.split(":",1)[1]
+        try:
+            chosen=date.fromisoformat(day)
+            if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
+            if chosen>_story_today() and not _story_tomorrow_available(): raise ValueError("Tomorrow not prepared")
+            item=story_draft(day)
+            if len(item["images"])!=1: raise ValueError("Daily Story image not ready")
+        except (RuntimeError,ValueError):
+            await q.answer("Bu günün görseli henüz hazır değil.",show_alert=True); return
+        await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
+        return
+    if data=="story_prepare_tomorrow":
+        if not is_dev(user_id): return
+        day=(_story_today()+timedelta(days=1)).isoformat()
+        if day in _STORY_PREPARING:
+            await q.answer("Yarının görseli hazırlanıyor.",show_alert=True); return
+        story_request_preview(day)
+        _STORY_PREPARING.add(day)
+        await q.edit_message_text("🎬 YARININ HİKÂYESİ — "+day+"\n\nMetin ve tek görsel hazırlanıyor. Hazır olduğunda inceleme ekranı açılacak; bu işlem Kaggle nedeniyle zaman alabilir.")
+        try:
+            item=await prepare_story_text(day)
+            if not item["images"]:
+                item=await _story_generate_images(item)
+        except Exception:
+            logger.exception("Tomorrow's Daily Story preparation failed")
+            await q.edit_message_text("🎬 YARININ HİKÂYESİ\n\nHazırlık tamamlanamadı. Eski bir görsel kullanılmadı; yarın için onay verilmedi.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Hikâyeye dön",callback_data="story_director")]])); return
+        finally:
+            _STORY_PREPARING.discard(day)
+        body,markup=_story_director_panel(item)
+        await q.edit_message_text(body,reply_markup=markup); return
+    if data.startswith("story_approve:"):
+        if not is_dev(user_id): return
+        day=data.split(":",1)[1]
+        try:
+            story_approve_tomorrow(day,today=_story_today())
+            body,markup=_story_director_panel(story_draft(day))
+        except (ValueError,RuntimeError):
+            await q.answer("Yarının metni ve görseli hazır olmalı.",show_alert=True); return
+        await q.edit_message_text(body,reply_markup=markup); return
     if data=="story_reference":
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
         await q.edit_message_text("📷 MUBA DAILY STORY\n\nYeni referans kullanmak istersen görseli gönder. Onaylı varsayılan referans zaten hazır.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
     if data=="story_generate":
         if not is_dev(user_id): return
+        day=_story_today().isoformat()
+        if day in _STORY_PREPARING:
+            await q.answer("Bugünün görseli zaten hazırlanıyor.",show_alert=True); return
+        _STORY_PREPARING.add(day)
         await q.answer("MUBA hikâye görseli hazırlanıyor…")
+        await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nTek 16:9 görsel Kaggle/ComfyUI üzerinde hazırlanıyor. Tamamlandığında görsel burada paylaşılacak; bu işlem zaman alabilir.")
         try:
-            item=await _story_generate_images(await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat()))
-        except Exception:
+            item=await _story_generate_images(await prepare_story_text(day))
+        except Exception as exc:
             logger.exception("MUBA Daily Story image generation failed")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörsel üretilemedi. Mevcut sistem ve hikâye taslağı korundu; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+            reason=("Kaggle şu anda çok fazla istek nedeniyle çıktı vermiyor."
+                    if "429" in str(exc) else
+                    "Kaggle/ComfyUI süresi doldu." if "timed out" in str(exc).lower() else
+                    "Üretim tamamlanamadı.")
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\n"+reason+" Hikâye taslağı korundu; daha sonra yeniden deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        finally:
+            _STORY_PREPARING.discard(day)
         await q.edit_message_text("🎬 Tek 16:9 görsel hazır. Hikâyeyi ve görseli incele.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
         await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
         return
@@ -773,6 +961,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         index=int(raw) if raw.isdigit() else 0
         body,index,total=updates_area_text(lang,user_id,area,index)
         await q.edit_message_text(body,reply_markup=updates_area_keyboard(lang,user_id,area,index),disable_web_page_preview=True); return
+    if data=="transparency_menu":
+        await q.edit_message_text(TRANSPARENCY_MENU_TITLE[lang],reply_markup=transparency_index_keyboard(lang),disable_web_page_preview=True); return
     if data.startswith("transparency:"):
         raw=data.split(":",1)[1]
         page=int(raw) if raw.isdigit() else 0
@@ -824,6 +1014,18 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if items:
             i=max(0,min(i,len(items)-1))
             await q.edit_message_text(items[i][1],reply_markup=topic_keyboard(lang,topic)); return
+    if data.startswith("community_archive:"):
+        record_id=data.split(":",1)[1]
+        item=next((x for x in COMMUNITY_RECORDS.get(lang,[]) if x[0]==record_id),None)
+        if item:
+            await q.edit_message_text(item[2],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(TEXT[lang]["back"],callback_data="community_hub")]])); return
+    if data=="ask_archive":
+        await q.edit_message_text(ASK_ARCHIVE_LABELS[lang],reply_markup=ask_archive_keyboard(lang)); return
+    if data.startswith("ask_archive:"):
+        record_id=data.split(":",1)[1]
+        item=next((x for x in ASK_RECORDS.get(lang,[]) if x[0]==record_id),None)
+        if item:
+            await q.edit_message_text(item[3],reply_markup=ask_archive_keyboard(lang)); return
     if data=="ask_muba":
         await q.edit_message_text("💬 ASK MUBA",reply_markup=ask_muba_keyboard(lang)); return
     if data.startswith("category:"):
@@ -970,7 +1172,7 @@ async def assistant_group_call(update: Update, context: ContextTypes.DEFAULT_TYP
 
     username=context.bot.username
     button=InlineKeyboardMarkup([[InlineKeyboardButton("🤖 Open MUBA Assistant",url=f"https://t.me/{username}?start=assistant")]])
-    await message.reply_text("MUBA Assistant 🪶\nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
+    await message.reply_text("MUBA Assistant \nI'm here whenever you need me. Open MUBA Assistant below.",reply_markup=button)
 
 async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, user_id=None):
     """Best-effort localized private Guardian report to DEV; never block moderation."""
@@ -1469,6 +1671,12 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
+    # Only one Daily Story Kaggle job may run at a time on the shared kernel.
+    async with _STORY_GENERATION_LOCK:
+        return await _story_generate_images_unlocked(item)
+
+
+async def _story_generate_images_unlocked(item):
     """Generate and archive one 16:9 Daily Story image; publishing remains DEV-only."""
     from muba_story_cloudflare import configured as story_image_configured, generate, GenerationCapacityError
     if item.get("status")=="published": return item
@@ -1519,15 +1727,31 @@ async def _story_generate_images(item):
     return set_story_images(item["day"],[archived["id"]])
 
 async def _prepare_daily_story(application):
-    """Daily reminder only. V3 never generates until DEV uploads a fresh reference."""
-    item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
+    """Prepare today's scene in advance; publication always requires DEV action."""
+    day=_story_today().isoformat()
+    if day in _STORY_PREPARING:
+        return story_draft(day)
+    _STORY_PREPARING.add(day)
     chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
-    if item.get("status")!="published":
+    try:
+        item=await prepare_story_text(day)
+        if item["status"]=="published" or item["images"]:
+            return item
+        item=await _story_generate_images(item)
         await application.bot.send_message(
             chat_id=chat_id,
-            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nBugünkü 150–170 karakterlik hikâye taslağı hazır. Tek 16:9 görseli üretmek için Daily Story menüsünü aç.",
+            text="🎬 MUBA DAILY STORY — "+day+"\n\nHikâye ve tek 16:9 görsel hazır. İncelemek ve yayınlamak için Daily Story menüsünü aç.",
         )
-    return item
+        return item
+    except Exception:
+        logger.exception("Daily Story advance preparation failed")
+        await application.bot.send_message(
+            chat_id=chat_id,
+            text="⚠️ MUBA DAILY STORY — "+day+"\n\nGörsel henüz hazır değil. Daily Story menüsünden tekrar deneyebilirsin.",
+        )
+        raise
+    finally:
+        _STORY_PREPARING.discard(day)
 
 async def daily_story_scheduler(application):
     """Internal Daily Story preparation scheduler. Timing details are not public story content."""
@@ -1536,7 +1760,14 @@ async def daily_story_scheduler(application):
     tz=ZoneInfo("Europe/Istanbul")
     while True:
         now=datetime.now(tz)
-        target=now.replace(hour=10,minute=45,second=0,microsecond=0)
+        target=now.replace(hour=8,minute=30,second=0,microsecond=0)
+        if target<=now<now.replace(hour=11,minute=0,second=0,microsecond=0):
+            try:
+                await _prepare_daily_story(application)
+            except Exception:
+                logger.exception("Daily Story morning catch-up failed")
+            now=datetime.now(tz)
+            target=now.replace(hour=8,minute=30,second=0,microsecond=0)
         if now>=target:
             target+=timedelta(days=1)
         await asyncio.sleep(max(1,(target-now).total_seconds()))
@@ -1547,14 +1778,24 @@ async def daily_story_scheduler(application):
             await asyncio.sleep(60)
 
 async def story_prepare_handler(request: web.Request):
-    """Protected reminder endpoint. V3 generation happens only from Telegram DEV."""
+    """Wake a sleeping service and queue today's private image preparation."""
     secret=os.getenv("MUBA_STORY_SCHEDULER_SECRET","")
     supplied=request.headers.get("X-MUBA-Story-Secret","")
-    if not secret or not supplied or not hashlib.compare_digest(secret,supplied):
+    if not secret or not supplied or not hmac.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
     item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
     reference=story_reference_for_day(item["day"])
-    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"generation":"telegram-dev-only"})
+    queued=False
+    if item["status"]!="published" and not item["images"] and item["day"] not in _STORY_PREPARING and item["day"] not in _STORY_QUEUED:
+        _STORY_QUEUED.add(item["day"])
+        async def run_queued():
+            try:
+                await _prepare_daily_story(request.app["telegram_application"])
+            finally:
+                _STORY_QUEUED.discard(item["day"])
+        asyncio.create_task(run_queued())
+        queued=True
+    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"image_ready":len(item["images"])==1,"queued":queued})
 
 async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
@@ -1749,8 +1990,12 @@ async def start_webhook_server():
     application.add_handler(CommandHandler("ca", ca_command))
     for guardian_name in ("start","stop","status","guardian","security","lockdown","normal","warn","mute","unmute","ban","unban","delete","help"):
         application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
+    # Kaggle image generation may take minutes. Keep that Daily Story callback
+    # and its reference-photo path off the single Telegram update worker so
+    # /start and other bot commands can continue responding.
+    application.add_handler(CallbackQueryHandler(callback_handler, pattern=r"^story_(?:director|generate|prepare_tomorrow)$|^story_day:", block=False))
     application.add_handler(CallbackQueryHandler(callback_handler))
-    application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo), group=-4)
+    application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo, block=False), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(

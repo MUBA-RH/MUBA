@@ -77,7 +77,7 @@ def _text_policy(prompt:str)->str:
     return (
         "TEXT POLICY — STRICT: Produce an entirely text-free image. ABSOLUTELY NO visible words, letters, numbers, "
         "captions, labels, titles, speech bubbles, signs, logos, watermarks, slogans or typography anywhere in the image. "
-        "Do not write MUBA on a cap, hoodie, clothing, object, background or border merely because the character is MUBA. "
+        "IDENTITY MARK: when MUBA wears visible clothing or an accessory with a suitable surface, place the exact readable name MUBA on at least one worn item. "
         "Do not generate pseudo-text or random glyphs. This rule applies to Meme, Image, Sticker and Reaction formats."
     )
 

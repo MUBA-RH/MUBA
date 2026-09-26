@@ -2,8 +2,8 @@ name: MUBA Daily Story Prepare
 
 on:
   schedule:
-    # 07:45 UTC = 10:45 Europe/Istanbul (UTC+3 year-round)
-    - cron: "45 7 * * *"
+    # 05:30 UTC = 08:30 Europe/Istanbul (UTC+3 year-round)
+    - cron: "30 5 * * *"
   workflow_dispatch:
 
 permissions:
