@@ -35,5 +35,5 @@ class Run extends Phaser.Scene{
 function haptic(){tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred('light')}function move(d){if(!alive)return;lane=clamp(lane+d,-1,1);haptic()}function doJump(){if(!alive||jump||slide)return;jump=620;haptic()}function doSlide(){if(!alive||slide||jump)return;slide=520;haptic()}
 function endRun(){if(!alive)return;alive=false;best=Math.max(best,Math.floor(score));localStorage.setItem('mubaRunBest',best);document.getElementById('result').textContent='Score '+Math.floor(score)+' · Best '+best;document.getElementById('over').classList.add('show');tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('error')}
 document.getElementById('again').onclick=()=>location.reload();
-new Phaser.Game({type:Phaser.AUTO,parent:'game',width:480,height:800,backgroundColor:'#070912,',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:Run});
+new Phaser.Game({type:Phaser.AUTO,parent:'game',width:480,height:800,backgroundColor:'#070912',scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},scene:Run});
 </script></body></html>
