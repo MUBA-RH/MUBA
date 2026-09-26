@@ -58,6 +58,28 @@ from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 
+ASSISTANT_MAIN_TOPIC_COUNT=6
+
+def assistant_content_count():
+    """Count structured user-facing Assistant content from live registries."""
+    community_routes=10
+    transparency_sections=len(TRANSPARENCY_PAGES.get("en",[]))+len(EXTRA_TRANSPARENCY_PAGES.get("en",[]))
+    ask_items=len(QUESTIONS.get("en",[]))+sum(len(items) for items in TOPIC_PROGRESS.get("en",{}).values())
+    create_areas=3
+    return community_routes+transparency_sections+ask_items+create_areas
+
+def assistant_menu_text(lang):
+    topics=ASSISTANT_MAIN_TOPIC_COUNT
+    content=assistant_content_count()
+    templates={
+        "en":"MUBA Assistant — Discover MUBA.\n{topics} main topics, {content} different pieces of content. Learn about MUBA, its ecosystem and how it works, or ask your own question.",
+        "tr":"MUBA Assistant — MUBA’yı keşfet.\n{topics} ana başlık, {content} farklı içerik. MUBA’yı, ekosistemini ve nasıl çalıştığını öğren veya kendi sorunu sor.",
+        "zh":"MUBA Assistant — 探索 MUBA。\n{topics} 个主要主题，{content} 项不同内容。了解 MUBA、其生态系统及其运作方式，或提出你自己的问题。",
+        "ar":"MUBA Assistant — اكتشف MUBA.\n{topics} مواضيع رئيسية و{content} محتوى مختلفاً. تعرّف على MUBA ونظامه البيئي وكيف يعمل، أو اطرح سؤالك الخاص.",
+        "hi":"MUBA Assistant — MUBA को जानें।\n{topics} मुख्य विषय, {content} अलग-अलग सामग्री। MUBA, उसके ecosystem और उसके काम करने के तरीके को जानें, या अपना सवाल पूछें。",
+    }
+    return templates.get(lang,templates["en"]).format(topics=topics,content=content)
+
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
@@ -753,7 +775,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang=data.split(":",1)[1]
         if set_assistant_language(user_id,lang):
             clear_conversation(user_id)
-            await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id))
+            await q.edit_message_text(assistant_menu_text(lang),reply_markup=menu_keyboard(lang,user_id))
         return
     lang=get_assistant_language(user_id)
     if not lang:
@@ -761,7 +783,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="language":
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
-        await q.edit_message_text(TEXT[lang]["menu"],reply_markup=menu_keyboard(lang,user_id)); return
+        await q.edit_message_text(assistant_menu_text(lang),reply_markup=menu_keyboard(lang,user_id)); return
     if data=="daily_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
