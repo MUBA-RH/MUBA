@@ -1359,18 +1359,21 @@
       try {
         const response = await fetch(studioObjectUrl);
         const blob = await response.blob();
-        const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
-        const file = new File([blob], "muba." + extension, { type: blob.type || "image/jpeg" });
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ text: currentTweetWithTags(), files: [file] });
+        const mime = blob.type && blob.type.startsWith("image/") ? blob.type : "image/jpeg";
+        const extension = mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+        const file = new File([blob], "muba." + extension, { type: mime });
+        const payload = { text: currentTweetWithTags(), files: [file] };
+        if (typeof navigator.share === "function" && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+          await navigator.share(payload);
           status.textContent = "MUBA image and TWT opened for sharing.";
           return;
         }
+        status.textContent = "This browser cannot send the image to X. Opening the TWT only.";
+        window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(currentTweetWithTags()), "_blank", "noopener");
       } catch (error) {
         if (error && error.name === "AbortError") return;
+        status.textContent = "Image share could not open. Try Share on X again.";
       }
-      status.textContent = "Image sharing is not supported here. Opening X with the TWT.";
-      window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(currentTweetWithTags()), "_blank", "noopener");
     });
 
     const studioApiBase = (document.querySelector('meta[name="muba-studio-api"]')?.content || "").replace(/\/$/, "");
