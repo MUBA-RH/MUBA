@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260926-btc-eth-price-art-watermarks",
+      "date": "2026-09-26",
+      "type": "improved",
+      "areas": [
+        "prices"
+      ],
+      "title": {
+        "en": "BTC and ETH price card artwork",
+        "tr": "BTC ve ETH fiyat kartı görselleri",
+        "zh": "BTC 和 ETH 价格卡片背景图",
+        "ar": "صور بطاقات أسعار BTC وETH",
+        "hi": "BTC और ETH मूल्य कार्ड की कलाकृति"
+      },
+      "text": {
+        "en": "The uploaded Bitcoin and Ethereum artwork now appears as subtle backgrounds on their live price cards, with price text kept readable. The MUBA card remains unchanged.",
+        "tr": "Yüklenen Bitcoin ve Ethereum görselleri canlı fiyat kartlarında hafif saydam arka plan olarak gösteriliyor; fiyat metni okunaklı kalıyor. MUBA kartı değişmedi.",
+        "zh": "用户上传的比特币和以太坊图片现在以低透明度显示在实时价格卡片背景中，价格文字保持清晰。MUBA 卡片未作更改。",
+        "ar": "تظهر الآن صور Bitcoin وEthereum التي رفعها المستخدم كخلفيات خفيفة لبطاقات الأسعار المباشرة، مع بقاء نص السعر واضحًا. لم تتغير بطاقة MUBA.",
+        "hi": "अपलोड की गई Bitcoin और Ethereum छवियाँ अब उनके लाइव मूल्य कार्ड के पीछे हल्की पारदर्शिता के साथ दिखाई देती हैं और मूल्य-पाठ स्पष्ट रहता है। MUBA कार्ड अपरिवर्तित है।"
+      }
+    },
+    {
       "id": "20260924-daily-story-kaggle-bridge-v16",
       "date": "2026-09-24",
       "type": "new",

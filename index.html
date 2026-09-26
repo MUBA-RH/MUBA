@@ -81,9 +81,10 @@
     .news-shell { padding:20px; }
     .price-bar { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
     .price-card { background:#120a1f; border:1px solid var(--line); border-radius:14px; padding:13px 16px; min-width:0; position:relative; overflow:hidden; isolation:isolate; }
-    .price-card::before { position:absolute; right:4%; top:50%; transform:translateY(-50%); z-index:-1; line-height:1; pointer-events:none; opacity:.10; font-weight:800; }
-    .price-card[data-asset="BTC"]::before { content:"₿"; font-size:7.5rem; color:#f59e0b; }
-    .price-card[data-asset="ETH"]::before { content:"◆"; font-size:7rem; color:#f59e0b; transform:translateY(-50%) scaleX(.72) rotate(45deg); }
+    .price-card::before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; background-repeat:no-repeat; background-position:center 48%; background-size:cover; opacity:.17; }
+    .price-card[data-asset="BTC"]::before { background-image:url("./assets/price/btc-watermark.svg"); }
+    .price-card[data-asset="ETH"]::before { background-image:url("./assets/price/eth-watermark.svg"); }
+    .price-card > * { position:relative; z-index:1; }
     .price-card strong { display:block; font-size:1.1rem; margin:3px 0; font-variant-numeric:tabular-nums; }
     .price-card span { color:var(--muted); font-size:.77rem; }
     .price-card .positive { color:var(--success); }
