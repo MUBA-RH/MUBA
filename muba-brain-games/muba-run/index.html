@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"><title>MUBA RUN V2</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover"><title>MUBA RUN</title>
 <style>*{box-sizing:border-box}html,body,#game{margin:0;width:100%;height:100%;overflow:hidden;background:#08070b}body{font-family:system-ui,-apple-system,sans-serif;touch-action:none;overscroll-behavior:none}.hud{position:fixed;z-index:8;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;color:#fff;pointer-events:none;text-shadow:0 2px 8px #000;font-weight:900}.hud small{display:block;font-size:10px;opacity:.6}.hint{position:fixed;z-index:8;left:50%;bottom:calc(13px + env(safe-area-inset-bottom));transform:translateX(-50%);color:#ffffffc9;background:#08080dcc;border:1px solid #ffffff20;border-radius:999px;padding:8px 13px;font-size:12px;pointer-events:none;white-space:nowrap}.over{position:fixed;z-index:12;inset:0;display:none;place-items:center;background:#050508d9;color:#fff;text-align:center;padding:25px}.over.show{display:grid}.panel{width:min(360px,90vw);padding:24px;border:1px solid #ffffff25;border-radius:24px;background:#111117}.panel h1{margin:0 0 8px}.panel button{width:100%;border:0;border-radius:14px;padding:13px;font-weight:900;background:#fff;color:#111;margin-top:16px}</style></head>
 <body><div id="game"></div><div class="hud"><span>MUBA RUN<small>ENDLESS NIGHT RUN</small></span><span id="score">0</span></div><div class="hint">Swipe ↑ jump · ↓ slide · ← → lanes</div><div class="over" id="over"><div class="panel"><h1>RUN OVER</h1><div id="result"></div><button id="again">RUN AGAIN</button></div></div>
 <script src="https://telegram.org/js/telegram-web-app.js"></script><script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
@@ -7,35 +7,40 @@
 const tg=window.Telegram&&window.Telegram.WebApp;if(tg){tg.ready();tg.expand();tg.disableVerticalSwipes&&tg.disableVerticalSwipes()}
 // V3 production runner architecture: pooled obstacles, procedural patterns, state machine, camera feedback
 const PLAYER={RUN:'run',JUMP:'jump',SLIDE:'slide',HIT:'hit'};let playerState=PLAYER.RUN;
-const PATTERNS=[[-1],[0],[1],[-1,1],[-1,0],[0,1]];const POOL_MAX=18;
-let score=0,best=+(localStorage.getItem('mubaRunBest')||0),speed=1,alive=true,runner,scoreEl=document.getElementById('score'),sx=0,sy=0,lane=0,jump=0,slide=0,spawnClock=0,obstacles=[],roadMarks=[],stars=[];
+const PATTERNS=[[-1],[0],[1],[-1,1],[-1,0],[0,1]];const POOL_MAX=28;
+const MISSIONS=[{at:250,label:'PACE UP'},{at:650,label:'NIGHT SHIFT'},{at:1200,label:'FULL SPEED'}];
+let missionIndex=0,combo=0,multiplier=1,nearMiss=0;
+let distance=0;let score=0,best=+(localStorage.getItem('mubaRunBest')||0),speed=1,alive=true,runner,scoreEl=document.getElementById('score'),sx=0,sy=0,lane=0,jump=0,slide=0,spawnClock=0,obstacles=[],roadMarks=[],stars=[];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 class Run extends Phaser.Scene{
  create(){this.W=this.scale.width;this.H=this.scale.height;this.cx=this.W/2;this.horizon=this.H*.29;this.bottom=this.H*.94;this.cameras.main.setBackgroundColor('#070912');
   for(let i=0;i<70;i++)stars.push({x:Math.random()*this.W,y:Math.random()*this.horizon*.95,r:Math.random()*1.5+.3,a:Math.random()*.6+.2});
-  this.g=this.add.graphics();this.player=this.add.container(this.cx,this.H*.81);this.makeRunner();runner=this.player;
-  for(let i=0;i<18;i++)roadMarks.push({z:i/18});
+  this.g=this.add.graphics();this.fx=this.add.graphics();this.player=this.add.container(this.cx,this.H*.81);this.makeRunner();runner=this.player;
+  for(let i=0;i<24;i++)roadMarks.push({z:i/24});this.cameras.main.fadeIn(250,7,9,18);
   this.input.on('pointerdown',p=>{sx=p.x;sy=p.y});this.input.on('pointerup',p=>{let dx=p.x-sx,dy=p.y-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?doJump():doSlide()});
   this.input.keyboard&&this.input.keyboard.on('keydown',e=>{if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1);if(e.key==='ArrowUp')doJump();if(e.key==='ArrowDown')doSlide()});
  }
  makeRunner(){let c=this.player,b=this.add.graphics();b.fillStyle(0x171719);b.fillRoundedRect(-24,9,48,61,13);b.fillStyle(0xb47a55);b.fillEllipse(0,-17,54,50);b.fillStyle(0x151519);b.fillRoundedRect(-29,-47,58,17,8);b.fillStyle(0xffffff);b.fillCircle(-11,-21,9);b.fillCircle(11,-21,9);b.fillStyle(0x39231c);b.fillCircle(-9,-20,4);b.fillCircle(9,-20,4);b.fillStyle(0xf08b96);b.fillEllipse(0,-4,15,9);b.fillStyle(0xffffff,.9);b.fillRect(-16,28,32,2);c.add(b);
   let l=this.add.graphics();l.lineStyle(8,0xb47a55,1);l.lineBetween(-12,67,-18,91);l.lineBetween(12,67,18,91);c.add(l);this.body=b;this.legs=l}
  project(l,z){let p=1-z,curve=Math.pow(p,1.65),half=lerp(this.W*.055,this.W*.52,curve);return{x:this.cx+l*half,y:lerp(this.horizon,this.bottom,curve),s:lerp(.08,1.2,curve)}}
- spawn(){const pat=Phaser.Utils.Array.GetRandom(PATTERNS);for(const l of pat){let o=obstacles.find(x=>!x.active);if(!o&&obstacles.length<POOL_MAX){o={};obstacles.push(o)}if(!o)continue;Object.assign(o,{active:true,l,z:1.02,kind:Math.random()<.3?'bar':'crate',hit:false})}}
- update(_,dt){if(!alive)return;dt=Math.min(dt,40);score+=dt*.018;speed=clamp(.00025+score*.00000055,.00025,.00058);scoreEl.textContent=Math.floor(score);spawnClock-=dt;if(spawnClock<=0){this.spawn();spawnClock=clamp(1320-score*1.15,620,1320)}
+ spawn(){let pat=Phaser.Utils.Array.GetRandom(PATTERNS);if(score<80&&pat.length>1)pat=[Phaser.Utils.Array.GetRandom(pat)];for(const l of pat){let o=obstacles.find(x=>!x.active);if(!o&&obstacles.length<POOL_MAX){o={};obstacles.push(o)}if(!o)continue;let r=Math.random();Object.assign(o,{active:true,l,z:1.02,kind:r<.22?'bar':r<.72?'crate':'gate',hit:false,passed:false})}}
+ update(_,dt){if(!alive)return;dt=Math.min(dt,34);distance+=speed*dt*10;score+=dt*.018*multiplier;speed=clamp(.000245+score*.00000042,.000245,.00054);multiplier=clamp(1+Math.floor(combo/6)*.25,1,2.5);scoreEl.textContent=Math.floor(score)+'  ×'+multiplier.toFixed(2);if(missionIndex<MISSIONS.length&&score>=MISSIONS[missionIndex].at){this.flash(MISSIONS[missionIndex].label);missionIndex++}spawnClock-=dt;if(spawnClock<=0){this.spawn();spawnClock=clamp(1320-score*1.15,620,1320)}
   if(jump>0){jump=Math.max(0,jump-dt);if(!jump)playerState=PLAYER.RUN}if(slide>0){slide=Math.max(0,slide-dt);if(!slide)playerState=PLAYER.RUN}
   let targetX=this.project(lane,0).x;this.player.x=lerp(this.player.x,targetX,.18);let jp=jump?Math.sin((1-jump/620)*Math.PI)*105:0;this.player.y=this.H*.81-jp;this.player.scaleY=slide?.62:1;this.player.scaleX=slide?1.08:1;
   roadMarks.forEach(m=>{m.z-=speed*dt;if(m.z<0)m.z+=1});
-  for(let i=obstacles.length-1;i>=0;i--){let o=obstacles[i];if(!o.active)continue;o.z-=speed*dt;if(o.z<-.08){o.active=false;score+=10;continue}if(!o.hit&&o.z<.13&&o.z>.015&&o.l===lane){let safe=o.kind==='bar'?slide>0:jump>190;if(!safe){o.hit=true;playerState=PLAYER.HIT;this.cameras.main.shake(150,.012);endRun()}}}
-  this.drawWorld()}
- drawWorld(){let g=this.g,W=this.W,H=this.H;g.clear();g.fillStyle(0x070912);g.fillRect(0,0,W,H);g.fillStyle(0xffffff);for(const s of stars)g.fillCircle(s.x,s.y,s.r,s.a);
-  g.fillStyle(0x11131b);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.99,this.bottom);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.01,this.bottom);
+  for(let i=obstacles.length-1;i>=0;i--){let o=obstacles[i];if(!o.active)continue;o.z-=speed*dt;if(o.z<-.08){o.active=false;score+=8*multiplier;combo++;continue}if(!o.hit&&o.z<.13&&o.z>.015&&o.l===lane){let safe=o.kind==='bar'?slide>0:o.kind==='gate'?(jump>155||slide>0):jump>190;if(!safe){o.hit=true;combo=0;playerState=PLAYER.HIT;this.cameras.main.shake(150,.012);endRun()}}}
+  this.drawWorld();this.animateRunner(dt)}
+ animateRunner(dt){let t=this.time.now*.012,bob=playerState===PLAYER.RUN?Math.sin(t)*3:0;this.body.y=bob;this.legs.rotation=playerState===PLAYER.RUN?Math.sin(t)*.08:0;this.player.rotation=lerp(this.player.rotation,(this.player.x-this.project(lane,0).x)*.0008,.1)}
+ flash(label){let t=this.add.text(this.cx,this.H*.2,label,{fontFamily:'system-ui',fontSize:'25px',fontStyle:'bold',color:'#ffffff',stroke:'#000000',strokeThickness:5}).setOrigin(.5).setDepth(20);this.tweens.add({targets:t,y:this.H*.15,alpha:0,duration:900,ease:'Cubic.easeOut',onComplete:()=>t.destroy()});this.cameras.main.flash(100,255,255,255,false)}
+
+ drawWorld(){let g=this.g,W=this.W,H=this.H;g.clear();g.fillStyle(0x070912);g.fillRect(0,0,W,H);let gradBands=8;for(let i=0;i<gradBands;i++){g.fillStyle(0x111426,.05+i*.012);g.fillRect(0,this.horizon+i*(H-this.horizon)/gradBands,W,(H-this.horizon)/gradBands+1)}g.fillStyle(0xffffff);for(const s of stars)g.fillCircle(s.x,s.y,s.r,s.a);
+  g.fillStyle(0x0d0f17);g.fillTriangle(this.cx-W*.06,this.horizon,this.cx+W*.06,this.horizon,W*.99,this.bottom);g.fillStyle(0x11131b);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.99,this.bottom);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.01,this.bottom);
   g.lineStyle(3,0x9b7fbd,.28);for(let l=-1.5;l<=1.5;l+=1){let a=this.project(l,1),b=this.project(l,0);g.lineBetween(a.x,a.y,b.x,b.y)}
   for(const m of roadMarks){let a=this.project(-.5,m.z),b=this.project(.5,m.z);g.lineStyle(Math.max(1,5*a.s),0xffffff,.16);g.lineBetween(a.x,a.y,b.x,b.y)}
-  let ordered=obstacles.filter(o=>o.active).sort((a,b)=>b.z-a.z);for(const o of ordered){let p=this.project(o.l,o.z),w=(o.kind==='bar'?90:62)*p.s,h=(o.kind==='bar'?32:75)*p.s;g.fillStyle(o.kind==='bar'?0xd7a23c:0x69427f,1);g.fillRoundedRect(p.x-w/2,p.y-h,w,h,Math.max(2,7*p.s));if(o.kind==='crate'){g.lineStyle(Math.max(1,3*p.s),0xb184c9,.6);g.strokeRect(p.x-w/2+3*p.s,p.y-h+3*p.s,w-6*p.s,h-6*p.s)}}
-  g.fillStyle(0x17141a);g.fillRect(0,this.bottom,W,H-this.bottom)}
+  let ordered=obstacles.filter(o=>o.active).sort((a,b)=>b.z-a.z);for(const o of ordered){let p=this.project(o.l,o.z),w=(o.kind==='bar'?94:o.kind==='gate'?108:66)*p.s,h=(o.kind==='bar'?34:o.kind==='gate'?58:78)*p.s;g.fillStyle(o.kind==='bar'?0xd7a23c:o.kind==='gate'?0x2e7f86:0x69427f,1);g.fillRoundedRect(p.x-w/2,p.y-h,w,h,Math.max(2,7*p.s));g.fillStyle(0xffffff,.12);g.fillRect(p.x-w*.38,p.y-h*.82,w*.76,Math.max(1,3*p.s));if(o.kind==='crate'){g.lineStyle(Math.max(1,3*p.s),0xb184c9,.6);g.strokeRect(p.x-w/2+3*p.s,p.y-h+3*p.s,w-6*p.s,h-6*p.s)}}
+  for(let i=0;i<10;i++){let y=this.horizon+(i/10)*(this.bottom-this.horizon);let a=(i/10)*.08;g.lineStyle(1,0xffffff,a);g.lineBetween(0,y,W,y)}g.fillStyle(0x17141a);g.fillRect(0,this.bottom,W,H-this.bottom)}
 }
-function haptic(){tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred('light')}function move(d){if(!alive)return;lane=clamp(lane+d,-1,1);haptic()}function doJump(){if(!alive||jump||slide)return;playerState=PLAYER.JUMP;jump=620;haptic()}function doSlide(){if(!alive||slide||jump)return;playerState=PLAYER.SLIDE;slide=520;haptic()}
+function haptic(){tg&&tg.HapticFeedback&&tg.HapticFeedback.impactOccurred('light')}function move(d){if(!alive)return;let old=lane;lane=clamp(lane+d,-1,1);if(old!==lane){combo=Math.max(0,combo-1);haptic()}}function doJump(){if(!alive||jump||slide)return;playerState=PLAYER.JUMP;jump=620;haptic()}function doSlide(){if(!alive||slide||jump)return;playerState=PLAYER.SLIDE;slide=520;haptic()}
 function endRun(){if(!alive)return;alive=false;best=Math.max(best,Math.floor(score));localStorage.setItem('mubaRunBest',best);document.getElementById('result').textContent='Score '+Math.floor(score)+' · Best '+best;document.getElementById('over').classList.add('show');tg&&tg.HapticFeedback&&tg.HapticFeedback.notificationOccurred('error')}
 document.getElementById('again').onclick=()=>location.reload();
 // Prefer WebGL batching on capable mobile devices; Phaser falls back automatically.
