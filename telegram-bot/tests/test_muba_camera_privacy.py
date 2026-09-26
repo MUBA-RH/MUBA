@@ -11,7 +11,9 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?',BOT)
   self.assertIn('app.router.add_get("/camera", camera_page_handler)',BOT)
   self.assertIn('app.router.add_post("/camera/generate", camera_generate_handler)',BOT)
-  self.assertIn('capture="user"',CAMERA)
+  self.assertIn('navigator.mediaDevices.getUserMedia',CAMERA)
+  self.assertIn('facingMode:"user"',CAMERA)
+  self.assertNotIn('type="file"',CAMERA)
  def test_source_is_not_persisted_or_published(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
@@ -30,10 +32,12 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn("camera_ai_prompt()",handler)
   self.assertNotIn("logger.",handler.split("except Exception:",1)[0])
  def test_camera_shows_selected_photo_and_result(self):
-  self.assertIn('id="previewStatus">Fotoğraf alındı ✓',CAMERA)
-  self.assertIn('id="preview" alt="Selected selfie preview"',CAMERA)
+  self.assertIn('id="openCamera">📷 KAMERAYI AÇ',CAMERA)
+  self.assertIn('id="camera" autoplay playsinline muted',CAMERA)
+  self.assertIn('id="status">Fotoğraf çekildi ✓',CAMERA)
+  self.assertIn('id="preview" alt="Captured camera frame"',CAMERA)
   self.assertIn('id="resultTitle">MUBA\'N HAZIR ✓',CAMERA)
-  self.assertIn('photo.onchange=',CAMERA)
+  self.assertIn('take.onclick=',CAMERA)
   self.assertIn('document.getElementById("resultTitle").style.display="block"',CAMERA)
   self.assertIn('out.style.display="block"',CAMERA)
  def test_daily_limit_counts_only_success(self):
@@ -45,6 +49,7 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertGreater(handler.index("consume(uid)"),handler.index("AI response contained no image"))
   self.assertIn("Daily MUBA Camera allowance used — 1/1.",handler)
   self.assertIn("Başarısız işlem hakkından düşmez",CAMERA)
+  self.assertIn('fd.append("photo",capturedBlob,"camera.jpg")',CAMERA)
  def test_gallery_is_explicitly_disabled_in_test_ui(self):
   self.assertIn("Gallery: yayınlanmadı",CAMERA)
   self.assertNotIn("/studio/share",CAMERA)
