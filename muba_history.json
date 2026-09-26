@@ -2166,6 +2166,26 @@
         "ar": "تُوحّد فئات العناوين المحفوظة عند قراءة السجل، فتُدمج التقارير القديمة عن الاختراق نفسه بعد تحسين قواعد تصنيف الأمن.",
         "hi": "सुरक्षा श्रेणी नियम सुधरने पर पूल पढ़ते समय पुराने शीर्षकों का वर्गीकरण फिर से किया जाता है और एक ही हैक की खबरें एक घटना में जुड़ती हैं।"
       }
+    },
+    {
+      "id": "20260926-gallery-explicit-community-shares",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": ["gallery", "studio", "web", "telegram"],
+      "title": {
+        "en": "Gallery shows community shares only",
+        "tr": "Galeri yalnızca topluluk paylaşımlarını gösterir",
+        "zh": "画廊仅展示社区主动分享的作品",
+        "ar": "يعرض المعرض مشاركات المجتمع فقط",
+        "hi": "गैलरी में केवल समुदाय की साझा कृतियां दिखेंगी"
+      },
+      "text": {
+        "en": "Old cards leave the public Gallery without deleting Story assets. Studio generations stay in preview until a user chooses Share to Gallery. Developer tests and Story approval do not add Gallery cards.",
+        "tr": "Eski kartlar Story görselleri silinmeden Galeri akışından çıkar. Studio üretimleri kullanıcı Galeride Paylaş seçeneğini seçene kadar önizlemede kalır. Geliştirici testleri ve Story onayı Galeriye kart eklemez.",
+        "zh": "旧卡片从公开画廊移除，Story 素材保留。Studio 生成内容仅在用户选择分享到画廊后发布。开发测试和 Story 审核不会新增画廊卡片。",
+        "ar": "تُزال البطاقات القديمة من المعرض العام مع الاحتفاظ بملفات Story. تبقى صور Studio في المعاينة حتى يختار المستخدم مشاركتها في المعرض. لا تضيف اختبارات المطور أو اعتماد Story بطاقات إلى المعرض.",
+        "hi": "Story की तस्वीरें सुरक्षित रखते हुए पुराने कार्ड सार्वजनिक गैलरी से हटते हैं। Studio की रचनाएं उपयोगकर्ता के गैलरी में साझा करने तक केवल पूर्वावलोकन में रहती हैं। डेवलपर परीक्षण और Story की स्वीकृति गैलरी में कार्ड नहीं जोड़ते।"
+      }
     }
   ]
 }

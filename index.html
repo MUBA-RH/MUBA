@@ -867,6 +867,7 @@
               <div class="studio-preview-tools">
                 <a class="btn btn-primary" id="download-image" href="#" download="MUBA-Studio.png">Download</a>
                 <button class="btn btn-secondary" type="button" id="use-twt">Use in MUBA TWT</button>
+                <button class="btn btn-secondary" type="button" id="share-gallery">Share to Gallery</button>
                 <button class="btn btn-soft" type="button" id="create-another">Create another</button>
               </div>
               <p class="studio-preview-meta" id="studio-preview-meta"></p>
@@ -878,7 +879,7 @@
           <div class="gallery-head">
             <div class="eyebrow">MUBA GALLERY</div>
             <h3>CREATE MUBA. <span>BECOME PART OF THE STORY.</span></h3>
-            <p>Every creation becomes part of the MUBA archive. Web Studio and Telegram Studio creations meet here so the community can see MUBA's visual story grow over time.</p>
+            <p>Creations shared by the community appear here. Your Studio image stays private until you choose to share it.</p>
           </div>
           <div class="gallery-filters" id="gallery-filters" aria-label="MUBA Gallery filters">
             <button class="chip active" type="button" data-gallery-kind="all">ALL</button>
@@ -1497,7 +1498,7 @@
         const payload=await response.json();
         const items=Array.isArray(payload.items) ? payload.items : [];
         if (!items.length) {
-          strip.innerHTML='<div class="gallery-empty">The archive is ready. New MUBA Studio creations will appear here automatically.</div>';
+          strip.innerHTML='<div class="gallery-empty">Community Gallery is ready. Create a visual in MUBA Studio and choose Share to Gallery to add it here.</div>';
           status.textContent="";
           return;
         }
@@ -1530,6 +1531,7 @@
 
     let creatorKind = "meme";
     let studioObjectUrl = "";
+    let studioShareKey = "";
 
     function setStudioStatus(text, state = "") {
       const el = document.getElementById("studio-generate-status");
@@ -1538,6 +1540,10 @@
     }
 
     function resetStudioPreview() {
+      studioShareKey = "";
+      const shareButton = document.getElementById("share-gallery");
+      shareButton.disabled = false;
+      shareButton.textContent = "Share to Gallery";
       if (studioObjectUrl) {
         URL.revokeObjectURL(studioObjectUrl);
         studioObjectUrl = "";
@@ -1606,6 +1612,8 @@
         }
 
         const blob = await response.blob();
+        const outputUrl = response.headers.get("X-MUBA-Output-URL") || "";
+        studioShareKey = outputUrl.startsWith(studioApiBase + "/studio/output/") ? outputUrl.slice((studioApiBase + "/studio/output/").length) : "";
         studioObjectUrl = URL.createObjectURL(blob);
         document.getElementById("studio-result-img").src = studioObjectUrl;
         document.getElementById("download-image").href = studioObjectUrl;
@@ -1614,13 +1622,35 @@
         document.getElementById("studio-preview-meta").textContent =
           "Created with MUBA Studio." + (remaining !== null ? " " + remaining + "/3 web creations left today." : "");
         setStudioStatus("Created. Your MUBA visual is ready.", "ok");
-        loadGallery();
       } catch (error) {
         const message = error && error.message ? error.message : "Web Studio is unavailable right now.";
         setStudioStatus(message + " You can still use Telegram Studio.", "error");
       } finally {
         button.disabled = false;
         button.textContent = "CREATE";
+      }
+    });
+
+    document.getElementById("share-gallery").addEventListener("click", async () => {
+      const button = document.getElementById("share-gallery");
+      if (!studioShareKey) { setStudioStatus("This creation is no longer available to share. Create another image.", "error"); return; }
+      button.disabled = true;
+      setStudioStatus("Sharing your creation…", "busy");
+      try {
+        const response = await fetch(studioApiBase + "/studio/share", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: studioShareKey })
+        });
+        if (!response.ok) {
+          const payload = await response.json();
+          throw new Error(payload.error || "Gallery is temporarily unavailable.");
+        }
+        button.textContent = "Shared to Gallery";
+        setStudioStatus("Shared to MUBA Gallery.", "ok");
+        loadGallery();
+      } catch (error) {
+        button.disabled = false;
+        setStudioStatus(error.message || "Gallery is temporarily unavailable.", "error");
       }
     });
 
