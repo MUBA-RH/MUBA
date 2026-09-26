@@ -40,7 +40,7 @@ CRYPTO=re.compile(r"\bcrypto(?:currency)?\b|\bbitcoin\b|\bethereum\b|\bblockchai
 MACRO=re.compile(r"\binterest rates?\b|\bfederal funds rate\b|\bmonetary policy\b|\brate (?:increase|cut|hike)\b",re.I)
 TOPICS={
     "ETF":r"\betf\b|exchange.traded fund",
-    "SECURITY":r"\bhack\b|exploit|breach|vulnerabilit|security incident|stolen funds",
+    "SECURITY":r"\bhack(?:ed|er|ers|ing)?\b|exploit|breach|vulnerabilit|security incident|stolen funds|\btheft\b|\bdrain(?:ed|ing)?\b",
     "STABLECOIN":r"stablecoin|\busdc\b|\busdt\b",
     "REGULATION":r"regulat|commission|rulemaking|\bsec\b|\bcftc\b|legislat|sanction",
     "EXCHANGE":r"\bexchange\b|trading platform|coinbase|kraken|binance",
@@ -180,7 +180,11 @@ def corroborates(a,b):
     if not a.get("published_at") or not b.get("published_at"): return False
     if abs((datetime.fromisoformat(a["published_at"])-datetime.fromisoformat(b["published_at"])).total_seconds())>172800: return False
     skip={"crypto","market","says","after","with","from","that","about","today","latest","news"}
-    terms=lambda row:{word for word in re.findall(r"[a-z]{4,}",row["title"].lower()) if word not in skip}
+    def terms(row):
+        words=set()
+        for word in re.findall(r"[a-z]{4,}",row["title"].lower()):
+            if word not in skip: words.add("hack" if word.startswith("hack") else "drain" if word.startswith("drain") else word)
+        return words
     left,right=terms(a),terms(b)
     return len(left & right)>=3 and len(left & right)/max(1,min(len(left),len(right)))>=0.35
 

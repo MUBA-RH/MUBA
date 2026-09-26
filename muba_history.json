@@ -2075,6 +2075,29 @@
         "ar": "تم إصلاح فواصل الأسطر المعطوبة في نص الموقع لتعود وحدتا الأسعار والأخبار للعمل، واستُعيد تمرير الأخبار على دفعات من عشرة مع التحقق من العناوين بمقالات الناشرين الموثوقين.",
         "hi": "वेबसाइट स्क्रिप्ट में गलत लाइन ब्रेक सुधारे गए ताकि मूल्य और समाचार विजेट फिर चलें। एक बार में दस खबरों वाली निरंतर स्क्रॉलिंग बहाल हुई और दिखाने से पहले शीर्षक विश्वसनीय प्रकाशक लेखों से मिलाए जाते हैं।"
       }
+    },
+    {
+      "id": "20260926-muba-news-security-dedup-v23",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": [
+        "web",
+        "telegram"
+      ],
+      "title": {
+        "en": "MUBA NEWS security event deduplication",
+        "tr": "MUBA HABER güvenlik olayı tekilleştirmesi",
+        "zh": "MUBA 新闻安全事件去重",
+        "ar": "إزالة تكرار أحداث أمن MUBA NEWS",
+        "hi": "MUBA NEWS सुरक्षा घटना डुप्लिकेट सुधार"
+      },
+      "text": {
+        "en": "Normalize security headline variants so separate publishers covering the same hack are grouped as one news event.",
+        "tr": "Farklı yayıncıların aynı saldırıyı anlatan başlıkları güvenlik kategorisinde eşleştirilerek tek haber olayı olarak gruplanır.",
+        "zh": "规范不同媒体对同一黑客事件的标题写法，将其归为同一条新闻事件。",
+        "ar": "تُوحّد صيغ عناوين الحوادث الأمنية لضم تغطيات الناشرين المختلفة للاختراق نفسه ضمن حدث إخباري واحد.",
+        "hi": "एक ही हैक पर अलग प्रकाशकों की खबरों को सुरक्षा श्रेणी में मिलाकर एक समाचार घटना बनाया जाता है।"
+      }
     }
   ]
 }
