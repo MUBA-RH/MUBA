@@ -1,4 +1,5 @@
-import pathlib,sys,unittest,os
+import pathlib,sys,unittest,os,hashlib,asyncio
+from PIL import Image
 ROOT=pathlib.Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 import muba_studio
 class StudioAI(unittest.TestCase):
@@ -18,6 +19,15 @@ class StudioAI(unittest.TestCase):
  def test_payload_preserves_muba_identity(self):
   p=muba_studio.ai_payload("on the moon","sticker","data:image/jpeg;base64,abc")
   self.assertIn("MUBA identity guidance",p["prompt"]);self.assertIn("core facial identity",p["prompt"]);self.assertIn("Do not force a large centered MUBA portrait",p["prompt"]);self.assertIn("concept should lead the composition",p["prompt"]);self.assertIn("input_image",p)
+  for guidance in ("large asymmetrical glossy brown eyes","small rounded brown nose","pink tongue","matching perspective","No hard cutout edges","pose, outfit"):
+   self.assertIn(guidance,p["prompt"])
+ def test_clean_studio_reference_is_present_and_used_in_both_paths(self):
+  reference=muba_studio.STUDIO_REFERENCE_FILE
+  self.assertEqual(hashlib.sha256(reference.read_bytes()).hexdigest(),muba_studio.STUDIO_REFERENCE_SHA256)
+  with Image.open(reference) as picture:self.assertEqual((picture.format,picture.size),("PNG",(1448,1086)))
+  src=(ROOT/"bot_mention.py").read_text()
+  self.assertEqual(src.count('"input_image_0",ref,filename="muba-studio-identity.png",content_type="image/png"'),2)
+  self.assertIn('ref=await _studio_reference(request)',src)
  def test_all_four_formats_are_textless_by_default(self):
   self.assertFalse(muba_studio.wants_visible_text("MUBA denizde olsun"))
   for kind in ("meme","image","sticker","emoji"):

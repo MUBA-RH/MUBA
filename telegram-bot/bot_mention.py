@@ -59,7 +59,7 @@ from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANS
 
 for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
-from muba_studio import REFERENCE_URL, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
+from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
 from muba_price import prices as live_prices
@@ -1286,9 +1286,14 @@ async def studio_page_handler(request: web.Request):
     return web.Response(text=studio_html(EXTERNAL_URL),content_type="text/html")
 
 async def _studio_reference(request: web.Request):
-    async with request.app["http_session"].get(REFERENCE_URL,timeout=15) as response:
-        if response.status != 200: raise RuntimeError("MUBA reference unavailable")
-        return await response.read()
+    """Both Studio paths use one clean identity portrait; Story has its own source."""
+    try:
+        reference=STUDIO_REFERENCE_FILE.read_bytes()
+    except OSError as exc:
+        raise RuntimeError("MUBA Studio identity reference unavailable") from exc
+    if hashlib.sha256(reference).hexdigest()!=STUDIO_REFERENCE_SHA256:
+        raise RuntimeError("MUBA Studio identity reference checksum mismatch")
+    return reference
 
 async def studio_generate_handler(request: web.Request):
     try: data=await request.json()
@@ -1309,7 +1314,7 @@ async def studio_generate_handler(request: web.Request):
         form.add_field("prompt",payload["prompt"])
         form.add_field("width",str(payload["width"]))
         form.add_field("height",str(payload["height"]))
-        form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+        form.add_field("input_image_0",ref,filename="muba-studio-identity.png",content_type="image/png")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
@@ -1405,7 +1410,7 @@ async def studio_web_generate_handler(request: web.Request):
         form.add_field("prompt",payload["prompt"])
         form.add_field("width",str(payload["width"]))
         form.add_field("height",str(payload["height"]))
-        form.add_field("input_image_0",ref,filename="muba-reference.jpg",content_type="image/jpeg")
+        form.add_field("input_image_0",ref,filename="muba-studio-identity.png",content_type="image/png")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
