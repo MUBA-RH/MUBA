@@ -26,7 +26,7 @@ class Run extends Phaser.Scene{
   if(jump>0){jump=Math.max(0,jump-dt);if(!jump)playerState=PLAYER.RUN}if(slide>0){slide=Math.max(0,slide-dt);if(!slide)playerState=PLAYER.RUN}
   let targetX=this.project(lane,0).x;this.player.x=lerp(this.player.x,targetX,.18);let jp=jump?Math.sin((1-jump/620)*Math.PI)*105:0;this.player.y=this.H*.81-jp;this.player.scaleY=slide?.62:1;this.player.scaleX=slide?1.08:1;
   roadMarks.forEach(m=>{m.z-=speed*dt;if(m.z<0)m.z+=1});
-  for(let i=obstacles.length-1;i>=0;i--){let o=obstacles[i];o.z-=speed*dt;if(!o.active)continue;if(o.z<-.08){o.active=false;score+=10;continue}if(!o.hit&&o.z<.13&&o.z>.015&&o.l===lane){let safe=o.kind==='bar'?slide>0:jump>190;if(!safe){o.hit=true;playerState=PLAYER.HIT;this.cameras.main.shake(150,.012);endRun()}}}
+  for(let i=obstacles.length-1;i>=0;i--){let o=obstacles[i];if(!o.active)continue;o.z-=speed*dt;if(o.z<-.08){o.active=false;score+=10;continue}if(!o.hit&&o.z<.13&&o.z>.015&&o.l===lane){let safe=o.kind==='bar'?slide>0:jump>190;if(!safe){o.hit=true;playerState=PLAYER.HIT;this.cameras.main.shake(150,.012);endRun()}}}
   this.drawWorld()}
  drawWorld(){let g=this.g,W=this.W,H=this.H;g.clear();g.fillStyle(0x070912);g.fillRect(0,0,W,H);g.fillStyle(0xffffff);for(const s of stars)g.fillCircle(s.x,s.y,s.r,s.a);
   g.fillStyle(0x11131b);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.99,this.bottom);g.fillTriangle(this.cx-W*.055,this.horizon,this.cx+W*.055,this.horizon,W*.01,this.bottom);
