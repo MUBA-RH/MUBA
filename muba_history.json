@@ -2310,6 +2310,26 @@
         "ar": "يوقظ طلب القصة اليومية المجدول الخدمة عند الساعة 08:30 بتوقيت إسطنبول ويبدأ إعداد صورة اليوم الوحيدة للمراجعة قبل الساعة 11:00.",
         "hi": "तय डेली स्टोरी अनुरोध इस्तांबुल समयानुसार सुबह 08:30 बजे सेवा जगाता है और 11:00 बजे से पहले समीक्षा के लिए आज की एक छवि तैयार करना शुरू करता है।"
       }
+    },
+    {
+      "id": "20260926-daily-story-kaggle-output-recovery",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": ["daily"],
+      "title": {
+        "en": "Recover completed Daily Story image",
+        "tr": "Tamamlanan Daily Story görselini kurtar",
+        "zh": "恢复已完成的每日故事图片",
+        "ar": "استعادة صورة القصة اليومية المكتملة",
+        "hi": "तैयार डेली स्टोरी छवि प्राप्त करें"
+      },
+      "text": {
+        "en": "Daily Story saves its completed 16:9 image directly to the private archive. The bot reads that image without Kaggle output listing, and retries reuse the same GPU job.",
+        "tr": "Daily Story tamamlanan 16:9 görseli doğrudan özel arşive kaydeder. Bot, Kaggle çıktı listesini çağırmadan görseli alır; tekrar denemeler aynı GPU işini kullanır.",
+        "zh": "每日故事将完成的16:9图片直接保存到私人档案。机器人无需列出Kaggle输出即可读取图片，重试时会复用同一GPU任务。",
+        "ar": "تحفظ القصة اليومية صورة 16:9 المكتملة مباشرة في الأرشيف الخاص. يقرأها البوت دون سرد مخرجات Kaggle، وتعيد المحاولات استخدام مهمة GPU نفسها.",
+        "hi": "डेली स्टोरी तैयार 16:9 छवि सीधे निजी संग्रह में रखती है। बॉट Kaggle आउटपुट सूची के बिना उसे पढ़ता है और दोबारा प्रयास में वही GPU कार्य उपयोग करता है।"
+      }
     }
   ]
 }
