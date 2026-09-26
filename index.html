@@ -1561,7 +1561,24 @@
 
       resetStudioPreview();
       button.disabled = true;
-      button.textContent = "CREATING…";
+
+      // UI-only progress feedback. The generator/API contract is unchanged.
+      // Progress intentionally stops below 100% until the real response arrives.
+      let studioProgress = 1;
+      let studioProgressTimer = null;
+      button.style.transition = "transform .28s ease";
+      button.style.transform = "rotateX(180deg)";
+      const renderStudioProgress = () => {
+        button.textContent = "ÜRETİM YAPILIYOR %" + studioProgress;
+      };
+      renderStudioProgress();
+      setTimeout(() => { button.style.transform = "rotateX(0deg)"; }, 280);
+      studioProgressTimer = setInterval(() => {
+        if (studioProgress >= 94) return;
+        const step = studioProgress < 55 ? 4 : studioProgress < 80 ? 2 : 1;
+        studioProgress = Math.min(94, studioProgress + step);
+        renderStudioProgress();
+      }, 650);
       setStudioStatus("MUBA Studio is creating your image…", "busy");
 
       try {
@@ -1596,6 +1613,16 @@
         const message = error && error.message ? error.message : "Web Studio is unavailable right now.";
         setStudioStatus(message + " You can still use Telegram Studio.", "error");
       } finally {
+        if (studioProgressTimer) clearInterval(studioProgressTimer);
+        if (studioObjectUrl) {
+          studioProgress = 100;
+          button.textContent = "ÜRETİM TAMAMLANDI %100 ✓";
+          await new Promise(resolve => setTimeout(resolve, 700));
+        } else {
+          button.textContent = "ÜRETİM BAŞARISIZ — TEKRAR DENE";
+          await new Promise(resolve => setTimeout(resolve, 1200));
+        }
+        button.style.transform = "";
         button.disabled = false;
         button.textContent = "CREATE";
       }
