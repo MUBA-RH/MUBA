@@ -412,7 +412,7 @@ def daily_hub_keyboard(lang):
 def create_hub_keyboard(lang,user_id):
     private_token=studio_token(user_id or 0,TOKEN)
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
+        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+private_token))],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/studio?uid="+str(user_id or 0)+"&st="+private_token))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
@@ -478,7 +478,7 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
-        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
+        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/?v=muba-run-v2"))],
     ]
@@ -815,10 +815,6 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
-    if data=="camera_native":
-        context.user_data["muba_camera_waiting_photo"]=True
-        await q.answer("MUBA CAMERA hazır — aşağıdaki mavi kamera düğmesine dokun.",show_alert=False)
-        await q.edit_message_text("📸 MUBA CAMERA HAZIR ✓\n\nSağ alttaki mavi kamera düğmesine dokun → fotoğrafı çek → gönder.\n\nFotoğraf gelir gelmez MUBA dönüşümü otomatik başlar. Günlük hak: 1 başarılı üretim; hata olursa hak düşmez.",reply_markup=InlineKeyboardMarkup([[_section_back(lang)]])); return
     if data=="community_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
     if data.startswith("community_info:"):
