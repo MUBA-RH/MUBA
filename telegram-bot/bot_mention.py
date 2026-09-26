@@ -11,7 +11,7 @@ import json
 import os
 import time
 from collections import OrderedDict, defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import aiohttp
@@ -66,7 +66,7 @@ from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
-from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, SCENE_REFERENCE
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, review_approved as story_review_approved, approve_tomorrow as story_approve_tomorrow, preview_requested as story_preview_requested, request_preview as story_request_preview, START as STORY_START, SCENE_REFERENCE
 from muba_story_text import prepare as prepare_story_text
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -98,6 +98,54 @@ _ASSISTANT_DAILY_LIMIT = 7
 _ASSISTANT_CALL_INTERVAL = 7200
 _ASSISTANT_CALLS = {}
 _ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
+_STORY_PREPARING = set()
+_STORY_GENERATION_LOCK = asyncio.Lock()
+
+
+def _story_today():
+    return datetime.now(_ISTANBUL_TZ).date()
+
+
+def _story_director_panel(item):
+    day = date.fromisoformat(item["day"])
+    today = _story_today()
+    if day > today:
+        status = ("YARIN İÇİN ONAYLI" if story_review_approved(item["day"]) else
+                  "GÖRSEL HAZIR — DEV ONAYI BEKLİYOR" if item["images"] else
+                  "HAZIRLANIYOR" if item["day"] in _STORY_PREPARING else "TASLAK — GÖRSEL HAZIR DEĞİL")
+    else:
+        status = "YAYINDA" if item["status"] == "published" else "TASLAK"
+    body = ("🎬 MUBA GÜNLÜK HİKÂYE — " + item["day"] + "\n\n" + item["story_tr"] +
+            "\n\nReferans: " + ("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ") +
+            "\nGörsel: " + ("HAZIR" if len(item["images"]) == 1 else "HAZIRLANIYOR" if item["day"] in _STORY_PREPARING else "HAZIR DEĞİL") +
+            "\nDurum: " + status)
+    rows = []
+    if len(item["images"]) == 1:
+        rows.append([InlineKeyboardButton("🖼️ GÖRSELİ GÖR", callback_data="story_preview:" + item["day"])])
+    if day == today and item["status"] != "published" and len(item["images"]) == 1:
+        rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish")])
+    if day == today and item["status"] != "published" and not item["images"] and item["day"] not in _STORY_PREPARING:
+        rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET", callback_data="story_generate")])
+    if day == today + timedelta(days=1) and len(item["images"]) == 1 and not story_review_approved(item["day"]):
+        rows.append([InlineKeyboardButton("✅ YARIN İÇİN UYGUN", callback_data="story_approve:" + item["day"])])
+    if day == today and item["status"] != "published":
+        rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR", callback_data="story_reference")])
+    if day == today and item["day"] not in _STORY_PREPARING:
+        rows.append([InlineKeyboardButton("⏭️ YARINI HAZIRLA", callback_data="story_prepare_tomorrow")])
+    pager = []
+    if day > STORY_START:
+        pager.append(InlineKeyboardButton("⬅️ Önceki gün", callback_data="story_day:" + (day - timedelta(days=1)).isoformat()))
+    if day < today or (day == today and _story_tomorrow_available()):
+        pager.append(InlineKeyboardButton("Sonraki gün ➡️", callback_data="story_day:" + (day + timedelta(days=1)).isoformat()))
+    if pager:
+        rows.append(pager)
+    rows.append([InlineKeyboardButton("⬅️ Geri", callback_data="menu")])
+    return body, InlineKeyboardMarkup(rows)
+
+
+def _story_tomorrow_available():
+    day = (_story_today() + timedelta(days=1)).isoformat()
+    return story_preview_requested(day) or day in _STORY_PREPARING
 
 
 def _claim_message(update: Update) -> bool:
@@ -717,36 +765,83 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         index=_latest_area_global_index(lang,area)
         body,index,total=updates_center_text(lang,user_id,index)
         await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
-    if data=="story_director":
+    if data=="story_director" or data.startswith("story_day:"):
         if not is_dev(user_id): return
-        try: item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
-        except RuntimeError:
-            logger.exception("Daily Story text preparation unavailable")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBugünkü hikâye henüz hazırlanamadı. Eski bölüm tekrar edilmiyor; daha sonra yeniden açabilirsin."); return
-        body=("🎬 MUBA GÜNLÜK HİKÂYE — "+item["day"]+"\n\n"+item["story_tr"]+
-              "\n\nReferans: "+("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ")+
-              "\nDurum: "+("YAYINDA" if item["status"]=="published" else "TASLAK"))
-        rows=[]
-        if item["status"]!="published" and len(item["images"])==1:
-            rows.append([InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")])
-        elif item["status"]!="published" and story_reference_for_day(item["day"]):
-            rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET",callback_data="story_generate")])
-        if item["status"]!="published":
-            rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR",callback_data="story_reference")])
-        rows.append([InlineKeyboardButton("⬅️ Geri",callback_data="menu")])
-        await q.edit_message_text(body,reply_markup=InlineKeyboardMarkup(rows)); return
+        day=_story_today().isoformat() if data=="story_director" else data.split(":",1)[1]
+        try:
+            chosen=date.fromisoformat(day)
+            if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
+            if chosen>_story_today() and not _story_tomorrow_available(): raise ValueError("Tomorrow not prepared")
+            item=await prepare_story_text(day) if chosen==_story_today() else story_draft(day)
+            body,markup=_story_director_panel(item)
+        except (RuntimeError,ValueError):
+            logger.exception("Daily Story day unavailable")
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBu günün hikâyesi henüz hazır değil.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        await q.edit_message_text(body,reply_markup=markup); return
+    if data.startswith("story_preview:"):
+        if not is_dev(user_id): return
+        day=data.split(":",1)[1]
+        try:
+            chosen=date.fromisoformat(day)
+            if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
+            if chosen>_story_today() and not _story_tomorrow_available(): raise ValueError("Tomorrow not prepared")
+            item=story_draft(day)
+            if len(item["images"])!=1: raise ValueError("Daily Story image not ready")
+        except (RuntimeError,ValueError):
+            await q.answer("Bu günün görseli henüz hazır değil.",show_alert=True); return
+        await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
+        return
+    if data=="story_prepare_tomorrow":
+        if not is_dev(user_id): return
+        day=(_story_today()+timedelta(days=1)).isoformat()
+        if day in _STORY_PREPARING:
+            await q.answer("Yarının görseli hazırlanıyor.",show_alert=True); return
+        story_request_preview(day)
+        _STORY_PREPARING.add(day)
+        await q.edit_message_text("🎬 YARININ HİKÂYESİ — "+day+"\n\nMetin ve tek görsel hazırlanıyor. Hazır olduğunda inceleme ekranı açılacak; bu işlem Kaggle nedeniyle zaman alabilir.")
+        try:
+            item=await prepare_story_text(day)
+            if not item["images"]:
+                item=await _story_generate_images(item)
+        except Exception:
+            logger.exception("Tomorrow's Daily Story preparation failed")
+            await q.edit_message_text("🎬 YARININ HİKÂYESİ\n\nHazırlık tamamlanamadı. Eski bir görsel kullanılmadı; yarın için onay verilmedi.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Hikâyeye dön",callback_data="story_director")]])); return
+        finally:
+            _STORY_PREPARING.discard(day)
+        body,markup=_story_director_panel(item)
+        await q.edit_message_text(body,reply_markup=markup); return
+    if data.startswith("story_approve:"):
+        if not is_dev(user_id): return
+        day=data.split(":",1)[1]
+        try:
+            story_approve_tomorrow(day,today=_story_today())
+            body,markup=_story_director_panel(story_draft(day))
+        except (ValueError,RuntimeError):
+            await q.answer("Yarının metni ve görseli hazır olmalı.",show_alert=True); return
+        await q.edit_message_text(body,reply_markup=markup); return
     if data=="story_reference":
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
         await q.edit_message_text("📷 MUBA DAILY STORY\n\nYeni referans kullanmak istersen görseli gönder. Onaylı varsayılan referans zaten hazır.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
     if data=="story_generate":
         if not is_dev(user_id): return
+        day=_story_today().isoformat()
+        if day in _STORY_PREPARING:
+            await q.answer("Bugünün görseli zaten hazırlanıyor.",show_alert=True); return
+        _STORY_PREPARING.add(day)
         await q.answer("MUBA hikâye görseli hazırlanıyor…")
+        await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nTek 16:9 görsel Kaggle/ComfyUI üzerinde hazırlanıyor. Tamamlandığında görsel burada paylaşılacak; bu işlem zaman alabilir.")
         try:
-            item=await _story_generate_images(await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat()))
-        except Exception:
+            item=await _story_generate_images(await prepare_story_text(day))
+        except Exception as exc:
             logger.exception("MUBA Daily Story image generation failed")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGörsel üretilemedi. Mevcut sistem ve hikâye taslağı korundu; daha sonra tekrar deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+            reason=("Kaggle şu anda çok fazla istek nedeniyle çıktı vermiyor."
+                    if "429" in str(exc) else
+                    "Kaggle/ComfyUI süresi doldu." if "timed out" in str(exc).lower() else
+                    "Üretim tamamlanamadı.")
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\n"+reason+" Hikâye taslağı korundu; daha sonra yeniden deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+        finally:
+            _STORY_PREPARING.discard(day)
         await q.edit_message_text("🎬 Tek 16:9 görsel hazır. Hikâyeyi ve görseli incele.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
         await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
         return
@@ -1477,6 +1572,12 @@ def _gallery_cors_headers():
 
 
 async def _story_generate_images(item):
+    # Only one Daily Story Kaggle job may run at a time on the shared kernel.
+    async with _STORY_GENERATION_LOCK:
+        return await _story_generate_images_unlocked(item)
+
+
+async def _story_generate_images_unlocked(item):
     """Generate and archive one 16:9 Daily Story image; publishing remains DEV-only."""
     from muba_story_cloudflare import configured as story_image_configured, generate, GenerationCapacityError
     if item.get("status")=="published": return item
@@ -1527,15 +1628,31 @@ async def _story_generate_images(item):
     return set_story_images(item["day"],[archived["id"]])
 
 async def _prepare_daily_story(application):
-    """Daily reminder only. V3 never generates until DEV uploads a fresh reference."""
-    item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
+    """Prepare today's scene in advance; publication always requires DEV action."""
+    day=_story_today().isoformat()
+    if day in _STORY_PREPARING:
+        return story_draft(day)
+    _STORY_PREPARING.add(day)
     chat_id=int(os.getenv("MUBA_DEV_CHAT_ID") or DEV_ID)
-    if item.get("status")!="published":
+    try:
+        item=await prepare_story_text(day)
+        if item["status"]=="published" or item["images"]:
+            return item
+        item=await _story_generate_images(item)
         await application.bot.send_message(
             chat_id=chat_id,
-            text="🎬 MUBA DAILY STORY — "+item["day"]+"\n\nBugünkü 150–170 karakterlik hikâye taslağı hazır. Tek 16:9 görseli üretmek için Daily Story menüsünü aç.",
+            text="🎬 MUBA DAILY STORY — "+day+"\n\nHikâye ve tek 16:9 görsel hazır. İncelemek ve yayınlamak için Daily Story menüsünü aç.",
         )
-    return item
+        return item
+    except Exception:
+        logger.exception("Daily Story advance preparation failed")
+        await application.bot.send_message(
+            chat_id=chat_id,
+            text="⚠️ MUBA DAILY STORY — "+day+"\n\nGörsel henüz hazır değil. Daily Story menüsünden tekrar deneyebilirsin.",
+        )
+        raise
+    finally:
+        _STORY_PREPARING.discard(day)
 
 async def daily_story_scheduler(application):
     """Internal Daily Story preparation scheduler. Timing details are not public story content."""
@@ -1544,7 +1661,14 @@ async def daily_story_scheduler(application):
     tz=ZoneInfo("Europe/Istanbul")
     while True:
         now=datetime.now(tz)
-        target=now.replace(hour=10,minute=45,second=0,microsecond=0)
+        target=now.replace(hour=9,minute=15,second=0,microsecond=0)
+        if target<=now<now.replace(hour=11,minute=0,second=0,microsecond=0):
+            try:
+                await _prepare_daily_story(application)
+            except Exception:
+                logger.exception("Daily Story morning catch-up failed")
+            now=datetime.now(tz)
+            target=now.replace(hour=9,minute=15,second=0,microsecond=0)
         if now>=target:
             target+=timedelta(days=1)
         await asyncio.sleep(max(1,(target-now).total_seconds()))
@@ -1555,14 +1679,14 @@ async def daily_story_scheduler(application):
             await asyncio.sleep(60)
 
 async def story_prepare_handler(request: web.Request):
-    """Protected reminder endpoint. V3 generation happens only from Telegram DEV."""
+    """Protected status endpoint for today's prepared Daily Story."""
     secret=os.getenv("MUBA_STORY_SCHEDULER_SECRET","")
     supplied=request.headers.get("X-MUBA-Story-Secret","")
     if not secret or not supplied or not hashlib.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
     item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
     reference=story_reference_for_day(item["day"])
-    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"generation":"telegram-dev-only"})
+    return web.json_response({"ok":True,"day":item["day"],"reference_ready":bool(reference),"image_ready":len(item["images"])==1})
 
 async def story_public_handler(request: web.Request):
     item=public_story(request.query.get("day") or None)
@@ -1757,8 +1881,12 @@ async def start_webhook_server():
     application.add_handler(CommandHandler("ca", ca_command))
     for guardian_name in ("start","stop","status","guardian","security","lockdown","normal","warn","mute","unmute","ban","unban","delete","help"):
         application.add_handler(CommandHandler(guardian_name, guardian_slash_command), group=-2)
+    # Kaggle image generation may take minutes. Keep that Daily Story callback
+    # and its reference-photo path off the single Telegram update worker so
+    # /start and other bot commands can continue responding.
+    application.add_handler(CallbackQueryHandler(callback_handler, pattern=r"^story_(?:director|generate|prepare_tomorrow)$|^story_day:", block=False))
     application.add_handler(CallbackQueryHandler(callback_handler))
-    application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo), group=-4)
+    application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo, block=False), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(

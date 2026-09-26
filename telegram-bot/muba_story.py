@@ -6,8 +6,11 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from muba_brain import STORE
+from muba_brain import STORE as BASE_STORE
+from muba_story_state import StoryState
 from muba_story_visual import REFERENCE_ROLE, VISUAL_STYLE, story_identity_prompt
+
+STORE = StoryState(BASE_STORE)
 
 TZ = ZoneInfo("Europe/Istanbul")
 START = date(2026, 9, 26)
@@ -129,6 +132,9 @@ def save_episode(day, episode):
             "step": (date.fromisoformat(day) - START).days}
     if not item["title"] or not item["title_tr"]:
         raise ValueError("Daily Story needs a title in both languages")
+    if STORE.get("story_text", day, None) != item:
+        STORE.set("story_image_batches", day, {})
+        STORE.set("story_review_approved", day, None)
     STORE.set("story_text", day, item)
     return draft(day)
 
@@ -167,6 +173,7 @@ def set_reference(day, gallery_id, sha256, content_type, fingerprint=None):
         metadata["fingerprint"] = dict(fingerprint)
     STORE.set("story_v3_reference", str(day), metadata)
     STORE.set("story_image_batches", str(day), {})
+    STORE.set("story_review_approved", str(day), None)
     return metadata
 
 
@@ -198,6 +205,40 @@ def set_images(day, image_ids):
     if not reference or len(image_ids) != 1:
         raise ValueError("Daily Story requires one image bound to its reference")
     STORE.set("story_image_batches", str(day), {"ids": list(image_ids), "reference": reference})
+    STORE.set("story_review_approved", str(day), None)
+    return draft(day)
+
+
+def review_approved(day):
+    saved = STORE.get("story_review_approved", str(day), None)
+    if not isinstance(saved, dict) or len(image_ids(day)) != 1:
+        return False
+    item = draft(day)
+    return (saved.get("story") == item["story"] and
+            saved.get("story_tr") == item["story_tr"] and
+            saved.get("image") == item["images"][0] and
+            saved.get("reference") == reference_for_day(day))
+
+
+def preview_requested(day):
+    return bool(STORE.get("story_preview_requested", str(day), False))
+
+
+def request_preview(day):
+    STORE.set("story_preview_requested", str(day), True)
+
+
+def approve_tomorrow(day, today=None):
+    today = today or datetime.now(TZ).date()
+    if date.fromisoformat(day) != today + timedelta(days=1):
+        raise ValueError("Only tomorrow's Daily Story can be approved in advance")
+    item = draft(day)
+    if len(item["images"]) != 1:
+        raise ValueError("Tomorrow needs one image before DEV approval")
+    STORE.set("story_review_approved", str(day), {
+        "story": item["story"], "story_tr": item["story_tr"],
+        "image": item["images"][0], "reference": reference_for_day(day),
+    })
     return draft(day)
 
 

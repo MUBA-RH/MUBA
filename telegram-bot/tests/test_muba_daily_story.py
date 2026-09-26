@@ -72,6 +72,21 @@ class DailyStoryTests(unittest.TestCase):
         muba_story.set_reference(day, 'new', 'hash', 'image/jpeg')
         self.assertEqual(muba_story.image_ids(day), [])
 
+    def test_tomorrow_review_is_bound_to_scene_and_reference(self):
+        today = muba_story.START
+        tomorrow = '2026-09-27'
+        with self.assertRaisesRegex(ValueError, 'one image'):
+            muba_story.approve_tomorrow(tomorrow, today=today)
+        muba_story.request_preview(tomorrow)
+        self.assertTrue(muba_story.preview_requested(tomorrow))
+        muba_story.set_images(tomorrow, ['scene-one'])
+        muba_story.approve_tomorrow(tomorrow, today=today)
+        self.assertTrue(muba_story.review_approved(tomorrow))
+        muba_story.set_images(tomorrow, ['scene-two'])
+        self.assertFalse(muba_story.review_approved(tomorrow))
+        with self.assertRaisesRegex(ValueError, "Only tomorrow"):
+            muba_story.approve_tomorrow('2026-09-28', today=today)
+
     def test_worker_contract_is_single_scene(self):
         job = muba_story.worker_job('2026-09-26')
         self.assertEqual(job['rules']['images'], 1)
