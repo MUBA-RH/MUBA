@@ -2270,6 +2270,26 @@
         "ar": "بعد الفصول الأولى تُعد القصة اليومية نصاً جديداً من 150 إلى 170 حرفاً انطلاقاً من القصة السابقة وتحفظه. عند تعذر إعداد نص صالح لا تتكرر قصة قديمة ولا تُنشر صورة.",
         "hi": "शुरुआती भाग के बाद दैनिक कहानी पिछले भाग से नया 150–170 अक्षरों का पाठ तैयार कर सहेजती है। पाठ अमान्य या अनुपलब्ध होने पर पुरानी कहानी दोहराई नहीं जाती और चित्र प्रकाशित नहीं होता।"
       }
+    },
+    {
+      "id": "20260926-daily-story-nonblocking-generation",
+      "date": "2026-09-26",
+      "type": "fixed",
+      "areas": ["daily"],
+      "title": {
+        "en": "Daily Story generation runs separately from bot commands",
+        "tr": "Daily Story üretimi bot komutlarından ayrı çalışıyor",
+        "zh": "每日故事生成与机器人命令分开运行",
+        "ar": "يعمل إنشاء القصة اليومية بمعزل عن أوامر البوت",
+        "hi": "दैनिक कहानी निर्माण बॉट आदेशों से अलग चलता है"
+      },
+      "text": {
+        "en": "Daily Story image generation, reference photos and story preparation no longer hold the Telegram update queue while waiting for external services.",
+        "tr": "Daily Story görsel üretimi, referans fotoğrafları ve hikâye hazırlığı dış hizmetleri beklerken Telegram komut kuyruğunu tutmaz.",
+        "zh": "每日故事图像生成、参考照片及故事准备在等待外部服务时不再占用 Telegram 命令队列。",
+        "ar": "لم تعد صور القصة اليومية والصور المرجعية وإعداد النص تحجز طابور أوامر تلغرام أثناء انتظار الخدمات الخارجية.",
+        "hi": "दैनिक कहानी की तस्वीर, संदर्भ फोटो और कहानी तैयार करते समय बाहरी सेवाओं की प्रतीक्षा में Telegram कमांड कतार अब नहीं रुकती।"
+      }
     }
   ]
 }
