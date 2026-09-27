@@ -27,9 +27,9 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('"Cache-Control":"no-store, no-cache, must-revalidate, private"',handler)
   self.assertIn("source_bytes=None",handler)
  def test_camera_prompt_preserves_life_size_source_composition(self):
-  for required in ("full-scale, human-proportioned MUBA adaptation","exact pose, body scale, body proportions, framing, camera angle, perspective","realistic adult human anatomy","same position and approximate physical size","Do not create a separate mascot portrait","life-size MUBA in the same photograph","input_image_1 as the controlling composition/pose photograph"):
+  for required in ("input_image_1 as the PRIMARY image","same crop, same camera distance, same field of view","same head size in frame","same seated/standing posture","Keep adult human anatomy and the source person's exact body scale","Do not zoom in, recrop, reframe","No new environment, no portrait backdrop"):
    self.assertIn(required,STUDIO)
-  self.assertIn("Do not preserve, reproduce or identify the person's biometric facial identity",STUDIO)
+  self.assertIn("Do not preserve or identify biometric facial identity",STUDIO)
  def test_source_is_sent_only_as_ephemeral_ai_input(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
@@ -74,5 +74,16 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('"muba_camera_message_ids"',BOT)
   self.assertIn("delete_message",BOT)
   self.assertIn("assistant_menu_text(lang)",BOT)
+
+ def test_camera_prompt_keeps_source_scene_primary(self):
+  for required in ("input_image_1 as the PRIMARY image","same crop, same camera distance, same field of view","Do not zoom in, recrop, reframe","SECONDARY identity reference","Never copy input_image_0's crop, pose, cap, hoodie, background or portrait composition"):
+   self.assertIn(required,STUDIO)
+
+ def test_success_quota_is_rolling_24_hours_from_first_production(self):
+  self.assertIn('time.time()-used_at<86400',STUDIO)
+  self.assertIn('row["used_at"]=now',STUDIO)
+  self.assertNotIn('row["day"]!=day',STUDIO)
+  self.assertIn('time.time()-used_at<86400',BOT)
+  self.assertIn('row["used_at"]=time.time()',BOT)
 
 if __name__=="__main__":unittest.main()

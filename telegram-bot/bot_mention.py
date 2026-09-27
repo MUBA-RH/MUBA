@@ -112,7 +112,7 @@ _STUDIO_OUTPUTS = {}
 # Public website Studio access is isolated from Telegram-authenticated Studio.
 # The public endpoint is limited per client/day and only allows the official
 # GitHub Pages origin. Successful generations consume quota; failures do not.
-_WEB_STUDIO_USAGE = defaultdict(lambda: {"day":"","count":0})
+_WEB_STUDIO_USAGE = defaultdict(dict)
 _WEB_STUDIO_DAILY_LIMIT = 1
 _WEB_STUDIO_ALLOWED_ORIGIN = "https://muba-rh.github.io"
 
@@ -1787,14 +1787,17 @@ def _web_studio_client_key(request: web.Request) -> str:
     return forwarded or request.headers.get("CF-Connecting-IP") or request.remote or "unknown"
 
 def _web_studio_remaining(client_key: str) -> int:
-    row=_WEB_STUDIO_USAGE[client_key]; day=time.strftime("%Y-%m-%d",time.gmtime())
-    if row["day"]!=day: row.update(day=day,count=0)
-    return max(0,_WEB_STUDIO_DAILY_LIMIT-row["count"])
+    row=_WEB_STUDIO_USAGE[client_key]
+    used_at=float(row.get("used_at",0) or 0)
+    if used_at and time.time()-used_at<86400:
+        return 0
+    if used_at:
+        row.clear()
+    return _WEB_STUDIO_DAILY_LIMIT
 
 def _web_studio_consume(client_key: str) -> None:
-    row=_WEB_STUDIO_USAGE[client_key]; day=time.strftime("%Y-%m-%d",time.gmtime())
-    if row["day"]!=day: row.update(day=day,count=0)
-    row["count"]+=1
+    row=_WEB_STUDIO_USAGE[client_key]
+    row.clear(); row["used_at"]=time.time()
 
 def _web_studio_cors_headers(origin: str) -> dict:
     if origin!=_WEB_STUDIO_ALLOWED_ORIGIN: return {}
