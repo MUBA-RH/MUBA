@@ -18,24 +18,28 @@ AI_MODEL="@cf/black-forest-labs/flux-2-klein-4b"
 _usage=defaultdict(lambda: {"day":"","count":0})
 _cache={"image":None,"at":0.0}
 
-def _day():
-    return time.strftime("%Y-%m-%d", time.gmtime())
-
 def is_dev(user_id:int)->bool:
     return int(user_id)==DEV_USER_ID
 
 def remaining(user_id:int)->int:
     if is_dev(user_id): return 999
-    row=_usage[int(user_id)]; day=_day()
-    if row["day"]!=day: row.update(day=day,count=0)
-    return max(0,DAILY_LIMIT-row["count"])
+    row=_usage[int(user_id)]
+    used_at=float(row.get("used_at",0) or 0)
+    if used_at and time.time()-used_at<86400:
+        return 0
+    if used_at:
+        row.clear()
+    return DAILY_LIMIT
 
 def consume(user_id:int)->bool:
     if is_dev(user_id): return True
-    row=_usage[int(user_id)]; day=_day()
-    if row["day"]!=day: row.update(day=day,count=0)
-    if row["count"]>=DAILY_LIMIT: return False
-    row["count"]+=1; return True
+    row=_usage[int(user_id)]
+    used_at=float(row.get("used_at",0) or 0)
+    now=time.time()
+    if used_at and now-used_at<86400:
+        return False
+    row.clear(); row["used_at"]=now
+    return True
 
 def clean_prompt(value:str)->str:
     return " ".join((value or "").strip().split())[:120]
@@ -91,13 +95,12 @@ def camera_reference_bytes(value:bytes,max_side:int=511)->bytes:
 
 def camera_ai_prompt()->str:
     return (
-        "Transform the person in input_image_1 into a full-scale, human-proportioned MUBA adaptation while preserving the source photograph's exact pose, body scale, body proportions, framing, camera angle, perspective, clothing silhouette, background, scene layout and lighting. "
-        "The transformed subject must occupy the same position and approximate physical size as the person in the source photo. Keep realistic adult human anatomy: normal shoulder width, torso length, arm placement and overall body scale. Do not create a separate mascot portrait, chibi body, toy-sized character, oversized floating head, bust portrait, centered character poster or a new composition. "
-        "Adapt MUBA's canonical identity onto that source anatomy: exceptionally large asymmetrical glossy brown eyes, small rounded brown nose, compact furry muzzle, playful open mouth and pink tongue, and short dense tan-brown fur. Integrate those features naturally with the source head orientation, perspective, shadows and scene lighting. "
-        "Preserve the source outfit design and placement as closely as possible while adapting it naturally to the MUBA transformation. The result should look like the photographed person became a life-size MUBA in the same photograph, not like the source person was replaced by an unrelated MUBA image. "
-        "Do not preserve, reproduce or identify the person's biometric facial identity; preserve only non-biometric scene, pose, anatomy, clothing and composition cues. "
-        "Use input_image_0 only for canonical MUBA identity and input_image_1 as the controlling composition/pose photograph. Keep the result text-free except for unavoidable text already belonging to the source clothing or scene. "
-        "The source camera image is ephemeral input and must never be treated as gallery content."
+        "Perform an image-to-image character transformation of input_image_1. Treat input_image_1 as the PRIMARY image and preserve its composition with very high fidelity: same crop, same camera distance, same field of view, same head size in frame, same seated/standing posture, same shoulder and torso placement, same hand and arm placement, same clothing silhouette, same background geometry, same perspective and same lighting. "
+        "Do not zoom in, recrop, reframe, center, beautify or convert the scene into a portrait. Do not move the subject closer to the camera. The output must remain recognizably the same photograph and scene at first glance. "
+        "Transform only the photographed person's character identity into a life-size human-proportioned MUBA. Keep adult human anatomy and the source person's exact body scale; do not use mascot, chibi, toy, childlike or oversized-head proportions. "
+        "Use input_image_0 only as a SECONDARY identity reference for MUBA facial traits and fur: large asymmetrical glossy brown eyes, small rounded brown nose, compact furry muzzle, playful open mouth and pink tongue, short dense tan-brown fur. Never copy input_image_0's crop, pose, cap, hoodie, background or portrait composition. "
+        "Preserve the source outfit design and its placement. Integrate MUBA fur and facial traits into the source head orientation, perspective, shadows and lighting. Do not preserve or identify biometric facial identity. "
+        "No new environment, no portrait backdrop, no character poster, no floating head, no independent MUBA portrait. The source camera image is ephemeral input and must never be treated as gallery content."
     )
 
 def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:
