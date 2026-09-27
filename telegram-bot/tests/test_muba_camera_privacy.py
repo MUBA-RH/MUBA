@@ -75,4 +75,15 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn("delete_message",BOT)
   self.assertIn("assistant_menu_text(lang)",BOT)
 
+ def test_camera_prompt_keeps_source_scene_primary(self):
+  for required in ("input_image_1 as the PRIMARY image","same crop, same camera distance, same field of view","Do not zoom in, recrop, reframe","SECONDARY identity reference","Never copy input_image_0's crop, pose, cap, hoodie, background or portrait composition"):
+   self.assertIn(required,STUDIO)
+
+ def test_success_quota_is_rolling_24_hours_from_first_production(self):
+  self.assertIn('time.time()-used_at<86400',STUDIO)
+  self.assertIn('row["used_at"]=now',STUDIO)
+  self.assertNotIn('row["day"]!=day',STUDIO)
+  self.assertIn('time.time()-used_at<86400',BOT)
+  self.assertIn('row["used_at"]=time.time()',BOT)
+
 if __name__=="__main__":unittest.main()
