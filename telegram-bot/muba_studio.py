@@ -83,12 +83,12 @@ def _text_policy(prompt:str)->str:
 
 def camera_ai_prompt()->str:
     return (
-        "Create a new MUBA character image inspired by the user's temporary camera photo. "
-        "Use the camera photo only for pose, clothing idea, framing, scene and composition. "
-        "Do not preserve, reproduce or identify the person's face or biometric identity. "
-        "Replace the person with MUBA's canonical facial identity: exceptionally large asymmetrical glossy brown eyes, "
-        "small rounded brown nose, compact furry muzzle, playful open mouth and pink tongue, short dense tan-brown fur. "
-        "Keep the result text-free unless the source scene naturally requires no writing. "
+        "Transform the person in input_image_1 into a full-scale, human-proportioned MUBA adaptation while preserving the source photograph's exact pose, body scale, body proportions, framing, camera angle, perspective, clothing silhouette, background, scene layout and lighting. "
+        "The transformed subject must occupy the same position and approximate physical size as the person in the source photo. Keep realistic adult human anatomy: normal shoulder width, torso length, arm placement and overall body scale. Do not create a separate mascot portrait, chibi body, toy-sized character, oversized floating head, bust portrait, centered character poster or a new composition. "
+        "Adapt MUBA's canonical identity onto that source anatomy: exceptionally large asymmetrical glossy brown eyes, small rounded brown nose, compact furry muzzle, playful open mouth and pink tongue, and short dense tan-brown fur. Integrate those features naturally with the source head orientation, perspective, shadows and scene lighting. "
+        "Preserve the source outfit design and placement as closely as possible while adapting it naturally to the MUBA transformation. The result should look like the photographed person became a life-size MUBA in the same photograph, not like the source person was replaced by an unrelated MUBA image. "
+        "Do not preserve, reproduce or identify the person's biometric facial identity; preserve only non-biometric scene, pose, anatomy, clothing and composition cues. "
+        "Use input_image_0 only for canonical MUBA identity and input_image_1 as the controlling composition/pose photograph. Keep the result text-free except for unavoidable text already belonging to the source clothing or scene. "
         "The source camera image is ephemeral input and must never be treated as gallery content."
     )
 
