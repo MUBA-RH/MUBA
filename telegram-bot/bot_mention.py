@@ -74,8 +74,8 @@ def assistant_menu_text(lang):
     topics=len(PUBLIC_MAIN_AREAS)
     content=assistant_content_count()
     templates={
-        "en":"MUBA Assistant — Discover MUBA.\nExplore MUBA, its ecosystem and how it works from one organized discovery area.",
-        "tr":"MUBA Assistant — MUBA’yı keşfet.\nMUBA’yı, ekosistemini ve nasıl çalıştığını tek düzenli keşif alanından incele.",
+        "en":"MUBA Assistant\nDiscover MUBA, create, or follow current developments.",
+        "tr":"MUBA Assistant\nMUBA'yı keşfet, üret veya güncel gelişmeleri takip et.",
         "zh":"MUBA Assistant — 探索 MUBA。\n在一个有序的探索区域中了解 MUBA、其生态系统及其运作方式。",
         "ar":"MUBA Assistant — اكتشف MUBA.\nاستكشف MUBA ونظامه البيئي وطريقة عمله من مساحة اكتشاف منظمة واحدة.",
         "hi":"MUBA Assistant — MUBA को जानें।\nMUBA, उसके ecosystem और उसके काम करने के तरीके को एक व्यवस्थित discovery area में देखें।",
@@ -444,51 +444,62 @@ ASSISTANT_UI={
 }
 
 DISCOVER_UI={
-    "en":{"title":"🧭 DISCOVER MUBA FROM START TO FINISH","intro":"Explore MUBA without repeated explanations. Each subject has one home; choose a section or use the full index.","items":["🌱 1 · MEET MUBA","✨ 2 · UNDERSTAND MUBA","🎭 3 · MUBA CULTURE","🌍 4 · MUBA COMMUNITY","🧠 5 · MUBA ECOSYSTEM","🎨 6 · CREATE WITH MUBA","📖 7 · MUBA STORY","📰 8 · FOLLOW MUBA","🚀 9 · MUBA TODAY & FUTURE"],"missing":"🔍 CAN'T FIND IT?"},
-    "tr":{"title":"🧭 MUBA'YI BAŞTAN SONA KEŞFET","intro":"MUBA'yı tekrar eden açıklamalar olmadan keşfet. Her bilginin tek bir ana yeri var; bir bölüm seç veya tam içerik dizinini aç.","items":["🌱 1 · MUBA'YI TANI","✨ 2 · MUBA'YI ANLA","🎭 3 · MUBA KÜLTÜRÜ","🌍 4 · MUBA TOPLULUĞU","🧠 5 · MUBA EKOSİSTEMİ","🎨 6 · MUBA İLE ÜRET","📖 7 · MUBA HİKÂYESİ","📰 8 · MUBA'YI TAKİP ET","🚀 9 · MUBA BUGÜN & GELECEK"],"missing":"🔍 ARADIĞINI BULAMADIN MI?"},
-    "zh":{"title":"🧭 从头到尾探索 MUBA","intro":"探索 MUBA，不重复说明。每项信息只有一个主要位置；选择分类或打开完整索引。","items":["🌱 1 · 认识 MUBA","✨ 2 · 理解 MUBA","🎭 3 · MUBA 文化","🌍 4 · MUBA 社区","🧠 5 · MUBA 生态系统","🎨 6 · 与 MUBA 创作","📖 7 · MUBA 故事","📰 8 · 关注 MUBA","🚀 9 · MUBA 今天与未来"],"missing":"🔍 没找到？"},
-    "ar":{"title":"🧭 اكتشف MUBA من البداية إلى النهاية","intro":"اكتشف MUBA دون شروحات مكررة. لكل معلومة مكان رئيسي واحد؛ اختر قسماً أو افتح الفهرس الكامل.","items":["🌱 1 · تعرّف على MUBA","✨ 2 · افهم MUBA","🎭 3 · ثقافة MUBA","🌍 4 · مجتمع MUBA","🧠 5 · نظام MUBA البيئي","🎨 6 · أنشئ مع MUBA","📖 7 · قصة MUBA","📰 8 · تابع MUBA","🚀 9 · MUBA اليوم والمستقبل"],"missing":"🔍 لم تجد ما تريد؟"},
-    "hi":{"title":"🧭 MUBA को शुरू से अंत तक जानें","intro":"दोहराव के बिना MUBA को जानें। हर जानकारी का एक मुख्य स्थान है; कोई section चुनें या पूरा index खोलें।","items":["🌱 1 · MUBA को जानें","✨ 2 · MUBA को समझें","🎭 3 · MUBA CULTURE","🌍 4 · MUBA COMMUNITY","🧠 5 · MUBA ECOSYSTEM","🎨 6 · MUBA के साथ बनाएँ","📖 7 · MUBA STORY","📰 8 · MUBA को FOLLOW करें","🚀 9 · MUBA आज और भविष्य"],"missing":"🔍 नहीं मिला?"},
+ "en":{"title":"🧭 DISCOVER MUBA","intro":"Everything essential about MUBA is grouped into four clear areas.","items":["🌱 WHAT IS MUBA?","🌍 COMMUNITY","🧠 ECOSYSTEM","📖 STORY"]},
+ "tr":{"title":"🧭 MUBA'YI KEŞFET","intro":"MUBA hakkında bilmen gereken temel bilgiler dört sade alanda toplandı.","items":["🌱 MUBA NEDİR?","🌍 TOPLULUK","🧠 EKOSİSTEM","📖 HİKÂYE"]},
+ "zh":{"title":"🧭 探索 MUBA","intro":"关于 MUBA 的核心信息集中在四个清晰区域。","items":["🌱 MUBA 是什么？","🌍 社区","🧠 生态系统","📖 故事"]},
+ "ar":{"title":"🧭 اكتشف MUBA","intro":"جُمعت المعلومات الأساسية عن MUBA في أربعة أقسام واضحة.","items":["🌱 ما هو MUBA؟","🌍 المجتمع","🧠 النظام البيئي","📖 القصة"]},
+ "hi":{"title":"🧭 MUBA को जानें","intro":"MUBA की जरूरी जानकारी चार साफ क्षेत्रों में रखी गई है।","items":["🌱 MUBA क्या है?","🌍 COMMUNITY","🧠 ECOSYSTEM","📖 STORY"]},
 }
-
-CONTENT_INDEX_LABELS={
- "en":["Origin","Identity","Character","Visuals","Difference","Purpose","Principles","Culture","Humor","Voice","Community","Join","Creation","Memory","Channels","Assistant","Guardian","Web","Studio","Camera","Gallery","Story","Daily Story","News","Updates","Development","Transparency","Safety","Languages","Automation","History","Facts","Evolution","Future","Roadmap","Token","AI","Originality","Technology","Participation","Sharing","Games","Website","X","Telegram","Official","Security","Errors","Knowledge","Archive","Today","Direction","Growth","Content"],
- "tr":["Köken","Kimlik","Karakter","Görsel","Fark","Amaç","İlkeler","Kültür","Mizah","Dil","Topluluk","Katılım","Üretim","Hafıza","Kanallar","Assistant","Guardian","Web","Studio","Camera","Gallery","Hikâye","Daily Story","News","Yenilikler","Geliştirme","Şeffaflık","Güvenlik","Diller","Otomasyon","Geçmiş","Gerçekler","Evrim","Gelecek","Roadmap","Token","AI","Özgünlük","Teknoloji","Katıl","Paylaşım","Oyunlar","Website","X","Telegram","Resmî","Koruma","Hatalar","Bilgi","Arşiv","Bugün","Yön","Büyüme","İçerik"],
- "zh":["起源","身份","角色","视觉","差异","目标","原则","文化","幽默","语言","社区","参与","创作","记忆","渠道","Assistant","Guardian","Web","Studio","Camera","Gallery","故事","Daily Story","News","更新","开发","透明度","安全","语言","自动化","历史","事实","演变","未来","Roadmap","Token","AI","原创","技术","参与","分享","游戏","网站","X","Telegram","官方","保护","错误","知识","档案","今天","方向","成长","内容"],
- "ar":["النشأة","الهوية","الشخصية","المرئيات","الاختلاف","الهدف","المبادئ","الثقافة","الفكاهة","اللغة","المجتمع","المشاركة","الإبداع","الذاكرة","القنوات","Assistant","Guardian","Web","Studio","Camera","Gallery","القصة","Daily Story","News","التحديثات","التطوير","الشفافية","الأمان","اللغات","الأتمتة","التاريخ","الحقائق","التطور","المستقبل","Roadmap","Token","AI","الأصالة","التقنية","المشاركة","النشر","الألعاب","الموقع","X","Telegram","رسمي","الحماية","الأخطاء","المعرفة","الأرشيف","اليوم","الاتجاه","النمو","المحتوى"],
- "hi":["शुरुआत","पहचान","Character","Visual","अंतर","उद्देश्य","Principles","Culture","Humor","भाषा","Community","भागीदारी","Creation","Memory","Channels","Assistant","Guardian","Web","Studio","Camera","Gallery","Story","Daily Story","News","Updates","Development","Transparency","Safety","Languages","Automation","History","Facts","Evolution","Future","Roadmap","Token","AI","Originality","Technology","Participation","Sharing","Games","Website","X","Telegram","Official","Security","Errors","Knowledge","Archive","Today","Direction","Growth","Content"],
+DISCOVER_CONTENT={
+ "en":{
+  "about":"🌱 WHAT IS MUBA?\n\nMUBA is an original meme character and community identity built around character, culture, creativity and participation. It did not begin with a prewritten legend: the character came first and the culture grew around it. MUBA has its own visual identity and personality; it is not a copy of another meme mascot and does not define itself through invented technology promises.\n\nCore: Character · Culture · Community · Creativity · Participation",
+  "community":"🌍 COMMUNITY\n\nThe community is where MUBA is lived: people follow, share, create and participate. There is no required prewritten legend to follow; community activity helps the culture and story grow naturally.\n\nOfficial channels below are the public places to follow MUBA.",
+  "ecosystem":"🧠 ECOSYSTEM\n\n🤖 Assistant — information and user help\n🛡 Guardian — Telegram community safety\n📸 Camera — photo-based MUBA creation\n🎭 Studio — creative MUBA visuals\n🖼 Gallery — community creations\n📖 Daily Story — MUBA's living story\n📰 News — verified news area\n🌐 Web — public ecosystem hub",
+  "story":"📖 STORY\n\nMUBA has two different story layers. Project history records what actually happened as MUBA developed. Daily Story is the creative, living narrative built around the character. These are kept separate so creative storytelling is not presented as project fact."
+ },
+ "tr":{
+  "about":"🌱 MUBA NEDİR?\n\nMUBA; karakter, kültür, yaratıcılık ve katılım etrafında gelişen özgün bir meme karakteri ve topluluk kimliğidir. Önceden yazılmış büyük bir efsaneyle başlamadı; önce karakter ortaya çıktı, kültür onun çevresinde gelişti. MUBA'nın kendi görsel kimliği ve kişiliği vardır; başka bir meme maskotunun kopyası değildir ve kendini uydurma teknoloji vaatleriyle tanımlamaz.\n\nTemel: Karakter · Kültür · Topluluk · Yaratıcılık · Katılım",
+  "community":"🌍 TOPLULUK\n\nMUBA topluluğu; insanların MUBA'yı takip ettiği, paylaştığı, ürettiği ve katıldığı alandır. Uyulması gereken önceden yazılmış bir efsane yoktur; topluluk kültürün ve hikâyenin doğal biçimde gelişmesine katkı sağlar.\n\nMUBA'yı takip etmek için resmî kanallar aşağıdadır.",
+  "ecosystem":"🧠 EKOSİSTEM\n\n🤖 Assistant — bilgi ve kullanıcı yardımı\n🛡 Guardian — Telegram topluluk güvenliği\n📸 Camera — fotoğraf tabanlı MUBA üretimi\n🎭 Studio — yaratıcı MUBA görselleri\n🖼 Gallery — topluluk üretimleri\n📖 Daily Story — yaşayan MUBA hikâyesi\n📰 News — doğrulanmış haber alanı\n🌐 Web — herkese açık ekosistem merkezi",
+  "story":"📖 HİKÂYE\n\nMUBA'da iki farklı hikâye katmanı vardır. Proje geçmişi, MUBA geliştirilirken gerçekten yaşananları kaydeder. Daily Story ise karakter etrafında gelişen yaratıcı ve yaşayan anlatıdır. Yaratıcı hikâyenin proje gerçeği gibi görünmemesi için bu iki alan birbirinden ayrı tutulur."
+ },
+ "zh":{
+  "about":"🌱 MUBA 是什么？\n\nMUBA 是围绕角色、文化、创造力和参与形成的原创 meme 角色与社区身份。它不是从预写传奇开始；先有角色，文化随后成长。MUBA 有自己的视觉身份和个性，不是其他 meme 吉祥物的复制，也不以虚构技术承诺定义自己。\n\n核心：角色 · 文化 · 社区 · 创造力 · 参与",
+  "community":"🌍 社区\n\n社区是人们关注、分享、创作和参与 MUBA 的地方。没有必须遵循的预写传奇；社区活动让文化与故事自然成长。\n\n可通过下方官方渠道关注 MUBA。",
+  "ecosystem":"🧠 生态系统\n\n🤖 Assistant — 信息与用户帮助\n🛡 Guardian — Telegram 社区安全\n📸 Camera — 基于照片的 MUBA 创作\n🎭 Studio — 创意 MUBA 图像\n🖼 Gallery — 社区作品\n📖 Daily Story — MUBA 的持续故事\n📰 News — 已验证新闻区域\n🌐 Web — 公开生态中心",
+  "story":"📖 故事\n\nMUBA 有两个不同的故事层。项目历史记录 MUBA 发展中真实发生的事情；Daily Story 是围绕角色展开的创意持续叙事。两者保持分离，避免把创意故事当作项目事实。"
+ },
+ "ar":{
+  "about":"🌱 ما هو MUBA؟\n\nMUBA شخصية ميم أصلية وهوية مجتمع تنمو حول الشخصية والثقافة والإبداع والمشاركة. لم يبدأ بأسطورة مكتوبة مسبقاً؛ جاءت الشخصية أولاً ثم نمت الثقافة حولها. لـ MUBA هويته البصرية وشخصيته الخاصة، وليس نسخة من تميمة ميم أخرى ولا يعرّف نفسه بوعود تقنية مختلقة.\n\nالأساس: الشخصية · الثقافة · المجتمع · الإبداع · المشاركة",
+  "community":"🌍 المجتمع\n\nالمجتمع هو المكان الذي يتابع فيه الناس MUBA ويشاركونه ويبدعون ويشاركون. لا توجد أسطورة مكتوبة مسبقاً يجب اتباعها؛ نشاط المجتمع يساعد الثقافة والقصة على النمو طبيعياً.\n\nالقنوات الرسمية أدناه هي الأماكن العامة لمتابعة MUBA.",
+  "ecosystem":"🧠 النظام البيئي\n\n🤖 Assistant — المعلومات ومساعدة المستخدم\n🛡 Guardian — أمان مجتمع Telegram\n📸 Camera — إنشاء MUBA انطلاقاً من الصور\n🎭 Studio — صور MUBA الإبداعية\n🖼 Gallery — إبداعات المجتمع\n📖 Daily Story — قصة MUBA الحية\n📰 News — الأخبار الموثقة\n🌐 Web — مركز النظام البيئي العام",
+  "story":"📖 القصة\n\nلدى MUBA طبقتان مختلفتان للقصة. تاريخ المشروع يسجل ما حدث فعلاً أثناء تطور MUBA، بينما Daily Story هو السرد الإبداعي الحي حول الشخصية. يبقى المجالان منفصلين حتى لا يُعرض السرد الإبداعي كحقيقة عن المشروع."
+ },
+ "hi":{
+  "about":"🌱 MUBA क्या है?\n\nMUBA character, culture, creativity और participation के आसपास बना original meme character और community identity है। यह पहले से लिखी legend से शुरू नहीं हुआ; पहले character आया और culture उसके आसपास बढ़ा। MUBA की अपनी visual identity और personality है; यह किसी दूसरे meme mascot की copy नहीं है और invented technology promises से खुद को define नहीं करता।\n\nCore: Character · Culture · Community · Creativity · Participation",
+  "community":"🌍 COMMUNITY\n\nCommunity वह जगह है जहाँ लोग MUBA को follow, share, create और participate करते हैं। कोई prewritten legend follow करना जरूरी नहीं है; community activity culture और story को naturally बढ़ाती है।\n\nMUBA के official public channels नीचे हैं।",
+  "ecosystem":"🧠 ECOSYSTEM\n\n🤖 Assistant — information और user help\n🛡 Guardian — Telegram community safety\n📸 Camera — photo-based MUBA creation\n🎭 Studio — creative MUBA visuals\n🖼 Gallery — community creations\n📖 Daily Story — MUBA की living story\n📰 News — verified news area\n🌐 Web — public ecosystem hub",
+  "story":"📖 STORY\n\nMUBA में दो अलग story layers हैं। Project history वास्तविक development history रखता है; Daily Story character के आसपास creative living narrative है। दोनों अलग रखे जाते हैं ताकि creative storytelling को project fact न समझा जाए।"
+ }
 }
-# The index is navigation, not a second knowledge store. Repeated concepts point to
-# their canonical owner. Three compact buttons per row keep the catalogue scannable.
-CONTENT_INDEX_TARGETS=[
- "category:discover","category:discover","ask_archive","ask_archive","category:understand","category:understand","ask_archive","ask_archive","ask_archive","ask_archive",
- "community_hub","community_hub","create_hub","community_hub","community_info:channels","transparency_menu","extra:security","community_info:channels","create_hub","camera_native","create_hub","extra:story","extra:story","news","updates_center","devlog","transparency_menu","extra:security","transparency_menu","transparency_menu",
- "devlog","extra:story","ask_archive","category:world","category:world","ask_archive","ask_archive","category:understand","category:understand","community_hub","create_hub","extra:games","community_info:channels","community_info:channels","community_info:channels","community_info:channels","extra:security","extra:security","transparency_menu","ask_archive","devlog","category:world","category:world","category:world","create_hub"
-]
 
 def discover_muba_keyboard(lang,user_id):
     d=DISCOVER_UI[lang]
-    targets=("category:discover","category:understand","ask_archive:culture","community_hub","ask_archive:ecosystem","create_hub","extra:story","daily_hub","category:world")
-    rows=[[InlineKeyboardButton(label,callback_data=target)] for label,target in zip(d["items"],targets)]
-    rows.append([InlineKeyboardButton(d["missing"],callback_data="content_index")])
-    rows.append([_section_back(lang)])
-    return InlineKeyboardMarkup(rows)
+    buttons=[InlineKeyboardButton(label,callback_data="discover_info:"+key) for label,key in zip(d["items"],("about","community","ecosystem","story"))]
+    return InlineKeyboardMarkup([[buttons[0],buttons[1]],[buttons[2],buttons[3]],[_section_back(lang)]])
 
-def content_index_keyboard(lang):
-    labels=CONTENT_INDEX_LABELS[lang]
-    buttons=[InlineKeyboardButton(label,callback_data=target) for label,target in zip(labels,CONTENT_INDEX_TARGETS)]
-    rows=[buttons[i:i+3] for i in range(0,len(buttons),3)]
+def discover_info_keyboard(lang,section):
+    rows=[]
+    if section=="community":
+        rows.append([
+          InlineKeyboardButton("🌐 Web",url="https://muba-rh.github.io/MUBA/"),
+          InlineKeyboardButton("𝕏 X",url="https://x.com/MUBA_RH"),
+          InlineKeyboardButton("Telegram",url="https://t.me/MUBA_RH"),
+        ])
+    if section=="ecosystem":
+        rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")])
     rows.append([_section_back(lang,"discover_muba")])
     return InlineKeyboardMarkup(rows)
-
-def content_index_text(lang):
-    return {
-      "en":"🔍 CAN'T FIND IT?\n\nAll MUBA subjects are collected below as short index terms. Tap a term to open its canonical section.",
-      "tr":"🔍 ARADIĞINI BULAMADIN MI?\n\nMUBA'daki konular kısa başlıklarla aşağıda toplandı. Bir başlığa dokunduğunda bilginin asıl bulunduğu bölüme gidersin.",
-      "zh":"🔍 没找到？\n\nMUBA 的主题以简短索引词集中在下方。点击即可前往该信息的主要位置。",
-      "ar":"🔍 لم تجد ما تريد؟\n\nجُمعت مواضيع MUBA أدناه كعناوين قصيرة. اضغط على عنوان للانتقال إلى مكانه الرئيسي.",
-      "hi":"🔍 नहीं मिला?\n\nMUBA के विषय नीचे छोटे index terms में हैं। किसी term पर tap करने से उसकी मुख्य जानकारी खुलेगी।",
-    }[lang]
 
 def _section_back(lang,callback_data="menu"):
     return InlineKeyboardButton(TEXT[lang]["back"],callback_data=callback_data)
@@ -556,6 +567,7 @@ def menu_keyboard(lang,user_id=None):
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[
         [InlineKeyboardButton(DISCOVER_UI[lang]["title"],callback_data="discover_muba")],
+        [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
     ]
@@ -890,8 +902,11 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(assistant_menu_text(lang),reply_markup=menu_keyboard(lang,user_id)); return
     if data=="discover_muba":
         await q.edit_message_text(DISCOVER_UI[lang]["title"]+"\n\n"+DISCOVER_UI[lang]["intro"],reply_markup=discover_muba_keyboard(lang,user_id)); return
-    if data=="content_index":
-        await q.edit_message_text(content_index_text(lang),reply_markup=content_index_keyboard(lang)); return
+    if data.startswith("discover_info:"):
+        section=data.split(":",1)[1]
+        body=DISCOVER_CONTENT.get(lang,DISCOVER_CONTENT["en"]).get(section)
+        if body:
+            await q.edit_message_text(body,reply_markup=discover_info_keyboard(lang,section),disable_web_page_preview=True); return
     if data=="daily_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
@@ -1173,7 +1188,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if item:
             await q.edit_message_text(item[3],reply_markup=InlineKeyboardMarkup([[_section_back(lang,"discover_muba")]])); return
     if data=="ask_muba":
-        await q.edit_message_text(content_index_text(lang),reply_markup=content_index_keyboard(lang)); return
+        await q.edit_message_text(DISCOVER_UI[lang]["title"]+"\n\n"+DISCOVER_UI[lang]["intro"],reply_markup=discover_muba_keyboard(lang,user_id)); return
     if data.startswith("category:"):
         category=data.split(":",1)[1]
         if category in CATEGORY_TOPICS:
