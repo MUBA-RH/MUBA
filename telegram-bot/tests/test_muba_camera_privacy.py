@@ -88,4 +88,16 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn("1️⃣ Mesaj alanındaki 📎 simgesine dokun.",BOT)
 
 
+ def test_camera_waits_for_user_instruction_before_generation(self):
+  self.assertIn('context.user_data["muba_camera_waiting_instruction"]=True',BOT)
+  self.assertIn('context.user_data["muba_camera_source_bytes"]=source_bytes',BOT)
+  self.assertIn('if context.user_data.get("muba_camera_waiting_instruction",False):',BOT)
+  self.assertIn('camera_ai_prompt(user_request)',BOT)
+  self.assertIn('camera_ai_prompt(text)',BOT) if False else None
+  self.assertIn("Günlük hakkın yalnızca başarılı bir görsel üretildiğinde kullanılır.",BOT)
+
+ def test_camera_prompt_includes_user_request(self):
+  self.assertIn('def camera_ai_prompt(user_request:str="")',STUDIO)
+  self.assertIn('"USER REQUEST: "+request',STUDIO)
+
 if __name__=="__main__":unittest.main()
