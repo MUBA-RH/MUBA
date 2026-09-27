@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260927-daily-story-english-web-text",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Daily Story public text uses English",
+        "tr": "Daily Story web metni İngilizce",
+        "zh": "每日故事网页显示英文正文",
+        "ar": "عرض نص القصة اليومية بالإنجليزية على الويب",
+        "hi": "Daily Story वेबसाइट का पाठ अंग्रेज़ी में"
+      },
+      "text": {
+        "en": "The Daily Story website now shows the saved English episode above the approved landscape image. The DEV Telegram preview continues to show the Turkish version.",
+        "tr": "Daily Story web sayfası onaylı yatay görselin üzerinde kayıtlı İngilizce bölümü gösterir. DEV Telegram önizlemesi Türkçe kalır.",
+        "zh": "每日故事网页现在在已批准的横向图片上方显示保存的英文故事；DEV 的 Telegram 预览仍显示土耳其语版本。",
+        "ar": "تعرض صفحة القصة اليومية النص الإنجليزي المحفوظ فوق الصورة الأفقية المعتمدة، بينما تظل معاينة المطور في تيليجرام باللغة التركية.",
+        "hi": "Daily Story वेबसाइट स्वीकृत क्षैतिज चित्र के ऊपर सहेजी गई अंग्रेज़ी कहानी दिखाती है। DEV Telegram पूर्वावलोकन तुर्की में रहता है।"
+      }
+    },
+    {
       "id": "20260927-camera-user-directed-transform",
       "date": "2026-09-27",
       "type": "updated",
