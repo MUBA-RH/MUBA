@@ -242,6 +242,21 @@ def approve_tomorrow(day, today=None):
     return draft(day)
 
 
+def approve_today(day, today=None):
+    """Bind DEV approval to today's exact text, image and reference."""
+    today = today or datetime.now(TZ).date()
+    if date.fromisoformat(day) != today:
+        raise ValueError("Only today's Daily Story can be approved for web")
+    item = draft(day)
+    if len(item["images"]) != 1 or item["status"] == "published":
+        raise ValueError("Today's story and one image must be ready")
+    STORE.set("story_review_approved", str(day), {
+        "story": item["story"], "story_tr": item["story_tr"],
+        "image": item["images"][0], "reference": reference_for_day(day),
+    })
+    return draft(day)
+
+
 def is_published(day):
     return bool(STORE.get("story_publish", str(day), False))
 
@@ -249,6 +264,8 @@ def is_published(day):
 def publish(day):
     if len(image_ids(day)) != 1:
         raise ValueError("Daily Story requires one approved image before publishing")
+    if not review_approved(day):
+        raise ValueError("Daily Story requires DEV review before publishing")
     item = draft(day)
     STORE.set("story_canon", str(day), {"day": day, "theme": item["theme"],
                                          "title": item["theme"], "title_tr": item["theme_tr"],

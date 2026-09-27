@@ -93,7 +93,7 @@ from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
-from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, review_approved as story_review_approved, approve_tomorrow as story_approve_tomorrow, preview_requested as story_preview_requested, request_preview as story_request_preview, START as STORY_START, SCENE_REFERENCE
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, review_approved as story_review_approved, approve_today as story_approve_today, approve_tomorrow as story_approve_tomorrow, preview_requested as story_preview_requested, request_preview as story_request_preview, START as STORY_START, SCENE_REFERENCE
 from muba_story_text import prepare as prepare_story_text
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -134,6 +134,34 @@ def _story_today():
     return datetime.now(_ISTANBUL_TZ).date()
 
 
+async def _story_github_draft(day):
+    """Telegram reads a dated GitHub draft; it never initiates image generation."""
+    from muba_story_github import configured, read_day
+    if not configured():
+        return None  # keep the existing production path until the private archive is configured
+    result = await asyncio.to_thread(read_day, day)
+    if result is None:
+        from muba_story import is_published
+        if is_published(day):
+            return story_draft(day)
+        raise RuntimeError("Daily Story GitHub record is not ready for " + day)
+    manifest, image = result
+    from muba_story import BEATS, is_published, save_episode
+    episode = manifest["episode"]
+    if not isinstance(episode, dict):
+        raise RuntimeError("Daily Story GitHub episode is invalid")
+    if not is_published(day):
+        if (date.fromisoformat(day) - STORY_START).days >= len(BEATS):
+            save_episode(day, episode)
+        elif story_draft(day)["story_tr"] != episode.get("story_tr"):
+            raise RuntimeError("Daily Story GitHub initial episode does not match its saved canon")
+        item = story_draft(day)
+        if not item["images"]:
+            item = _story_archive_preview(item, image, "image/png", "github-daily-story")
+        return item
+    return story_draft(day)
+
+
 def _story_director_panel(item):
     day = date.fromisoformat(item["day"])
     today = _story_today()
@@ -150,20 +178,25 @@ def _story_director_panel(item):
     rows = []
     if len(item["images"]) == 1:
         rows.append([InlineKeyboardButton("🖼️ GÖRSELİ GÖR", callback_data="story_preview:" + item["day"])])
-    if day == today and item["status"] != "published" and len(item["images"]) == 1:
+    if day == today and item["status"] != "published" and len(item["images"]) == 1 and not story_review_approved(item["day"]):
+        rows.append([InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA", callback_data="story_approve_today:" + item["day"])])
+    if day == today and item["status"] != "published" and story_review_approved(item["day"]):
         rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish")])
-    if day == today and item["status"] != "published" and not item["images"] and item["day"] not in _STORY_PREPARING:
+    from muba_story_github import configured as github_story_configured
+    if not github_story_configured() and day == today and item["status"] != "published" and not item["images"] and item["day"] not in _STORY_PREPARING:
         rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET", callback_data="story_generate")])
     if day == today + timedelta(days=1) and len(item["images"]) == 1 and not story_review_approved(item["day"]):
         rows.append([InlineKeyboardButton("✅ YARIN İÇİN UYGUN", callback_data="story_approve:" + item["day"])])
-    if day == today and item["status"] != "published":
+    if not github_story_configured() and day == today and item["status"] != "published":
         rows.append([InlineKeyboardButton("📷 REFERANSI DEĞİŞTİR", callback_data="story_reference")])
-    if day == today and item["day"] not in _STORY_PREPARING:
+    if not github_story_configured() and day in (today, today + timedelta(days=1)) and item["status"] != "published":
+        rows.append([InlineKeyboardButton("📥 HAZIR GÖRSELİ YÜKLE", callback_data="story_upload:" + item["day"])])
+    if not github_story_configured() and day == today and item["day"] not in _STORY_PREPARING:
         rows.append([InlineKeyboardButton("⏭️ YARINI HAZIRLA", callback_data="story_prepare_tomorrow")])
     pager = []
     if day > STORY_START:
         pager.append(InlineKeyboardButton("⬅️ Önceki gün", callback_data="story_day:" + (day - timedelta(days=1)).isoformat()))
-    if day < today or (day == today and _story_tomorrow_available()):
+    if day < today or (day == today and (github_story_configured() or _story_tomorrow_available())):
         pager.append(InlineKeyboardButton("Sonraki gün ➡️", callback_data="story_day:" + (day + timedelta(days=1)).isoformat()))
     if pager:
         rows.append(pager)
@@ -859,25 +892,32 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             chosen=date.fromisoformat(day)
             if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
-            if chosen>_story_today() and not _story_tomorrow_available(): raise ValueError("Tomorrow not prepared")
-            item=await prepare_story_text(day) if chosen==_story_today() else story_draft(day)
+            from muba_story_github import configured as github_story_configured
+            if chosen>_story_today() and not (github_story_configured() or _story_tomorrow_available()): raise ValueError("Tomorrow not prepared")
+            item=await _story_github_draft(day)
+            if item is None:
+                item=await prepare_story_text(day) if chosen==_story_today() else story_draft(day)
             body,markup=_story_director_panel(item)
         except (RuntimeError,ValueError):
             logger.exception("Daily Story day unavailable")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBu günün hikâyesi henüz hazır değil.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
-        await q.edit_message_text(body,reply_markup=markup); return
+        await q.edit_message_text(body,reply_markup=markup)
+        if item["images"]:
+            await _story_send_preview(q.message,item)
+        return
     if data.startswith("story_preview:"):
         if not is_dev(user_id): return
         day=data.split(":",1)[1]
         try:
             chosen=date.fromisoformat(day)
             if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
-            if chosen>_story_today() and not _story_tomorrow_available(): raise ValueError("Tomorrow not prepared")
-            item=story_draft(day)
+            from muba_story_github import configured as github_story_configured
+            if chosen>_story_today() and not (github_story_configured() or _story_tomorrow_available()): raise ValueError("Tomorrow not prepared")
+            item=await _story_github_draft(day) or story_draft(day)
             if len(item["images"])!=1: raise ValueError("Daily Story image not ready")
         except (RuntimeError,ValueError):
             await q.answer("Bu günün görseli henüz hazır değil.",show_alert=True); return
-        await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
+        await _story_send_preview(q.message,item)
         return
     if data=="story_prepare_tomorrow":
         if not is_dev(user_id): return
@@ -907,12 +947,35 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (ValueError,RuntimeError):
             await q.answer("Yarının metni ve görseli hazır olmalı.",show_alert=True); return
         await q.edit_message_text(body,reply_markup=markup); return
+    if data.startswith("story_approve_today:"):
+        if not is_dev(user_id): return
+        try:
+            day=data.split(":",1)[1]
+            item=story_approve_today(day,today=_story_today())
+            body,markup=_story_director_panel(item)
+        except (RuntimeError,ValueError):
+            await q.answer("Önce günün hikâyesi ve görseli hazır olmalı.",show_alert=True); return
+        await q.edit_message_text(body,reply_markup=markup); return
     if data=="story_reference":
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
         await q.edit_message_text("📷 MUBA DAILY STORY\n\nYeni referans kullanmak istersen görseli gönder. Onaylı varsayılan referans zaten hazır.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+    if data.startswith("story_upload:"):
+        if not is_dev(user_id): return
+        day=data.split(":",1)[1]
+        try:
+            chosen=date.fromisoformat(day)
+            if chosen not in (_story_today(),_story_today()+timedelta(days=1)) or story_draft(day)["status"]=="published":
+                raise ValueError("Invalid upload day")
+        except (RuntimeError,ValueError):
+            await q.answer("Yalnızca bugün veya yarının taslağına görsel eklenebilir.",show_alert=True); return
+        context.user_data["daily_story_waiting_image"]=day
+        await q.edit_message_text("📥 MUBA DAILY STORY — "+day+"\n\nHazır 16:9 görseli fotoğraf veya PNG dosyası olarak gönder. Önce taslakta inceleyeceksin; web yayını ayrı onay gerektirir.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_day:"+day)]])); return
     if data=="story_generate":
         if not is_dev(user_id): return
+        from muba_story_github import configured as github_story_configured
+        if github_story_configured():
+            await q.answer("Bu günün görseli GitHub Daily Story kaydından okunur.",show_alert=True); return
         day=_story_today().isoformat()
         if day in _STORY_PREPARING:
             await q.answer("Bugünün görseli zaten hazırlanıyor.",show_alert=True); return
@@ -930,14 +993,24 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\n"+reason+" Hikâye taslağı korundu; daha sonra yeniden deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
         finally:
             _STORY_PREPARING.discard(day)
-        await q.edit_message_text("🎬 Tek 16:9 görsel hazır. Hikâyeyi ve görseli incele.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
-        await q.message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
+        await q.edit_message_text("🎬 Tek 16:9 görsel hazır. Hikâyeyi ve görseli incele.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA",callback_data="story_approve_today:"+day)],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
+        await _story_send_preview(q.message,item)
         return
     if data=="story_publish":
         if not is_dev(user_id): return
-        try: item=publish_story(story_draft()["day"])
-        except ValueError:
-            await q.answer("Önce tek hikâye görseli hazırlanmalı.",show_alert=True); return
+        try:
+            draft_item=story_draft()
+            if len(draft_item["images"])!=1: raise ValueError("Daily Story image required")
+            if not story_review_approved(draft_item["day"]): raise ValueError("DEV review required")
+            image_id=draft_item["images"][0]
+            if not set_gallery_visibility(image_id,"public"): raise RuntimeError("Daily Story image archive unavailable")
+            try: item=publish_story(draft_item["day"])
+            except Exception:
+                set_gallery_visibility(image_id,"hidden")
+                raise
+        except (ValueError,RuntimeError):
+            logger.exception("Daily Story publish unavailable")
+            await q.answer("Görsel arşivi ve hikâye hazır olmalı.",show_alert=True); return
         await q.edit_message_text("🎬 MUBA Günlük Hikâye\n\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
     if data=="gallery_admin":
         if not is_dev(user_id): return
@@ -1312,6 +1385,10 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     message=update.effective_message; user=update.effective_user; chat=update.effective_chat
     if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not is_dev(user.id):
         return
+    upload_day=context.user_data.pop("daily_story_waiting_image",None)
+    if upload_day:
+        await _story_receive_ready_image(message,context,upload_day)
+        return
     if not context.user_data.pop("daily_story_waiting_reference",False):
         return
     if not message.photo:
@@ -1342,8 +1419,8 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     await message.reply_text("📥 DAILY STORY INBOX — Referans güncellendi. Tek görsel hazırlanıyor.")
     try:
         item=await _story_generate_images(item)
-        await message.reply_photo(photo=EXTERNAL_URL.rstrip("/")+"/gallery/image/"+item["images"][0],caption=item["story_tr"])
-        await message.reply_text("Görseli kontrol et. Uygunsa WEB YAYINLA ile onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ WEB YAYINLA",callback_data="story_publish")],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
+        await _story_send_preview(message,item)
+        await message.reply_text("Görseli kontrol et. Uygunsa önce hikâyeyi onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA",callback_data="story_approve_today:"+day)],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
         await message.reply_text("⚠️ Görsel üretilemedi. Mevcut sistem ve hikâye taslağı korundu; daha sonra tekrar deneyebilirsin.")
@@ -1842,7 +1919,7 @@ async def _story_generate_images_unlocked(item):
     if engine=="kaggle":
         from muba_story_kaggle import configured as kaggle_configured, generate_batch
         if not kaggle_configured(): raise RuntimeError("Kaggle Daily Story engine is not configured")
-        frames=await generate_batch(reference,[prompt])
+        frames=await generate_batch(reference,[prompt],day=item["day"],fresh=bool(item["images"]))
         if len(frames)!=1: raise RuntimeError("Kaggle Daily Story returned an incomplete batch")
         body,out_type=frames[0]
     else:
@@ -1861,12 +1938,53 @@ async def _story_generate_images_unlocked(item):
         generated.load()
         if generated.width*9!=generated.height*16:
             raise RuntimeError("Daily Story output must be 16:9")
-    archived=_archive_studio_output(body,out_type,prompt,"image","telegram-story-engine")
-    if not archived: raise RuntimeError("Daily Story image archive failed")
+    return _story_archive_preview(item,body,out_type,"telegram-story-engine")
+
+def _story_archive_preview(item,body,out_type,source):
+    """Keep a Daily Story frame private until DEV publishes that day."""
+    archived=archive_creation(body,out_type,item["prompts"][0],"image",source)
+    if not archived or not set_gallery_visibility(archived["id"],"hidden"):
+        raise RuntimeError("Daily Story private image archive failed")
     return set_story_images(item["day"],[archived["id"]])
+
+async def _story_send_preview(message,item):
+    import io
+    result=read_gallery_image(item["images"][0],include_nonpublic=True)
+    if not result: raise RuntimeError("Daily Story private preview unavailable")
+    body,_=result
+    preview=io.BytesIO(body)
+    preview.name="muba-daily-story.png"
+    await message.reply_photo(photo=preview,caption=item["story_tr"])
+
+async def _story_receive_ready_image(message,context,day):
+    """DEV may supply a finished image when automatic generation is unavailable."""
+    from muba_story_visual import normalize_ready_image
+    try:
+        if date.fromisoformat(day) not in (_story_today(),_story_today()+timedelta(days=1)):
+            raise ValueError("Daily Story upload day expired")
+        item=story_draft(day)
+        if item["status"]=="published": raise ValueError("Published Daily Story cannot be replaced")
+        document=message.document
+        if document and document.mime_type not in ("image/png","image/jpeg","image/webp"):
+            raise ValueError("Send an image file or a Telegram photo")
+        chosen=document or (message.photo[-1] if message.photo else None)
+        if not chosen: raise ValueError("Send one image")
+        tg_file=await context.bot.get_file(chosen.file_id,read_timeout=30)
+        original=bytes(await tg_file.download_as_bytearray(read_timeout=60))
+        item=_story_archive_preview(item,normalize_ready_image(original),"image/png","telegram-story-dev")
+        await _story_send_preview(message,item)
+        body,markup=_story_director_panel(item)
+        await message.reply_text(body,reply_markup=markup)
+    except Exception as exc:
+        context.user_data["daily_story_waiting_image"]=day
+        logger.exception("Daily Story image upload failed")
+        await message.reply_text("⚠️ Görsel taslağa eklenemedi: "+str(exc)+". 16:9 PNG veya fotoğrafı yeniden gönder.")
 
 async def _prepare_daily_story(application):
     """Prepare today's scene in advance; publication always requires DEV action."""
+    from muba_story_github import configured as github_story_configured
+    if github_story_configured():
+        return None  # The 14:00 Work task writes this day's GitHub record.
     day=_story_today().isoformat()
     if day in _STORY_PREPARING:
         return story_draft(day)
@@ -1922,6 +2040,10 @@ async def story_prepare_handler(request: web.Request):
     supplied=request.headers.get("X-MUBA-Story-Secret","")
     if not secret or not supplied or not hmac.compare_digest(secret,supplied):
         return web.json_response({"error":"forbidden"},status=403)
+    from muba_story_github import configured as github_story_configured
+    if github_story_configured():
+        return web.json_response({"ok":True,"day":_story_today().isoformat(),
+                                  "source":"private-github","queued":False})
     item=await prepare_story_text(datetime.now(ZoneInfo("Europe/Istanbul")).date().isoformat())
     reference=story_reference_for_day(item["day"])
     queued=False
@@ -2135,7 +2257,7 @@ async def start_webhook_server():
     application.add_handler(CallbackQueryHandler(callback_handler, pattern=r"^story_(?:director|generate|prepare_tomorrow)$|^story_day:", block=False))
     application.add_handler(CallbackQueryHandler(callback_handler))
     application.add_handler(MessageHandler(filters.PHOTO, muba_camera_photo, block=False), group=-5)
-    application.add_handler(MessageHandler(filters.PHOTO, daily_story_reference_photo, block=False), group=-4)
+    application.add_handler(MessageHandler(filters.PHOTO | filters.Document.IMAGE, daily_story_reference_photo, block=False), group=-4)
     application.add_handler(InlineQueryHandler(dev_inline_translator), group=-3)
     application.add_handler(InlineQueryHandler(inline_studio))
     application.add_handler(
