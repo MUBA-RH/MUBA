@@ -7,6 +7,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import muba_story
+from muba_story_visual import normalize_ready_image
 from state import MemoryRepository
 
 
@@ -60,6 +61,9 @@ class DailyStoryTests(unittest.TestCase):
         item = muba_story.set_images(day, ['one'])
         self.assertEqual(item['images'], ['one'])
         self.assertIsNone(muba_story.public_story(day))
+        with self.assertRaisesRegex(ValueError, 'DEV review'):
+            muba_story.publish(day)
+        muba_story.approve_today(day, today=muba_story.START)
         muba_story.publish(day)
         self.assertEqual(muba_story.public_story(day)['images'], ['one'])
         self.assertEqual(self.store.get('story_canon', day, None)['story'], item['story'])
@@ -98,6 +102,23 @@ class DailyStoryTests(unittest.TestCase):
         self.store.set('story_image_batches', day, {'ids': ['1', '2', '3', '4']})
         self.store.set('story_publish', day, True)
         self.assertEqual(len(muba_story.public_story(day)['images']), 4)
+
+    def test_dev_supplied_scene_is_landscape_and_normalized(self):
+        from io import BytesIO
+        from PIL import Image
+        supplied=BytesIO()
+        Image.new('RGB',(1536,864),'orange').save(supplied,format='PNG')
+        ready=normalize_ready_image(supplied.getvalue())
+        with Image.open(BytesIO(ready)) as scene:
+            self.assertEqual(scene.size,(1024,576))
+        near=BytesIO()
+        Image.new('RGB',(1672,941),'orange').save(near,format='PNG')
+        with Image.open(BytesIO(normalize_ready_image(near.getvalue()))) as scene:
+            self.assertEqual(scene.size,(1024,576))
+        square=BytesIO()
+        Image.new('RGB',(1024,1024),'orange').save(square,format='PNG')
+        with self.assertRaisesRegex(ValueError,'16:9'):
+            normalize_ready_image(square.getvalue())
 
 
 if __name__ == '__main__':

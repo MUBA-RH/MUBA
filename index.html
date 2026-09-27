@@ -930,8 +930,8 @@
         if(!response.ok) return;
         const payload=await response.json(); const story=payload.story;
         if(!story) return;
-        document.getElementById("story-date").textContent="MUBA STORY · "+story.day;
-        document.getElementById("story-theme").textContent=story.theme;
+        document.getElementById("story-date").textContent=story.day;
+        document.getElementById("story-theme").textContent=story.story_tr||story.story||story.summary||"";
         const grid=document.getElementById("story-grid");
         const urls=Array.isArray(story.image_urls)?story.image_urls:[];
         if(urls.length!==1 && urls.length!==4){
@@ -941,12 +941,8 @@
         const figures=urls.map((url,i)=>{const figure=document.createElement("figure"); figure.className="story-frame";
           const img=document.createElement("img"); img.src=url; img.alt=urls.length===1?"MUBA Daily Story scene":`MUBA Daily Story archived frame ${i+1}`;
           figure.appendChild(img); return figure;}); grid.replaceChildren(...figures);
-        const twt=document.getElementById("story-twt"); twt.hidden=false; twt.textContent=story.summary||story.twt||"";
-        const shareText=story.twt||story.summary||"";
-        const share=document.getElementById("story-share");
-        const shareX=document.getElementById("story-share-x");
-        shareX.href="https://twitter.com/intent/tweet?text="+encodeURIComponent(shareText)+"&url="+encodeURIComponent(location.origin+location.pathname+"#daily-story");
-        share.hidden=false;
+        document.getElementById("story-twt").hidden=true;
+        document.getElementById("story-share").hidden=true;
         document.getElementById("story-empty").hidden=true;
       }catch(_){ }
     }
