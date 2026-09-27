@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-scene-intent-baseline",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Camera scene intent baseline",
+        "tr": "Camera sahne isteği baseline",
+        "zh": "Camera 场景意图基线",
+        "ar": "خط أساس نية مشهد Camera",
+        "hi": "Camera scene intent baseline"
+      },
+      "text": {
+        "en": "Camera now treats requested environments as mandatory visual requirements. Combined requests such as being with MUBA at the beach must preserve the photographed person, add MUBA separately and visibly realize the requested setting.",
+        "tr": "Camera artık istenen ortamları zorunlu görsel gereksinim olarak ele alır. MUBA ile sahilde olmak gibi birleşik isteklerde fotoğraftaki kişi korunur, MUBA ayrı eklenir ve istenen ortam görünür biçimde uygulanır.",
+        "zh": "Camera 现在将用户指定的环境视为必须实现的视觉要求。像“和 MUBA 一起在海边”这样的组合请求会保留照片中的人物、单独加入 MUBA，并明确呈现所要求的场景。",
+        "ar": "يتعامل Camera الآن مع البيئة المطلوبة كمتطلب بصري إلزامي. في الطلبات المركبة مثل الوجود مع MUBA على الشاطئ، يبقى الشخص المصوَّر محفوظًا ويُضاف MUBA كشخصية منفصلة ويظهر المكان المطلوب بوضوح.",
+        "hi": "Camera अब requested environment को mandatory visual requirement मानता है। MUBA के साथ beach पर होने जैसे combined requests में photographed person सुरक्षित रहता है, MUBA अलग जोड़ा जाता है और requested setting स्पष्ट रूप से दिखाई जाती है।"
+      }
+    },
+    {
       "id": "20260927-camera-intent-aware-edit",
       "date": "2026-09-27",
       "type": "updated",
