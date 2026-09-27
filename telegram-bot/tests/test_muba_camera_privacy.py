@@ -19,6 +19,16 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('if data.startswith("discover_info:"):',BOT)
   self.assertNotIn('callback_data="content_index"',BOT)
   self.assertNotIn('"missing":"🔍',BOT)
+ def test_discover_content_is_deep_but_navigation_stays_shallow(self):
+  for required in ("KÖKEN","KİMLİK","FARKI","AMACI","KÜLTÜRÜ","TEMEL İLKELER","NASIL KATILIRSIN?","ÜRETİM VE HAFIZA","ASSISTANT","GUARDIAN","CAMERA","STUDIO","GALLERY","DAILY STORY","GERÇEK BAŞLANGIÇ","PROJENİN GELİŞİMİ","YAŞAYAN HİKÂYE"):
+   self.assertIn(required,BOT)
+  self.assertNotIn('callback_data="content_index"',BOT)
+  self.assertNotIn('"missing":"🔍',BOT)
+ def test_discover_transition_targets_are_defined(self):
+  for target in ('discover_muba','discover_info:','create_hub','updates_center','transparency_menu'):
+   self.assertIn(target,BOT)
+  self.assertIn('_section_back(lang,"discover_muba")',BOT)
+  self.assertIn('_section_back(lang,"create_hub")',BOT)
  def test_main_menu_keeps_create_direct(self):
   start=BOT.index("def menu_keyboard")
   end=BOT.index("def updates_center_text",start)
