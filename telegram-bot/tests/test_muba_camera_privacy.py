@@ -26,6 +26,10 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('"X-MUBA-Gallery-Published":"false"',handler)
   self.assertIn('"Cache-Control":"no-store, no-cache, must-revalidate, private"',handler)
   self.assertIn("source_bytes=None",handler)
+ def test_camera_prompt_preserves_life_size_source_composition(self):
+  for required in ("full-scale, human-proportioned MUBA adaptation","exact pose, body scale, body proportions, framing, camera angle, perspective","realistic adult human anatomy","same position and approximate physical size","Do not create a separate mascot portrait","life-size MUBA in the same photograph","input_image_1 as the controlling composition/pose photograph"):
+   self.assertIn(required,STUDIO)
+  self.assertIn("Do not preserve, reproduce or identify the person's biometric facial identity",STUDIO)
  def test_source_is_sent_only_as_ephemeral_ai_input(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
