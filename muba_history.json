@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-native-telegram-final",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Native Telegram Camera flow",
+        "tr": "Yerel Telegram Camera akışı",
+        "zh": "Telegram 原生 Camera 流程",
+        "ar": "مسار Camera الأصلي في Telegram",
+        "hi": "Native Telegram Camera flow"
+      },
+      "text": {
+        "en": "MUBA Camera now uses Telegram’s normal photo-send flow instead of WebView camera capture. The user takes and sends a photo with Telegram; MUBA processes it and returns the generated image in the same private chat.",
+        "tr": "MUBA Camera artık WebView kamera yakalama yerine Telegram’ın normal fotoğraf gönderme akışını kullanır. Kullanıcı Telegram ile fotoğrafı çekip gönderir; MUBA işler ve oluşturulan görseli aynı özel sohbette geri verir.",
+        "zh": "MUBA Camera 现在使用 Telegram 的常规照片发送流程，而不是 WebView 摄像头。用户通过 Telegram 拍摄并发送照片，MUBA 处理后在同一私聊中返回生成图像。",
+        "ar": "تستخدم MUBA Camera الآن مسار إرسال الصور العادي في Telegram بدلاً من كاميرا WebView. يلتقط المستخدم الصورة ويرسلها عبر Telegram، ثم يعالجها MUBA ويعيد الصورة الناتجة في المحادثة الخاصة نفسها.",
+        "hi": "MUBA Camera अब WebView camera के बजाय Telegram के सामान्य photo-send flow का उपयोग करता है। User Telegram से photo लेकर भेजता है; MUBA उसे process करके generated image उसी private chat में लौटाता है।"
+      }
+    },
+    {
       "id": "20260927-camera-automatic-capture-fallback",
       "date": "2026-09-27",
       "type": "fixed",
