@@ -67,7 +67,7 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn("src.thumbnail((max_side,max_side)",STUDIO)
   self.assertIn("muba_ref=camera_reference_bytes(ref_path.read_bytes())",BOT)
   self.assertIn("source_ai=camera_reference_bytes(source_bytes)",BOT)
-  self.assertIn('form.add_field("input_image_1",source_ai',BOT)
+  self.assertIn('form.add_field("input_image_0",source_ai',BOT)
 
  def test_camera_result_has_clean_back_to_main_menu(self):
   self.assertIn('callback_data="camera_back"',BOT)
