@@ -508,7 +508,7 @@ def create_hub_keyboard(lang,user_id):
         [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/studio?uid="+str(user_id or 0)+"&st="+private_token))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
-        [_section_back(lang)],
+        [_section_back(lang,"discover_muba")],
     ])
 
 COMMUNITY_GUIDE_LABELS={
@@ -540,14 +540,14 @@ def community_hub_keyboard(lang,user_id):
         [InlineKeyboardButton(g["system"],callback_data="transparency_menu")],
         [InlineKeyboardButton(g["security"]+_update_badge(lang,user_id,"guardian"),callback_data="extra:security")],
         [InlineKeyboardButton(g["devlog"]+_update_badge(lang,user_id,"assistant"),callback_data="devlog")],
-        [_section_back(lang)],
+        [_section_back(lang,"discover_muba")],
     ])
 
 def community_info_keyboard(lang,section):
     g=COMMUNITY_GUIDE_LABELS[lang]
     back=InlineKeyboardButton(TEXT[lang]["back"],callback_data="community_hub")
     if section=="about":
-        return InlineKeyboardMarkup([[InlineKeyboardButton(g["ask"],callback_data="ask_muba")],[InlineKeyboardButton(g["system"],callback_data="transparency_menu")],[back]])
+        return InlineKeyboardMarkup([[InlineKeyboardButton(g["system"],callback_data="transparency_menu")],[back]])
     if section=="join":
         return InlineKeyboardMarkup([[InlineKeyboardButton(g["story"],callback_data="extra:story")],[InlineKeyboardButton(g["updates"],callback_data="updates_center")],[InlineKeyboardButton(g["create"],callback_data="create_hub")],[back]])
     return InlineKeyboardMarkup([[InlineKeyboardButton(g["web"],url="https://muba-rh.github.io/MUBA/")],[InlineKeyboardButton(g["x"],url="https://x.com/MUBA_RH")],[InlineKeyboardButton(g["telegram"],url="https://t.me/MUBA_RH")],[back]])
@@ -804,7 +804,7 @@ ASK_ARCHIVE_LABELS={"en":"🧠 MUBA Knowledge World","tr":"🧠 MUBA Bilgi Düny
 
 def ask_archive_keyboard(lang):
     rows=[[InlineKeyboardButton(title,callback_data=f"ask_archive:{record_id}")] for record_id,title,_,_ in ASK_RECORDS.get(lang,[])]
-    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="ask_muba")])
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="discover_muba")])
     return InlineKeyboardMarkup(rows)
 
 def ask_muba_keyboard(lang):
@@ -825,7 +825,7 @@ def category_keyboard(lang,category):
     for i,(topic,question) in enumerate(QUESTIONS[lang]):
         if topic in topics:
             rows.append([InlineKeyboardButton(question,callback_data=f"q:{i}")])
-    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="ask_muba")])
+    rows.append([InlineKeyboardButton(TEXT[lang]["back"],callback_data="discover_muba")])
     return InlineKeyboardMarkup(rows)
 
 def topic_keyboard(lang,topic):
@@ -1182,7 +1182,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if item:
             await q.edit_message_text(item[3],reply_markup=ask_archive_keyboard(lang)); return
     if data=="ask_muba":
-        await q.edit_message_text("💬 ASK MUBA",reply_markup=ask_muba_keyboard(lang)); return
+        await q.edit_message_text(content_index_text(lang),reply_markup=content_index_keyboard(lang)); return
     if data.startswith("category:"):
         category=data.split(":",1)[1]
         if category in CATEGORY_TOPICS:
