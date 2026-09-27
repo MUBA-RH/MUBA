@@ -444,11 +444,11 @@ ASSISTANT_UI={
 }
 
 DISCOVER_UI={
- "en":{"title":"🧭 DISCOVER MUBA","intro":"Everything essential about MUBA is grouped into four clear areas.","items":["🌱 WHAT IS MUBA?","🌍 COMMUNITY","🧠 ECOSYSTEM","📖 STORY"]},
- "tr":{"title":"🧭 MUBA'YI KEŞFET","intro":"MUBA hakkında bilmen gereken temel bilgiler dört sade alanda toplandı.","items":["🌱 MUBA NEDİR?","🌍 TOPLULUK","🧠 EKOSİSTEM","📖 HİKÂYE"]},
- "zh":{"title":"🧭 探索 MUBA","intro":"关于 MUBA 的核心信息集中在四个清晰区域。","items":["🌱 MUBA 是什么？","🌍 社区","🧠 生态系统","📖 故事"]},
- "ar":{"title":"🧭 اكتشف MUBA","intro":"جُمعت المعلومات الأساسية عن MUBA في أربعة أقسام واضحة.","items":["🌱 ما هو MUBA؟","🌍 المجتمع","🧠 النظام البيئي","📖 القصة"]},
- "hi":{"title":"🧭 MUBA को जानें","intro":"MUBA की जरूरी जानकारी चार साफ क्षेत्रों में रखी गई है।","items":["🌱 MUBA क्या है?","🌍 COMMUNITY","🧠 ECOSYSTEM","📖 STORY"]},
+ "en":{"title":"🧭 DISCOVER MUBA","intro":"Explore MUBA without getting lost. Start with the character, follow the story, understand the culture, see the ecosystem, or check where MUBA stands today.","items":["🐾 MUBA","📖 STORY","🌍 CULTURE","🧠 ECOSYSTEM","🚀 TODAY & FUTURE"]},
+ "tr":{"title":"🧭 MUBA'YI KEŞFET","intro":"Kaybolmadan MUBA'yı baştan sona keşfet. Karakteri tanı, hikâyeyi takip et, kültürü anla, ekosistemi gör veya MUBA'nın bugün geldiği noktaya bak.","items":["🐾 MUBA","📖 HİKÂYE","🌍 KÜLTÜR","🧠 EKOSİSTEM","🚀 BUGÜN & GELECEK"]},
+ "zh":{"title":"🧭 探索 MUBA","intro":"无需迷路即可完整探索 MUBA：认识角色、追随故事、理解文化、查看生态系统，以及了解今天与未来。","items":["🐾 MUBA","📖 故事","🌍 文化","🧠 生态系统","🚀 今天与未来"]},
+ "ar":{"title":"🧭 اكتشف MUBA","intro":"اكتشف MUBA من البداية إلى اليوم دون أن تضيع: تعرّف على الشخصية، تابع القصة، افهم الثقافة، واستكشف النظام البيئي والحاضر والمستقبل.","items":["🐾 MUBA","📖 القصة","🌍 الثقافة","🧠 النظام البيئي","🚀 اليوم والمستقبل"]},
+ "hi":{"title":"🧭 MUBA को जानें","intro":"बिना उलझे MUBA को शुरू से आज तक जानें: character, story, culture, ecosystem और आज व आगे की दिशा।","items":["🐾 MUBA","📖 STORY","🌍 CULTURE","🧠 ECOSYSTEM","🚀 TODAY & FUTURE"]},
 }
 DISCOVER_CONTENT={
  "en":{
@@ -904,7 +904,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(DISCOVER_UI[lang]["title"]+"\n\n"+DISCOVER_UI[lang]["intro"],reply_markup=discover_muba_keyboard(lang,user_id)); return
     if data.startswith("discover_info:"):
         section=data.split(":",1)[1]
-        body=DISCOVER_CONTENT.get(lang,DISCOVER_CONTENT["en"]).get(section)
+        body=DISCOVER_CONTENT.get(lang,DISCOVER_CONTENT["en"]).get(section) or DISCOVER_CONTENT["en"].get(section)
         if body:
             await q.edit_message_text(body,reply_markup=discover_info_keyboard(lang,section),disable_web_page_preview=True); return
     if data=="daily_hub":
@@ -2526,4 +2526,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()  "culture":"🌍 MUBA CULTURE\n\nMUBA grows through character, humor, participation and creative expression. The community is not expected to memorize lore; people can follow, create, share and take part naturally. MUBA's recurring language — including I'M MUBA., WE LIVE HERE NOW. and Same Meme. Different Universe. — belongs to that living culture, not to artificial hype. Community creations can become part of the broader cultural memory while verified facts remain separate from jokes, interpretations and speculation.",
+  "future":"🚀 MUBA TODAY & FUTURE\n\nTODAY\nMUBA is an active character-centered ecosystem connecting Assistant, Guardian, Camera, Studio, Gallery, Daily Story, News, Web, Updates and Transparency. Each area has a separate responsibility so the public experience can stay understandable.\n\nDIRECTION\nMUBA continues through consistent building, creativity, participation and community culture. New capabilities can be added when they are real and usable; unconfirmed plans are not presented as promises.\n\nWHAT DOES NOT CHANGE\nThe character remains the center. Culture and community remain more important than manufactured hype, and verified information stays separate from speculation.",
+  "culture":"🌍 MUBA KÜLTÜRÜ\n\nMUBA; karakter, mizah, katılım ve yaratıcı üretim etrafında yaşayan bir kültürdür. Topluluktan bir lore ezberlemesi beklenmez; insanlar MUBA'yı takip eder, üretir, paylaşır ve doğal biçimde katılır. I'M MUBA., WE LIVE HERE NOW. ve Same Meme. Different Universe. gibi ifadeler bu yaşayan kimliğin parçalarıdır; yapay hype üretmek için kullanılmaz. Topluluk üretimleri kültürel hafızaya katkı sağlayabilir; doğrulanmış bilgi ise mizah, yorum ve söylentiden ayrı tutulur.",
+  "future":"🚀 MUBA BUGÜN & GELECEK\n\nBUGÜN\nMUBA bugün Assistant, Guardian, Camera, Studio, Gallery, Daily Story, News, Web, Yenilikler ve Şeffaflık gibi birbirine bağlı alanları bulunan karakter merkezli bir ekosistemdir. Her alanın görevi ayrıdır; böylece kullanıcı bütün sistemi öğrenmek zorunda kalmadan ihtiyacı olan bölümü kullanabilir.\n\nGELİŞİM YÖNÜ\nMUBA; istikrarlı üretim, yaratıcılık, katılım ve topluluk kültürü üzerinden gelişmeye devam eder. Yeni özellikler ancak gerçek ve kullanılabilir olduklarında mevcut yapının parçası olarak anlatılır; doğrulanmamış planlar vaat gibi sunulmaz.\n\nDEĞİŞMEYEN TEMEL\nMerkezde karakter vardır. Kültür ve topluluk yapay hype'ın önünde kalır; doğrulanmış bilgi ile beklenti veya söylenti birbirine karıştırılmaz.",
+
