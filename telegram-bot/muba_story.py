@@ -14,6 +14,7 @@ STORE = StoryState(BASE_STORE)
 
 TZ = ZoneInfo("Europe/Istanbul")
 START = date(2026, 9, 26)
+ORIGIN_START = date(2026, 9, 28)
 SCENE_REFERENCE = Path(__file__).with_name("assets") / "muba_daily_story_scene_reference.jpg"
 
 # Each beat begins with the outcome of the preceding beat. The last beat leads
@@ -52,14 +53,14 @@ BEATS = (
 
 def _episode(day):
     step = (date.fromisoformat(day) - START).days
-    if step >= len(BEATS):
+    if date.fromisoformat(day) >= ORIGIN_START:
         saved = STORE.get("story_text", day, None)
         if not isinstance(saved, dict) or not saved.get("scene"):
             saved = STORE.get("story_canon", day, None)
         if not isinstance(saved, dict) or not saved.get("scene"):
             raise RuntimeError("Daily Story text is awaiting a new connected episode")
         return saved
-    title, title_tr, story, story_tr, scene = BEATS[step % len(BEATS)]
+    title, title_tr, story, story_tr, scene = BEATS[step]
     return {"title": title, "title_tr": title_tr, "story": story,
             "story_tr": story_tr, "scene": scene, "step": step}
 
@@ -72,6 +73,18 @@ def _length_checked(text):
 
 
 def _previous_state(day):
+    chosen = date.fromisoformat(day)
+    if chosen == ORIGIN_START:
+        # The origin is the first canonical chapter. Earlier published days
+        # remain intact as experimental history, not as its predecessor.
+        return {"day": None, "story": "", "theme": "The Beginning"}
+    if chosen > ORIGIN_START:
+        previous = (chosen - timedelta(days=1)).isoformat()
+        saved = STORE.get("story_canon", previous, None) or STORE.get("story_text", previous, None)
+        if not isinstance(saved, dict) or not saved.get("story"):
+            raise RuntimeError("Daily Story needs the preceding canonical episode: " + previous)
+        return {"day": previous, "story": saved["story"],
+                "theme": saved.get("theme") or saved.get("title", "MUBA Daily Story")}
     previous_date = date.fromisoformat(day) - timedelta(days=1)
     for gap in range(31):
         previous = (previous_date - timedelta(days=gap)).isoformat()
@@ -79,7 +92,7 @@ def _previous_state(day):
         if isinstance(saved, dict) and saved.get("story"):
             return {"day": previous, "story": saved["story"],
                     "theme": saved.get("theme") or saved.get("title", "MUBA Daily Story")}
-        if previous_date - timedelta(days=gap) <= START + timedelta(days=len(BEATS)-1):
+        if previous_date - timedelta(days=gap) < ORIGIN_START:
             ep = _episode(previous)
             return {"day": previous, "story": ep["story"], "theme": ep["title"]}
     raise RuntimeError("Daily Story needs a prior approved episode to continue")
@@ -94,6 +107,8 @@ def draft(day=None):
     archived = archived if isinstance(archived, dict) else {}
     story = archived.get("story") or _length_checked(ep["story"])
     story_tr = archived.get("story_tr") or _length_checked(ep["story_tr"])
+    localized = {field: ep[field] for field in ("story_zh", "story_ar", "story_hi")
+                 if isinstance(ep.get(field), str) and ep[field].strip()}
     prompt = (story_identity_prompt() + " CURRENT BEAT: " + ep["scene"] + ". "
               "Illustrate the meaningful moment of TODAY'S STORY: " + story + " "
               "One bright, airy, full-bleed 16:9 scene. No panels, collage, captions or oppressive dark atmosphere. "
@@ -102,7 +117,7 @@ def draft(day=None):
     images = image_ids(day)
     return {"day": day, "status": "published" if is_published(day) else "draft",
             "theme": ep["title"], "theme_tr": ep["title_tr"],
-            "story": story, "story_tr": story_tr, "summary": story,
+            "story": story, "story_tr": story_tr, **localized, "summary": story,
             "summary_tr": story_tr, "twt": story, "twt_tr": story_tr,
             "previous_day": previous["day"], "previous_theme": previous["theme"],
             "story_state": {"previous_story": previous["story"], "step": ep["step"]},
@@ -130,6 +145,11 @@ def save_episode(day, episode):
     item = {"title": episode["title"].strip(), "title_tr": episode["title_tr"].strip(),
             "story": story, "story_tr": story_tr, "scene": episode["scene"].strip(),
             "step": (date.fromisoformat(day) - START).days}
+    for field in ("story_zh", "story_ar", "story_hi"):
+        if isinstance(episode.get(field), str) and episode[field].strip():
+            item[field] = " ".join(episode[field].split())
+    if date.fromisoformat(day) >= ORIGIN_START and any(field not in item for field in ("story_zh", "story_ar", "story_hi")):
+        raise ValueError("Daily Story needs DEV translations in all supported languages")
     if not item["title"] or not item["title_tr"]:
         raise ValueError("Daily Story needs a title in both languages")
     if STORE.get("story_text", day, None) != item:
@@ -270,7 +290,8 @@ def publish(day):
     STORE.set("story_canon", str(day), {"day": day, "theme": item["theme"],
                                          "title": item["theme"], "title_tr": item["theme_tr"],
                                          "scene": _episode(day)["scene"], "step": _episode(day)["step"],
-                                         "story": item["story"], "story_tr": item["story_tr"]})
+                                         "story": item["story"], "story_tr": item["story_tr"],
+                                         **{field: item[field] for field in ("story_zh", "story_ar", "story_hi") if field in item}})
     STORE.set("story_publish", str(day), True)
     return draft(day)
 
