@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-v3-camera-permission-bridge",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "V3 Camera permission bridge guard",
+        "tr": "V3 Camera izin köprüsü koruması",
+        "zh": "V3 Camera 权限桥保护",
+        "ar": "حماية جسر أذونات V3 Camera",
+        "hi": "V3 Camera permission bridge guard"
+      },
+      "text": {
+        "en": "The V3 Android build now fails closed unless the pinned Telegram client contains its native WebView video-capture bridge with Android CAMERA permission and explicit video resource grant required by the MUBA Camera Mini App.",
+        "tr": "V3 Android derlemesi artık sabitlenmiş Telegram istemcisinde MUBA Camera Mini App'in ihtiyaç duyduğu Android CAMERA izni ve video kaynağı onayını içeren yerel WebView kamera köprüsü yoksa güvenli biçimde durur.",
+        "zh": "V3 Android 构建现在会验证 Telegram 客户端是否包含 MUBA Camera Mini App 所需的原生 WebView 视频捕获桥、Android CAMERA 权限和视频资源授权。",
+        "ar": "يتحقق بناء V3 Android الآن من وجود جسر التقاط الفيديو الأصلي في WebView مع إذن CAMERA ومنح مورد الفيديو المطلوب لتطبيق MUBA Camera المصغر.",
+        "hi": "V3 Android build अब pinned Telegram client में MUBA Camera Mini App के लिए आवश्यक native WebView video-capture bridge, Android CAMERA permission और video resource grant की पुष्टि करता है।"
+      }
+    },
+    {
       "id": "20260927-games-module-removed",
       "date": "2026-09-27",
       "type": "updated",

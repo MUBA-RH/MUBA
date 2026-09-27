@@ -109,6 +109,20 @@ if tc_anchor not in tc:
     raise SystemExit("TranslateController translatable anchor missing")
 tc = tc.replace(tc_anchor, tc_hook, 1)
 translate_controller.write_text(tc)
+
+# Camera Mini App requires Telegram Android's native WebView bridge to grant
+# RESOURCE_VIDEO_CAPTURE only after Android CAMERA permission succeeds.
+webview = root / "TMessagesProj/src/main/java/org/telegram/ui/web/BotWebViewContainer.java"
+wv = webview.read_text()
+required = (
+    "onPermissionRequest(PermissionRequest request)",
+    "PermissionRequest.RESOURCE_VIDEO_CAPTURE",
+    "Manifest.permission.CAMERA",
+    "request.grant(new String[] {resource})",
+)
+missing = [item for item in required if item not in wv]
+if missing:
+    raise SystemExit("Telegram WebView camera permission bridge missing: " + ", ".join(missing))
 PY
 
-echo "MUBA V3 composer hook, native chat-translation compatibility patch, and private build inputs applied."
+echo "MUBA V3 composer hook, native chat-translation compatibility patch, private build inputs, and WebView camera permission bridge validated."
