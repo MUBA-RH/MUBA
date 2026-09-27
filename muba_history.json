@@ -3010,6 +3010,28 @@
         "ar": "تم الحفاظ على تنقل الاكتشاف بأربع بطاقات مع توسيع صفحات MUBA والمجتمع والنظام البيئي والقصة بمعلومات أعمق دون تكرار، ولم تتم إضافة فهرس أو قائمة ASK.",
         "hi": "चार-card discovery navigation रखा गया और MUBA, Community, Ecosystem तथा Story pages को बिना repetition के अधिक गहरी जानकारी दी गई; content index या ASK menu नहीं जोड़ा गया।"
       }
+    },
+    {
+      "id": "20260927-discover-complete-index",
+      "date": "2026-09-27",
+      "type": "improved",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Complete Discover knowledge routes",
+        "tr": "Keşfet bilgi yolları tamamlandı",
+        "zh": "完善探索知识路径",
+        "ar": "اكتمال مسارات معرفة الاستكشاف",
+        "hi": "Discover ज्ञान मार्ग पूरे हुए"
+      },
+      "text": {
+        "en": "The five Discover paths now lead to a paginated index of the existing MUBA questions, explanations, community records and transparency pages. Each answer returns to its own topic list without creating new claims.",
+        "tr": "Beş Keşfet yolu artık mevcut MUBA sorularını, açıklamaları, topluluk kayıtlarını ve şeffaflık sayfalarını sayfalı bir dizinde açıyor. Her cevap kendi konu listesine dönüyor; yeni iddia eklenmiyor.",
+        "zh": "五条探索路径现在通过分页目录连接现有的 MUBA 问答、说明、社区记录和透明度页面。每个答案都会返回对应主题列表，不增加新的未经证实的主张。",
+        "ar": "ترتبط مسارات الاستكشاف الخمسة الآن بفهرس مُقسّم للصفحات للأسئلة والشروح وسجلات المجتمع وصفحات الشفافية الموجودة. تعود كل إجابة إلى قائمة موضوعها دون إضافة ادعاءات جديدة.",
+        "hi": "Discover के पाँच रास्ते अब मौजूदा MUBA सवालों, विवरणों, community records और transparency pages की पेज वाली सूची तक पहुँचाते हैं। हर जवाब अपनी topic list में लौटता है; कोई नया दावा नहीं जोड़ा गया।"
+      }
     }
   ]
 }
