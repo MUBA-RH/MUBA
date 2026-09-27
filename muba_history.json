@@ -2966,6 +2966,28 @@
         "ar": "أعيد تصميم Assistant العام حول الاكتشاف والإنشاء والتحديثات والشفافية، وأصبح الاكتشاف أربع بطاقات معلومات مختصرة.",
         "hi": "Public Assistant को Discover, Create, Updates और Transparency के आसपास सरल किया गया; Discover अब चार concise information cards उपयोग करता है।"
       }
+    },
+    {
+      "id": "20260927-assistant-deep-discovery",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Deeper MUBA discovery content",
+        "tr": "Daha kapsamlı MUBA keşif içeriği",
+        "zh": "更深入的 MUBA 探索内容",
+        "ar": "محتوى أعمق لاكتشاف MUBA",
+        "hi": "गहरा MUBA discovery content"
+      },
+      "text": {
+        "en": "Kept the four-card discovery navigation but expanded each canonical page with deeper, non-duplicative information about MUBA, community, ecosystem and story. No content index or ASK menu was added.",
+        "tr": "Dört kartlı sade keşif navigasyonu korundu; MUBA, Topluluk, Ekosistem ve Hikâye sayfaları tekrar yaratmadan daha kapsamlı bilgilerle derinleştirildi. İçerik dizini veya MUBA'YA SOR menüsü eklenmedi.",
+        "zh": "保留四卡片探索导航，并扩展 MUBA、社区、生态系统和故事的规范页面，增加更深入且不重复的信息；未添加内容索引或 ASK 菜单。",
+        "ar": "تم الحفاظ على تنقل الاكتشاف بأربع بطاقات مع توسيع صفحات MUBA والمجتمع والنظام البيئي والقصة بمعلومات أعمق دون تكرار، ولم تتم إضافة فهرس أو قائمة ASK.",
+        "hi": "चार-card discovery navigation रखा गया और MUBA, Community, Ecosystem तथा Story pages को बिना repetition के अधिक गहरी जानकारी दी गई; content index या ASK menu नहीं जोड़ा गया।"
+      }
     }
   ]
 }
