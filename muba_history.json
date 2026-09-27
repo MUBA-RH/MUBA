@@ -3032,6 +3032,28 @@
         "ar": "ترتبط مسارات الاستكشاف الخمسة الآن بفهرس مُقسّم للصفحات للأسئلة والشروح وسجلات المجتمع وصفحات الشفافية الموجودة. تعود كل إجابة إلى قائمة موضوعها دون إضافة ادعاءات جديدة.",
         "hi": "Discover के पाँच रास्ते अब मौजूदा MUBA सवालों, विवरणों, community records और transparency pages की पेज वाली सूची तक पहुँचाते हैं। हर जवाब अपनी topic list में लौटता है; कोई नया दावा नहीं जोड़ा गया।"
       }
+    },
+    {
+      "id": "20260927-discover-index-safe-growth",
+      "date": "2026-09-27",
+      "type": "improved",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Discover index growth safety",
+        "tr": "Keşfet dizininin büyüme koruması",
+        "zh": "探索索引扩展保护",
+        "ar": "حماية توسع فهرس الاستكشاف",
+        "hi": "Discover सूची का विस्तार सुरक्षित"
+      },
+      "text": {
+        "en": "New knowledge records remain reachable from a Discover path even before their dedicated classification is added; unknown IDs no longer interrupt navigation.",
+        "tr": "Yeni bilgi kayıtları özel sınıflandırmaları eklenmeden önce de Keşfet içinde erişilebilir kalır; yeni kimlikler gezinmeyi kesmez.",
+        "zh": "新增知识记录在加入专门分类前仍可通过探索路径访问；未知 ID 不再中断导航。",
+        "ar": "تبقى سجلات المعرفة الجديدة متاحة من أحد مسارات الاستكشاف قبل إضافة تصنيف خاص لها؛ ولا توقف المعرّفات الجديدة التنقل.",
+        "hi": "नए knowledge records अलग classification जुड़ने से पहले भी Discover में मिलते हैं; नए ID navigation नहीं रोकते।"
+      }
     }
   ]
 }
