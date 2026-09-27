@@ -2944,6 +2944,28 @@
         "ar": "تعود أقسام الاستكشاف الآن إلى مركز الاستكشاف بدلاً من شاشة ASK المتوقفة؛ تفتح الثقافة والمنظومة المحتوى الأساسي مباشرة ولا يكرر المجتمع القوائم غير المرتبطة.",
         "hi": "Discover sections अब retired ASK screen की जगह Discover hub पर लौटते हैं; Culture और Ecosystem canonical content सीधे खोलते हैं और Community unrelated menus दोहराता नहीं है।"
       }
+    },
+    {
+      "id": "20260927-assistant-simple-navigation",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Simplified Assistant navigation",
+        "tr": "Sadeleştirilmiş Assistant navigasyonu",
+        "zh": "简化 Assistant 导航",
+        "ar": "تبسيط تنقل Assistant",
+        "hi": "सरल Assistant navigation"
+      },
+      "text": {
+        "en": "Redesigned the public Assistant around Discover, Create, Updates and Transparency. Discover now has four concise information cards instead of question trees or a content index.",
+        "tr": "Kullanıcı Assistant'ı Keşfet, Oluştur, Yenilikler ve Şeffaflık etrafında yeniden düzenlendi. Keşfet artık soru ağaçları veya içerik dizini yerine dört kısa bilgi kartı kullanıyor.",
+        "zh": "公共 Assistant 围绕探索、创作、更新和透明度重新设计；探索改为四个简洁信息卡片。",
+        "ar": "أعيد تصميم Assistant العام حول الاكتشاف والإنشاء والتحديثات والشفافية، وأصبح الاكتشاف أربع بطاقات معلومات مختصرة.",
+        "hi": "Public Assistant को Discover, Create, Updates और Transparency के आसपास सरल किया गया; Discover अब चार concise information cards उपयोग करता है।"
+      }
     }
   ]
 }
