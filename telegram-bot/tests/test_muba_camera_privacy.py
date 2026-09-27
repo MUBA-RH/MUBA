@@ -27,9 +27,10 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('"Cache-Control":"no-store, no-cache, must-revalidate, private"',handler)
   self.assertIn("source_bytes=None",handler)
  def test_camera_prompt_preserves_life_size_source_composition(self):
-  for required in ("input_image_1 as the PRIMARY image","same crop, same camera distance, same field of view","same head size in frame","same seated/standing posture","Keep adult human anatomy and the source person's exact body scale","Do not zoom in, recrop, reframe","No new environment, no portrait backdrop"):
+  for required in ("input_image_0 is the user's camera photograph and is the immutable base image","Do not regenerate the scene","localized character edit applied where the person's face/head is","exact position, size, rotation, tilt and perspective","Keep the photographed person's original body and outfit in place","No mascot body, no chibi body, no new background"):
    self.assertIn(required,STUDIO)
   self.assertIn("Do not preserve or identify biometric facial identity",STUDIO)
+
  def test_source_is_sent_only_as_ephemeral_ai_input(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
@@ -66,7 +67,7 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn("src.thumbnail((max_side,max_side)",STUDIO)
   self.assertIn("muba_ref=camera_reference_bytes(ref_path.read_bytes())",BOT)
   self.assertIn("source_ai=camera_reference_bytes(source_bytes)",BOT)
-  self.assertIn('form.add_field("input_image_1",source_ai',BOT)
+  self.assertIn('form.add_field("input_image_0",source_ai',BOT)
 
  def test_camera_result_has_clean_back_to_main_menu(self):
   self.assertIn('callback_data="camera_back"',BOT)
@@ -75,15 +76,16 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn("delete_message",BOT)
   self.assertIn("assistant_menu_text(lang)",BOT)
 
- def test_camera_prompt_keeps_source_scene_primary(self):
-  for required in ("input_image_1 as the PRIMARY image","same crop, same camera distance, same field of view","Do not zoom in, recrop, reframe","SECONDARY identity reference","Never copy input_image_0's crop, pose, cap, hoodie, background or portrait composition"):
-   self.assertIn(required,STUDIO)
-
  def test_success_quota_is_rolling_24_hours_from_first_production(self):
   self.assertIn('time.time()-used_at<86400',STUDIO)
   self.assertIn('row["used_at"]=now',STUDIO)
   self.assertNotIn('row["day"]!=day',STUDIO)
   self.assertIn('time.time()-used_at<86400',BOT)
   self.assertIn('row["used_at"]=time.time()',BOT)
+ def test_camera_sends_source_as_primary_reference(self):
+  self.assertIn('form.add_field("input_image_0",source_ai',BOT)
+  self.assertIn('form.add_field("input_image_1",muba_ref',BOT)
+  self.assertIn("1️⃣ Mesaj alanındaki 📎 simgesine dokun.",BOT)
+
 
 if __name__=="__main__":unittest.main()
