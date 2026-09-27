@@ -2922,6 +2922,28 @@
         "ar": "أزيل مدخل ASK MUBA المكرر، وتحول خيار البحث إلى فهرس مختصر من ثلاثة أعمدة يوجّه كل مفهوم إلى قسمه الرئيسي.",
         "hi": "दोहराव वाला ASK MUBA discovery entry हटाया गया और fallback को तीन-column short subject index में बदला गया जो हर concept को उसके canonical section पर ले जाता है।"
       }
+    },
+    {
+      "id": "20260927-assistant-discover-transition-fix",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Discover navigation transition fix",
+        "tr": "Keşfet gezinme geçişi düzeltmesi",
+        "zh": "探索导航切换修复",
+        "ar": "إصلاح انتقالات تنقل الاستكشاف",
+        "hi": "Discover navigation transition fix"
+      },
+      "text": {
+        "en": "Discover sections now return to the Discover hub instead of the retired ASK screen; Culture and Ecosystem open canonical content directly, and Community no longer repeats unrelated cross-menu entries.",
+        "tr": "Keşfet bölümleri artık kaldırılan MUBA'YA SOR ekranına değil Keşfet merkezine dönüyor; Kültür ve Ekosistem doğrudan kanonik içeriği açıyor, Topluluk ise ilgisiz menüleri tekrar etmiyor.",
+        "zh": "探索分类现在返回探索中心而不是已停用的 ASK 页面；文化和生态系统直接打开规范内容，社区不再重复无关菜单。",
+        "ar": "تعود أقسام الاستكشاف الآن إلى مركز الاستكشاف بدلاً من شاشة ASK المتوقفة؛ تفتح الثقافة والمنظومة المحتوى الأساسي مباشرة ولا يكرر المجتمع القوائم غير المرتبطة.",
+        "hi": "Discover sections अब retired ASK screen की जगह Discover hub पर लौटते हैं; Culture और Ecosystem canonical content सीधे खोलते हैं और Community unrelated menus दोहराता नहीं है।"
+      }
     }
   ]
 }
