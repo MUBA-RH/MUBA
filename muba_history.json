@@ -19,10 +19,35 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-intent-aware-edit",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Intent-aware Camera editing",
+        "tr": "Niyet duyarlı Camera düzenleme",
+        "zh": "意图感知 Camera 编辑",
+        "ar": "تحرير Camera وفق نية المستخدم",
+        "hi": "Intent-aware Camera editing"
+      },
+      "text": {
+        "en": "Camera now interprets the user's instruction before choosing an edit. Requests to be with MUBA keep the photographed person human and recognizable and add MUBA separately; person-to-MUBA transformation happens only when explicitly requested.",
+        "tr": "Camera artık düzenleme türünü seçmeden önce kullanıcının isteğini yorumlar. MUBA ile birlikte olma taleplerinde fotoğraftaki kişi insan ve tanınabilir kalır, MUBA ayrı karakter olarak eklenir; kişiyi MUBA'ya dönüştürme yalnızca açıkça istendiğinde uygulanır.",
+        "zh": "Camera 现在会先理解用户指令再决定编辑方式。要求与 MUBA 同框时，照片中的人物保持为可识别的人类，并将 MUBA 作为独立角色加入；只有用户明确要求时才会把人物转换为 MUBA。",
+        "ar": "يفسر Camera الآن طلب المستخدم قبل اختيار نوع التعديل. عند طلب الظهور مع MUBA يبقى الشخص في الصورة بشريًا وقابلًا للتعرّف ويُضاف MUBA كشخصية منفصلة؛ ولا يتم تحويل الشخص إلى MUBA إلا عند طلب ذلك صراحةً.",
+        "hi": "Camera अब edit चुनने से पहले user की instruction समझता है। MUBA के साथ होने वाले requests में photographed person human और recognizable रहता है और MUBA अलग character के रूप में जुड़ता है; person-to-MUBA transformation केवल explicit request पर होता है।"
+      }
+    },
+    {
       "id": "20260927-daily-story-origin-dev-language",
       "date": "2026-09-27",
       "type": "updated",
-      "areas": ["daily"],
+      "areas": [
+        "daily"
+      ],
       "title": {
         "en": "Daily Story origin and DEV language",
         "tr": "Günlük hikâyenin başlangıcı ve DEV dili",
