@@ -9,24 +9,29 @@ class CameraPrivacyTests(unittest.TestCase):
   ast.parse(BOT);ast.parse(CAMERA);ast.parse(STUDIO)
  def test_camera_button_arms_native_telegram_photo_flow(self):
   self.assertGreaterEqual(BOT.count('callback_data="camera_native"'),1)
-  self.assertIn('"create_hub","extra:story","daily_hub","category:world")',BOT)
-  self.assertIn('callback_data="content_index"',BOT)
+  self.assertIn('callback_data="create_hub"',BOT)
   self.assertIn('if data=="camera_native":',BOT)
   self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
   self.assertIn('MessageHandler(filters.PHOTO, muba_camera_photo',BOT)
- def test_discover_navigation_does_not_fall_back_to_ask_screen(self):
-  self.assertIn('callback_data="content_index"',BOT)
+ def test_simple_discover_navigation_has_four_clear_cards(self):
   self.assertIn('callback_data="discover_muba"',BOT)
-  self.assertIn('"ask_archive:culture","community_hub","ask_archive:ecosystem","create_hub"',BOT)
-  self.assertIn('rows=[buttons[i:i+3] for i in range(0,len(buttons),3)]',BOT)
-  self.assertIn('if data=="ask_muba":\n        await q.edit_message_text(content_index_text(lang)',BOT)
-  self.assertNotIn('callback_data="ask_muba")],[InlineKeyboardButton(g["system"]',BOT)
- def test_discover_community_has_no_cross_menu_duplicates(self):
-  start=BOT.index("def community_hub_keyboard")
-  end=BOT.index("def community_info_keyboard",start)
-  hub=BOT[start:end]
-  for duplicate in ('callback_data="updates_center"','callback_data="news"','callback_data="extra:story"','callback_data="create_hub"','callback_data="transparency_menu"','callback_data="devlog"'):
-   self.assertNotIn(duplicate,hub)
+  self.assertIn('("about","community","ecosystem","story")',BOT)
+  self.assertIn('if data.startswith("discover_info:"):',BOT)
+  self.assertNotIn('callback_data="content_index"',BOT)
+  self.assertNotIn('"missing":"🔍',BOT)
+ def test_main_menu_keeps_create_direct(self):
+  start=BOT.index("def menu_keyboard")
+  end=BOT.index("def updates_center_text",start)
+  menu=BOT[start:end]
+  self.assertIn('callback_data="discover_muba"',menu)
+  self.assertIn('callback_data="create_hub"',menu)
+  self.assertIn('callback_data="updates_center"',menu)
+  self.assertIn('callback_data="transparency_menu"',menu)
+ def test_discover_cards_return_to_discover(self):
+  start=BOT.index("def discover_info_keyboard")
+  end=BOT.index("def _section_back",start)
+  card=BOT[start:end]
+  self.assertIn('_section_back(lang,"discover_muba")',card)
  def test_legacy_camera_route_remains_isolated_from_native_entry(self):
   self.assertIn('app.router.add_get("/camera", camera_page_handler)',BOT)
   self.assertIn('app.router.add_post("/camera/generate", camera_generate_handler)',BOT)
