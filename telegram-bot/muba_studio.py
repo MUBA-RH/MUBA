@@ -94,15 +94,19 @@ def camera_reference_bytes(value:bytes,max_side:int=511)->bytes:
     return out.getvalue()
 
 def camera_ai_prompt(user_request:str="")->str:
-    request=clean_prompt(user_request) or "Transform this photo with MUBA while preserving the source scene."
+    request=clean_prompt(user_request) or "Create a natural MUBA-related edit from this photo."
     return (
-        "USER REQUEST: "+request+". Follow the user request as the transformation goal. "
-        "EDIT input_image_0. input_image_0 is the user's camera photograph and is the immutable base image. Keep the photograph itself: exact canvas orientation, crop, camera distance, field of view, background, room/outdoor environment, furniture, walls, objects, clothing, body, hands, pose, perspective, light and shadows. "
-        "Do not regenerate the scene and do not redesign the person. Do not zoom, crop, center, reframe or make a portrait. The output should look like the original camera photo with a localized character edit applied where the person's face/head is. "
-        "Replace/adapt only the visible human face and exposed head/skin area with MUBA identity from input_image_1, following the photographed head's exact position, size, rotation, tilt and perspective. MUBA must inherit the source head bounding box rather than imposing its own portrait proportions. "
-        "Use input_image_1 only to learn MUBA identity: tan-brown short dense fur, large asymmetrical glossy brown eyes, small rounded brown nose, compact furry muzzle, playful mouth and pink tongue. Do not copy input_image_1's cap, hoodie, crop, pose, background, camera distance or composition. "
-        "Keep the photographed person's original body and outfit in place. Blend the MUBA head naturally into the original neck/body with scene-matched lighting and shadows. No mascot body, no chibi body, no new background, no studio portrait, no character poster, no independent MUBA portrait. "
-        "Do not preserve or identify biometric facial identity. The source camera image is ephemeral input and must never be treated as gallery content."
+        "USER REQUEST: "+request+". The user's request is the highest-priority editing intent. "
+        "input_image_0 is the user's source photograph. input_image_1 is the MUBA identity reference. "
+        "First infer what the user is asking for; do not assume every request means transforming the photographed person into MUBA. "
+        "If the request says MUBA should be with, beside, next to, behind, in front of, or otherwise together with the person, KEEP THE PERSON HUMAN and recognizable from the source photo, including their natural face, hair, body and clothing, and add MUBA as a separate character. Never replace the person's head or face in this case. "
+        "If the request explicitly asks to transform the person into MUBA or apply MUBA traits to them, perform only that requested transformation and preserve as much of the person's original facial structure, expression, pose, body, clothing and recognizability as the request allows; avoid a pasted-on mascot head. "
+        "If the request asks to change the location, background, activity, props or scene, change those requested elements while keeping the person recognizable unless the user also explicitly asks to transform them. "
+        "For all other requests, make only the edits reasonably required by the user's words. Do not introduce an unsolicited MUBA face replacement. "
+        "Use input_image_1 to preserve MUBA's character identity when MUBA appears: tan-brown short dense fur, large expressive glossy brown eyes, small rounded brown nose, compact furry muzzle, playful mouth and pink tongue. "
+        "Preserve source-photo composition, camera perspective and the person's identity wherever compatible with the requested edit. Integrate additions naturally with coherent scale, lighting, shadows and perspective. "
+        "No arbitrary portrait reframing, no pasted head, no automatic mascot-body replacement, and no unrelated redesign. "
+        "The source camera image is ephemeral input and must never be treated as gallery content."
     )
 
 def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:
