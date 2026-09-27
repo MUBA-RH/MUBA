@@ -443,6 +443,23 @@ ASSISTANT_UI={
     "hi":{"ask":"💬 MUBA से पूछें","daily":"📰 MUBA दैनिक","create":"🎨 MUBA बनाएँ","studio":"🎭 MUBA स्टूडियो","community":"🧭 MUBA समुदाय","dev":"⚙️ DEV उपकरण","daily_story":"🎬 MUBA दैनिक कहानी","games":"🎮 MUBA ब्रेन गेम्स"},
 }
 
+DISCOVER_UI={
+    "en":{"title":"🧭 DISCOVER MUBA FROM START TO FINISH","intro":"Explore MUBA from identity to community, ecosystem, creation, story and current direction. Choose any topic or follow them in order.","items":["🌱 1 · MEET MUBA","✨ 2 · UNDERSTAND MUBA","🎭 3 · MUBA CULTURE","🌍 4 · MUBA COMMUNITY","💬 5 · ASK MUBA","🧠 6 · MUBA ECOSYSTEM","🎨 7 · CREATE WITH MUBA","📖 8 · MUBA STORY","📰 9 · FOLLOW MUBA","🚀 10 · MUBA TODAY & FUTURE"],"missing":"🔍 Couldn't find it? ASK MUBA"},
+    "tr":{"title":"🧭 MUBA'YI BAŞTAN SONA KEŞFET","intro":"MUBA'yı kimliğinden topluluğuna, ekosisteminden üretim araçlarına, hikâyesinden bugünkü yönüne kadar keşfet. İstediğin başlığı aç veya sırayla ilerle.","items":["🌱 1 · MUBA'YI TANI","✨ 2 · MUBA'YI ANLA","🎭 3 · MUBA KÜLTÜRÜ","🌍 4 · MUBA TOPLULUĞU","💬 5 · MUBA'YA SOR","🧠 6 · MUBA EKOSİSTEMİ","🎨 7 · MUBA İLE ÜRET","📖 8 · MUBA HİKÂYESİ","📰 9 · MUBA'YI TAKİP ET","🚀 10 · MUBA BUGÜN & GELECEK"],"missing":"🔍 Aradığını bulamadın mı? MUBA'YA SOR"},
+    "zh":{"title":"🧭 从头到尾探索 MUBA","intro":"从身份、社区和生态系统，到创作工具、故事与当前方向，完整探索 MUBA。选择任一主题或按顺序浏览。","items":["🌱 1 · 认识 MUBA","✨ 2 · 理解 MUBA","🎭 3 · MUBA 文化","🌍 4 · MUBA 社区","💬 5 · 询问 MUBA","🧠 6 · MUBA 生态系统","🎨 7 · 与 MUBA 创作","📖 8 · MUBA 故事","📰 9 · 关注 MUBA","🚀 10 · MUBA 今天与未来"],"missing":"🔍 没找到？询问 MUBA"},
+    "ar":{"title":"🧭 اكتشف MUBA من البداية إلى النهاية","intro":"اكتشف MUBA من الهوية والمجتمع والنظام البيئي إلى أدوات الإبداع والقصة والاتجاه الحالي. اختر أي موضوع أو تابع بالترتيب.","items":["🌱 1 · تعرّف على MUBA","✨ 2 · افهم MUBA","🎭 3 · ثقافة MUBA","🌍 4 · مجتمع MUBA","💬 5 · اسأل MUBA","🧠 6 · نظام MUBA البيئي","🎨 7 · أنشئ مع MUBA","📖 8 · قصة MUBA","📰 9 · تابع MUBA","🚀 10 · MUBA اليوم والمستقبل"],"missing":"🔍 لم تجد ما تريد؟ اسأل MUBA"},
+    "hi":{"title":"🧭 MUBA को शुरू से अंत तक जानें","intro":"MUBA की पहचान और community से लेकर ecosystem, creation tools, story और वर्तमान दिशा तक जानें। कोई भी विषय चुनें या क्रम से आगे बढ़ें।","items":["🌱 1 · MUBA को जानें","✨ 2 · MUBA को समझें","🎭 3 · MUBA CULTURE","🌍 4 · MUBA COMMUNITY","💬 5 · MUBA से पूछें","🧠 6 · MUBA ECOSYSTEM","🎨 7 · MUBA के साथ बनाएँ","📖 8 · MUBA STORY","📰 9 · MUBA को FOLLOW करें","🚀 10 · MUBA आज और भविष्य"],"missing":"🔍 नहीं मिला? MUBA से पूछें"},
+}
+
+def discover_muba_keyboard(lang,user_id):
+    d=DISCOVER_UI[lang]
+    targets=("category:discover","category:understand","ask_archive","community_hub","ask_muba","transparency_menu","create_hub","extra:story","daily_hub","category:world")
+    rows=[[InlineKeyboardButton(label,callback_data=target)] for label,target in zip(d["items"],targets)]
+    rows.append([InlineKeyboardButton(d["missing"],callback_data="ask_muba")])
+    rows.append([_section_back(lang)])
+    return InlineKeyboardMarkup(rows)
+
+
 def _section_back(lang,callback_data="menu"):
     return InlineKeyboardButton(TEXT[lang]["back"],callback_data=callback_data)
 
@@ -518,13 +535,9 @@ def menu_keyboard(lang,user_id=None):
     user_id=int(user_id or 0)
     updates_label=UPDATE_LABELS[lang]["center"]+_global_update_badge(lang,user_id)
     rows=[
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["community"],callback_data="community_hub")],
+        [InlineKeyboardButton(DISCOVER_UI[lang]["title"],callback_data="discover_muba")],
         [InlineKeyboardButton(updates_label,callback_data="updates_center")],
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
-        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
-        [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
     ]
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
@@ -855,6 +868,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_assistant_language(user_id); clear_conversation(user_id); await q.edit_message_text(TEXT["en"]["choose"],reply_markup=language_keyboard()); return
     if data=="menu":
         await q.edit_message_text(assistant_menu_text(lang),reply_markup=menu_keyboard(lang,user_id)); return
+    if data=="discover_muba":
+        await q.edit_message_text(DISCOVER_UI[lang]["title"]+"\n\n"+DISCOVER_UI[lang]["intro"],reply_markup=discover_muba_keyboard(lang,user_id)); return
     if data=="daily_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
