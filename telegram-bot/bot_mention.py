@@ -1393,7 +1393,9 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             raise RuntimeError("Günlük hak doğrulanamadı.")
         context.user_data.pop("muba_camera_waiting_photo",None)
         await status.edit_text("MUBA DÖNÜŞ %100 ✓\nVER → MUBA'N HAZIR ✓")
-        await message.reply_photo(photo=body,caption="📸 MUBA'N HAZIR ✓\nKaynak fotoğraf MUBA tarafından kalıcı kaydedilmedi. Gallery'ye yayınlanmadı.")
+        context.user_data.setdefault("muba_camera_message_ids",[]).append(status.message_id)
+        result_message=await message.reply_photo(photo=body,caption="📸 MUBA'N HAZIR ✓\nKaynak fotoğraf MUBA tarafından kalıcı kaydedilmedi. Gallery'ye yayınlanmadı.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅ ANA MENÜ",callback_data="camera_back")]]))
+        context.user_data.setdefault("muba_camera_message_ids",[]).append(result_message.message_id)
     except Exception:
         logger.exception("Native MUBA Camera transformation failed without source payload logging")
         await status.edit_text("⚠️ MUBA DÖNÜŞ başarısız. Günlük hakkın kullanılmadı. Yeni bir fotoğraf göndererek tekrar deneyebilirsin.")
