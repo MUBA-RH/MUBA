@@ -81,6 +81,14 @@ def _text_policy(prompt:str)->str:
         "Do not generate pseudo-text or random glyphs. This rule applies to Meme, Image, Sticker and Reaction formats."
     )
 
+def camera_reference_bytes(value:bytes,max_side:int=511)->bytes:
+    """Normalize Camera references to the FLUX.2 multi-reference input limit."""
+    src=Image.open(io.BytesIO(value)).convert("RGB")
+    src.thumbnail((max_side,max_side),Image.Resampling.LANCZOS)
+    out=io.BytesIO()
+    src.save(out,format="JPEG",quality=92,optimize=True)
+    return out.getvalue()
+
 def camera_ai_prompt()->str:
     return (
         "Transform the person in input_image_1 into a full-scale, human-proportioned MUBA adaptation while preserving the source photograph's exact pose, body scale, body proportions, framing, camera angle, perspective, clothing silhouette, background, scene layout and lighting. "
