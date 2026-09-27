@@ -2900,6 +2900,28 @@
         "ar": "يجمع Assistant الآن مسارات اكتشاف MUBA الحالية داخل مركز واحد من عشرة مواضيع، مع بقاء التحديثات وشفافية النظام وأدوات DEV وشفافية ترجمة DEV واختيار اللغة متاحة مباشرة.",
         "hi": "Assistant अब मौजूदा MUBA discovery paths को दस-विषय वाले एक केंद्र में समूहित करता है, जबकि Updates, System Transparency, DEV Tools, DEV Translation Transparency और language selection सीधे उपलब्ध रहते हैं।"
       }
+    },
+    {
+      "id": "20260927-assistant-canonical-content-index",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Canonical MUBA content index",
+        "tr": "Kanonik MUBA içerik dizini",
+        "zh": "MUBA 规范内容索引",
+        "ar": "فهرس محتوى MUBA الأساسي",
+        "hi": "Canonical MUBA content index"
+      },
+      "text": {
+        "en": "Removed the redundant ASK MUBA discovery entry and replaced the duplicate fallback with a compact three-column subject index that routes each concept to its canonical section.",
+        "tr": "Tekrar eden MUBA'YA SOR keşif girişi kaldırıldı; Aradığını Bulamadın mı alanı her kavramı asıl bölümüne yönlendiren üç sütunlu kısa içerik dizinine dönüştürüldü.",
+        "zh": "移除了重复的 ASK MUBA 探索入口，并将备用入口改为三列简短主题索引，每个概念都指向其主要位置。",
+        "ar": "أزيل مدخل ASK MUBA المكرر، وتحول خيار البحث إلى فهرس مختصر من ثلاثة أعمدة يوجّه كل مفهوم إلى قسمه الرئيسي.",
+        "hi": "दोहराव वाला ASK MUBA discovery entry हटाया गया और fallback को तीन-column short subject index में बदला गया जो हर concept को उसके canonical section पर ले जाता है।"
+      }
     }
   ]
 }

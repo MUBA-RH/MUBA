@@ -9,7 +9,8 @@ class CameraPrivacyTests(unittest.TestCase):
   ast.parse(BOT);ast.parse(CAMERA);ast.parse(STUDIO)
  def test_camera_button_arms_native_telegram_photo_flow(self):
   self.assertGreaterEqual(BOT.count('callback_data="camera_native"'),1)
-  self.assertIn('targets=("category:discover","category:understand","ask_archive","community_hub","ask_muba","transparency_menu","create_hub"',BOT)
+  self.assertIn('"create_hub","extra:story","daily_hub","category:world")',BOT)
+  self.assertIn('callback_data="content_index"',BOT)
   self.assertIn('if data=="camera_native":',BOT)
   self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
   self.assertIn('MessageHandler(filters.PHOTO, muba_camera_photo',BOT)
