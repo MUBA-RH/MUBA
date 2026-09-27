@@ -7,9 +7,11 @@ STUDIO=(ROOT/"muba_studio.py").read_text(encoding="utf-8")
 class CameraPrivacyTests(unittest.TestCase):
  def test_runtime_parses(self):
   ast.parse(BOT);ast.parse(CAMERA);ast.parse(STUDIO)
- def test_camera_button_opens_mini_app(self):
-  self.assertIn('/camera?uid=',BOT)
-  self.assertIn('WebAppInfo',BOT)
+ def test_camera_button_arms_native_telegram_photo_flow(self):
+  self.assertGreaterEqual(BOT.count('callback_data="camera_native"'),2)
+  self.assertIn('if data=="camera_native":',BOT)
+  self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
+  self.assertIn('MessageHandler(filters.PHOTO, muba_camera_photo',BOT)
  def test_camera_is_telegram_mini_app_route(self):
   self.assertIn('/camera?uid=',BOT)
   self.assertIn('app.router.add_get("/camera", camera_page_handler)',BOT)
