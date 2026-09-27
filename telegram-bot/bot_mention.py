@@ -445,7 +445,7 @@ def daily_hub_keyboard(lang):
 def create_hub_keyboard(lang,user_id):
     private_token=studio_token(user_id or 0,TOKEN)
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+private_token))],
+        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["studio"]+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/studio?uid="+str(user_id or 0)+"&st="+private_token))],
         [InlineKeyboardButton(AREA_LABELS[lang]["gallery"]+_update_badge(lang,user_id,"gallery"),callback_data="updates_area:gallery:0")],
         [InlineKeyboardButton(SHARE_LABELS[lang]["menu"],callback_data="share")],
@@ -511,7 +511,7 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(TRANSPARENCY_LABELS[lang],callback_data="transparency_menu")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["ask"],callback_data="ask_muba")],
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
-        [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
+        [InlineKeyboardButton("📸 MUBA CAMERA",callback_data="camera_native")],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
     ]
     if is_dev(user_id):
@@ -847,6 +847,16 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
+    if data=="camera_native":
+        context.user_data["muba_camera_waiting_photo"]=True
+        prompts={
+            "en":"📸 MUBA CAMERA\n\nOpen Telegram’s attachment menu, choose Camera, take your photo and send it here. MUBA will process it and return the result in this chat.",
+            "tr":"📸 MUBA CAMERA\n\nTelegram’ın ek menüsünü aç, Kamera’yı seç, fotoğrafını çek ve buraya gönder. MUBA işleyecek ve sonucu bu sohbette geri verecek.",
+            "zh":"📸 MUBA CAMERA\n\n打开 Telegram 附件菜单，选择相机，拍照并发送到这里。MUBA 会处理并在此聊天中返回结果。",
+            "ar":"📸 MUBA CAMERA\n\nافتح قائمة المرفقات في Telegram واختر الكاميرا والتقط صورتك ثم أرسلها هنا. سيعالجها MUBA ويعيد النتيجة في هذه المحادثة.",
+            "hi":"📸 MUBA CAMERA\n\nTelegram attachment menu खोलें, Camera चुनें, फोटो लें और यहाँ भेजें। MUBA उसे process करके result इसी chat में लौटाएगा।",
+        }
+        await q.edit_message_text(prompts.get(lang,prompts["en"]),reply_markup=InlineKeyboardMarkup([[_section_back(lang,"create_hub")]])); return
     if data=="community_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["community"],reply_markup=community_hub_keyboard(lang,user_id)); return
     if data.startswith("community_info:"):
