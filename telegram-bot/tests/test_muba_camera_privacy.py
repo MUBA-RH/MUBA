@@ -16,7 +16,9 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('app.router.add_post("/camera/generate", camera_generate_handler)',BOT)
   self.assertIn('navigator.mediaDevices.getUserMedia',CAMERA)
   self.assertIn('facingMode:"user"',CAMERA)
-  self.assertNotIn('type="file"',CAMERA)
+  self.assertIn('id="cameraFallback" type="file" accept="image/*" capture="user"',CAMERA)
+  self.assertIn('fallback.click()',CAMERA)
+  self.assertIn('fallback.onchange=',CAMERA)
  def test_source_is_not_persisted_or_published(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
