@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-local-face-scene-lock",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Camera source-scene face transform",
+        "tr": "Camera kaynak sahne yüz dönüşümü",
+        "zh": "Camera 源场景面部转换",
+        "ar": "تحويل وجه Camera داخل المشهد الأصلي",
+        "hi": "Camera source-scene face transform"
+      },
+      "text": {
+        "en": "Camera now sends the user's photograph as the primary edit image and MUBA as the secondary identity reference, explicitly preserving the original environment, framing, body and clothing while localizing the MUBA transformation to the photographed face/head region. Camera instructions were also made clearer.",
+        "tr": "Camera artık kullanıcının fotoğrafını birincil düzenleme görseli, MUBA'yı ikincil kimlik referansı olarak gönderir; orijinal ortamı, kadrajı, gövdeyi ve kıyafeti koruyup MUBA dönüşümünü fotoğraftaki yüz/baş bölgesine yerelleştirir. Camera kullanım açıklaması da daha anlaşılır hale getirildi.",
+        "zh": "Camera 现在将用户照片作为主要编辑图像、MUBA 作为次要身份参考，明确保留原始环境、构图、身体和服装，并将 MUBA 转换限定在照片中的面部/头部区域。Camera 使用说明也更加清晰。",
+        "ar": "يرسل Camera الآن صورة المستخدم كصورة التحرير الأساسية وMUBA كمرجع هوية ثانوي، مع الحفاظ صراحةً على البيئة والإطار والجسم والملابس الأصلية وحصر تحويل MUBA في منطقة الوجه/الرأس المصوَّرة. كما أصبحت تعليمات Camera أوضح.",
+        "hi": "Camera अब user photo को primary edit image और MUBA को secondary identity reference भेजता है, original environment, framing, body और clothing को बनाए रखते हुए MUBA transformation को photographed face/head region तक सीमित करता है। Camera instructions भी अधिक स्पष्ट किए गए हैं।"
+      }
+    },
+    {
       "id": "20260927-camera-scene-rolling-quota",
       "date": "2026-09-27",
       "type": "fixed",

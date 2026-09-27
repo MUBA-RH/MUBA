@@ -95,12 +95,12 @@ def camera_reference_bytes(value:bytes,max_side:int=511)->bytes:
 
 def camera_ai_prompt()->str:
     return (
-        "Perform an image-to-image character transformation of input_image_1. Treat input_image_1 as the PRIMARY image and preserve its composition with very high fidelity: same crop, same camera distance, same field of view, same head size in frame, same seated/standing posture, same shoulder and torso placement, same hand and arm placement, same clothing silhouette, same background geometry, same perspective and same lighting. "
-        "Do not zoom in, recrop, reframe, center, beautify or convert the scene into a portrait. Do not move the subject closer to the camera. The output must remain recognizably the same photograph and scene at first glance. "
-        "Transform only the photographed person's character identity into a life-size human-proportioned MUBA. Keep adult human anatomy and the source person's exact body scale; do not use mascot, chibi, toy, childlike or oversized-head proportions. "
-        "Use input_image_0 only as a SECONDARY identity reference for MUBA facial traits and fur: large asymmetrical glossy brown eyes, small rounded brown nose, compact furry muzzle, playful open mouth and pink tongue, short dense tan-brown fur. Never copy input_image_0's crop, pose, cap, hoodie, background or portrait composition. "
-        "Preserve the source outfit design and its placement. Integrate MUBA fur and facial traits into the source head orientation, perspective, shadows and lighting. Do not preserve or identify biometric facial identity. "
-        "No new environment, no portrait backdrop, no character poster, no floating head, no independent MUBA portrait. The source camera image is ephemeral input and must never be treated as gallery content."
+        "EDIT input_image_0. input_image_0 is the user's camera photograph and is the immutable base image. Keep the photograph itself: exact canvas orientation, crop, camera distance, field of view, background, room/outdoor environment, furniture, walls, objects, clothing, body, hands, pose, perspective, light and shadows. "
+        "Do not regenerate the scene and do not redesign the person. Do not zoom, crop, center, reframe or make a portrait. The output should look like the original camera photo with a localized character edit applied where the person's face/head is. "
+        "Replace/adapt only the visible human face and exposed head/skin area with MUBA identity from input_image_1, following the photographed head's exact position, size, rotation, tilt and perspective. MUBA must inherit the source head bounding box rather than imposing its own portrait proportions. "
+        "Use input_image_1 only to learn MUBA identity: tan-brown short dense fur, large asymmetrical glossy brown eyes, small rounded brown nose, compact furry muzzle, playful mouth and pink tongue. Do not copy input_image_1's cap, hoodie, crop, pose, background, camera distance or composition. "
+        "Keep the photographed person's original body and outfit in place. Blend the MUBA head naturally into the original neck/body with scene-matched lighting and shadows. No mascot body, no chibi body, no new background, no studio portrait, no character poster, no independent MUBA portrait. "
+        "Do not preserve or identify biometric facial identity. The source camera image is ephemeral input and must never be treated as gallery content."
     )
 
 def ai_payload(prompt:str,kind:str,reference_data_uri:str)->dict:

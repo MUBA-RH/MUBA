@@ -859,7 +859,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["muba_camera_message_ids"]=[q.message.message_id]
         prompts={
             "en":"📸 MUBA CAMERA\n\nOpen Telegram’s attachment menu, choose Camera, take your photo and send it here. MUBA will process it and return the result in this chat.",
-            "tr":"📸 MUBA CAMERA\n\nTelegram’ın ek menüsünü aç, Kamera’yı seç, fotoğrafını çek ve buraya gönder. MUBA işleyecek ve sonucu bu sohbette geri verecek.",
+            "tr":"📸 MUBA CAMERA\n\n1️⃣ Mesaj alanındaki 📎 simgesine dokun.\n2️⃣ Kamera’yı seç ve fotoğrafını çek.\n3️⃣ Fotoğrafı bu sohbete gönder.\n\nMUBA, çektiğin fotoğrafın ortamını ve kadrajını koruyarak seni MUBA’ya dönüştürür ve sonucu buraya gönderir.",
             "zh":"📸 MUBA CAMERA\n\n打开 Telegram 附件菜单，选择相机，拍照并发送到这里。MUBA 会处理并在此聊天中返回结果。",
             "ar":"📸 MUBA CAMERA\n\nافتح قائمة المرفقات في Telegram واختر الكاميرا والتقط صورتك ثم أرسلها هنا. سيعالجها MUBA ويعيد النتيجة في هذه المحادثة.",
             "hi":"📸 MUBA CAMERA\n\nTelegram attachment menu खोलें, Camera चुनें, फोटो लें और यहाँ भेजें। MUBA उसे process करके result इसी chat में लौटाएगा।",
@@ -1367,8 +1367,8 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         form=aiohttp.FormData()
         form.add_field("prompt",camera_ai_prompt())
         form.add_field("width","1024"); form.add_field("height","1024")
-        form.add_field("input_image_0",muba_ref,filename="muba-identity.png",content_type="image/png")
-        form.add_field("input_image_1",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
+        form.add_field("input_image_0",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
+        form.add_field("input_image_1",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
         session=context.application.bot_data.get("news_session")
         if session is None:
