@@ -61,4 +61,18 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertNotIn("/studio/share",CAMERA)
   self.assertNotIn("/gallery",CAMERA)
 
+ def test_camera_references_fit_flux_multi_reference_limit(self):
+  self.assertIn("def camera_reference_bytes(value:bytes,max_side:int=511)",STUDIO)
+  self.assertIn("src.thumbnail((max_side,max_side)",STUDIO)
+  self.assertIn("muba_ref=camera_reference_bytes(ref_path.read_bytes())",BOT)
+  self.assertIn("source_ai=camera_reference_bytes(source_bytes)",BOT)
+  self.assertIn('form.add_field("input_image_1",source_ai',BOT)
+
+ def test_camera_result_has_clean_back_to_main_menu(self):
+  self.assertIn('callback_data="camera_back"',BOT)
+  self.assertIn('if data=="camera_back":',BOT)
+  self.assertIn('"muba_camera_message_ids"',BOT)
+  self.assertIn("delete_message",BOT)
+  self.assertIn("assistant_menu_text(lang)",BOT)
+
 if __name__=="__main__":unittest.main()
