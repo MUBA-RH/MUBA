@@ -93,7 +93,8 @@ def camera_reference_bytes(value:bytes,max_side:int=511)->bytes:
     src.save(out,format="JPEG",quality=92,optimize=True)
     return out.getvalue()
 
-def camera_ai_prompt()->str:
+def camera_ai_prompt(user_request:str="")->str:
+    request=clean_prompt(user_request) or "Transform this photo with MUBA while preserving the source scene."
     return (
         "EDIT input_image_0. input_image_0 is the user's camera photograph and is the immutable base image. Keep the photograph itself: exact canvas orientation, crop, camera distance, field of view, background, room/outdoor environment, furniture, walls, objects, clothing, body, hands, pose, perspective, light and shadows. "
         "Do not regenerate the scene and do not redesign the person. Do not zoom, crop, center, reframe or make a portrait. The output should look like the original camera photo with a localized character edit applied where the person's face/head is. "
