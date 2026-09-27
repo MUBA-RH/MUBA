@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-life-size-source-fidelity",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Camera life-size source fidelity",
+        "tr": "Camera gerçek boyut kaynak uyumu",
+        "zh": "Camera 真人比例源图一致性",
+        "ar": "تطابق Camera بالحجم الواقعي",
+        "hi": "Camera life-size source fidelity"
+      },
+      "text": {
+        "en": "MUBA Camera transformation now preserves the source photo's pose, adult human body scale, proportions, framing, perspective, clothing silhouette, scene and lighting while adapting canonical MUBA identity onto the photographed subject.",
+        "tr": "MUBA Camera dönüşümü artık kanonik MUBA kimliğini fotoğraftaki kişiye uyarlarken kaynak fotoğrafın pozunu, yetişkin insan vücut ölçeğini, oranlarını, kadrajını, perspektifini, kıyafet siluetini, sahneyi ve ışığını korur.",
+        "zh": "MUBA Camera 转换现在会在将标准 MUBA 身份适配到照片人物时，保留源照片的姿势、成人身体尺度、比例、构图、透视、服装轮廓、场景和光线。",
+        "ar": "يحافظ تحويل MUBA Camera الآن على وضعية الصورة الأصلية وحجم جسم الإنسان البالغ ونسبه والإطار والمنظور وشكل الملابس والمشهد والإضاءة مع تكييف هوية MUBA الأساسية على الشخص المصوَّر.",
+        "hi": "MUBA Camera transformation अब canonical MUBA identity को photographed subject पर adapt करते समय source photo की pose, adult human body scale, proportions, framing, perspective, clothing silhouette, scene और lighting को बनाए रखता है।"
+      }
+    },
+    {
       "id": "20260927-camera-native-telegram-final",
       "date": "2026-09-27",
       "type": "fixed",
