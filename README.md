@@ -1,5 +1,21 @@
 # MUBA — WE LIVE HERE NOW
 
+## Explore the MUBA ecosystem
+
+Choose an area to see its modules and direct links to the working sources. The six module repositories are documentation and navigation spaces; production stays in this repository.
+
+| Area | Open the preview |
+| --- | --- |
+| **CORE** — Kimlik, yapılandırma, yetki, bilgi ve süreklilik | [Explore MUBA-CORE](https://github.com/MUBA-RH/MUBA-CORE/tree/preview/ecosystem-navigation-20260928) |
+| **ASSISTANT** — Asistan, keşif, sohbet ve arayüz | [Explore MUBA-ASSISTANT](https://github.com/MUBA-RH/MUBA-ASSISTANT/tree/preview/ecosystem-navigation-20260928) |
+| **GUARDIAN** — DEV yetkisi ve grup güvenliği | [Explore MUBA-GUARDIAN](https://github.com/MUBA-RH/MUBA-GUARDIAN/tree/preview/ecosystem-navigation-20260928) |
+| **CREATIVE** — Studio, Gallery ve görsel kimlik | [Explore MUBA-CREATIVE](https://github.com/MUBA-RH/MUBA-CREATIVE/tree/preview/ecosystem-navigation-20260928) |
+| **DAILY-STORY** — Özel arşiv, hikâye üretimi ve DEV onayı | [Explore MUBA-DAILY-STORY](https://github.com/MUBA-RH/MUBA-DAILY-STORY/tree/preview/ecosystem-navigation-20260928) |
+| **WEB** — Web sitesi, halka açık alanlar ve yayın | [Explore MUBA-WEB](https://github.com/MUBA-RH/MUBA-WEB/tree/preview/ecosystem-navigation-20260928) |
+
+**Source of truth:** this repository's `main` branch. Daily Story is private and visible only to authorized accounts.
+
+
 MUBA is an original meme character, a culture and a community.
 
 **I'M MUBA.**  
