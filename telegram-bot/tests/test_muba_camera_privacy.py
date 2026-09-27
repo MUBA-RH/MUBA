@@ -26,10 +26,17 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('"X-MUBA-Gallery-Published":"false"',handler)
   self.assertIn('"Cache-Control":"no-store, no-cache, must-revalidate, private"',handler)
   self.assertIn("source_bytes=None",handler)
- def test_camera_prompt_preserves_life_size_source_composition(self):
-  for required in ("input_image_0 is the user's camera photograph and is the immutable base image","Do not regenerate the scene","localized character edit applied where the person's face/head is","exact position, size, rotation, tilt and perspective","Keep the photographed person's original body and outfit in place","No mascot body, no chibi body, no new background"):
+ def test_camera_prompt_is_intent_aware(self):
+  for required in (
+   "do not assume every request means transforming the photographed person into MUBA",
+   "KEEP THE PERSON HUMAN and recognizable",
+   "Never replace the person's head or face in this case",
+   "explicitly asks to transform the person into MUBA",
+   "preserve as much of the person's original facial structure",
+   "change the location, background, activity, props or scene",
+   "No arbitrary portrait reframing, no pasted head",
+  ):
    self.assertIn(required,STUDIO)
-  self.assertIn("Do not preserve or identify biometric facial identity",STUDIO)
 
  def test_source_is_sent_only_as_ephemeral_ai_input(self):
   start=BOT.index("async def camera_generate_handler")
