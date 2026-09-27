@@ -13,9 +13,9 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('if data=="camera_native":',BOT)
   self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
   self.assertIn('MessageHandler(filters.PHOTO, muba_camera_photo',BOT)
- def test_simple_discover_navigation_has_four_clear_cards(self):
+ def test_simple_discover_navigation_has_five_clear_cards(self):
   self.assertIn('callback_data="discover_muba"',BOT)
-  self.assertIn('("about","community","ecosystem","story")',BOT)
+  self.assertIn('("about","story","culture","ecosystem","future")',BOT)
   self.assertIn('if data.startswith("discover_info:"):',BOT)
   self.assertNotIn('callback_data="content_index"',BOT)
   self.assertNotIn('"missing":"🔍',BOT)
