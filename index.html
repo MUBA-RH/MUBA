@@ -931,7 +931,7 @@
         const payload=await response.json(); const story=payload.story;
         if(!story) return;
         document.getElementById("story-date").textContent=story.day;
-        document.getElementById("story-theme").textContent=story.story_tr||story.story||story.summary||"";
+        document.getElementById("story-theme").textContent=story.story||story.summary||"Today's story is waiting for its English text.";
         const grid=document.getElementById("story-grid");
         const urls=Array.isArray(story.image_urls)?story.image_urls:[];
         if(urls.length!==1 && urls.length!==4){
