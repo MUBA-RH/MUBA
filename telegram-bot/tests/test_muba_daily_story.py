@@ -19,7 +19,7 @@ class DailyStoryTests(unittest.TestCase):
         self.addCleanup(patch.stop)
 
     def test_each_day_is_short_connected_and_one_scene(self):
-        for n in range(7):
+        for n in range(2):
             day = (muba_story.START + __import__('datetime').timedelta(days=n)).isoformat()
             item = muba_story.draft(day)
             self.assertTrue(150 <= len(item['story']) <= 170)
@@ -34,21 +34,30 @@ class DailyStoryTests(unittest.TestCase):
                 self.assertEqual(item['previous_day'],
                                  (muba_story.START + __import__('datetime').timedelta(days=n - 1)).isoformat())
 
-    def test_new_episode_must_be_prepared_after_first_arc_and_uses_prior_text(self):
-        day = '2026-10-03'
+    def test_new_origin_starts_without_experiments_and_next_day_requires_it(self):
+        day = '2026-09-29'
         with self.assertRaisesRegex(RuntimeError, 'awaiting a new connected episode'):
             muba_story.draft(day)
-        episode = {'title': 'A New Neighbor', 'title_tr': 'Yeni Komşu',
-                   'story': 'MUBA follows the new arrow beyond the square, where a neighbor has set out colorful paper. They fold a little boat together and send it along the stream.',
-                   'story_tr': 'MUBA yeni oku izleyip meydanı geçer; bir komşu rengârenk kâğıtlar bırakmıştır. Birlikte küçük bir kayık yapar ve onu şırıl şırıl akan dereye bırakırlar.',
-                   'scene': 'MUBA and a neighbor folding a paper boat near a sunny stream'}
-        # Validate both languages without weakening the public character gate.
-        episode['story'] += ' Everyone waves.'
-        episode['story_tr'] += ' Herkes gülümser.'
+        episode = {'title': 'A Name on the Street', 'title_tr': 'Sokakta Bir İsim',
+                   'story': 'The young stranger unfolds the paper for the others to see. Someone sketches the little name on a window; soon the whole block begins asking where it came from.',
+                   'story_tr': 'Genç, kâğıdı açıp çevresindekilere gösterir. Biri adı dükkân camına çizer; sokaktan geçenler durup bu sözcüğün nereden geldiğini birbirlerine sormaya başlar.',
+                   'story_zh': '年轻人打开纸张给大家看，人群聚了过来。有人把这个名字画在商店玻璃上，路过的陌生人也停下脚步，好奇地打听它从何而来。',
+                   'story_ar': 'يفتح الشاب الورقة ليراها الجميع. يرسم أحدهم الاسم على زجاج متجر، وسرعان ما يتوقف المارة ليسألوا من أين جاء هذا الاسم الغريب.',
+                   'story_hi': 'युवा कागज़ खोलकर सबको दिखाता है। कोई दुकान की खिड़की पर नाम बनाता है; राहगीर रुकते हैं और पूछने लगते हैं कि यह नाम कहाँ से आया।',
+                   'scene': 'city storefront window, a young person showing the paper to a curious crowd'}
         self.assertTrue(150 <= len(episode['story']) <= 170)
         self.assertTrue(150 <= len(episode['story_tr']) <= 170)
+        with self.assertRaisesRegex(RuntimeError, 'preceding canonical episode'):
+            muba_story.save_episode(day, episode)
+        origin = {'title': 'The Paper', 'title_tr': 'Uçan Kâğıt',
+                  'story': 'A paper marked “MUBA” glides above a busy city crowd. The wind drops it into a young person\'s hand; they smile, and strangers pause to look at the same name.',
+                  'story_tr': 'Kalabalık caddede “MUBA” yazılı bir kâğıt başların üstünden süzülür. Rüzgâr onu bir gencin eline bırakır; genç gülümser, kalabalık ilk kez aynı söze bakar.',
+                  'story_zh': episode['story_zh'], 'story_ar': episode['story_ar'], 'story_hi': episode['story_hi'],
+                  'scene': 'paper flying above a human crowd on a lively city street'}
+        first = muba_story.save_episode(muba_story.ORIGIN_START.isoformat(), origin)
+        self.assertIsNone(first['previous_day'])
         item = muba_story.save_episode(day, episode)
-        self.assertEqual(item['previous_day'], '2026-10-02')
+        self.assertEqual(item['previous_day'], muba_story.ORIGIN_START.isoformat())
         self.assertEqual(item['story'], episode['story'])
         self.assertEqual(muba_story.draft(day)['story'], episode['story'])
 
