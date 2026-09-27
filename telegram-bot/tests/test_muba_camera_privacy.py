@@ -33,7 +33,7 @@ class CameraPrivacyTests(unittest.TestCase):
    "Never replace the person's head or face in this case",
    "explicitly asks to transform the person into MUBA",
    "preserve as much of the person's original facial structure",
-   "change the location, background, activity, props or scene",
+   "destination, setting, environment or scene",
    "No arbitrary portrait reframing, no pasted head",
   ):
    self.assertIn(required,STUDIO)
