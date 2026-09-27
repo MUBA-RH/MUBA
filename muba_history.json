@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260927-discover-muba-five-path-ux",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Discover MUBA navigation redesign",
+        "tr": "MUBA'yı Keşfet navigasyon yenilemesi",
+        "zh": "探索 MUBA 导航更新",
+        "ar": "تحديث تنقل اكتشف MUBA",
+        "hi": "Discover MUBA navigation update"
+      },
+      "text": {
+        "en": "Discover MUBA now synthesizes the existing knowledge into five clear paths: MUBA, Story, Culture, Ecosystem, and Today & Future. The main Assistant menu remains unchanged, and detail pages return to the Discover MUBA parent instead of unexpectedly jumping to the main menu.",
+        "tr": "MUBA'yı Keşfet, mevcut bilgi içeriğini artık beş net yolda sentezler: MUBA, Hikâye, Kültür, Ekosistem ve Bugün & Gelecek. Ana Assistant menüsü değişmeden korunur; detay sayfalarındaki Geri akışı kullanıcıyı beklenmedik biçimde Ana Menü'ye atmak yerine MUBA'yı Keşfet üst katmanına döndürür.",
+        "zh": "探索 MUBA 现在将现有知识整合为五条清晰路径：MUBA、故事、文化、生态系统、今天与未来。Assistant 主菜单保持不变，详情页返回探索 MUBA 上级页面。",
+        "ar": "يجمع قسم اكتشف MUBA المعرفة الحالية الآن في خمسة مسارات واضحة: MUBA والقصة والثقافة والنظام البيئي واليوم والمستقبل. تبقى قائمة Assistant الرئيسية دون تغيير وتعود صفحات التفاصيل إلى قسم اكتشف MUBA.",
+        "hi": "Discover MUBA अब मौजूदा knowledge को पाँच साफ paths में व्यवस्थित करता है: MUBA, Story, Culture, Ecosystem और Today & Future. Main Assistant menu unchanged रहता है और detail pages वापस Discover MUBA parent पर जाते हैं।"
+      }
+    },
+    {
       "id": "20260927-camera-scene-intent-baseline",
       "date": "2026-09-27",
       "type": "fixed",
