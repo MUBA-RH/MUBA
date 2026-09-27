@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260927-daily-story-private-handoff",
+      "date": "2026-09-27",
+      "type": "improved",
+      "areas": [
+        "daily"
+      ],
+      "title": {
+        "en": "Private Daily Story draft and DEV review",
+        "tr": "Özel günlük hikâye taslağı ve DEV onayı",
+        "zh": "私人每日故事草稿和开发者审核",
+        "ar": "مسودة القصة اليومية الخاصة ومراجعة المطور",
+        "hi": "निजी डेली स्टोरी ड्राफ़्ट और DEV समीक्षा"
+      },
+      "text": {
+        "en": "Daily Story keeps the dated story and one wide scene in a private GitHub archive. The DEV Telegram view reads the draft and requires approval before separate web publication.",
+        "tr": "Günlük hikâye tarihli metni ve tek yatay görseli özel GitHub arşivinde tutar. Telegram DEV görünümü taslağı okur; ayrı web yayını öncesinde onay ister.",
+        "zh": "每日故事将日期故事和单幅宽幅画面保存在私人 GitHub 档案中。Telegram 开发者页面读取草稿，单独发布到网站前须经批准。",
+        "ar": "تحفظ القصة اليومية النص المؤرخ وصورة أفقية واحدة في أرشيف GitHub خاص. تقرأ واجهة المطور في تيليغرام المسودة وتتطلب الموافقة قبل النشر المنفصل على الموقع.",
+        "hi": "डेली स्टोरी तारीख़ सहित कहानी और एक चौड़ा दृश्य निजी GitHub संग्रह में रखती है। Telegram DEV ड्राफ़्ट पढ़ता है और अलग वेब प्रकाशन से पहले स्वीकृति मांगता है।"
+      }
+    },
+    {
       "id": "20260927-v3-camera-permission-bridge",
       "date": "2026-09-27",
       "type": "fixed",
