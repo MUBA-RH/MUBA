@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-automatic-capture-fallback",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Camera automatic capture fallback",
+        "tr": "Camera otomatik çekim yedeği",
+        "zh": "Camera 自动拍摄回退",
+        "ar": "بديل تلقائي لالتقاط Camera",
+        "hi": "Camera automatic capture fallback"
+      },
+      "text": {
+        "en": "MUBA Camera now tries live Mini App video first and automatically opens the device camera capture control when the Telegram WebView cannot provide live camera access. The existing AL → İŞLE → VER transformation, privacy and quota flow is preserved.",
+        "tr": "MUBA Camera artık önce canlı Mini App kamerasını dener; Telegram WebView canlı kamera erişimi sağlayamazsa cihazın kamera çekim kontrolünü otomatik açar. Mevcut AL → İŞLE → VER dönüşüm, gizlilik ve kota akışı korunur.",
+        "zh": "MUBA Camera 会先尝试 Mini App 实时摄像头；若 Telegram WebView 无法提供实时访问，则自动打开设备拍摄控件，并保留现有转换、隐私和配额流程。",
+        "ar": "تحاول MUBA Camera أولاً تشغيل الكاميرا المباشرة داخل Mini App، وإذا تعذر ذلك تفتح تلقائياً أداة التقاط الكاميرا في الجهاز مع الحفاظ على مسار التحويل والخصوصية والحصة.",
+        "hi": "MUBA Camera पहले Mini App live camera आज़माता है; Telegram WebView live access न दे तो device camera capture control अपने-आप खोलता है और मौजूदा transformation, privacy तथा quota flow बनाए रखता है।"
+      }
+    },
+    {
       "id": "20260927-daily-story-private-handoff",
       "date": "2026-09-27",
       "type": "improved",
