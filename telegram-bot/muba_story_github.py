@@ -68,6 +68,16 @@ def _get(day, filename):
     result = _api(_path(day, filename) + "?ref=" + quote(branch, safe=""))
     if result is None:
         return None, None
+    # GitHub omits inline content for files larger than 1 MB. The Git blob
+    # endpoint still returns their base64 bytes using the same read-only token.
+    if result.get("encoding") == "none" or not result.get("content"):
+        sha = result.get("sha", "")
+        if not sha or not all(char in "0123456789abcdef" for char in sha.lower()):
+            raise RuntimeError("Daily Story GitHub file has no valid blob SHA")
+        blob = _api("/git/blobs/" + sha)
+        if not blob or blob.get("encoding") != "base64" or not blob.get("content"):
+            raise RuntimeError("Daily Story GitHub blob content is unavailable")
+        return base64.b64decode(blob["content"]), sha
     return base64.b64decode(result["content"]), result["sha"]
 
 

@@ -55,6 +55,19 @@ class PrivateArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "changed"):
             archive.read_day("2026-09-26")
 
+    def test_large_github_scene_is_read_from_git_blob(self):
+        picture = b"scene" * 225000  # exceeds GitHub Contents API's 1 MB inline limit
+        blob_sha = "a" * 40
+        def api(path, method="GET", body=None):
+            if path.startswith("/contents/"):
+                return {"sha": blob_sha, "encoding": "none", "content": "", "size": len(picture)}
+            if path == "/git/blobs/" + blob_sha:
+                return {"sha": blob_sha, "encoding": "base64",
+                        "content": base64.b64encode(picture).decode("ascii")}
+            raise AssertionError(path)
+        with mock.patch.object(archive, "_api", side_effect=api):
+            self.assertEqual(archive._get("2026-09-27", "scene.png"), (picture, blob_sha))
+
     def test_public_repository_is_rejected_before_upload(self):
         with mock.patch.dict(os.environ, {"MUBA_STORY_GITHUB_REPO": "MUBA-RH/MUBA"}):
             with self.assertRaisesRegex(RuntimeError, "public MUBA"):

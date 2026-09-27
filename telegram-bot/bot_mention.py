@@ -900,7 +900,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             body,markup=_story_director_panel(item)
         except (RuntimeError,ValueError):
             logger.exception("Daily Story day unavailable")
-            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nBu günün hikâyesi henüz hazır değil.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
+            await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGünün hikâyesi veya görseli okunamadı. Kaynak bağlantısını kontrol edip yeniden deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Tekrar dene",callback_data="story_director")],[InlineKeyboardButton("⬅️ Ana menü",callback_data="menu")]])); return
         await q.edit_message_text(body,reply_markup=markup)
         if item["images"]:
             await _story_send_preview(q.message,item)
