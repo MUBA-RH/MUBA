@@ -14,6 +14,19 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('if data=="camera_native":',BOT)
   self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
   self.assertIn('MessageHandler(filters.PHOTO, muba_camera_photo',BOT)
+ def test_discover_navigation_does_not_fall_back_to_ask_screen(self):
+  self.assertIn('callback_data="content_index"',BOT)
+  self.assertIn('callback_data="discover_muba"',BOT)
+  self.assertIn('"ask_archive:culture","community_hub","ask_archive:ecosystem","create_hub"',BOT)
+  self.assertIn('rows=[buttons[i:i+3] for i in range(0,len(buttons),3)]',BOT)
+  self.assertIn('if data=="ask_muba":\n        await q.edit_message_text(content_index_text(lang)',BOT)
+  self.assertNotIn('callback_data="ask_muba")],[InlineKeyboardButton(g["system"]',BOT)
+ def test_discover_community_has_no_cross_menu_duplicates(self):
+  start=BOT.index("def community_hub_keyboard")
+  end=BOT.index("def community_info_keyboard",start)
+  hub=BOT[start:end]
+  for duplicate in ('callback_data="updates_center"','callback_data="news"','callback_data="extra:story"','callback_data="create_hub"','callback_data="transparency_menu"','callback_data="devlog"'):
+   self.assertNotIn(duplicate,hub)
  def test_legacy_camera_route_remains_isolated_from_native_entry(self):
   self.assertIn('app.router.add_get("/camera", camera_page_handler)',BOT)
   self.assertIn('app.router.add_post("/camera/generate", camera_generate_handler)',BOT)
