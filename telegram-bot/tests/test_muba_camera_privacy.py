@@ -7,18 +7,15 @@ STUDIO=(ROOT/"muba_studio.py").read_text(encoding="utf-8")
 class CameraPrivacyTests(unittest.TestCase):
  def test_runtime_parses(self):
   ast.parse(BOT);ast.parse(CAMERA);ast.parse(STUDIO)
- def test_camera_button_opens_mini_app(self):
-  self.assertIn('/camera?uid=',BOT)
-  self.assertIn('WebAppInfo',BOT)
- def test_camera_is_telegram_mini_app_route(self):
-  self.assertIn('/camera?uid=',BOT)
+ def test_camera_button_arms_native_telegram_photo_flow(self):
+  self.assertGreaterEqual(BOT.count('callback_data="camera_native"'),2)
+  self.assertIn('if data=="camera_native":',BOT)
+  self.assertIn('context.user_data["muba_camera_waiting_photo"]=True',BOT)
+  self.assertIn('MessageHandler(filters.PHOTO, muba_camera_photo',BOT)
+ def test_legacy_camera_route_remains_isolated_from_native_entry(self):
   self.assertIn('app.router.add_get("/camera", camera_page_handler)',BOT)
   self.assertIn('app.router.add_post("/camera/generate", camera_generate_handler)',BOT)
-  self.assertIn('navigator.mediaDevices.getUserMedia',CAMERA)
-  self.assertIn('facingMode:"user"',CAMERA)
-  self.assertIn('id="cameraFallback" type="file" accept="image/*" capture="user"',CAMERA)
-  self.assertIn('fallback.click()',CAMERA)
-  self.assertIn('fallback.onchange=',CAMERA)
+  self.assertNotIn('web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="',BOT)
  def test_source_is_not_persisted_or_published(self):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
