@@ -19,6 +19,28 @@
   },
   "entries": [
     {
+      "id": "20260927-games-module-removed",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "telegram"
+      ],
+      "title": {
+        "en": "Game module removed",
+        "tr": "Oyun modu kaldırıldı",
+        "zh": "游戏模块已移除",
+        "ar": "تمت إزالة وحدة الألعاب",
+        "hi": "गेम मॉड्यूल हटाया गया"
+      },
+      "text": {
+        "en": "The game entry has been removed from the MUBA Telegram experience.",
+        "tr": "Oyun girişi MUBA Telegram deneyiminden kaldırıldı.",
+        "zh": "游戏入口已从 MUBA Telegram 体验中移除。",
+        "ar": "تمت إزالة مدخل الألعاب من تجربة MUBA على Telegram.",
+        "hi": "MUBA Telegram अनुभव से गेम एंट्री हटा दी गई है।"
+      }
+    },
+    {
       "id": "20260927-camera-mini-app-restored",
       "date": "2026-09-27",
       "type": "fixed",
