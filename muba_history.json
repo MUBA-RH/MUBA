@@ -2878,6 +2878,28 @@
         "ar": "يوقظ طلب القصة اليومية المجدول الخدمة عند الساعة 08:30 بتوقيت إسطنبول ويبدأ إعداد صورة اليوم الوحيدة للمراجعة قبل الساعة 11:00.",
         "hi": "तय डेली स्टोरी अनुरोध इस्तांबुल समयानुसार सुबह 08:30 बजे सेवा जगाता है और 11:00 बजे से पहले समीक्षा के लिए आज की एक छवि तैयार करना शुरू करता है।"
       }
+    },
+    {
+      "id": "20260927-assistant-discover-muba-hub",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "Discover MUBA navigation hub",
+        "tr": "MUBA'yı Baştan Sona Keşfet merkezi",
+        "zh": "从头到尾探索 MUBA 导航中心",
+        "ar": "مركز اكتشاف MUBA من البداية إلى النهاية",
+        "hi": "MUBA को शुरू से अंत तक जानने का केंद्र"
+      },
+      "text": {
+        "en": "Assistant now groups existing MUBA discovery paths under one ten-topic Discover MUBA hub while Updates, System Transparency, DEV Tools, DEV Translation Transparency and language selection remain directly accessible.",
+        "tr": "Assistant artık mevcut MUBA keşif yollarını on başlıklı tek bir MUBA'yı Baştan Sona Keşfet merkezinde topluyor; Yenilikler, Sistem Şeffaflığı, DEV Araçları, DEV Çeviri Şeffaflığı ve dil seçimi doğrudan erişilebilir kalıyor.",
+        "zh": "Assistant 现在将现有 MUBA 探索路径集中到一个包含十个主题的“从头到尾探索 MUBA”中心，同时更新、系统透明度、DEV 工具、DEV 翻译透明度和语言选择仍可直接访问。",
+        "ar": "يجمع Assistant الآن مسارات اكتشاف MUBA الحالية داخل مركز واحد من عشرة مواضيع، مع بقاء التحديثات وشفافية النظام وأدوات DEV وشفافية ترجمة DEV واختيار اللغة متاحة مباشرة.",
+        "hi": "Assistant अब मौजूदा MUBA discovery paths को दस-विषय वाले एक केंद्र में समूहित करता है, जबकि Updates, System Transparency, DEV Tools, DEV Translation Transparency और language selection सीधे उपलब्ध रहते हैं।"
+      }
     }
   ]
 }
