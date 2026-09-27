@@ -859,7 +859,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["muba_camera_message_ids"]=[q.message.message_id]
         prompts={
             "en":"📸 MUBA CAMERA\n\nOpen Telegram’s attachment menu, choose Camera, take your photo and send it here. MUBA will process it and return the result in this chat.",
-            "tr":"📸 MUBA CAMERA\n\n1️⃣ Mesaj alanındaki 📎 simgesine dokun.\n2️⃣ Kamera’yı seç ve fotoğrafını çek.\n3️⃣ Fotoğrafı bu sohbete gönder.\n\nMUBA, çektiğin fotoğrafın ortamını ve kadrajını koruyarak seni MUBA’ya dönüştürür ve sonucu buraya gönderir.",
+            "tr":"📸 MUBA CAMERA\n\n1️⃣ 📎 simgesine dokun ve Kamera’yı aç.\n2️⃣ Fotoğrafını çekip bu sohbete gönder.\n3️⃣ Fotoğraf geldikten sonra MUBA sana ne olmasını istediğini soracak. İsteğini tek mesajla kısaca yaz.\n4️⃣ MUBA fotoğrafını ve isteğini birlikte işleyip sonucu buraya gönderecek.\n\nGünlük hakkın yalnızca başarılı bir görsel üretildiğinde kullanılır.",
             "zh":"📸 MUBA CAMERA\n\n打开 Telegram 附件菜单，选择相机，拍照并发送到这里。MUBA 会处理并在此聊天中返回结果。",
             "ar":"📸 MUBA CAMERA\n\nافتح قائمة المرفقات في Telegram واختر الكاميرا والتقط صورتك ثم أرسلها هنا. سيعالجها MUBA ويعيد النتيجة في هذه المحادثة.",
             "hi":"📸 MUBA CAMERA\n\nTelegram attachment menu खोलें, Camera चुनें, फोटो लें और यहाँ भेजें। MUBA उसे process करके result इसी chat में लौटाएगा।",
@@ -1335,27 +1335,9 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
     except Exception:
         logger.exception("Guardian DEV private report failed")
 
-async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Private native Telegram photo -> ephemeral MUBA transformation -> Telegram result."""
-    message=update.effective_message; user=update.effective_user; chat=update.effective_chat
-    if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not message.photo:
-        return
-    if not context.user_data.get("muba_camera_waiting_photo",False):
-        return
-    uid=int(user.id)
-    if not is_dev(uid) and remaining(uid)<=0:
-        context.user_data.pop("muba_camera_waiting_photo",None)
-        await message.reply_text("📸 Günlük MUBA CAMERA hakkın kullanıldı — 1/1.")
-        return
-    if not ai_configured():
-        await message.reply_text("⚠️ MUBA AI şu anda hazır değil. Günlük hakkın kullanılmadı.")
-        return
-    status=await message.reply_text("MUBA DÖNÜŞ %10\nAL → Fotoğraf alındı ✓")
-    source_bytes=None
+async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,user_request:str):
+    status=await message.reply_text("MUBA DÖNÜŞ %10\nAL → Fotoğraf + isteğin alındı ✓")
     try:
-        tg_file=await context.bot.get_file(message.photo[-1].file_id,read_timeout=30)
-        source_bytes=bytes(await tg_file.download_as_bytearray(read_timeout=60))
-        context.user_data.setdefault("muba_camera_message_ids",[]).append(message.message_id)
         await status.edit_text("MUBA DÖNÜŞ %35\nİŞLE → MUBA hazırlanıyor...")
         if len(source_bytes)>8*1024*1024:
             raise RuntimeError("Fotoğraf çok büyük.")
@@ -1365,7 +1347,7 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         muba_ref=camera_reference_bytes(ref_path.read_bytes())
         source_ai=camera_reference_bytes(source_bytes)
         form=aiohttp.FormData()
-        form.add_field("prompt",camera_ai_prompt())
+        form.add_field("prompt",camera_ai_prompt(user_request))
         form.add_field("width","1024"); form.add_field("height","1024")
         form.add_field("input_image_0",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
         form.add_field("input_image_1",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
@@ -1391,16 +1373,55 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             raise RuntimeError("Üretim sonucu boş.")
         if not is_dev(uid) and not consume(uid):
             raise RuntimeError("Günlük hak doğrulanamadı.")
-        context.user_data.pop("muba_camera_waiting_photo",None)
+        context.user_data.pop("muba_camera_waiting_instruction",None)
+        context.user_data.pop("muba_camera_source_bytes",None)
         await status.edit_text("MUBA DÖNÜŞ %100 ✓\nVER → MUBA'N HAZIR ✓")
         context.user_data.setdefault("muba_camera_message_ids",[]).append(status.message_id)
         result_message=await message.reply_photo(photo=body,caption="📸 MUBA'N HAZIR ✓\nKaynak fotoğraf MUBA tarafından kalıcı kaydedilmedi. Gallery'ye yayınlanmadı.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅ ANA MENÜ",callback_data="camera_back")]]))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(result_message.message_id)
     except Exception:
         logger.exception("Native MUBA Camera transformation failed without source payload logging")
-        await status.edit_text("⚠️ MUBA DÖNÜŞ başarısız. Günlük hakkın kullanılmadı. Yeni bir fotoğraf göndererek tekrar deneyebilirsin.")
-    finally:
-        source_bytes=None
+        await status.edit_text("⚠️ MUBA DÖNÜŞ başarısız. Günlük hakkın kullanılmadı. İsteğini tekrar yazabilirsin.")
+
+async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Capture Camera photo first; generation starts only after the user's instruction."""
+    message=update.effective_message; user=update.effective_user; chat=update.effective_chat
+    if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not message.photo:
+        return
+    if not context.user_data.get("muba_camera_waiting_photo",False):
+        return
+    uid=int(user.id)
+    if not is_dev(uid) and remaining(uid)<=0:
+        context.user_data.pop("muba_camera_waiting_photo",None)
+        await message.reply_text("📸 Günlük MUBA CAMERA hakkın kullanıldı — 1/1.")
+        return
+    if not ai_configured():
+        await message.reply_text("⚠️ MUBA AI şu anda hazır değil. Günlük hakkın kullanılmadı.")
+        return
+    try:
+        tg_file=await context.bot.get_file(message.photo[-1].file_id,read_timeout=30)
+        source_bytes=bytes(await tg_file.download_as_bytearray(read_timeout=60))
+        if len(source_bytes)>8*1024*1024:
+            raise RuntimeError("Fotoğraf çok büyük.")
+        context.user_data["muba_camera_source_bytes"]=source_bytes
+        context.user_data["muba_camera_waiting_photo"]=False
+        context.user_data["muba_camera_waiting_instruction"]=True
+        context.user_data.setdefault("muba_camera_message_ids",[]).append(message.message_id)
+        lang=get_assistant_language(uid) or "en"
+        asks={
+            "en":"📸 Photo received.\n\nWhat would you like MUBA to do with this photo? Write it briefly in one message.\n\nExample: Keep the environment, pose and body exactly the same; adapt my face naturally into MUBA.",
+            "tr":"📸 Fotoğraf alındı.\n\nBu fotoğrafta MUBA'nın ne yapmasını istiyorsun? Tek mesajla kısaca yaz.\n\nÖrnek: Ortamı, pozumu ve vücudumu aynen koru; yüzümü doğal şekilde MUBA'ya uyarla.",
+            "zh":"📸 已收到照片。\n\n你希望 MUBA 对这张照片做什么？请用一条简短消息说明。\n\n示例：保持环境、姿势和身体不变，只把我的脸自然地调整为 MUBA 风格。",
+            "ar":"📸 تم استلام الصورة.\n\nماذا تريد من MUBA أن يفعل بهذه الصورة؟ اكتب طلبك باختصار في رسالة واحدة.\n\nمثال: حافظ على المكان والوضعية والجسم كما هي، وحوّل وجهي إلى MUBA بشكل طبيعي.",
+            "hi":"📸 फोटो मिल गई।\n\nआप चाहते हैं कि MUBA इस फोटो में क्या करे? एक छोटे संदेश में लिखें।\n\nउदाहरण: माहौल, pose और body बिल्कुल वैसे ही रखें; केवल मेरे चेहरे को स्वाभाविक रूप से MUBA में adapt करें।",
+        }
+        ask=await message.reply_text(asks.get(lang,asks["en"]),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅ ANA MENÜ" if lang=="tr" else "⬅ BACK",callback_data="camera_back")]]))
+        context.user_data.setdefault("muba_camera_message_ids",[]).append(ask.message_id)
+    except Exception:
+        logger.exception("MUBA Camera photo capture failed without source payload logging")
+        context.user_data.pop("muba_camera_source_bytes",None)
+        context.user_data.pop("muba_camera_waiting_instruction",None)
+        await message.reply_text("⚠️ Fotoğraf alınamadı. Günlük hakkın kullanılmadı; tekrar deneyebilirsin.")
 
 async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """DEV-only: capture a fresh Telegram photo as today's one-batch Story reference."""
@@ -1456,6 +1477,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text=message.text.strip(); user=update.effective_user; user_id=user.id if user else None
     if chat.type==ChatType.PRIVATE:
         lang=get_assistant_language(user_id)
+        if context.user_data.get("muba_camera_waiting_instruction",False):
+            source_bytes=context.user_data.get("muba_camera_source_bytes")
+            if not source_bytes:
+                context.user_data.pop("muba_camera_waiting_instruction",None)
+                await message.reply_text("⚠️ Camera fotoğrafı bulunamadı. MUBA CAMERA'yı yeniden aç."); return
+            request=clean_prompt(text)
+            if not request:
+                await message.reply_text("Ne olmasını istediğini tek mesajla kısaca yaz."); return
+            await _run_muba_camera_transform(message,context,int(user_id),source_bytes,request)
+            return
         if not lang:
             await show_language(update); return
         if context.user_data.pop("muba_security_check",False):
