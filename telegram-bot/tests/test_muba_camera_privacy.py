@@ -33,7 +33,7 @@ class CameraPrivacyTests(unittest.TestCase):
    "Never replace the person's head or face in this case",
    "explicitly asks to transform the person into MUBA",
    "preserve as much of the person's original facial structure",
-   "change the location, background, activity, props or scene",
+   "destination, setting, environment or scene",
    "No arbitrary portrait reframing, no pasted head",
   ):
    self.assertIn(required,STUDIO)
@@ -106,5 +106,16 @@ class CameraPrivacyTests(unittest.TestCase):
  def test_camera_prompt_includes_user_request(self):
   self.assertIn('def camera_ai_prompt(user_request:str="")',STUDIO)
   self.assertIn('"USER REQUEST: "+request',STUDIO)
+
+ def test_camera_honors_requested_environment_with_muba(self):
+  for required in (
+   "that requested setting MUST be visibly realized in the output",
+   "do not preserve the old background when it conflicts with the requested setting",
+   "satisfy BOTH requirements at the same time",
+   "add MUBA as a separate character",
+   "visibly place them together in the requested environment",
+   "Do not satisfy only the MUBA part while ignoring the requested location",
+  ):
+   self.assertIn(required,STUDIO)
 
 if __name__=="__main__":unittest.main()
