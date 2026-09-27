@@ -19,6 +19,30 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-scene-rolling-quota",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio",
+        "web"
+      ],
+      "title": {
+        "en": "Camera scene fidelity and rolling quota",
+        "tr": "Camera sahne uyumu ve kayan kota",
+        "zh": "Camera 场景一致性与滚动配额",
+        "ar": "تطابق مشهد Camera والحصة المتحركة",
+        "hi": "Camera scene fidelity और rolling quota"
+      },
+      "text": {
+        "en": "Camera now treats the user's photo as the primary composition and MUBA only as the secondary identity reference, preventing forced portrait reframing. User production allowance now resets 24 hours after the first successful production instead of at a calendar-day boundary.",
+        "tr": "Camera artık kullanıcının fotoğrafını ana kompozisyon, MUBA'yı yalnızca ikincil kimlik referansı olarak kullanır ve zorunlu portre kadrajını engeller. Kullanıcı üretim hakkı artık takvim günü sınırında değil, ilk başarılı üretimden 24 saat sonra yenilenir.",
+        "zh": "Camera 现在以用户照片为主要构图、MUBA 仅为次要身份参考，避免强制改成肖像构图。用户生产额度现在从首次成功生产起 24 小时后重置，而不是按日历日重置。",
+        "ar": "يستخدم Camera الآن صورة المستخدم كتكوين أساسي وMUBA كمرجع هوية ثانوي فقط لمنع إعادة التأطير القسرية كصورة شخصية. وتتجدد حصة الإنتاج بعد 24 ساعة من أول إنتاج ناجح بدلاً من حدود اليوم التقويمي.",
+        "hi": "Camera अब user photo को primary composition और MUBA को केवल secondary identity reference मानता है, जिससे forced portrait reframing रुकता है। User production allowance अब calendar day पर नहीं, पहली successful production के 24 घंटे बाद reset होता है।"
+      }
+    },
+    {
       "id": "20260927-camera-reference-fidelity-back",
       "date": "2026-09-27",
       "type": "fixed",
