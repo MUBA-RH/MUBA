@@ -146,12 +146,12 @@ async def _story_github_draft(day):
             return story_draft(day)
         raise RuntimeError("Daily Story GitHub record is not ready for " + day)
     manifest, image = result
-    from muba_story import BEATS, is_published, save_episode
+    from muba_story import ORIGIN_START, BEATS, is_published, save_episode
     episode = manifest["episode"]
     if not isinstance(episode, dict):
         raise RuntimeError("Daily Story GitHub episode is invalid")
     if not is_published(day):
-        if (date.fromisoformat(day) - STORY_START).days >= len(BEATS):
+        if date.fromisoformat(day) >= ORIGIN_START or (date.fromisoformat(day) - STORY_START).days >= len(BEATS):
             save_episode(day, episode)
         elif story_draft(day)["story_tr"] != episode.get("story_tr"):
             raise RuntimeError("Daily Story GitHub initial episode does not match its saved canon")
@@ -162,7 +162,18 @@ async def _story_github_draft(day):
     return story_draft(day)
 
 
-def _story_director_panel(item):
+def _story_display_text(item, lang):
+    if lang == "en":
+        return item["story"]
+    field = "story_" + lang
+    if field in item:
+        return item[field]
+    if item["day"] >= "2026-09-28":
+        raise RuntimeError("Daily Story DEV translation unavailable for " + lang)
+    return item["story"]  # historical experiments have English and Turkish only
+
+
+def _story_director_panel(item, lang="en"):
     day = date.fromisoformat(item["day"])
     today = _story_today()
     if day > today:
@@ -171,7 +182,7 @@ def _story_director_panel(item):
                   "HAZIRLANIYOR" if item["day"] in _STORY_PREPARING else "TASLAK — GÖRSEL HAZIR DEĞİL")
     else:
         status = "YAYINDA" if item["status"] == "published" else "TASLAK"
-    body = ("🎬 MUBA GÜNLÜK HİKÂYE — " + item["day"] + "\n\n" + item["story_tr"] +
+    body = ("🎬 MUBA GÜNLÜK HİKÂYE — " + item["day"] + "\n\n" + _story_display_text(item, lang) +
             "\n\nReferans: " + ("HAZIR" if story_reference_for_day(item["day"]) else "GEREKLİ") +
             "\nGörsel: " + ("HAZIR" if len(item["images"]) == 1 else "HAZIRLANIYOR" if item["day"] in _STORY_PREPARING else "HAZIR DEĞİL") +
             "\nDurum: " + status)
@@ -194,7 +205,8 @@ def _story_director_panel(item):
     if not github_story_configured() and day == today and item["day"] not in _STORY_PREPARING:
         rows.append([InlineKeyboardButton("⏭️ YARINI HAZIRLA", callback_data="story_prepare_tomorrow")])
     pager = []
-    if day > STORY_START:
+    from muba_story import ORIGIN_START
+    if day > STORY_START and day != ORIGIN_START:
         pager.append(InlineKeyboardButton("⬅️ Önceki gün", callback_data="story_day:" + (day - timedelta(days=1)).isoformat()))
     if day < today or (day == today and (github_story_configured() or _story_tomorrow_available())):
         pager.append(InlineKeyboardButton("Sonraki gün ➡️", callback_data="story_day:" + (day + timedelta(days=1)).isoformat()))
@@ -906,7 +918,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(body,reply_markup=updates_center_keyboard(lang,user_id,index),disable_web_page_preview=True); return
     if data=="story_director" or data.startswith("story_day:"):
         if not is_dev(user_id): return
-        day=_story_today().isoformat() if data=="story_director" else data.split(":",1)[1]
+        from muba_story import ORIGIN_START
+        # The former published days are retained, but the new origin is the
+        # default DEV preview as soon as its scheduled date is reachable.
+        day=max(_story_today(), ORIGIN_START).isoformat() if data=="story_director" else data.split(":",1)[1]
         try:
             chosen=date.fromisoformat(day)
             if chosen<STORY_START or chosen>_story_today()+timedelta(days=1): raise ValueError("Invalid story day")
@@ -915,13 +930,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             item=await _story_github_draft(day)
             if item is None:
                 item=await prepare_story_text(day) if chosen==_story_today() else story_draft(day)
-            body,markup=_story_director_panel(item)
+            body,markup=_story_director_panel(item,lang)
         except (RuntimeError,ValueError):
             logger.exception("Daily Story day unavailable")
             await q.edit_message_text("🎬 MUBA GÜNLÜK HİKÂYE\n\nGünün hikâyesi veya görseli okunamadı. Kaynak bağlantısını kontrol edip yeniden deneyebilirsin.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Tekrar dene",callback_data="story_director")],[InlineKeyboardButton("⬅️ Ana menü",callback_data="menu")]])); return
         await q.edit_message_text(body,reply_markup=markup)
         if item["images"]:
-            await _story_send_preview(q.message,item)
+            await _story_send_preview(q.message,item,lang)
         return
     if data.startswith("story_preview:"):
         if not is_dev(user_id): return
@@ -935,7 +950,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if len(item["images"])!=1: raise ValueError("Daily Story image not ready")
         except (RuntimeError,ValueError):
             await q.answer("Bu günün görseli henüz hazır değil.",show_alert=True); return
-        await _story_send_preview(q.message,item)
+        await _story_send_preview(q.message,item,lang)
         return
     if data=="story_prepare_tomorrow":
         if not is_dev(user_id): return
@@ -954,14 +969,14 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.edit_message_text("🎬 YARININ HİKÂYESİ\n\nHazırlık tamamlanamadı. Eski bir görsel kullanılmadı; yarın için onay verilmedi.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Hikâyeye dön",callback_data="story_director")]])); return
         finally:
             _STORY_PREPARING.discard(day)
-        body,markup=_story_director_panel(item)
+        body,markup=_story_director_panel(item,lang)
         await q.edit_message_text(body,reply_markup=markup); return
     if data.startswith("story_approve:"):
         if not is_dev(user_id): return
         day=data.split(":",1)[1]
         try:
             story_approve_tomorrow(day,today=_story_today())
-            body,markup=_story_director_panel(story_draft(day))
+            body,markup=_story_director_panel(story_draft(day),lang)
         except (ValueError,RuntimeError):
             await q.answer("Yarının metni ve görseli hazır olmalı.",show_alert=True); return
         await q.edit_message_text(body,reply_markup=markup); return
@@ -970,7 +985,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             day=data.split(":",1)[1]
             item=story_approve_today(day,today=_story_today())
-            body,markup=_story_director_panel(item)
+            body,markup=_story_director_panel(item,lang)
         except (RuntimeError,ValueError):
             await q.answer("Önce günün hikâyesi ve görseli hazır olmalı.",show_alert=True); return
         await q.edit_message_text(body,reply_markup=markup); return
@@ -1012,7 +1027,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         finally:
             _STORY_PREPARING.discard(day)
         await q.edit_message_text("🎬 Tek 16:9 görsel hazır. Hikâyeyi ve görseli incele.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA",callback_data="story_approve_today:"+day)],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
-        await _story_send_preview(q.message,item)
+        await _story_send_preview(q.message,item,lang)
         return
     if data=="story_publish":
         if not is_dev(user_id): return
@@ -1462,7 +1477,7 @@ async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFA
     await message.reply_text("📥 DAILY STORY INBOX — Referans güncellendi. Tek görsel hazırlanıyor.")
     try:
         item=await _story_generate_images(item)
-        await _story_send_preview(message,item)
+        await _story_send_preview(message,item,get_assistant_language(user.id) or "en")
         await message.reply_text("Görseli kontrol et. Uygunsa önce hikâyeyi onayla.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA",callback_data="story_approve_today:"+day)],[InlineKeyboardButton("🔄 YENİDEN ÜRET",callback_data="story_generate")]]))
     except Exception:
         logger.exception("Daily Story automatic inbox generation failed")
@@ -2003,14 +2018,14 @@ def _story_archive_preview(item,body,out_type,source):
         raise RuntimeError("Daily Story private image archive failed")
     return set_story_images(item["day"],[archived["id"]])
 
-async def _story_send_preview(message,item):
+async def _story_send_preview(message,item,lang="en"):
     import io
     result=read_gallery_image(item["images"][0],include_nonpublic=True)
     if not result: raise RuntimeError("Daily Story private preview unavailable")
     body,_=result
     preview=io.BytesIO(body)
     preview.name="muba-daily-story.png"
-    await message.reply_photo(photo=preview,caption=item["story_tr"])
+    await message.reply_photo(photo=preview,caption=_story_display_text(item,lang))
 
 async def _story_receive_ready_image(message,context,day):
     """DEV may supply a finished image when automatic generation is unavailable."""
@@ -2028,8 +2043,8 @@ async def _story_receive_ready_image(message,context,day):
         tg_file=await context.bot.get_file(chosen.file_id,read_timeout=30)
         original=bytes(await tg_file.download_as_bytearray(read_timeout=60))
         item=_story_archive_preview(item,normalize_ready_image(original),"image/png","telegram-story-dev")
-        await _story_send_preview(message,item)
-        body,markup=_story_director_panel(item)
+        await _story_send_preview(message,item,get_assistant_language(message.from_user.id) or "en")
+        body,markup=_story_director_panel(item,get_assistant_language(message.from_user.id) or "en")
         await message.reply_text(body,reply_markup=markup)
     except Exception as exc:
         context.user_data["daily_story_waiting_image"]=day

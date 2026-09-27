@@ -110,6 +110,30 @@ class PrivateArchiveTests(unittest.TestCase):
             self.assertEqual(second["images"], ["image-id"])
             saved.assert_called_once()
 
+    def test_new_origin_reads_private_draft_and_dev_selected_language(self):
+        from state import MemoryRepository
+        with mock.patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": "1:dummy",
+                                           "RENDER_EXTERNAL_URL": "https://muba.test"}):
+            import bot_mention
+        episode = {"title": "The Paper", "title_tr": "Uçan Kâğıt",
+                   "story": "A paper marked MUBA glides above a busy city crowd. The wind drops it into a young person's hand; they smile, and strangers pause to look at the same new name.",
+                   "story_tr": "Kalabalık caddede MUBA yazılı bir kâğıt başların üstünden süzülür. Rüzgâr onu bir gencin eline bırakır; genç gülümser, kalabalık ilk kez aynı söze bakar.",
+                   "story_zh": "写着MUBA的纸飞过城市人群，落在一个年轻人的手中；陌生人们微笑着围了过来。",
+                   "story_ar": "تحلّق ورقة تحمل اسم MUBA فوق الحشد وتهبط في يد شاب؛ يبتسم الناس ويتجمعون لرؤيتها.",
+                   "story_hi": "MUBA लिखा कागज़ शहर की भीड़ के ऊपर उड़ता है और एक युवा के हाथ में आ गिरता है; लोग मुस्कुराकर उसे देखने रुकते हैं।",
+                   "scene": "paper flying over a human crowd on a bright city street"}
+        manifest = {"version": 1, "day": "2026-09-28", "episode": episode}
+        with mock.patch.object(muba_story, "STORE", MemoryRepository()), \
+             mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=(manifest, b"private image")), \
+             mock.patch.object(bot_mention, "_story_archive_preview",
+                               side_effect=lambda item, *_: muba_story.set_images(item["day"], ["image-id"])):
+            item = asyncio.run(bot_mention._story_github_draft("2026-09-28"))
+            self.assertIsNone(item["previous_day"])
+            self.assertEqual(bot_mention._story_display_text(item, "zh"), episode["story_zh"])
+            self.assertEqual(bot_mention._story_display_text(item, "en"), episode["story"])
+            self.assertEqual(item["images"], ["image-id"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,6 +19,26 @@
   },
   "entries": [
     {
+      "id": "20260927-daily-story-origin-dev-language",
+      "date": "2026-09-27",
+      "type": "updated",
+      "areas": ["daily"],
+      "title": {
+        "en": "Daily Story origin and DEV language",
+        "tr": "Günlük hikâyenin başlangıcı ve DEV dili",
+        "zh": "每日故事起源与开发者语言",
+        "ar": "بداية القصة اليومية ولغة المطور",
+        "hi": "डेली स्टोरी की शुरुआत और DEV की भाषा"
+      },
+      "text": {
+        "en": "A private new story arc begins with the paper above a city crowd. Earlier published scenes remain intact; the DEV previews the new draft in the selected language before separate approval and web publication.",
+        "tr": "Yeni özel hikâye akışı şehir kalabalığının üzerindeki kâğıtla başlar. Önceki yayınlar korunur; DEV yeni taslağı seçtiği dilde görür, onay ve web yayını ayrı kalır.",
+        "zh": "新的私密故事从城市人群上方飞过的纸张开始。旧日已发布内容保留；开发者以所选语言预览新草稿，审核与网页发布分别进行。",
+        "ar": "تبدأ القصة الخاصة الجديدة بورقة تحلّق فوق حشد في المدينة. تبقى المشاهد المنشورة السابقة محفوظة؛ يعاين المطور المسودة بلغته المختارة قبل الموافقة والنشر المنفصلين.",
+        "hi": "नई निजी कहानी शहर की भीड़ के ऊपर उड़ते कागज़ से शुरू होती है। पुरानी प्रकाशित कहानियाँ सुरक्षित रहती हैं; DEV चुनी हुई भाषा में मसौदा देखता है और मंज़ूरी व वेब प्रकाशन अलग रहते हैं।"
+      }
+    },
+    {
       "id": "20260927-daily-story-english-web-text",
       "date": "2026-09-27",
       "type": "fixed",
