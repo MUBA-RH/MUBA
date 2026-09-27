@@ -1,3 +1,3 @@
 # TEST
 
-Module-specific regression gate. Failed validation stops promotion.
+Local regression gate. Validate the changed scope and its parent integration. Failure => STOP + report; STABLE remains unchanged.

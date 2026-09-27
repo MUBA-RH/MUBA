@@ -1,4 +1,3 @@
 # STABLE 🛡️🔒
 
-Baseline status: protected staging definition.
-Promotion rule: only tested changes may replace this baseline.
+Last validated baseline. A new version may replace this baseline only after UPDATE and TEST pass.

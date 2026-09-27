@@ -1,3 +1,3 @@
-# knowledge — CONTENT
+# CONTENT
 
-Current implementation mapping is documented in the parent MODULES.md. This area is the target ownership boundary.
+Owned implementation/content mapping for this module or flow. Production behavior remains sourced from the validated runtime until migration is explicitly completed.
