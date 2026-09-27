@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-user-directed-transform",
+      "date": "2026-09-27",
+      "type": "added",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "User-directed Camera transformation",
+        "tr": "Kullanıcı yönlendirmeli Camera dönüşümü",
+        "zh": "用户指令式 Camera 转换",
+        "ar": "تحويل Camera بتوجيه المستخدم",
+        "hi": "User-directed Camera transformation"
+      },
+      "text": {
+        "en": "MUBA Camera now captures the photo first, asks what the user wants changed, and only then generates from the source photo, MUBA identity reference and the user's instruction. Uploading or describing does not consume quota; only a successful result does. Camera instructions were updated for this flow.",
+        "tr": "MUBA Camera artık önce fotoğrafı alır, kullanıcıya fotoğrafta ne istediğini sorar ve ancak ardından kaynak fotoğraf, MUBA kimlik referansı ve kullanıcının isteğiyle üretim yapar. Fotoğraf yüklemek veya isteği yazmak hakkı tüketmez; yalnızca başarılı sonuç tüketir. Camera açıklaması bu akışa göre güncellendi.",
+        "zh": "MUBA Camera 现在先接收照片，再询问用户希望如何修改，之后才结合源照片、MUBA 身份参考和用户指令进行生成。上传照片或描述需求不会消耗额度，只有成功生成结果才会消耗。Camera 说明也已更新。",
+        "ar": "يستقبل MUBA Camera الصورة أولاً ثم يسأل المستخدم عما يريده في الصورة، وبعدها فقط ينشئ النتيجة باستخدام الصورة الأصلية ومرجع هوية MUBA وتعليمات المستخدم. رفع الصورة أو كتابة الطلب لا يستهلك الحصة؛ النتيجة الناجحة فقط تستهلكها. وتم تحديث شرح Camera وفق هذا التدفق.",
+        "hi": "MUBA Camera अब पहले फोटो लेता है, फिर user से पूछता है कि फोटो में क्या बदलाव चाहिए, और उसके बाद source photo, MUBA identity reference और user instruction से generation करता है। Photo upload या request लिखने से quota consume नहीं होता; केवल successful result से होता है। Camera instructions भी इस flow के अनुसार update किए गए हैं।"
+      }
+    },
+    {
       "id": "20260927-camera-local-face-scene-lock",
       "date": "2026-09-27",
       "type": "fixed",
