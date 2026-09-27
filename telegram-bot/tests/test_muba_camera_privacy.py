@@ -85,7 +85,7 @@ class CameraPrivacyTests(unittest.TestCase):
  def test_camera_sends_source_as_primary_reference(self):
   self.assertIn('form.add_field("input_image_0",source_ai',BOT)
   self.assertIn('form.add_field("input_image_1",muba_ref',BOT)
-  self.assertIn("1️⃣ Mesaj alanındaki 📎 simgesine dokun.",BOT)
+  self.assertIn("1️⃣ 📎 simgesine dokun ve Kamera’yı aç.",BOT)
 
 
  def test_camera_waits_for_user_instruction_before_generation(self):
