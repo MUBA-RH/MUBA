@@ -107,4 +107,15 @@ class CameraPrivacyTests(unittest.TestCase):
   self.assertIn('def camera_ai_prompt(user_request:str="")',STUDIO)
   self.assertIn('"USER REQUEST: "+request',STUDIO)
 
+ def test_camera_honors_requested_environment_with_muba(self):
+  for required in (
+   "that requested setting MUST be visibly realized in the output",
+   "do not preserve the old background when it conflicts with the requested setting",
+   "satisfy BOTH requirements at the same time",
+   "add MUBA as a separate character",
+   "visibly place them together in the requested environment",
+   "Do not satisfy only the MUBA part while ignoring the requested location",
+  ):
+   self.assertIn(required,STUDIO)
+
 if __name__=="__main__":unittest.main()
