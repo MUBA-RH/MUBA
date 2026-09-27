@@ -60,7 +60,7 @@ from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARE
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 from ecosystem_expansion import COMMUNITY_RECORDS, ASK_RECORDS, TRANSPARENCY_RECORDS, ARCHIVE_POLICY
 
-PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio","games")
+PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio")
 
 def assistant_content_count():
     """Count structured user-facing Assistant content from live registries."""
@@ -480,7 +480,6 @@ def menu_keyboard(lang,user_id=None):
         [InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")],
         [InlineKeyboardButton("📸 MUBA CAMERA",web_app=WebAppInfo(url=EXTERNAL_URL.rstrip()+"/camera?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
         [InlineKeyboardButton("🎭 MUBA Studio"+_update_badge(lang,user_id,"studio"),web_app=WebAppInfo(url=EXTERNAL_URL.rstrip("/")+"/studio?uid="+str(user_id or 0)+"&st="+studio_token(user_id or 0,TOKEN)))],
-        [InlineKeyboardButton(ASSISTANT_UI[lang]["games"],web_app=WebAppInfo(url="https://muba-rh.github.io/MUBA/muba-brain-games/?v=muba-run-v2"))],
     ]
     if is_dev(user_id):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["dev"],callback_data="dev_tools")])
