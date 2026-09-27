@@ -483,10 +483,28 @@ DISCOVER_CONTENT={
  }
 }
 
+
+DISCOVER_EXTRA_CONTENT={
+ "en":{
+  "culture":"🌍 MUBA CULTURE\n\nMUBA grows through character, humor, participation and creative expression. People can follow, create, share and take part naturally; there is no lore users must memorize. I'M MUBA., WE LIVE HERE NOW. and Same Meme. Different Universe. are parts of this living identity, not artificial hype. Community creations can contribute to MUBA's cultural memory while verified facts stay separate from jokes, interpretations and speculation.",
+  "future":"🚀 MUBA TODAY & FUTURE\n\nTODAY\nMUBA is a character-centered ecosystem connecting Assistant, Guardian, Camera, Studio, Gallery, Daily Story, News, Web, Updates and Transparency. Each area has a separate responsibility so the experience stays understandable.\n\nDIRECTION\nMUBA continues through consistent building, creativity, participation and community culture. New capabilities are presented when they are real and usable; unconfirmed plans are not promises.\n\nWHAT DOES NOT CHANGE\nThe character remains the center. Culture and community stay ahead of manufactured hype, and verified information stays separate from speculation."
+ },
+ "tr":{
+  "culture":"🌍 MUBA KÜLTÜRÜ\n\nMUBA; karakter, mizah, katılım ve yaratıcı üretim etrafında yaşayan bir kültürdür. İnsanlardan bir lore ezberlemesi beklenmez; MUBA'yı takip eder, üretir, paylaşır ve doğal biçimde katılırlar. I'M MUBA., WE LIVE HERE NOW. ve Same Meme. Different Universe. gibi ifadeler bu yaşayan kimliğin parçalarıdır; yapay hype üretmek için kullanılmaz. Topluluk üretimleri MUBA'nın kültürel hafızasına katkı sağlayabilir; doğrulanmış bilgi ise mizah, yorum ve söylentiden ayrı tutulur.",
+  "future":"🚀 MUBA BUGÜN & GELECEK\n\nBUGÜN\nMUBA bugün Assistant, Guardian, Camera, Studio, Gallery, Daily Story, News, Web, Yenilikler ve Şeffaflık gibi birbirine bağlı alanları bulunan karakter merkezli bir ekosistemdir. Her alanın görevi ayrıdır; kullanıcı bütün sistemi öğrenmek zorunda kalmadan ihtiyacı olan bölümü kullanabilir.\n\nGELİŞİM YÖNÜ\nMUBA; istikrarlı üretim, yaratıcılık, katılım ve topluluk kültürü üzerinden gelişir. Yeni özellikler ancak gerçek ve kullanılabilir olduklarında mevcut yapının parçası olarak anlatılır; doğrulanmamış planlar vaat gibi sunulmaz.\n\nDEĞİŞMEYEN TEMEL\nMerkezde karakter vardır. Kültür ve topluluk yapay hype'ın önünde kalır; doğrulanmış bilgi ile beklenti veya söylenti birbirine karıştırılmaz."
+ }
+}
+
 def discover_muba_keyboard(lang,user_id):
     d=DISCOVER_UI[lang]
-    buttons=[InlineKeyboardButton(label,callback_data="discover_info:"+key) for label,key in zip(d["items"],("about","community","ecosystem","story"))]
-    return InlineKeyboardMarkup([[buttons[0],buttons[1]],[buttons[2],buttons[3]],[_section_back(lang)]])
+    keys=("about","story","culture","ecosystem","future")
+    buttons=[InlineKeyboardButton(label,callback_data="discover_info:"+key) for label,key in zip(d["items"],keys)]
+    return InlineKeyboardMarkup([
+        [buttons[0],buttons[1]],
+        [buttons[2],buttons[3]],
+        [buttons[4]],
+        [_section_back(lang)],
+    ])
 
 def discover_info_keyboard(lang,section):
     rows=[]
@@ -904,7 +922,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(DISCOVER_UI[lang]["title"]+"\n\n"+DISCOVER_UI[lang]["intro"],reply_markup=discover_muba_keyboard(lang,user_id)); return
     if data.startswith("discover_info:"):
         section=data.split(":",1)[1]
-        body=DISCOVER_CONTENT.get(lang,DISCOVER_CONTENT["en"]).get(section) or DISCOVER_CONTENT["en"].get(section)
+        body=DISCOVER_CONTENT.get(lang,DISCOVER_CONTENT["en"]).get(section) or DISCOVER_EXTRA_CONTENT.get(lang,DISCOVER_EXTRA_CONTENT["en"]).get(section) or DISCOVER_EXTRA_CONTENT["en"].get(section) or DISCOVER_CONTENT["en"].get(section)
         if body:
             await q.edit_message_text(body,reply_markup=discover_info_keyboard(lang,section),disable_web_page_preview=True); return
     if data=="daily_hub":
