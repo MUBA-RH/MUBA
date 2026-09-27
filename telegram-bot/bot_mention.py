@@ -59,6 +59,7 @@ from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 from ecosystem_expansion import COMMUNITY_RECORDS, ASK_RECORDS, TRANSPARENCY_RECORDS, ARCHIVE_POLICY
+from discover_index import SECTIONS as DISCOVER_SECTIONS, LABELS as DISCOVER_INDEX_LABELS, entries as discover_entries
 
 PUBLIC_MAIN_AREAS=("community","updates","transparency","ask","create","studio")
 
@@ -508,6 +509,8 @@ def discover_muba_keyboard(lang,user_id):
 
 def discover_info_keyboard(lang,section):
     rows=[]
+    if section in DISCOVER_SECTIONS:
+        rows.append([InlineKeyboardButton(DISCOVER_INDEX_LABELS[lang][0],callback_data=f"discover_list:{section}:0")])
     if section=="community":
         rows.append([
           InlineKeyboardButton("🌐 Web",url="https://muba-rh.github.io/MUBA/"),
@@ -518,6 +521,29 @@ def discover_info_keyboard(lang,section):
         rows.append([InlineKeyboardButton(ASSISTANT_UI[lang]["create"],callback_data="create_hub")])
     rows.append([_section_back(lang,"discover_muba")])
     return InlineKeyboardMarkup(rows)
+
+def discover_list_keyboard(lang,section,page):
+    items=discover_entries(lang,section,TRANSPARENCY_PAGES)
+    pages=max(1,(len(items)+5)//6)
+    page=max(0,min(page,pages-1))
+    rows=[[InlineKeyboardButton(title[:60],callback_data=f"discover_item:{section}:{index}")]
+          for index,(title,_) in enumerate(items[page*6:(page+1)*6],start=page*6)]
+    pager=[]
+    if page:
+        pager.append(InlineKeyboardButton("⬅️ "+DISCOVER_INDEX_LABELS[lang][2],callback_data=f"discover_list:{section}:{page-1}"))
+    if page+1<pages:
+        pager.append(InlineKeyboardButton(DISCOVER_INDEX_LABELS[lang][3]+" ➡️",callback_data=f"discover_list:{section}:{page+1}"))
+    if pager:
+        rows.append(pager)
+    rows.append([_section_back(lang,f"discover_info:{section}")])
+    return InlineKeyboardMarkup(rows)
+
+def discover_list_text(lang,section,page):
+    count=len(discover_entries(lang,section,TRANSPARENCY_PAGES))
+    pages=max(1,(count+5)//6)
+    page=max(0,min(page,pages-1))
+    title=DISCOVER_UI[lang]["items"][DISCOVER_SECTIONS.index(section)]
+    return f"{title}\n\n{DISCOVER_INDEX_LABELS[lang][1]}\n{page+1}/{pages}"
 
 def _section_back(lang,callback_data="menu"):
     return InlineKeyboardButton(TEXT[lang]["back"],callback_data=callback_data)
@@ -925,6 +951,20 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         body=DISCOVER_CONTENT.get(lang,DISCOVER_CONTENT["en"]).get(section) or DISCOVER_EXTRA_CONTENT.get(lang,DISCOVER_EXTRA_CONTENT["en"]).get(section) or DISCOVER_EXTRA_CONTENT["en"].get(section) or DISCOVER_CONTENT["en"].get(section)
         if body:
             await q.edit_message_text(body,reply_markup=discover_info_keyboard(lang,section),disable_web_page_preview=True); return
+    if data.startswith("discover_list:"):
+        _,section,raw=data.split(":",2)
+        if section in DISCOVER_SECTIONS:
+            page=int(raw) if raw.isdigit() else 0
+            await q.edit_message_text(discover_list_text(lang,section,page),reply_markup=discover_list_keyboard(lang,section,page)); return
+    if data.startswith("discover_item:"):
+        _,section,raw=data.split(":",2)
+        if section in DISCOVER_SECTIONS and raw.isdigit():
+            items=discover_entries(lang,section,TRANSPARENCY_PAGES)
+            index=int(raw)
+            if index<len(items):
+                title,body=items[index]
+                back=_section_back(lang,f"discover_list:{section}:{index//6}")
+                await q.edit_message_text(title+"\n\n"+body,reply_markup=InlineKeyboardMarkup([[back]]),disable_web_page_preview=True); return
     if data=="daily_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["daily"],reply_markup=daily_hub_keyboard(lang)); return
     if data=="create_hub":
