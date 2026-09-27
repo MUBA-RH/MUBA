@@ -19,6 +19,29 @@
   },
   "entries": [
     {
+      "id": "20260927-camera-reference-fidelity-back",
+      "date": "2026-09-27",
+      "type": "fixed",
+      "areas": [
+        "telegram",
+        "studio"
+      ],
+      "title": {
+        "en": "Camera reference fidelity and clean return",
+        "tr": "Camera referans uyumu ve temiz dönüş",
+        "zh": "Camera 参考一致性与清理返回",
+        "ar": "تطابق مرجع Camera والعودة النظيفة",
+        "hi": "Camera reference fidelity and clean return"
+      },
+      "text": {
+        "en": "Camera references are now normalized within the image model's multi-reference size limit so both MUBA identity and the user's source composition can be used. The result also includes a Back to Main Menu control that clears Camera-session messages before returning.",
+        "tr": "Camera referansları artık görsel modelinin çoklu referans boyut sınırı içinde normalize edilir; böylece hem MUBA kimliği hem kullanıcının kaynak kompozisyonu kullanılabilir. Sonuçta ayrıca Camera oturum mesajlarını temizleyip ana menüye dönen bir Geri butonu bulunur.",
+        "zh": "Camera 参考图现在会规范到图像模型的多参考尺寸限制内，使 MUBA 身份与用户源构图都能被使用；结果中还加入返回主菜单按钮，返回前清理 Camera 会话消息。",
+        "ar": "تُطبَّع مراجع Camera الآن ضمن حد حجم المراجع المتعددة للنموذج حتى يمكن استخدام هوية MUBA وتكوين صورة المستخدم معاً، كما أضيف زر للعودة إلى القائمة الرئيسية بعد تنظيف رسائل جلسة Camera.",
+        "hi": "Camera references अब image model की multi-reference size limit के भीतर normalize होते हैं, ताकि MUBA identity और user source composition दोनों उपयोग हों। Result में Main Menu back control भी है जो लौटने से पहले Camera session messages साफ करता है।"
+      }
+    },
+    {
       "id": "20260927-camera-life-size-source-fidelity",
       "date": "2026-09-27",
       "type": "fixed",
