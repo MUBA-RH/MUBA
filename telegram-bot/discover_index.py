@@ -33,16 +33,16 @@ def entries(lang, section, transparency_pages):
         return []
     result = []
     for index, (topic, question) in enumerate(QUESTIONS[lang]):
-        if TOPIC_SECTION[topic] == section:
+        if TOPIC_SECTION.get(topic, "future") == section:
             result.append((question, answer_for_question(lang, index)))
     for topic, items in TOPIC_PROGRESS[lang].items():
-        if TOPIC_SECTION[topic] == section:
+        if TOPIC_SECTION.get(topic, "future") == section:
             result.extend(items)
     for record_id, title, question, answer in ASK_RECORDS[lang]:
-        if ASK_SECTION[record_id] == section:
+        if ASK_SECTION.get(record_id, "future") == section:
             result.append((question, answer))
     for record_id, title, body in COMMUNITY_RECORDS[lang]:
-        if COMMUNITY_SECTION[record_id] == section:
+        if COMMUNITY_SECTION.get(record_id, "culture") == section:
             result.append((title, body))
     if section == "ecosystem":
         for page in transparency_pages[lang]:
