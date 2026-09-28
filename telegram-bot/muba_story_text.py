@@ -6,7 +6,7 @@ import os
 
 import aiohttp
 
-from muba_story import BEATS, START, _previous_state, draft, save_episode
+from muba_story import ORIGIN_START, _previous_state, draft, save_episode
 from datetime import date
 
 MODEL = os.getenv("MUBA_STORY_TEXT_MODEL", "@cf/meta/llama-3.1-8b-instruct-fp8").strip()
@@ -14,7 +14,7 @@ MODEL = os.getenv("MUBA_STORY_TEXT_MODEL", "@cf/meta/llama-3.1-8b-instruct-fp8")
 
 async def prepare(day):
     """Draft once and persist; failed generation never repeats an old episode."""
-    if (date.fromisoformat(day) - START).days < len(BEATS):
+    if date.fromisoformat(day) < ORIGIN_START:
         return draft(day)
     try:
         return draft(day)  # already prepared, including after service restart
@@ -33,9 +33,11 @@ async def prepare(day):
         "Make the beginning, middle and ending understandable within ONE short episode. "
         "Friendly, light, airy, warm, playful; avoid invented product claims, token promises, prices, "
         "unrelated brands, and a repeated garden/arrow plot. "
-        "Return ONLY a JSON object with string fields title, title_tr, story, story_tr, scene. "
-        "story is English, story_tr is its natural Turkish translation. EACH is 150–170 Unicode characters "
-        "including spaces. scene is an English description of ONE visible 16:9 moment from today's story "
+        "Return ONLY a JSON object with string fields title, title_tr, story, story_tr, "
+        "story_zh, story_ar, story_hi, scene. story is English; the other four are natural "
+        "Turkish, Chinese, Arabic and Hindi translations respectively. Each story field "
+        "must have 150–170 Unicode characters including spaces. "
+        "scene is an English description of ONE visible 16:9 moment from today's story "
         "with the setting, action and important object. No panel divisions, visible caption or text overlay."
     )
     url=f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{MODEL}"
@@ -45,13 +47,16 @@ async def prepare(day):
             async with session.post(url, json={"messages": [
                 {"role": "system", "content": "Write concise original stories. Follow JSON and character limits precisely."},
                 {"role": "user", "content": prompt if attempt == 0 else prompt + " Check both exact lengths carefully before answering."},
-            ], "max_tokens": 420}, headers=headers, timeout=aiohttp.ClientTimeout(total=70)) as response:
+            ], "max_tokens": 900}, headers=headers, timeout=aiohttp.ClientTimeout(total=70)) as response:
                 if response.status != 200:
                     raise RuntimeError(f"Daily Story text provider unavailable ({response.status})")
                 payload=await response.json()
             raw=payload.get("result", {}).get("response", "")
             try:
                 episode=json.loads(raw[raw.index("{"):raw.rindex("}")+1])
+                if any(not 150 <= len(" ".join(episode[field].split())) <= 170
+                       for field in ("story", "story_tr", "story_zh", "story_ar", "story_hi")):
+                    continue
                 return save_episode(day, episode)
             except (ValueError, KeyError, TypeError):
                 continue
