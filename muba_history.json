@@ -3096,6 +3096,26 @@
         "ar": "إذا خرج نص إحدى اللغات عن حد طول القصة، يُعاد إنشاء تلك اللغة وحدها قبل حفظ المسودة الخاصة الكاملة. تظل الموافقة والنشر خطوتين منفصلتين للمطور.",
         "hi": "किसी भाषा का पाठ कहानी की लंबाई सीमा से बाहर हो तो तैयारी उसी भाषा को दोबारा बनाती है। सभी भाषाएँ तैयार होने पर ही निजी मसौदा सहेजा जाता है; मंज़ूरी और प्रकाशन DEV के अलग कदम हैं।"
       }
+    },
+    {
+      "id": "20260928-daily-story-current-day-on-demand",
+      "date": "2026-09-28",
+      "type": "updated",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Prepare today's Daily Story when DEV requests it",
+        "tr": "DEV istediğinde bugünün günlük hikâyesini hazırla",
+        "zh": "开发者请求时准备当天故事",
+        "ar": "تحضير قصة اليوم عند طلب المطور",
+        "hi": "DEV के कहने पर आज की कहानी तैयार करें"
+      },
+      "text": {
+        "en": "DEV starts today's text and one image at a chosen time with HAZIRLA. A completed private draft opens on later taps; failures show the affected stage. Review and web publication remain separate DEV actions.",
+        "tr": "DEV istediği saatte HAZIRLA ile bugünün metnini ve tek görselini başlatır. Tamamlanan özel taslak sonraki basışlarda açılır; hatada durulan adım görünür. İnceleme ve web yayını ayrı DEV işlemleridir.",
+        "zh": "开发者可在自选时间点击 HAZIRLA，生成当天文本和一张图片。再次点击时打开已完成的私有草稿；失败时显示出错步骤。审核和网站发布仍由开发者分别操作。",
+        "ar": "يبدأ المطور نص قصة اليوم وصورتها الوحيدة بزر HAZIRLA في الوقت الذي يختاره. تفتح الضغطات اللاحقة المسودة الخاصة المكتملة، ويظهر موضع التعطل عند الخطأ. تظل المراجعة والنشر خطوتين منفصلتين.",
+        "hi": "DEV अपने चुने समय पर HAZIRLA से आज की कहानी और एक चित्र बनाना शुरू करता है। बाद में उसी दिन दबाने पर तैयार निजी मसौदा खुलता है; त्रुटि का चरण दिखता है। समीक्षा और वेब प्रकाशन अलग DEV कदम हैं।"
+      }
     }
   ]
 }

@@ -942,3 +942,9 @@
 - Production writeback: disabled.
 - V2 auto-activation: disabled.
 
+## 2026-09-28T16:51:45.880887Z
+- Stable main: `bc176c1539695e0e36f7a7f57e0d20d2319aa370`
+- Validation: Telegram regressions + Web Smoke + canonical History schema passed.
+- Production writeback: disabled.
+- V2 auto-activation: disabled.
+

@@ -4,7 +4,7 @@
   "repository": "MUBA-RH/MUBA",
   "snapshot_date": "2026-09-28",
   "stable_main": {
-    "sha": "1ff5634aa02180cfcd49cc9f50b86e54109c8e72",
+    "sha": "bc176c1539695e0e36f7a7f57e0d20d2319aa370",
     "branch": "main"
   },
   "vault": {
@@ -91,9 +91,9 @@
     "enabled": true,
     "mode": "green-main-auto-sync",
     "source_workflow": "MUBA Vault Auto Sync",
-    "last_synced_main_sha": "1ff5634aa02180cfcd49cc9f50b86e54109c8e72",
-    "last_synced_at": "2026-09-28T16:23:24.226274Z",
-    "source_run_id": "36450613690",
+    "last_synced_main_sha": "bc176c1539695e0e36f7a7f57e0d20d2319aa370",
+    "last_synced_at": "2026-09-28T16:51:45.880887Z",
+    "source_run_id": "36454035578",
     "production_writeback": false,
     "v2_auto_activation": false
   },
