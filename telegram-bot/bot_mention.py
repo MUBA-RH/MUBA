@@ -200,42 +200,28 @@ class StoryPreparationError(RuntimeError):
 
 
 async def _story_prepare_private_today(day):
-    """Generate today's draft once, then verify both files in the private repo."""
-    from muba_story_github import configured, read_day, write_day
-    from muba_story import STORE
+    """Ask ChatGPT to prepare today's draft; read only verified private files."""
+    from muba_story_github import configured, read_day, request_chatgpt_day
     if not configured() or date.fromisoformat(day) != _story_today():
         raise RuntimeError("Private current-day preparation is unavailable")
-    stage = "Özel arşiv okunamadı."
+    stage = "ChatGPT isteği oluşturulamadı."
     try:
-        existing = await asyncio.to_thread(read_day, day)
-        if existing:
+        result = await asyncio.to_thread(request_chatgpt_day, day)
+        if result == "ready":
             return await _story_github_draft(day)
-        stage = "Önceki hikâye okunamadı."
-        await _story_seed_previous(day)
-        stage = "Metin hazırlanamadı."
-        item = await prepare_story_text(day)
-        stage = "Görsel hazırlanamadı."
-        if not item["images"]:
-            item = await _story_generate_images(item)
-        if len(item["images"]) != 1:
-            raise RuntimeError("Daily Story must contain exactly one image")
-        image = read_gallery_image(item["images"][0], include_nonpublic=True)
-        if not image:
-            raise RuntimeError("Generated private Story image is unavailable")
-        stage = "Özel arşive kaydedilemedi."
-        episode = STORE.get("story_text", day, None)
-        if not isinstance(episode, dict):
-            raise RuntimeError("Generated Daily Story text is unavailable")
-        if date.fromisoformat(day) != _story_today():
-            raise RuntimeError("Daily Story preparation crossed midnight; refresh today's screen")
-        await asyncio.to_thread(write_day, day, episode, image[0])
-        stored = await asyncio.to_thread(read_day, day)
-        if not stored or stored[0].get("status") != "draft":
-            raise RuntimeError("Private Daily Story draft verification failed")
-        stage = "Taslak inceleme ekranında açılamadı."
-        return await _story_github_draft(day)
+        stage = "ChatGPT yanıtı henüz özel arşive gelmedi."
+        for _ in range(45):
+            await asyncio.sleep(8)
+            if date.fromisoformat(day) != _story_today():
+                raise RuntimeError("Daily Story preparation crossed midnight")
+            stored = await asyncio.to_thread(read_day, day)
+            if stored:
+                stage = "Taslak inceleme ekranında açılamadı."
+                return await _story_github_draft(day)
+        return None  # request remains queued; DEV can refresh without creating another PR
     except Exception as exc:
-        raise StoryPreparationError(stage) from exc
+        detail = str(exc) if isinstance(exc, (RuntimeError, ValueError)) else ""
+        raise StoryPreparationError(stage + (" " + detail if detail else "")) from exc
 
 
 def _story_display_text(item, lang):
@@ -1139,12 +1125,21 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.answer("Bugünün hikâyesi hazırlanıyor.",show_alert=True); return
         if github_story_configured():
             _STORY_PREPARING.add(day)
-            await q.edit_message_text("🎬 BUGÜNÜN HİKÂYESİ — "+day+"\n\nHAZIRLANIYOR: metin ve tek görsel özel arşive kaydedilecek. Bu işlem zaman alabilir.")
+            await q.edit_message_text("🎬 BUGÜNÜN HİKÂYESİ — "+day+"\n\nChatGPT için istek açılıyor. Metin ve tek görsel hazır olduğunda özel arşivden doğrulanacak.")
             async def run_private_prepare():
                 try:
                     item=await _story_prepare_private_today(day)
+                    if item is None:
+                        await q.message.edit_text("🎬 BUGÜNÜN HİKÂYESİ — "+day+
+                                                  "\n\nChatGPT isteği açık, taslak henüz özel arşive gelmedi. Hazır olup olmadığını kontrol edebilirsin; tekrar basmak yeni istek açmaz.",
+                                                  reply_markup=InlineKeyboardMarkup([
+                                                      [InlineKeyboardButton("🔄 Durumu kontrol et",callback_data="story_director")],
+                                                      [InlineKeyboardButton("⬅️ Geri",callback_data="menu")]]))
+                        return
                     body,markup=_story_director_panel(item,get_assistant_language(user_id) or "en")
                     await q.message.edit_text(body,reply_markup=markup)
+                    if item["images"]:
+                        await _story_send_preview(q.message,item,get_assistant_language(user_id) or "en")
                 except Exception as exc:
                     logger.exception("Private current-day Daily Story preparation failed")
                     await q.message.edit_text("🎬 BUGÜNÜN HİKÂYESİ — "+day+
@@ -1158,19 +1153,9 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     _STORY_PREPARING.discard(day)
             asyncio.create_task(run_private_prepare())
             return
-        _STORY_PREPARING.add(day)
-        await q.edit_message_text("🎬 BUGÜNÜN HİKÂYESİ — "+day+"\n\nMetin ve tek görsel hazırlanıyor. Hazır olduğunda inceleme ekranı açılacak; bu işlem Kaggle nedeniyle zaman alabilir.")
-        try:
-            item=await prepare_story_text(day)
-            if not item["images"]:
-                item=await _story_generate_images(item)
-        except Exception:
-            logger.exception("Current-day Daily Story preparation failed")
-            await q.edit_message_text("🎬 BUGÜNÜN HİKÂYESİ\n\nHazırlık tamamlanamadı. Eski bir görsel kullanılmadı; bugün için onay verilmedi.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Hikâyeye dön",callback_data="story_director")]])); return
-        finally:
-            _STORY_PREPARING.discard(day)
-        body,markup=_story_director_panel(item,lang)
-        await q.edit_message_text(body,reply_markup=markup); return
+        await q.edit_message_text("🎬 BUGÜNÜN HİKÂYESİ — "+day+
+                                  "\n\nÖzel Daily Story arşivi bağlı değil. ChatGPT üretim isteği açılamadı; ayarı kontrol et.",
+                                  reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]])); return
     if data.startswith("story_approve:"):
         await q.answer("Bu eski bir ekran. Günlük Hikâye'yi yeniden aç.",show_alert=True); return
     if data.startswith("story_approve_today:"):
