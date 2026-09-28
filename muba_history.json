@@ -3054,6 +3054,26 @@
         "ar": "تبقى سجلات المعرفة الجديدة متاحة من أحد مسارات الاستكشاف قبل إضافة تصنيف خاص لها؛ ولا توقف المعرّفات الجديدة التنقل.",
         "hi": "नए knowledge records अलग classification जुड़ने से पहले भी Discover में मिलते हैं; नए ID navigation नहीं रोकते।"
       }
+    },
+    {
+      "id": "20260928-daily-story-dev-next-day-prepare",
+      "date": "2026-09-28",
+      "type": "updated",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Prepare the next Daily Story from DEV Tools",
+        "tr": "DEV Tools üzerinden yarının hikâyesini hazırla",
+        "zh": "通过 DEV Tools 准备次日故事",
+        "ar": "إعداد قصة الغد من أدوات المطور",
+        "hi": "DEV Tools से अगले दिन की कहानी तैयार करें"
+      },
+      "text": {
+        "en": "DEV can prepare the next day's story and one image from its own screen. The completed draft stays in the private archive; review and website publication remain separate actions.",
+        "tr": "DEV ertesi günün hikâyesini ve tek görselini kendi ekranından hazırlayabilir. Tamamlanan taslak özel arşivde kalır; inceleme ve web yayını ayrı işlemlerdir.",
+        "zh": "开发者可在专属界面准备次日故事和一张图片。草稿保存在私有档案中，审核与网站发布分别进行。",
+        "ar": "يمكن للمطور إعداد قصة اليوم التالي وصورة واحدة من واجهته. تُحفظ المسودة في الأرشيف الخاص؛ وتبقى المراجعة والنشر على الموقع خطوتين منفصلتين.",
+        "hi": "DEV अपने पैनल से अगले दिन की कहानी और एक चित्र तैयार कर सकता है। मसौदा निजी संग्रह में रहता है; समीक्षा और वेबसाइट प्रकाशन अलग कदम हैं।"
+      }
     }
   ]
 }

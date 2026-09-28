@@ -136,7 +136,7 @@ def _story_today():
 
 
 async def _story_github_draft(day):
-    """Telegram reads a dated GitHub draft; it never initiates image generation."""
+    """Read a verified private draft; viewing a day never starts generation."""
     from muba_story_github import configured, read_day
     if not configured():
         return None  # keep the existing production path until the private archive is configured
@@ -145,6 +145,8 @@ async def _story_github_draft(day):
         from muba_story import is_published
         if is_published(day):
             return story_draft(day)
+        if date.fromisoformat(day) == _story_today() + timedelta(days=1):
+            return None
         raise RuntimeError("Daily Story GitHub record is not ready for " + day)
     manifest, image = result
     from muba_story import ORIGIN_START, BEATS, is_published, save_episode
@@ -153,6 +155,8 @@ async def _story_github_draft(day):
         raise RuntimeError("Daily Story GitHub episode is invalid")
     if not is_published(day):
         if date.fromisoformat(day) >= ORIGIN_START or (date.fromisoformat(day) - STORY_START).days >= len(BEATS):
+            if date.fromisoformat(day) > ORIGIN_START:
+                await _story_seed_previous(day)
             save_episode(day, episode)
         elif story_draft(day)["story_tr"] != episode.get("story_tr"):
             raise RuntimeError("Daily Story GitHub initial episode does not match its saved canon")
@@ -161,6 +165,62 @@ async def _story_github_draft(day):
             item = _story_archive_preview(item, image, "image/png", "github-daily-story")
         return item
     return story_draft(day)
+
+
+async def _story_seed_previous(day):
+    """Use the verified private predecessor as the only next-day text source."""
+    from muba_story import ORIGIN_START, START, STORE
+    from muba_story_github import read_day
+    chosen = date.fromisoformat(day)
+    if chosen <= ORIGIN_START:
+        return
+    previous_day = (chosen - timedelta(days=1)).isoformat()
+    previous = await asyncio.to_thread(read_day, previous_day)
+    if not previous or not isinstance(previous[0].get("episode"), dict):
+        raise RuntimeError("Previous canonical Daily Story is unavailable: " + previous_day)
+    episode = dict(previous[0]["episode"])
+    if not isinstance(episode.get("story"), str) or not episode["story"].strip():
+        raise RuntimeError("Previous canonical Daily Story text is unavailable")
+    episode["step"] = (chosen - timedelta(days=1) - START).days
+    STORE.set("story_text", previous_day, episode)
+
+
+def _story_unprepared_panel(day):
+    rows = [[InlineKeyboardButton("🎬 HAZIRLA", callback_data="story_prepare_tomorrow")],
+            [InlineKeyboardButton("⬅️ Önceki gün", callback_data="story_day:" +
+                                  (date.fromisoformat(day) - timedelta(days=1)).isoformat())],
+            [InlineKeyboardButton("⬅️ Geri", callback_data="menu")]]
+    return ("🎬 MUBA GÜNLÜK HİKÂYE — " + day +
+            "\n\nYarının metni ve görseli henüz hazır değil. HAZIRLA düğmesi üretimi başlatır; "
+            "web yayını için ayrıca DEV onayı gerekir.", InlineKeyboardMarkup(rows))
+
+
+async def _story_prepare_private_tomorrow(day):
+    """Generate one next-day draft, then verify both files in the private repo."""
+    from muba_story_github import configured, read_day, write_day
+    from muba_story import STORE
+    if not configured() or date.fromisoformat(day) != _story_today() + timedelta(days=1):
+        raise RuntimeError("Private next-day preparation is unavailable")
+    existing = await asyncio.to_thread(read_day, day)
+    if existing:
+        return await _story_github_draft(day)
+    await _story_seed_previous(day)
+    item = await prepare_story_text(day)
+    if not item["images"]:
+        item = await _story_generate_images(item)
+    if len(item["images"]) != 1:
+        raise RuntimeError("Daily Story must contain exactly one image")
+    image = read_gallery_image(item["images"][0], include_nonpublic=True)
+    if not image:
+        raise RuntimeError("Generated private Story image is unavailable")
+    episode = STORE.get("story_text", day, None)
+    if not isinstance(episode, dict):
+        raise RuntimeError("Generated Daily Story text is unavailable")
+    await asyncio.to_thread(write_day, day, episode, image[0])
+    stored = await asyncio.to_thread(read_day, day)
+    if not stored or stored[0].get("status") != "draft":
+        raise RuntimeError("Private Daily Story draft verification failed")
+    return await _story_github_draft(day)
 
 
 def _story_display_text(item, lang):
@@ -1039,6 +1099,10 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if chosen>_story_today() and not (github_story_configured() or _story_tomorrow_available()): raise ValueError("Tomorrow not prepared")
             item=await _story_github_draft(day)
             if item is None:
+                if chosen > _story_today() and github_story_configured():
+                    body,markup=_story_unprepared_panel(day)
+                    await q.edit_message_text(body,reply_markup=markup)
+                    return
                 item=await prepare_story_text(day) if chosen==_story_today() else story_draft(day)
             body,markup=_story_director_panel(item,lang)
         except (RuntimeError,ValueError):
@@ -1064,9 +1128,29 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if data=="story_prepare_tomorrow":
         if not is_dev(user_id): return
+        from muba_story_github import configured as github_story_configured
         day=(_story_today()+timedelta(days=1)).isoformat()
         if day in _STORY_PREPARING:
             await q.answer("Yarının görseli hazırlanıyor.",show_alert=True); return
+        if github_story_configured():
+            _STORY_PREPARING.add(day)
+            await q.edit_message_text("🎬 YARININ HİKÂYESİ — "+day+"\n\nHAZIRLANIYOR: metin ve tek görsel özel arşive kaydedilecek. Bu işlem zaman alabilir.")
+            async def run_private_prepare():
+                try:
+                    item=await _story_prepare_private_tomorrow(day)
+                    body,markup=_story_director_panel(item,get_assistant_language(user_id) or "en")
+                    await q.message.edit_text(body,reply_markup=markup)
+                except Exception:
+                    logger.exception("Private next-day Daily Story preparation failed")
+                    await q.message.edit_text("🎬 YARININ HİKÂYESİ — "+day+
+                                              "\n\nHazırlık tamamlanamadı. Taslak onaylanmadı veya yayınlanmadı.",
+                                              reply_markup=InlineKeyboardMarkup([
+                                                  [InlineKeyboardButton("🔄 Yeniden dene",callback_data="story_prepare_tomorrow")],
+                                                  [InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]]))
+                finally:
+                    _STORY_PREPARING.discard(day)
+            asyncio.create_task(run_private_prepare())
+            return
         story_request_preview(day)
         _STORY_PREPARING.add(day)
         await q.edit_message_text("🎬 YARININ HİKÂYESİ — "+day+"\n\nMetin ve tek görsel hazırlanıyor. Hazır olduğunda inceleme ekranı açılacak; bu işlem Kaggle nedeniyle zaman alabilir.")
@@ -2123,8 +2207,8 @@ async def _story_generate_images_unlocked(item):
 
 def _story_archive_preview(item,body,out_type,source):
     """Keep a Daily Story frame private until DEV publishes that day."""
-    archived=archive_creation(body,out_type,item["prompts"][0],"image",source)
-    if not archived or not set_gallery_visibility(archived["id"],"hidden"):
+    archived=archive_creation(body,out_type,item["prompts"][0],"image",source,visibility="hidden")
+    if not archived:
         raise RuntimeError("Daily Story private image archive failed")
     return set_story_images(item["day"],[archived["id"]])
 
