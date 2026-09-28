@@ -26,11 +26,13 @@ class PrivatePrepareTests(unittest.TestCase):
                                            "RENDER_EXTERNAL_URL": "https://muba.test"}):
             import bot_mention as bot
 
-    def test_unprepared_current_day_offers_a_dev_trigger(self):
+    def test_unprepared_current_day_offers_isolated_test_only(self):
         text, markup = bot._story_unprepared_panel("2026-09-29")
         self.assertIn("2026-09-29", text)
-        self.assertEqual(markup.inline_keyboard[0][0].callback_data, "story_prepare_today")
-        self.assertIn("Bugünün", text)
+        self.assertEqual(markup.inline_keyboard[0][0].callback_data, "story_test")
+        self.assertIn("kilitli", text)
+        self.assertFalse(any(button.callback_data == "story_prepare_today"
+                             for row in markup.inline_keyboard for button in row))
         self.assertFalse(any(button.callback_data == "story_publish"
                              for row in markup.inline_keyboard for button in row))
 
@@ -103,6 +105,26 @@ class PrivatePrepareTests(unittest.TestCase):
         self.assertEqual(json.loads(posts[-1][1])["title"], "Daily Story Request: 2026-09-29")
         self.assertTrue(any(path == "/contents/daily-story/requests/2026-09-29.json" and method == "PUT"
                             for path, method, _ in calls))
+
+    def test_live_test_uses_separate_path_and_request(self):
+        calls=[]
+        def api(path, method="GET", body=None):
+            calls.append((path,method,body))
+            if path.startswith("/pulls?state=all"):
+                return []
+            if path == "/git/ref/heads/main":
+                return {"object":{"sha":"base-sha"}}
+            return None
+        with mock.patch.object(archive,"_private"), \
+             mock.patch.object(archive,"read_test_day",return_value=None), \
+             mock.patch.object(archive,"_settings",return_value=("MUBA-RH/MUBA-DAILY-STORY","token","main")), \
+             mock.patch.object(archive,"_api",side_effect=api):
+            self.assertEqual(archive.request_chatgpt_test("2026-09-28"),"queued")
+        self.assertTrue(any(path == "/contents/daily-story/requests/test-2026-09-28-01.json" and method == "PUT"
+                            for path,method,_ in calls))
+        import json
+        self.assertEqual(json.loads(calls[-1][2])["title"],"Daily Story Test Request: 2026-09-28-01")
+        self.assertIn("/daily-story/tests/2026-09-28-01/scene.png",archive._path("2026-09-28","scene.png",test=True))
 
 
 if __name__ == "__main__":
