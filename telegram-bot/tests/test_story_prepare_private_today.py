@@ -1,6 +1,5 @@
 """DEV's prepare button builds only the current day's verified private draft."""
 import asyncio
-import io
 import os
 import sys
 import unittest
@@ -8,10 +7,7 @@ from datetime import date
 from pathlib import Path
 from unittest import mock
 
-from PIL import Image
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from state import MemoryRepository
 import muba_story
 import muba_story_github as archive
 
@@ -47,62 +43,66 @@ class PrivatePrepareTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "not ready"):
                 asyncio.run(bot._story_github_draft("2026-09-28"))
 
-    def test_private_prepare_reuses_canon_and_verifies_saved_image(self):
-        picture = io.BytesIO()
-        Image.new("RGB", (1024, 576), "gold").save(picture, "PNG")
-        previous = {"episode": {"story": "Yesterday's city scene", "title": "Origin"}}
-        record = {}
-
-        def read_day(day):
-            if day == "2026-09-28":
-                return previous, picture.getvalue()
-            return (record["manifest"], picture.getvalue()) if record else None
-
-        def write_day(day, episode, image):
-            self.assertEqual(day, "2026-09-29")
-            self.assertEqual(image, picture.getvalue())
-            self.assertEqual(episode["story"], "New episode")
-            record["manifest"] = {"status": "draft", "episode": episode}
-
-        async def text_generator(day):
-            self.assertEqual(day, "2026-09-29")
-            self.assertEqual(muba_story.STORE.get("story_text", "2026-09-28", None)["story"],
-                             "Yesterday's city scene")
-            return {"day": day, "images": [], "status": "draft"}
-
-        async def image_generator(item):
-            return {**item, "images": ["private-gallery-id"]}
-
-        with mock.patch.object(muba_story, "STORE", MemoryRepository()), \
-             mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
+    def test_private_prepare_wakes_chatgpt_and_reads_verified_draft(self):
+        record = {"draft": None}
+        async def tick(seconds):
+            record["draft"] = ({"status": "draft"}, b"new-image")
+        with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
              mock.patch.object(archive, "configured", return_value=True), \
-             mock.patch.object(archive, "read_day", side_effect=read_day), \
-             mock.patch.object(archive, "write_day", side_effect=write_day) as writer, \
-             mock.patch.object(bot, "prepare_story_text", side_effect=text_generator) as text_call, \
-             mock.patch.object(bot, "_story_generate_images", side_effect=image_generator) as image_call, \
-             mock.patch.object(bot, "read_gallery_image", return_value=(picture.getvalue(), "image/png")), \
-             mock.patch.object(bot, "_story_github_draft", return_value={"day": "2026-09-29"}):
-            muba_story.STORE.set("story_text", "2026-09-29", {"story": "New episode"})
-            first = asyncio.run(bot._story_prepare_private_today("2026-09-29"))
-            second = asyncio.run(bot._story_prepare_private_today("2026-09-29"))
-            self.assertEqual(first, second)
-            writer.assert_called_once()
-            text_call.assert_awaited_once()
-            image_call.assert_awaited_once()
+             mock.patch.object(archive, "read_day", side_effect=lambda day: record["draft"]), \
+             mock.patch.object(archive, "request_chatgpt_day", return_value="queued") as wake, \
+             mock.patch.object(bot.asyncio, "sleep", side_effect=tick), \
+             mock.patch.object(bot, "_story_github_draft", return_value={"day": "2026-09-29"}) as read:
+            self.assertEqual(asyncio.run(bot._story_prepare_private_today("2026-09-29")),
+                             {"day": "2026-09-29"})
+            wake.assert_called_once_with("2026-09-29")
+            read.assert_awaited_once()
             with self.assertRaisesRegex(RuntimeError, "unavailable"):
                 asyncio.run(bot._story_prepare_private_today("2026-09-30"))
 
-    def test_current_day_error_names_failed_stage_without_saving(self):
+    def test_current_day_error_names_request_stage(self):
         with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
-             mock.patch.object(bot, "_story_seed_previous", new_callable=mock.AsyncMock), \
-             mock.patch.object(bot, "prepare_story_text", new_callable=mock.AsyncMock,
-                               side_effect=RuntimeError("provider response invalid")), \
              mock.patch.object(archive, "configured", return_value=True), \
-             mock.patch.object(archive, "read_day", return_value=None), \
-             mock.patch.object(archive, "write_day") as write:
-            with self.assertRaisesRegex(bot.StoryPreparationError, "Metin hazırlanamadı"):
+             mock.patch.object(archive, "request_chatgpt_day", side_effect=RuntimeError("403")):
+            with self.assertRaisesRegex(bot.StoryPreparationError, "ChatGPT isteği oluşturulamadı"):
                 asyncio.run(bot._story_prepare_private_today("2026-09-29"))
-        write.assert_not_called()
+
+    def test_request_is_private_and_idempotent(self):
+        calls = []
+        def api(path, method="GET", body=None):
+            calls.append((path, method))
+            if path.startswith("/pulls?state=all"):
+                return [{"title": "Daily Story Request: 2026-09-29", "state": "open"}]
+            return None
+        with mock.patch.object(archive, "_private"), \
+             mock.patch.object(archive, "read_day", return_value=None), \
+             mock.patch.object(archive, "_settings", return_value=("MUBA-RH/MUBA-DAILY-STORY", "private-token", "main")), \
+             mock.patch.object(archive, "_api", side_effect=api):
+            self.assertEqual(archive.request_chatgpt_day("2026-09-29"), "queued")
+        self.assertFalse(any(method == "POST" for _, method in calls))
+
+    def test_missing_day_opens_one_dated_request_pr(self):
+        calls = []
+        def api(path, method="GET", body=None):
+            calls.append((path, method, body))
+            if path.startswith("/pulls?state=all"):
+                return []
+            if path == "/git/ref/heads/main":
+                return {"object": {"sha": "base-sha"}}
+            return None
+        with mock.patch.object(archive, "_private") as private, \
+             mock.patch.object(archive, "read_day", return_value=None), \
+             mock.patch.object(archive, "_settings", return_value=("MUBA-RH/MUBA-DAILY-STORY", "private-token", "main")), \
+             mock.patch.object(archive, "_api", side_effect=api):
+            self.assertEqual(archive.request_chatgpt_day("2026-09-29"), "queued")
+        private.assert_called_once()
+        posts = [(path, body) for path, method, body in calls if method == "POST"]
+        self.assertEqual([path for path, _ in posts], ["/git/refs", "/pulls"])
+        self.assertEqual(posts[-1][0], "/pulls")
+        import json
+        self.assertEqual(json.loads(posts[-1][1])["title"], "Daily Story Request: 2026-09-29")
+        self.assertTrue(any(path == "/contents/daily-story/requests/2026-09-29.json" and method == "PUT"
+                            for path, method, _ in calls))
 
 
 if __name__ == "__main__":
