@@ -2415,8 +2415,10 @@ async def news_scheduler(application,session):
     await asyncio.sleep(10)
     while True:
         try:
-            rows=await collect_news(session)
-            if rows: await notify_subscribers(rows,application.bot,session,get_assistant_language)
+            # Verified news is stored in the MUBA NEWS pool and rendered only
+            # when the user explicitly opens the MUBA NEWS surface. Do not
+            # inject background news into unrelated Telegram menu flows.
+            await collect_news(session)
         except Exception:
             logger.exception("News collection unavailable; other MUBA systems remain active")
         await asyncio.sleep(1200)
