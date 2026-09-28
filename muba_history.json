@@ -3116,6 +3116,26 @@
         "ar": "يبدأ المطور نص قصة اليوم وصورتها الوحيدة بزر HAZIRLA في الوقت الذي يختاره. تفتح الضغطات اللاحقة المسودة الخاصة المكتملة، ويظهر موضع التعطل عند الخطأ. تظل المراجعة والنشر خطوتين منفصلتين.",
         "hi": "DEV अपने चुने समय पर HAZIRLA से आज की कहानी और एक चित्र बनाना शुरू करता है। बाद में उसी दिन दबाने पर तैयार निजी मसौदा खुलता है; त्रुटि का चरण दिखता है। समीक्षा और वेब प्रकाशन अलग DEV कदम हैं।"
       }
+    },
+    {
+      "id": "20260928-daily-story-chatgpt-on-demand",
+      "date": "2026-09-28",
+      "type": "fixed",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Daily Story ChatGPT request bridge",
+        "tr": "Günlük Hikâye ChatGPT istek bağlantısı",
+        "zh": "每日故事 ChatGPT 请求连接",
+        "ar": "ربط طلب قصة اليوم مع ChatGPT",
+        "hi": "दैनिक कहानी ChatGPT अनुरोध कड़ी"
+      },
+      "text": {
+        "en": "DEV's HAZIRLA button requests ChatGPT production through a private GitHub event, then verifies the dated draft and one image. Review and web publishing remain separate.",
+        "tr": "DEV'in HAZIRLA düğmesi özel GitHub olayıyla ChatGPT üretimini ister; sonra tarihli taslağı ve tek görseli doğrular. İnceleme ve web yayını ayrı kalır.",
+        "zh": "开发者点击 HAZIRLA 后通过私有 GitHub 事件请求 ChatGPT 生成，再验证当天草稿和单张图片。审核和网站发布仍为独立步骤。",
+        "ar": "يطلب زر HAZIRLA من ChatGPT الإنتاج عبر حدث GitHub خاص، ثم يتحقق من مسودة اليوم والصورة الواحدة. تبقى المراجعة والنشر خطوتين منفصلتين.",
+        "hi": "DEV का HAZIRLA बटन निजी GitHub घटना के जरिए ChatGPT निर्माण माँगता है, फिर दिनांकित मसौदे और एक चित्र की पुष्टि करता है। समीक्षा और वेब प्रकाशन अलग रहते हैं।"
+      }
     }
   ]
 }

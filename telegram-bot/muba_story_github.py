@@ -9,7 +9,7 @@ import base64
 import hashlib
 import json
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
@@ -96,6 +96,44 @@ def read_day(day):
     if normalize_ready_image(image) != image:
         raise RuntimeError("Daily Story GitHub image must be an exact 1024x576 PNG")
     return item, image
+
+
+def request_chatgpt_day(day):
+    """Wake ChatGPT with one private request PR; never run a bot-side writer."""
+    date.fromisoformat(day)
+    _private()
+    if read_day(day):
+        return "ready"
+    repo, _, branch = _settings()
+    head = "daily-story-request-" + day
+    pulls = _api("/pulls?state=all&head=" + quote(repo.split("/")[0] + ":" + head, safe=":") +
+                 "&base=" + quote(branch, safe="")) or []
+    for pull in pulls:
+        if pull.get("title") != "Daily Story Request: " + day:
+            continue
+        if pull.get("state") == "open":
+            return "queued"
+        raise RuntimeError("Daily Story request PR is closed; inspect it before retrying")
+    ref = _api("/git/ref/heads/" + quote(head, safe=""))
+    if ref is None:
+        base = _api("/git/ref/heads/" + quote(branch, safe=""))
+        if not base or not base.get("object", {}).get("sha"):
+            raise RuntimeError("Daily Story base branch is unavailable")
+        _api("/git/refs", "POST", json.dumps({"ref": "refs/heads/" + head,
+                                                "sha": base["object"]["sha"]}).encode("utf-8"))
+    path = "/contents/daily-story/requests/" + day + ".json"
+    if _api(path + "?ref=" + quote(head, safe="")) is None:
+        request = {"version": 1, "day": day, "source": "telegram-dev",
+                   "requested_at": datetime.now(timezone.utc).isoformat()}
+        payload = {"message": "Daily Story: request ChatGPT for " + day,
+                   "content": base64.b64encode(json.dumps(request).encode("utf-8")).decode("ascii"),
+                   "branch": head}
+        _api(path, "PUT", json.dumps(payload).encode("utf-8"))
+    # GitHub PR opening is the actual event that wakes the ChatGPT automation.
+    _api("/pulls", "POST", json.dumps({"title": "Daily Story Request: " + day,
+                                         "head": head, "base": branch, "draft": True,
+                                         "body": "DEV HAZIRLA request; ChatGPT writes only to the private dated draft. No merge or web publication."}).encode("utf-8"))
+    return "queued"
 
 
 def _put(day, filename, data, previous_sha):
