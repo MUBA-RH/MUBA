@@ -55,17 +55,18 @@ def _private():
         raise RuntimeError("Daily Story GitHub storage must be a private repository")
 
 
-def _path(day, filename):
+def _path(day, filename, test=False):
     if date.fromisoformat(day).isoformat() != day:
         raise ValueError("Invalid Daily Story date")
     if filename not in ("story.json", "scene.png"):
         raise ValueError("Invalid Daily Story file")
-    return "/contents/daily-story/days/" + day + "/" + filename
+    root = "tests/" + day + "-01" if test else "days/" + day
+    return "/contents/daily-story/" + root + "/" + filename
 
 
-def _get(day, filename):
+def _get(day, filename, test=False):
     _, _, branch = _settings()
-    result = _api(_path(day, filename) + "?ref=" + quote(branch, safe=""))
+    result = _api(_path(day, filename, test) + "?ref=" + quote(branch, safe=""))
     if result is None:
         return None, None
     # GitHub omits inline content for files larger than 1 MB. The Git blob
@@ -96,6 +97,62 @@ def read_day(day):
     if normalize_ready_image(image) != image:
         raise RuntimeError("Daily Story GitHub image must be an exact 1024x576 PNG")
     return item, image
+
+
+def read_test_day(day):
+    """A separate live test record can never be mistaken for the canonical day."""
+    _private()
+    raw, _ = _get(day, "story.json", test=True)
+    if raw is None:
+        return None
+    item = json.loads(raw)
+    if (item.get("day") != day or item.get("version") != 1 or
+            item.get("test_id") != day + "-01" or item.get("status") != "test"):
+        raise RuntimeError("Daily Story test manifest is invalid")
+    image, _ = _get(day, "scene.png", test=True)
+    if image is None or hashlib.sha256(image).hexdigest() != item.get("image_sha256"):
+        raise RuntimeError("Daily Story test image is missing or changed")
+    if normalize_ready_image(image) != image:
+        raise RuntimeError("Daily Story test image must be an exact 1024x576 PNG")
+    return item, image
+
+
+def request_chatgpt_test(day):
+    """Open an isolated one-time test request without editing dated story canon."""
+    date.fromisoformat(day)
+    _private()
+    if read_test_day(day):
+        return "ready"
+    repo, _, branch = _settings()
+    ident = day + "-01"
+    head = "daily-story-test-" + ident
+    title = "Daily Story Test Request: " + ident
+    pulls = _api("/pulls?state=all&head=" + quote(repo.split("/")[0] + ":" + head, safe=":") +
+                 "&base=" + quote(branch, safe="")) or []
+    for pull in pulls:
+        if pull.get("title") == title:
+            if pull.get("state") == "open":
+                return "queued"
+            raise RuntimeError("Daily Story test PR is closed; inspect it before retrying")
+    ref = _api("/git/ref/heads/" + quote(head, safe=""))
+    if ref is None:
+        base = _api("/git/ref/heads/" + quote(branch, safe=""))
+        if not base or not base.get("object", {}).get("sha"):
+            raise RuntimeError("Daily Story base branch is unavailable")
+        _api("/git/refs", "POST", json.dumps({"ref": "refs/heads/" + head,
+                                                "sha": base["object"]["sha"]}).encode("utf-8"))
+    path = "/contents/daily-story/requests/test-" + ident + ".json"
+    if _api(path + "?ref=" + quote(head, safe="")) is None:
+        request = {"version": 1, "day": day, "test_id": ident, "source": "telegram-dev-test",
+                   "requested_at": datetime.now(timezone.utc).isoformat()}
+        payload = {"message": "Daily Story: test ChatGPT bridge for " + ident,
+                   "content": base64.b64encode(json.dumps(request).encode("utf-8")).decode("ascii"),
+                   "branch": head}
+        _api(path, "PUT", json.dumps(payload).encode("utf-8"))
+    _api("/pulls", "POST", json.dumps({"title": title, "head": head, "base": branch,
+                                         "draft": True,
+                                         "body": "DEV-only live test. Write only to daily-story/tests/; never merge or publish."}).encode("utf-8"))
+    return "queued"
 
 
 def request_chatgpt_day(day):

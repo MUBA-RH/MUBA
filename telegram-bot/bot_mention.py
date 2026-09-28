@@ -127,12 +127,18 @@ _ASSISTANT_CALL_INTERVAL = 7200
 _ASSISTANT_CALLS = {}
 _ISTANBUL_TZ = ZoneInfo("Europe/Istanbul")
 _STORY_PREPARING = set()
+_STORY_TESTING = set()
 _STORY_QUEUED = set()
 _STORY_GENERATION_LOCK = asyncio.Lock()
 
 
 def _story_today():
     return datetime.now(_ISTANBUL_TZ).date()
+
+
+def _story_production_enabled():
+    # DEV explicitly starts the dated series after the isolated live test.
+    return os.getenv("MUBA_STORY_PRODUCTION_ENABLED", "").lower() == "true"
 
 
 async def _story_github_draft(day):
@@ -186,13 +192,15 @@ async def _story_seed_previous(day):
 
 
 def _story_unprepared_panel(day):
-    rows = [[InlineKeyboardButton("🎬 BUGÜNÜ HAZIRLA", callback_data="story_prepare_today")],
+    rows = ([[InlineKeyboardButton("🎬 BUGÜNÜ HAZIRLA", callback_data="story_prepare_today")]]
+            if _story_production_enabled() else []) + [
+            [InlineKeyboardButton("🧪 CANLI TEST", callback_data="story_test")],
             [InlineKeyboardButton("⬅️ Önceki gün", callback_data="story_day:" +
                                   (date.fromisoformat(day) - timedelta(days=1)).isoformat())],
             [InlineKeyboardButton("⬅️ Geri", callback_data="menu")]]
     return ("🎬 MUBA GÜNLÜK HİKÂYE — " + day +
-            "\n\nBugünün metni ve görseli henüz hazır değil. HAZIRLA düğmesi üretimi başlatır; "
-            "web yayını için ayrıca DEV onayı gerekir.", InlineKeyboardMarkup(rows))
+            "\n\nGünlük üretim test bitene kadar kilitli. CANLI TEST ayrı özel alanda "
+            "metin ve görsel üretimini dener; web yayını yapmaz.", InlineKeyboardMarkup(rows))
 
 
 class StoryPreparationError(RuntimeError):
@@ -224,6 +232,43 @@ async def _story_prepare_private_today(day):
         raise StoryPreparationError(stage + (" " + detail if detail else "")) from exc
 
 
+async def _story_prepare_private_test(day):
+    from muba_story_github import configured, read_test_day, request_chatgpt_test
+    if not configured() or date.fromisoformat(day) != _story_today():
+        raise RuntimeError("Private current-day test is unavailable")
+    result = await asyncio.to_thread(request_chatgpt_test, day)
+    if result == "ready":
+        return await asyncio.to_thread(read_test_day, day)
+    for _ in range(45):
+        await asyncio.sleep(8)
+        record = await asyncio.to_thread(read_test_day, day)
+        if record:
+            return record
+    return None
+
+
+def _story_test_panel(record, day, lang):
+    if record:
+        episode, image = record[0]["episode"], record[1]
+        body = "🧪 MUBA DAILY STORY — CANLI TEST\n\n" + _story_display_text({**episode, "day": day}, lang)
+        body += "\n\nMetin: HAZIR\nGörsel: HAZIR\nDurum: TEST — web yayını kapalı."
+        rows = [[InlineKeyboardButton("🖼️ TEST GÖRSELİNİ GÖR", callback_data="story_test_preview")]]
+    else:
+        body = ("🧪 MUBA DAILY STORY — CANLI TEST\n\nChatGPT bugünün hikâyesi ve tek görseli için "
+                "ayrı bir deneme oluşturacak. Resmî günlük kayda ve web yayınına dokunulmaz.")
+        rows = [[InlineKeyboardButton("🧪 TESTİ BAŞLAT", callback_data="story_test_start")]]
+    rows.append([InlineKeyboardButton("⬅️ Hikâyeye dön", callback_data="story_director")])
+    return body, InlineKeyboardMarkup(rows)
+
+
+async def _story_send_test_preview(message, record, day, lang):
+    import io
+    episode, image = record[0]["episode"], record[1]
+    preview = io.BytesIO(image)
+    preview.name = "muba-daily-story-test.png"
+    await message.reply_photo(photo=preview, caption="🧪 TEST — " + _story_display_text({**episode, "day": day}, lang))
+
+
 def _story_display_text(item, lang):
     if lang == "en":
         return item["story"]
@@ -246,11 +291,13 @@ def _story_director_panel(item, lang="en"):
     rows = []
     if len(item["images"]) == 1:
         rows.append([InlineKeyboardButton("🖼️ GÖRSELİ GÖR", callback_data="story_preview:" + item["day"])])
-    if day == today and item["status"] != "published" and len(item["images"]) == 1 and not story_review_approved(item["day"]):
+    if _story_production_enabled() and day == today and item["status"] != "published" and len(item["images"]) == 1 and not story_review_approved(item["day"]):
         rows.append([InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA", callback_data="story_approve_today:" + item["day"])])
-    if day == today and item["status"] != "published" and story_review_approved(item["day"]):
+    if _story_production_enabled() and day == today and item["status"] != "published" and story_review_approved(item["day"]):
         rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish")])
     from muba_story_github import configured as github_story_configured
+    if day == today and not _story_production_enabled():
+        rows.append([InlineKeyboardButton("🧪 CANLI TEST", callback_data="story_test")])
     if not github_story_configured() and day == today and item["status"] != "published" and not item["images"] and item["day"] not in _STORY_PREPARING:
         rows.append([InlineKeyboardButton("🎬 TEK GÖRSELİ ÜRET", callback_data="story_generate")])
     if not github_story_configured() and day == today and item["status"] != "published":
@@ -1115,10 +1162,59 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.answer("Bu günün görseli henüz hazır değil.",show_alert=True); return
         await _story_send_preview(q.message,item,lang)
         return
+    if data in ("story_test", "story_test_preview", "story_test_start"):
+        if not is_dev(user_id): return
+        from muba_story_github import configured as github_story_configured, read_test_day
+        day = _story_today().isoformat()
+        if not github_story_configured():
+            await q.answer("Özel Daily Story arşivi bağlı değil.", show_alert=True); return
+        if data == "story_test_start":
+            if day in _STORY_TESTING:
+                await q.answer("Canlı test zaten çalışıyor.", show_alert=True); return
+            _STORY_TESTING.add(day)
+            await q.edit_message_text("🧪 CANLI TEST — "+day+"\n\nChatGPT isteği açılıyor. Metin ve tek görsel yalnızca özel test alanına kaydedilecek.")
+            async def run_test():
+                try:
+                    record = await _story_prepare_private_test(day)
+                    if not record:
+                        await q.message.edit_text("🧪 CANLI TEST — "+day+
+                                                  "\n\nİstek açıldı; test kaydı henüz gelmedi. Durumu yeniden kontrol et.",
+                                                  reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Durumu kontrol et",callback_data="story_test")]]))
+                        return
+                    selected = get_assistant_language(user_id) or "en"
+                    body, markup = _story_test_panel(record,day,selected)
+                    await q.message.edit_text(body,reply_markup=markup)
+                    await _story_send_test_preview(q.message,record,day,selected)
+                except Exception as exc:
+                    logger.exception("Isolated Daily Story live test failed")
+                    detail = str(exc) if isinstance(exc,(RuntimeError,ValueError)) else "Bilinmeyen adım"
+                    await q.message.edit_text("🧪 CANLI TEST — "+day+"\n\nTest tamamlanamadı: "+detail+
+                                              ". Resmî hikâyeye veya web yayınına dokunulmadı.",
+                                              reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Durumu kontrol et",callback_data="story_test")]]))
+                finally:
+                    _STORY_TESTING.discard(day)
+            asyncio.create_task(run_test())
+            return
+        try:
+            record = await asyncio.to_thread(read_test_day, day)
+            if data == "story_test_preview":
+                if not record: raise ValueError("Test görseli henüz hazır değil")
+                await _story_send_test_preview(q.message,record,day,lang)
+                return
+            body,markup = _story_test_panel(record,day,lang)
+            await q.edit_message_text(body,reply_markup=markup)
+        except Exception:
+            logger.exception("Isolated Daily Story record unavailable")
+            await q.edit_message_text("🧪 CANLI TEST\n\nTest kaydı okunamadı. Yeniden kontrol edebilirsin.",
+                                      reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔄 Durumu kontrol et",callback_data="story_test")],
+                                                                         [InlineKeyboardButton("⬅️ Geri",callback_data="story_director")]]))
+        return
     if data=="story_prepare_tomorrow":
         await q.answer("Bu eski bir ekran. Günlük Hikâye'yi yeniden aç.",show_alert=True); return
     if data=="story_prepare_today":
         if not is_dev(user_id): return
+        if not _story_production_enabled():
+            await q.answer("Günlük üretim test tamamlanana kadar kilitli.",show_alert=True); return
         from muba_story_github import configured as github_story_configured
         day=_story_today().isoformat()
         if day in _STORY_PREPARING:
@@ -1160,6 +1256,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.answer("Bu eski bir ekran. Günlük Hikâye'yi yeniden aç.",show_alert=True); return
     if data.startswith("story_approve_today:"):
         if not is_dev(user_id): return
+        if not _story_production_enabled():
+            await q.answer("Günlük üretim henüz başlamadı.",show_alert=True); return
         try:
             day=data.split(":",1)[1]
             item=story_approve_today(day,today=_story_today())
@@ -1184,6 +1282,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("📥 MUBA DAILY STORY — "+day+"\n\nHazır 16:9 görseli fotoğraf veya PNG dosyası olarak gönder. Önce taslakta inceleyeceksin; web yayını ayrı onay gerektirir.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅️ Geri",callback_data="story_day:"+day)]])); return
     if data=="story_generate":
         if not is_dev(user_id): return
+        if not _story_production_enabled():
+            await q.answer("Günlük üretim henüz başlamadı.",show_alert=True); return
         from muba_story_github import configured as github_story_configured
         if github_story_configured():
             await q.answer("Bu günün görseli GitHub Daily Story kaydından okunur.",show_alert=True); return
@@ -1209,6 +1309,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     if data=="story_publish":
         if not is_dev(user_id): return
+        if not _story_production_enabled():
+            await q.answer("Web yayını test süresince kilitli.",show_alert=True); return
         try:
             draft_item=story_draft()
             if len(draft_item["images"])!=1: raise ValueError("Daily Story image required")
@@ -2415,10 +2517,8 @@ async def news_scheduler(application,session):
     await asyncio.sleep(10)
     while True:
         try:
-            # Verified news is stored in the MUBA NEWS pool and rendered only
-            # when the user explicitly opens the MUBA NEWS surface. Do not
-            # inject background news into unrelated Telegram menu flows.
-            await collect_news(session)
+            rows=await collect_news(session)
+            if rows: await notify_subscribers(rows,application.bot,session,get_assistant_language)
         except Exception:
             logger.exception("News collection unavailable; other MUBA systems remain active")
         await asyncio.sleep(1200)
