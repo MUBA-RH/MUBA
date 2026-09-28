@@ -1,4 +1,4 @@
-"""DEV's prepare button must build only tomorrow's verified private draft."""
+"""DEV's prepare button builds only the current day's verified private draft."""
 import asyncio
 import io
 import os
@@ -30,12 +30,22 @@ class PrivatePrepareTests(unittest.TestCase):
                                            "RENDER_EXTERNAL_URL": "https://muba.test"}):
             import bot_mention as bot
 
-    def test_unprepared_next_day_offers_a_dev_trigger(self):
+    def test_unprepared_current_day_offers_a_dev_trigger(self):
         text, markup = bot._story_unprepared_panel("2026-09-29")
         self.assertIn("2026-09-29", text)
-        self.assertEqual(markup.inline_keyboard[0][0].callback_data, "story_prepare_tomorrow")
+        self.assertEqual(markup.inline_keyboard[0][0].callback_data, "story_prepare_today")
+        self.assertIn("Bugünün", text)
         self.assertFalse(any(button.callback_data == "story_publish"
                              for row in markup.inline_keyboard for button in row))
+
+    def test_missing_current_day_is_unprepared_without_implicit_generation(self):
+        with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
+             mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=None), \
+             mock.patch.object(muba_story, "is_published", return_value=False):
+            self.assertIsNone(asyncio.run(bot._story_github_draft("2026-09-29")))
+            with self.assertRaisesRegex(RuntimeError, "not ready"):
+                asyncio.run(bot._story_github_draft("2026-09-28"))
 
     def test_private_prepare_reuses_canon_and_verifies_saved_image(self):
         picture = io.BytesIO()
@@ -64,7 +74,7 @@ class PrivatePrepareTests(unittest.TestCase):
             return {**item, "images": ["private-gallery-id"]}
 
         with mock.patch.object(muba_story, "STORE", MemoryRepository()), \
-             mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 28)), \
+             mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
              mock.patch.object(archive, "configured", return_value=True), \
              mock.patch.object(archive, "read_day", side_effect=read_day), \
              mock.patch.object(archive, "write_day", side_effect=write_day) as writer, \
@@ -73,14 +83,26 @@ class PrivatePrepareTests(unittest.TestCase):
              mock.patch.object(bot, "read_gallery_image", return_value=(picture.getvalue(), "image/png")), \
              mock.patch.object(bot, "_story_github_draft", return_value={"day": "2026-09-29"}):
             muba_story.STORE.set("story_text", "2026-09-29", {"story": "New episode"})
-            first = asyncio.run(bot._story_prepare_private_tomorrow("2026-09-29"))
-            second = asyncio.run(bot._story_prepare_private_tomorrow("2026-09-29"))
+            first = asyncio.run(bot._story_prepare_private_today("2026-09-29"))
+            second = asyncio.run(bot._story_prepare_private_today("2026-09-29"))
             self.assertEqual(first, second)
             writer.assert_called_once()
             text_call.assert_awaited_once()
             image_call.assert_awaited_once()
             with self.assertRaisesRegex(RuntimeError, "unavailable"):
-                asyncio.run(bot._story_prepare_private_tomorrow("2026-09-30"))
+                asyncio.run(bot._story_prepare_private_today("2026-09-30"))
+
+    def test_current_day_error_names_failed_stage_without_saving(self):
+        with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
+             mock.patch.object(bot, "_story_seed_previous", new_callable=mock.AsyncMock), \
+             mock.patch.object(bot, "prepare_story_text", new_callable=mock.AsyncMock,
+                               side_effect=RuntimeError("provider response invalid")), \
+             mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=None), \
+             mock.patch.object(archive, "write_day") as write:
+            with self.assertRaisesRegex(bot.StoryPreparationError, "Metin hazırlanamadı"):
+                asyncio.run(bot._story_prepare_private_today("2026-09-29"))
+        write.assert_not_called()
 
 
 if __name__ == "__main__":
