@@ -250,7 +250,7 @@ def storage_status():
     }
 
 
-def _new_record(image_bytes,content_type,prompt,kind,source):
+def _new_record(image_bytes,content_type,prompt,kind,source,visibility="public"):
     stamp=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
     digest=hashlib.sha256(image_bytes+stamp.encode("utf-8")).hexdigest()[:24]
     ext=_ALLOWED_TYPES[content_type]
@@ -262,17 +262,19 @@ def _new_record(image_bytes,content_type,prompt,kind,source):
         "created_at":stamp,
         "content_type":content_type,
         "file":digest+ext,
-        "visibility":"public",
+        "visibility":visibility,
     }
 
 
-def archive_creation(image_bytes,content_type,prompt,kind,source):
+def archive_creation(image_bytes,content_type,prompt,kind,source,visibility="public"):
     if content_type not in _ALLOWED_TYPES:
         raise ValueError("unsupported image content type")
     if not image_bytes:
         raise ValueError("empty image")
+    if visibility not in _ALLOWED_VISIBILITY:
+        raise ValueError("invalid gallery visibility")
     with _LOCK:
-        record=_new_record(image_bytes,content_type,prompt,kind,source)
+        record=_new_record(image_bytes,content_type,prompt,kind,source,visibility)
         if _r2_enabled():
             record["file"]="images/"+record["file"]
             rows=_r2_load_index()
