@@ -3074,6 +3074,28 @@
         "ar": "يمكن للمطور إعداد قصة اليوم التالي وصورة واحدة من واجهته. تُحفظ المسودة في الأرشيف الخاص؛ وتبقى المراجعة والنشر على الموقع خطوتين منفصلتين.",
         "hi": "DEV अपने पैनल से अगले दिन की कहानी और एक चित्र तैयार कर सकता है। मसौदा निजी संग्रह में रहता है; समीक्षा और वेबसाइट प्रकाशन अलग कदम हैं।"
       }
+    },
+    {
+      "id": "20260928-daily-story-text-length-repair",
+      "date": "2026-09-28",
+      "type": "improved",
+      "areas": [
+        "daily_story"
+      ],
+      "title": {
+        "en": "More reliable next-day story preparation",
+        "tr": "Yarının hikâyesini daha güvenilir hazırlama",
+        "zh": "更可靠地准备次日故事",
+        "ar": "تحضير قصة الغد بموثوقية أكبر",
+        "hi": "अगले दिन की कहानी की अधिक भरोसेमंद तैयारी"
+      },
+      "text": {
+        "en": "When a language version falls outside the story length limit, preparation retries that language alone before saving the complete private draft. Approval and publication still require separate DEV actions.",
+        "tr": "Bir dildeki metin uzunluk sınırını aşarsa hazırlık yalnızca o dili yeniden dener; tüm diller tamamlanmadan özel taslağı kaydetmez. Onay ve yayın ayrı DEV işlemleridir.",
+        "zh": "若某个语言版本不符合故事字数限制，准备过程仅重试该语言；所有语言完成后才保存私有草稿。审核与发布仍需开发者分别操作。",
+        "ar": "إذا خرج نص إحدى اللغات عن حد طول القصة، يُعاد إنشاء تلك اللغة وحدها قبل حفظ المسودة الخاصة الكاملة. تظل الموافقة والنشر خطوتين منفصلتين للمطور.",
+        "hi": "किसी भाषा का पाठ कहानी की लंबाई सीमा से बाहर हो तो तैयारी उसी भाषा को दोबारा बनाती है। सभी भाषाएँ तैयार होने पर ही निजी मसौदा सहेजा जाता है; मंज़ूरी और प्रकाशन DEV के अलग कदम हैं।"
+      }
     }
   ]
 }
