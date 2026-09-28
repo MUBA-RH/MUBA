@@ -3136,6 +3136,26 @@
         "ar": "يطلب زر HAZIRLA من ChatGPT الإنتاج عبر حدث GitHub خاص، ثم يتحقق من مسودة اليوم والصورة الواحدة. تبقى المراجعة والنشر خطوتين منفصلتين.",
         "hi": "DEV का HAZIRLA बटन निजी GitHub घटना के जरिए ChatGPT निर्माण माँगता है, फिर दिनांकित मसौदे और एक चित्र की पुष्टि करता है। समीक्षा और वेब प्रकाशन अलग रहते हैं।"
       }
+    },
+    {
+      "id": "20260928-daily-story-isolated-live-test",
+      "date": "2026-09-28",
+      "type": "updated",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Isolated Daily Story live test",
+        "tr": "Ayrı Günlük Hikâye canlı testi",
+        "zh": "独立每日故事实时测试",
+        "ar": "اختبار مباشر منفصل للقصة اليومية",
+        "hi": "अलग दैनिक कहानी लाइव परीक्षण"
+      },
+      "text": {
+        "en": "DEV can test ChatGPT story and image production in a private test record. Dated production and web publishing stay locked until DEV starts the series.",
+        "tr": "DEV, ChatGPT metin ve görsel üretimini özel test kaydında deneyebilir. DEV seriyi başlatana kadar tarihli üretim ve web yayını kilitli kalır.",
+        "zh": "开发者可在私有测试记录中验证 ChatGPT 故事与图片生成。正式开始前，日期生产和网站发布保持锁定。",
+        "ar": "يمكن للمطور اختبار إنشاء القصة والصورة بواسطة ChatGPT في سجل اختبار خاص. يبقى الإنتاج الرسمي والنشر مغلقين حتى بدء السلسلة.",
+        "hi": "DEV निजी परीक्षण रिकॉर्ड में ChatGPT कहानी और चित्र निर्माण जाँच सकता है। श्रृंखला शुरू होने तक दिनांकित निर्माण और वेब प्रकाशन बंद रहते हैं।"
+      }
     }
   ]
 }
