@@ -40,7 +40,7 @@ class StoryReferenceTests(unittest.TestCase):
     def test_telegram_web_gates_remain_dev_approved(self):
         bot = (ROOT/'bot_mention.py').read_text(encoding='utf-8')
         web = (ROOT.parent/'index.html').read_text(encoding='utf-8')
-        self.assertIn('callback_data="story_publish"', bot)
+        self.assertIn('callback_data="story_publish:" + item["day"]', bot)
         self.assertIn('story_reference_for_day', bot)
         self.assertIn('if(urls.length!==1 && urls.length!==4)', web)
         self.assertIn('id="story-share-x"', web)
