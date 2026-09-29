@@ -3176,6 +3176,26 @@
         "ar": "يكتب اختبار المطور الطلب في فرع PR خاص موجود بدلاً من استدعاء قائمة PR المحظور. تُظهر الأخطاء مسار GitHub؛ يبقى الإنتاج الرسمي مقفلاً.",
         "hi": "DEV लाइव परीक्षण अनुरोध मौजूदा निजी PR शाखा में लिखता है और बाधित PR सूची कॉल से बचता है। त्रुटियाँ GitHub पथ दिखाती हैं; आधिकारिक निर्माण बंद रहता है।"
       }
+    },
+    {
+      "id": "20260929-daily-story-scheduled-reader",
+      "date": "2026-09-29",
+      "type": "updated",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Daily Story scheduled preparation and read-only Telegram preview",
+        "tr": "Günlük Hikâye zamanlı hazırlık ve Telegram'da salt okunur önizleme",
+        "zh": "每日故事定时准备与 Telegram 只读预览",
+        "ar": "إعداد القصة اليومية المجدول ومعاينة تيليجرام للقراءة فقط",
+        "hi": "डेली स्टोरी की निर्धारित तैयारी और टेलीग्राम में केवल पढ़ने योग्य झलक"
+      },
+      "text": {
+        "en": "ChatGPT's daily task owns story and image preparation in the private archive. Telegram checks and previews the verified record without opening a production request. The official series stays paused until DEV starts it.",
+        "tr": "ChatGPT'nin günlük görevi hikâye ve görseli özel arşivde hazırlar. Telegram üretim isteği açmadan doğrulanmış kaydı kontrol edip gösterir. DEV başlatana kadar resmî seri duraklatılmıştır.",
+        "zh": "ChatGPT 的每日任务在私有档案中准备故事和图片。Telegram 只检查并预览已验证记录，不发起正式生产请求。正式系列等待开发者启动。",
+        "ar": "تُحضّر مهمة ChatGPT اليومية القصة والصورة في الأرشيف الخاص. يتحقق تيليجرام من السجل ويعرضه دون بدء طلب إنتاج رسمي. تبقى السلسلة متوقفة حتى يبدأها المطور.",
+        "hi": "ChatGPT का दैनिक कार्य निजी संग्रह में कहानी और चित्र तैयार करता है। टेलीग्राम उत्पादन अनुरोध खोले बिना सत्यापित रिकॉर्ड दिखाता है। DEV के शुरू करने तक आधिकारिक श्रृंखला रुकी रहेगी।"
+      }
     }
   ]
 }
