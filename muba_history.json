@@ -3236,6 +3236,26 @@
         "ar": "يوافق المطور أسفل صورة القصة الرسمية؛ وبعد الموافقة يظهر زر النشر على الويب أسفل الصورة نفسها. لا تعرض صورة الاختبار المنفصل زر نشر.",
         "hi": "DEV आधिकारिक कहानी की तस्वीर के नीचे मंज़ूरी देता है; उसके बाद उसी तस्वीर के नीचे वेब प्रकाशन दिखता है। अलग लाइव टेस्ट चित्र में प्रकाशन बटन नहीं होता।"
       }
+    },
+    {
+      "id": "20260929-daily-story-isolated-web-test-preview",
+      "date": "2026-09-29",
+      "type": "improved",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Daily Story isolated web test preview",
+        "tr": "Günlük Hikâye ayrı web test önizlemesi",
+        "zh": "每日故事独立网页测试预览",
+        "ar": "معاينة ويب اختبار مستقلة للقصة اليومية",
+        "hi": "डेली स्टोरी की अलग वेब परीक्षण झलक"
+      },
+      "text": {
+        "en": "The live test photo now offers DEV test approval and then WEB PUBLISH (TEST), which opens a temporary signed web preview. It does not publish the test record as an official story.",
+        "tr": "Canlı test görselinin altında DEV test onayı, ardından WEB YAYINLA (TEST) vardır; düğme süreli imzalı web önizlemesi açar. Test kaydı resmî hikâye olarak yayımlanmaz.",
+        "zh": "实时测试图片下方先显示开发者测试批准，然后显示网站发布（测试）；按钮打开有时限的签名网页预览。测试记录不会作为正式故事发布。",
+        "ar": "تظهر أسفل صورة الاختبار موافقة المطور، ثم زر النشر على الويب (اختبار) الذي يفتح معاينة موقعة ومؤقتة. لا يُنشر سجل الاختبار كقصة رسمية.",
+        "hi": "लाइव टेस्ट चित्र के नीचे पहले DEV की टेस्ट मंज़ूरी, फिर वेब प्रकाशन (टेस्ट) है; यह सीमित समय वाली हस्ताक्षरित वेब झलक खोलता है। टेस्ट रिकॉर्ड आधिकारिक कहानी नहीं बनता।"
+      }
     }
   ]
 }
