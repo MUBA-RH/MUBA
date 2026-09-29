@@ -3156,6 +3156,26 @@
         "ar": "يمكن للمطور اختبار إنشاء القصة والصورة بواسطة ChatGPT في سجل اختبار خاص. يبقى الإنتاج الرسمي والنشر مغلقين حتى بدء السلسلة.",
         "hi": "DEV निजी परीक्षण रिकॉर्ड में ChatGPT कहानी और चित्र निर्माण जाँच सकता है। श्रृंखला शुरू होने तक दिनांकित निर्माण और वेब प्रकाशन बंद रहते हैं।"
       }
+    },
+    {
+      "id": "20260929-daily-story-test-queue-permission-fix",
+      "date": "2026-09-29",
+      "type": "fixed",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Daily Story test request permission fix",
+        "tr": "Günlük Hikâye test isteği yetki düzeltmesi",
+        "zh": "每日故事测试请求权限修复",
+        "ar": "إصلاح صلاحية طلب اختبار القصة اليومية",
+        "hi": "दैनिक कहानी परीक्षण अनुरोध अनुमति सुधार"
+      },
+      "text": {
+        "en": "The DEV live test writes a private request to an existing PR branch, avoiding the bot token's blocked PR-list call. Errors identify the GitHub route; official production remains locked.",
+        "tr": "DEV canlı testi, bot tokenının engellenen PR listeleme çağrısı yerine açık özel PR dalına istek yazar. Hata GitHub yolunu gösterir; resmî üretim kilitli kalır.",
+        "zh": "开发者实时测试将请求写入现有私有 PR 分支，避免受限的 PR 列表调用。错误会标明 GitHub 路径；正式生产保持锁定。",
+        "ar": "يكتب اختبار المطور الطلب في فرع PR خاص موجود بدلاً من استدعاء قائمة PR المحظور. تُظهر الأخطاء مسار GitHub؛ يبقى الإنتاج الرسمي مقفلاً.",
+        "hi": "DEV लाइव परीक्षण अनुरोध मौजूदा निजी PR शाखा में लिखता है और बाधित PR सूची कॉल से बचता है। त्रुटियाँ GitHub पथ दिखाती हैं; आधिकारिक निर्माण बंद रहता है।"
+      }
     }
   ]
 }
