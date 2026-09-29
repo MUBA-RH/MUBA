@@ -55,6 +55,30 @@ class PrivatePrepareTests(unittest.TestCase):
         self.assertFalse(hasattr(archive, "request_chatgpt_day"))
         self.assertFalse(hasattr(bot, "_story_prepare_private_today"))
 
+    def test_web_approval_rechecks_private_text_and_exact_image(self):
+        day = "2026-09-29"
+        episode = {key: key + " text" for key in
+                   ("story", "story_tr", "story_zh", "story_ar", "story_hi")}
+        item = {"day": day, "status": "draft", "images": ["private-frame"], **episode}
+        record = ({"status": "draft", "episode": episode}, b"approved-png")
+        with mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=record), \
+             mock.patch.object(bot, "read_gallery_image", return_value=(b"approved-png", "image/png")):
+            asyncio.run(bot._story_verify_private_publication(day, item))
+        with mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=record), \
+             mock.patch.object(bot, "read_gallery_image", return_value=(b"other-png", "image/png")):
+            with self.assertRaisesRegex(ValueError, "image changed"):
+                asyncio.run(bot._story_verify_private_publication(day, item))
+        with mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=({"status": "test", "episode": episode}, b"approved-png")):
+            with self.assertRaisesRegex(ValueError, "draft is unavailable"):
+                asyncio.run(bot._story_verify_private_publication(day, item))
+        with mock.patch.object(archive, "configured", return_value=True), \
+             mock.patch.object(archive, "read_day", return_value=record):
+            with self.assertRaisesRegex(ValueError, "draft and one image"):
+                asyncio.run(bot._story_verify_private_publication("2026-09-30", item))
+
     def test_live_test_uses_separate_path_and_request(self):
         calls=[]
         def api(path, method="GET", body=None):
