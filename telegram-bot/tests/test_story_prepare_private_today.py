@@ -88,6 +88,37 @@ class PrivatePrepareTests(unittest.TestCase):
         self.assertEqual(fields["reply_markup"].inline_keyboard[0][0].callback_data,
                          "story_publish:2026-09-29")
 
+    def test_isolated_test_photo_approval_and_signed_web_preview(self):
+        from types import SimpleNamespace
+        from urllib.parse import parse_qs, urlparse
+        from state import MemoryRepository
+        day="2026-09-29"
+        record=({"version":1,"day":day,"test_id":day+"-01","status":"test",
+                 "episode":{"title":"Street meeting","story":"Private test text"},
+                 "image_sha256":"test-image"},b"private-png")
+        fingerprint=bot._story_test_fingerprint(record)
+        with mock.patch.object(bot,"STORY_STORE",MemoryRepository()), \
+             mock.patch.object(bot,"TOKEN","1:dummy"), \
+             mock.patch.object(bot,"EXTERNAL_URL","https://muba.test"), \
+             mock.patch.object(archive,"read_test_day",return_value=record):
+            self.assertEqual(bot._story_test_photo_actions(record,day).inline_keyboard[0][0].callback_data,
+                             "story_test_approve:"+day)
+            bot.STORY_STORE.set("story_test_approved",day,fingerprint)
+            self.assertEqual(bot._story_test_photo_actions(record,day).inline_keyboard[0][0].callback_data,
+                             "story_test_web:"+day)
+            url=bot._story_test_web_url(day)
+            query={key:values[0] for key,values in parse_qs(urlparse(url).query).items()}
+            request=SimpleNamespace(query=query)
+            self.assertEqual(asyncio.run(bot.story_test_web_handler(request)).status,403)
+            bot.STORY_STORE.set("story_test_web",day,fingerprint)
+            response=asyncio.run(bot.story_test_web_handler(request))
+            self.assertEqual(response.status,200)
+            self.assertIn("Private test text",response.text)
+            self.assertIn("NOT PUBLISHED",response.text)
+            self.assertEqual(response.headers["Cache-Control"],"no-store")
+            self.assertEqual(asyncio.run(bot.story_test_web_handler(
+                SimpleNamespace(query={**query,"signature":"0"*64}))).status,403)
+
     def test_web_approval_rechecks_private_text_and_exact_image(self):
         day = "2026-09-29"
         episode = {key: key + " text" for key in
