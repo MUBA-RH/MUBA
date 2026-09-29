@@ -173,6 +173,25 @@ async def _story_github_draft(day):
     return story_draft(day)
 
 
+async def _story_verify_private_publication(day, item):
+    """Bind DEV approval/publication to the current verified private record."""
+    from muba_story_github import configured, read_day
+    if not configured() or item["day"] != day or item["status"] != "draft" or len(item["images"]) != 1:
+        raise ValueError("Private Daily Story draft and one image are required")
+    record = await asyncio.to_thread(read_day, day)
+    if not record or record[0].get("status") != "draft":
+        raise ValueError("Private Daily Story draft is unavailable")
+    episode, image = record[0].get("episode"), record[1]
+    if not isinstance(episode, dict) or any(
+        item.get(field) != episode.get(field)
+        for field in ("story", "story_tr", "story_zh", "story_ar", "story_hi")
+    ):
+        raise ValueError("Daily Story text changed after private preview")
+    archived = read_gallery_image(item["images"][0], include_nonpublic=True)
+    if not archived or archived[0] != image:
+        raise ValueError("Daily Story image changed after private preview")
+
+
 async def _story_seed_previous(day):
     """Use the verified private predecessor as the only next-day text source."""
     from muba_story import ORIGIN_START, START, STORE
@@ -267,7 +286,7 @@ def _story_director_panel(item, lang="en"):
     if _story_production_enabled() and day == today and item["status"] != "published" and len(item["images"]) == 1 and not story_review_approved(item["day"]):
         rows.append([InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA", callback_data="story_approve_today:" + item["day"])])
     if _story_production_enabled() and day == today and item["status"] != "published" and story_review_approved(item["day"]):
-        rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish")])
+        rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish:" + item["day"])])
     from muba_story_github import configured as github_story_configured
     if day == today and not _story_production_enabled():
         rows.append([InlineKeyboardButton("🧪 CANLI TEST", callback_data="story_test")])
@@ -1191,6 +1210,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.answer("Günlük üretim henüz başlamadı.",show_alert=True); return
         try:
             day=data.split(":",1)[1]
+            await _story_verify_private_publication(day, story_draft(day))
             item=story_approve_today(day,today=_story_today())
             body,markup=_story_director_panel(item,lang)
         except (RuntimeError,ValueError):
@@ -1239,11 +1259,17 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await _story_send_preview(q.message,item,lang)
         return
     if data=="story_publish":
+        await q.answer("Eski düğme. Günlük Hikâye'yi yeniden aç.",show_alert=True); return
+    if data.startswith("story_publish:"):
         if not is_dev(user_id): return
         if not _story_production_enabled():
             await q.answer("Web yayını test süresince kilitli.",show_alert=True); return
         try:
-            draft_item=story_draft()
+            day=data.split(":",1)[1]
+            if date.fromisoformat(day) != _story_today():
+                raise ValueError("Only today's Daily Story may be published")
+            draft_item=story_draft(day)
+            await _story_verify_private_publication(day,draft_item)
             if len(draft_item["images"])!=1: raise ValueError("Daily Story image required")
             if not story_review_approved(draft_item["day"]): raise ValueError("DEV review required")
             image_id=draft_item["images"][0]
