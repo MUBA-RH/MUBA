@@ -3196,6 +3196,26 @@
         "ar": "تُحضّر مهمة ChatGPT اليومية القصة والصورة في الأرشيف الخاص. يتحقق تيليجرام من السجل ويعرضه دون بدء طلب إنتاج رسمي. تبقى السلسلة متوقفة حتى يبدأها المطور.",
         "hi": "ChatGPT का दैनिक कार्य निजी संग्रह में कहानी और चित्र तैयार करता है। टेलीग्राम उत्पादन अनुरोध खोले बिना सत्यापित रिकॉर्ड दिखाता है। DEV के शुरू करने तक आधिकारिक श्रृंखला रुकी रहेगी।"
       }
+    },
+    {
+      "id": "20260929-daily-story-private-web-publish-gate",
+      "date": "2026-09-29",
+      "type": "improved",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Daily Story web publication guard",
+        "tr": "Günlük Hikâye web yayın koruması",
+        "zh": "每日故事网站发布保护",
+        "ar": "حماية نشر القصة اليومية على الويب",
+        "hi": "डेली स्टोरी वेब प्रकाशन सुरक्षा"
+      },
+      "text": {
+        "en": "DEV approval and WEB PUBLISH recheck today's exact private story and scene. The date-bound button rejects older screens and isolated test records; publication stays locked until DEV starts the series.",
+        "tr": "DEV onayı ve WEB YAYINLA bugünün özel hikâye ve görselini yeniden doğrular. Tarihe bağlı düğme eski ekranları ve ayrı test kayıtlarını reddeder; DEV seriyi başlatana kadar yayın kilitlidir.",
+        "zh": "开发者审批和网站发布会重新核对当天的私有故事与图片。日期绑定按钮拒绝旧界面及独立测试记录；正式启动前发布保持锁定。",
+        "ar": "تعيد موافقة المطور والنشر على الويب فحص قصة اليوم وصورتها في السجل الخاص. يرفض الزر المرتبط بالتاريخ الشاشات القديمة وسجلات الاختبار؛ ويبقى النشر مغلقاً حتى يبدأ المطور السلسلة.",
+        "hi": "DEV की मंज़ूरी और वेब प्रकाशन आज की निजी कहानी और चित्र को फिर सत्यापित करते हैं। तारीख से बँधा बटन पुराने स्क्रीन और अलग परीक्षण रिकॉर्ड रोकता है; DEV के शुरू करने तक प्रकाशन बंद है।"
+      }
     }
   ]
 }
