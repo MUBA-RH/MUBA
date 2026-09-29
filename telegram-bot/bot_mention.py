@@ -283,10 +283,6 @@ def _story_director_panel(item, lang="en"):
     rows = []
     if len(item["images"]) == 1:
         rows.append([InlineKeyboardButton("🖼️ GÖRSELİ GÖR", callback_data="story_preview:" + item["day"])])
-    if _story_production_enabled() and day == today and item["status"] != "published" and len(item["images"]) == 1 and not story_review_approved(item["day"]):
-        rows.append([InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA", callback_data="story_approve_today:" + item["day"])])
-    if _story_production_enabled() and day == today and item["status"] != "published" and story_review_approved(item["day"]):
-        rows.append([InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish:" + item["day"])])
     from muba_story_github import configured as github_story_configured
     if day == today and not _story_production_enabled():
         rows.append([InlineKeyboardButton("🧪 CANLI TEST", callback_data="story_test")])
@@ -306,6 +302,18 @@ def _story_director_panel(item, lang="en"):
         rows.append(pager)
     rows.append([InlineKeyboardButton("⬅️ Geri", callback_data="menu")])
     return body, InlineKeyboardMarkup(rows)
+
+
+def _story_photo_actions(item):
+    """Put DEV approval and the later web action directly below its scene."""
+    if (not _story_production_enabled() or item["day"] != _story_today().isoformat()
+            or item["status"] != "draft" or len(item["images"]) != 1):
+        return None
+    if story_review_approved(item["day"]):
+        button = InlineKeyboardButton("✅ WEB YAYINLA", callback_data="story_publish:" + item["day"])
+    else:
+        button = InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA", callback_data="story_approve_today:" + item["day"])
+    return InlineKeyboardMarkup([[button]])
 
 
 def _claim_message(update: Update) -> bool:
@@ -1215,7 +1223,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             body,markup=_story_director_panel(item,lang)
         except (RuntimeError,ValueError):
             await q.answer("Önce günün hikâyesi ve görseli hazır olmalı.",show_alert=True); return
-        await q.edit_message_text(body,reply_markup=markup); return
+        if getattr(q.message,"photo",None):
+            await q.edit_message_caption(caption=_story_display_text(item,lang),reply_markup=_story_photo_actions(item))
+        else:
+            await q.edit_message_text(body,reply_markup=markup)
+            await _story_send_preview(q.message,item,lang)
+        return
     if data=="story_reference":
         if not is_dev(user_id): return
         context.user_data["daily_story_waiting_reference"]=True
@@ -1281,7 +1294,13 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (ValueError,RuntimeError):
             logger.exception("Daily Story publish unavailable")
             await q.answer("Görsel arşivi ve hikâye hazır olmalı.",show_alert=True); return
-        await q.edit_message_text("🎬 MUBA Günlük Hikâye\n\nWeb yayını onaylandı: "+item["day"],reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])); return
+        published_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 Story",url="https://muba-rh.github.io/MUBA/#daily-story")],[InlineKeyboardButton("⬅️ Geri",callback_data="menu")]])
+        published_text="🎬 MUBA Günlük Hikâye\n\nWeb yayını onaylandı: "+item["day"]
+        if getattr(q.message,"photo",None):
+            await q.edit_message_caption(caption=published_text,reply_markup=published_markup)
+        else:
+            await q.edit_message_text(published_text,reply_markup=published_markup)
+        return
     if data=="gallery_admin":
         if not is_dev(user_id): return
         await q.edit_message_text(GALLERY_ADMIN_LABELS[lang]["title"],reply_markup=gallery_admin_keyboard(lang)); return
@@ -2262,7 +2281,8 @@ async def _story_send_preview(message,item,lang="en"):
     body,_=result
     preview=io.BytesIO(body)
     preview.name="muba-daily-story.png"
-    await message.reply_photo(photo=preview,caption=_story_display_text(item,lang))
+    await message.reply_photo(photo=preview,caption=_story_display_text(item,lang),
+                              reply_markup=_story_photo_actions(item))
 
 async def _story_receive_ready_image(message,context,day):
     """DEV may supply a finished image when automatic generation is unavailable."""

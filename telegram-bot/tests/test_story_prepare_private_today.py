@@ -55,6 +55,39 @@ class PrivatePrepareTests(unittest.TestCase):
         self.assertFalse(hasattr(archive, "request_chatgpt_day"))
         self.assertFalse(hasattr(bot, "_story_prepare_private_today"))
 
+    def test_web_button_is_below_approved_current_day_photo_only(self):
+        item = {"day": "2026-09-29", "status": "draft", "images": ["approved-scene"]}
+        with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
+             mock.patch.object(bot, "_story_production_enabled", return_value=True), \
+             mock.patch.object(bot, "story_review_approved", return_value=False):
+            actions = bot._story_photo_actions(item)
+            self.assertEqual(actions.inline_keyboard[0][0].callback_data, "story_approve_today:2026-09-29")
+        with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
+             mock.patch.object(bot, "_story_production_enabled", return_value=True), \
+             mock.patch.object(bot, "story_review_approved", return_value=True):
+            actions = bot._story_photo_actions(item)
+            self.assertEqual(actions.inline_keyboard[0][0].callback_data, "story_publish:2026-09-29")
+            self.assertIsNone(bot._story_photo_actions({**item, "day": "2026-09-28"}))
+            self.assertIsNone(bot._story_photo_actions({**item, "status": "published"}))
+            self.assertIsNone(bot._story_photo_actions({**item, "images": []}))
+        with mock.patch.object(bot, "_story_production_enabled", return_value=False):
+            self.assertIsNone(bot._story_photo_actions(item))
+
+    def test_telegram_photo_carries_the_action_under_its_caption(self):
+        item = {"day": "2026-09-29", "status": "draft", "images": ["approved-scene"],
+                "story": "English preview", "story_tr": "Türkçe önizleme"}
+        message = mock.Mock()
+        message.reply_photo = mock.AsyncMock()
+        with mock.patch.object(bot, "_story_today", return_value=date(2026, 9, 29)), \
+             mock.patch.object(bot, "_story_production_enabled", return_value=True), \
+             mock.patch.object(bot, "story_review_approved", return_value=True), \
+             mock.patch.object(bot, "read_gallery_image", return_value=(b"scene", "image/png")):
+            asyncio.run(bot._story_send_preview(message, item, "tr"))
+        fields = message.reply_photo.await_args.kwargs
+        self.assertEqual(fields["caption"], "Türkçe önizleme")
+        self.assertEqual(fields["reply_markup"].inline_keyboard[0][0].callback_data,
+                         "story_publish:2026-09-29")
+
     def test_web_approval_rechecks_private_text_and_exact_image(self):
         day = "2026-09-29"
         episode = {key: key + " text" for key in

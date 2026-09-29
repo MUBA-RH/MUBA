@@ -3216,6 +3216,26 @@
         "ar": "تعيد موافقة المطور والنشر على الويب فحص قصة اليوم وصورتها في السجل الخاص. يرفض الزر المرتبط بالتاريخ الشاشات القديمة وسجلات الاختبار؛ ويبقى النشر مغلقاً حتى يبدأ المطور السلسلة.",
         "hi": "DEV की मंज़ूरी और वेब प्रकाशन आज की निजी कहानी और चित्र को फिर सत्यापित करते हैं। तारीख से बँधा बटन पुराने स्क्रीन और अलग परीक्षण रिकॉर्ड रोकता है; DEV के शुरू करने तक प्रकाशन बंद है।"
       }
+    },
+    {
+      "id": "20260929-daily-story-photo-action-placement",
+      "date": "2026-09-29",
+      "type": "improved",
+      "areas": ["daily_story"],
+      "title": {
+        "en": "Daily Story actions beneath the image",
+        "tr": "Günlük Hikâye düğmeleri görselin altında",
+        "zh": "每日故事操作按钮位于图片下方",
+        "ar": "أزرار القصة اليومية تحت الصورة",
+        "hi": "डेली स्टोरी के बटन चित्र के नीचे"
+      },
+      "text": {
+        "en": "DEV approves directly below the official story photo; after approval, the same photo offers WEB PUBLISH. The isolated live test image never offers a publication action.",
+        "tr": "DEV resmî hikâye görselinin altında onay verir; onaydan sonra aynı görselin altında WEB YAYINLA görünür. Ayrı canlı test görselinde yayın düğmesi olmaz.",
+        "zh": "开发者在正式故事图片下方批准；批准后，同一图片下方出现网站发布按钮。独立实时测试图片绝不提供发布操作。",
+        "ar": "يوافق المطور أسفل صورة القصة الرسمية؛ وبعد الموافقة يظهر زر النشر على الويب أسفل الصورة نفسها. لا تعرض صورة الاختبار المنفصل زر نشر.",
+        "hi": "DEV आधिकारिक कहानी की तस्वीर के नीचे मंज़ूरी देता है; उसके बाद उसी तस्वीर के नीचे वेब प्रकाशन दिखता है। अलग लाइव टेस्ट चित्र में प्रकाशन बटन नहीं होता।"
+      }
     }
   ]
 }
