@@ -110,10 +110,6 @@ class PrivatePrepareTests(unittest.TestCase):
         calls=[]
         def api(path, method="GET", body=None):
             calls.append((path,method,body))
-            if path.startswith("/pulls?state=all"):
-                return []
-            if path == "/git/ref/heads/main":
-                return {"object":{"sha":"base-sha"}}
             return None
         with mock.patch.object(archive,"_private"), \
              mock.patch.object(archive,"read_test_day",return_value=None), \
@@ -122,8 +118,11 @@ class PrivatePrepareTests(unittest.TestCase):
             self.assertEqual(archive.request_chatgpt_test("2026-09-28"),"queued")
         self.assertTrue(any(path == "/contents/daily-story/requests/test-2026-09-28-01.json" and method == "PUT"
                             for path,method,_ in calls))
-        import json
-        self.assertEqual(json.loads(calls[-1][2])["title"],"Daily Story Test Request: 2026-09-28-01")
+        import base64, json
+        payload=json.loads(calls[-1][2])
+        self.assertEqual(payload["branch"],"daily-story-test-queue")
+        self.assertEqual(json.loads(base64.b64decode(payload["content"]))["source"],"telegram-dev-test")
+        self.assertFalse(any(path.startswith("/pulls") or path.startswith("/git/ref") for path,_,_ in calls))
         self.assertIn("/daily-story/tests/2026-09-28-01/scene.png",archive._path("2026-09-28","scene.png",test=True))
 
 

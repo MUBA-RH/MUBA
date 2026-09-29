@@ -46,7 +46,8 @@ def _api(path, method="GET", body=None):
     except HTTPError as exc:
         if exc.code == 404 and method == "GET":
             return None
-        raise RuntimeError(f"Daily Story GitHub {method} failed ({exc.code})") from exc
+        # Keep the failing route visible without ever logging the token or URL query.
+        raise RuntimeError(f"Daily Story GitHub {method} {path.split('?', 1)[0]} failed ({exc.code})") from exc
 
 
 def _private():
@@ -118,40 +119,24 @@ def read_test_day(day):
 
 
 def request_chatgpt_test(day):
-    """Open an isolated one-time test request without editing dated story canon."""
+    """Commit an isolated request to the pre-opened private PR test queue."""
     date.fromisoformat(day)
     _private()
     if read_test_day(day):
         return "ready"
-    repo, _, branch = _settings()
     ident = day + "-01"
-    head = "daily-story-test-" + ident
-    title = "Daily Story Test Request: " + ident
-    pulls = _api("/pulls?state=all&head=" + quote(repo.split("/")[0] + ":" + head, safe=":") +
-                 "&base=" + quote(branch, safe="")) or []
-    for pull in pulls:
-        if pull.get("title") == title:
-            if pull.get("state") == "open":
-                return "queued"
-            raise RuntimeError("Daily Story test PR is closed; inspect it before retrying")
-    ref = _api("/git/ref/heads/" + quote(head, safe=""))
-    if ref is None:
-        base = _api("/git/ref/heads/" + quote(branch, safe=""))
-        if not base or not base.get("object", {}).get("sha"):
-            raise RuntimeError("Daily Story base branch is unavailable")
-        _api("/git/refs", "POST", json.dumps({"ref": "refs/heads/" + head,
-                                                "sha": base["object"]["sha"]}).encode("utf-8"))
+    head = "daily-story-test-queue"
     path = "/contents/daily-story/requests/test-" + ident + ".json"
-    if _api(path + "?ref=" + quote(head, safe="")) is None:
-        request = {"version": 1, "day": day, "test_id": ident, "source": "telegram-dev-test",
-                   "requested_at": datetime.now(timezone.utc).isoformat()}
-        payload = {"message": "Daily Story: test ChatGPT bridge for " + ident,
-                   "content": base64.b64encode(json.dumps(request).encode("utf-8")).decode("ascii"),
-                   "branch": head}
-        _api(path, "PUT", json.dumps(payload).encode("utf-8"))
-    _api("/pulls", "POST", json.dumps({"title": title, "head": head, "base": branch,
-                                         "draft": True,
-                                         "body": "DEV-only live test. Write only to daily-story/tests/; never merge or publish."}).encode("utf-8"))
+    existing = _api(path + "?ref=" + quote(head, safe=""))
+    if existing is not None:
+        return "queued"
+    request = {"version": 1, "day": day, "test_id": ident, "source": "telegram-dev-test",
+               "requested_at": datetime.now(timezone.utc).isoformat()}
+    payload = {"message": "Daily Story: test ChatGPT bridge for " + ident,
+               "content": base64.b64encode(json.dumps(request).encode("utf-8")).decode("ascii"),
+               "branch": head}
+    _api(path, "PUT", json.dumps(payload).encode("utf-8"))
+    # A new commit on the open private PR emits synchronize for ChatGPT.
     return "queued"
 
 
