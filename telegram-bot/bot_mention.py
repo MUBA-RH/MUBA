@@ -94,7 +94,7 @@ from muba_price import prices as live_prices
 from muba_updates import UPDATE_LABELS, AREA_LABELS, entries as update_entries, latest_id as latest_update_id, has_unseen as has_unseen_update, badge_type as update_badge_type
 from muba_story_fingerprint import build as build_story_fingerprint, matches as story_fingerprint_matches
 from muba_master_identity import reference_state as master_reference_state
-from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, review_approved as story_review_approved, approve_today as story_approve_today, START as STORY_START, SCENE_REFERENCE
+from muba_story import draft as story_draft, publish as publish_story, public_story, set_images as set_story_images, set_reference as set_story_reference, reference_for_day as story_reference_for_day, clear_reference as clear_story_reference, review_approved as story_review_approved, approve_today as story_approve_today, START as STORY_START, SCENE_REFERENCE, STORE as STORY_STORE
 from muba_story_text import prepare as prepare_story_text
 from guardian import DEV_ID, GROUP_ID, authorized_command, command_arg, inspect_message, is_control_attempt, is_guardian_group, is_dev, lockdown_enabled, set_lockdown, status_text, help_text, security_text
 
@@ -243,7 +243,7 @@ def _story_test_panel(record, day, lang):
     if record:
         episode, image = record[0]["episode"], record[1]
         body = "🧪 MUBA DAILY STORY — CANLI TEST\n\n" + _story_display_text({**episode, "day": day}, lang)
-        body += "\n\nMetin: HAZIR\nGörsel: HAZIR\nDurum: TEST — web yayını kapalı."
+        body += "\n\nMetin: HAZIR\nGörsel: HAZIR\nDurum: TEST — resmî web yayını kapalı."
         rows = [[InlineKeyboardButton("🖼️ TEST GÖRSELİNİ GÖR", callback_data="story_test_preview")]]
     else:
         body = ("🧪 MUBA DAILY STORY — CANLI TEST\n\nChatGPT bugünün hikâyesi ve tek görseli için "
@@ -253,12 +253,38 @@ def _story_test_panel(record, day, lang):
     return body, InlineKeyboardMarkup(rows)
 
 
+def _story_test_fingerprint(record):
+    manifest = record[0]
+    return hashlib.sha256(json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _story_test_photo_actions(record, day):
+    fingerprint = _story_test_fingerprint(record)
+    if STORY_STORE.get("story_test_approved", day, None) == fingerprint:
+        button = InlineKeyboardButton("🌐 WEB YAYINLA (TEST)", callback_data="story_test_web:" + day)
+    else:
+        button = InlineKeyboardButton("✅ HİKÂYEYİ ONAYLA (TEST)", callback_data="story_test_approve:" + day)
+    return InlineKeyboardMarkup([[button]])
+
+
+def _story_test_web_url(day):
+    from urllib.parse import urlencode
+    if not EXTERNAL_URL or not TOKEN:
+        raise RuntimeError("Test web preview address is unavailable")
+    expires = int(time.time()) + 1800
+    payload = f"{day}:{expires}:{DEV_ID}".encode("utf-8")
+    signature = hmac.new(TOKEN.encode("utf-8"), payload, hashlib.sha256).hexdigest()
+    return EXTERNAL_URL.rstrip("/") + "/story/test-preview?" + urlencode(
+        {"day": day, "expires": expires, "signature": signature})
+
+
 async def _story_send_test_preview(message, record, day, lang):
     import io
     episode, image = record[0]["episode"], record[1]
     preview = io.BytesIO(image)
     preview.name = "muba-daily-story-test.png"
-    await message.reply_photo(photo=preview, caption="🧪 TEST — " + _story_display_text({**episode, "day": day}, lang))
+    await message.reply_photo(photo=preview, caption="🧪 TEST — " + _story_display_text({**episode, "day": day}, lang),
+                              reply_markup=_story_test_photo_actions(record, day))
 
 
 def _story_display_text(item, lang):
@@ -1158,6 +1184,34 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except (RuntimeError,ValueError):
             await q.answer("Bu günün görseli henüz hazır değil.",show_alert=True); return
         await _story_send_preview(q.message,item,lang)
+        return
+    if data.startswith("story_test_approve:") or data.startswith("story_test_web:"):
+        if not is_dev(user_id): return
+        from muba_story_github import read_test_day
+        try:
+            day=data.split(":",1)[1]
+            if date.fromisoformat(day) != _story_today():
+                raise ValueError("Test date has expired")
+            record=await asyncio.to_thread(read_test_day,day)
+            if not record:
+                raise ValueError("Test record is unavailable")
+            fingerprint=_story_test_fingerprint(record)
+            if data.startswith("story_test_approve:"):
+                STORY_STORE.set("story_test_approved",day,fingerprint)
+                STORY_STORE.set("story_test_web",day,None)
+                await q.edit_message_reply_markup(reply_markup=_story_test_photo_actions(record,day))
+            else:
+                if STORY_STORE.get("story_test_approved",day,None)!=fingerprint:
+                    raise ValueError("Test approval is missing or changed")
+                url=_story_test_web_url(day)
+                STORY_STORE.set("story_test_web",day,fingerprint)
+                await q.message.reply_text(
+                    "🧪 Web test önizlemesi hazır. Bağlantı 30 dakika geçerlidir; resmî site yayını yapılmadı.",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🌐 WEB'DE GÖR (TEST)",url=url)]]))
+                await q.answer("Test web önizlemesi hazır.")
+        except (RuntimeError,ValueError):
+            logger.exception("Isolated Daily Story web preview unavailable")
+            await q.answer("Test onayı veya özel kayıt doğrulanamadı. Görseli yeniden aç.",show_alert=True)
         return
     if data in ("story_test", "story_test_preview", "story_test_start"):
         if not is_dev(user_id): return
@@ -2370,6 +2424,48 @@ async def story_public_handler(request: web.Request):
     item.pop("prompts",None)
     return web.json_response({"story":item},headers=_gallery_cors_headers())
 
+
+async def story_test_web_handler(request: web.Request):
+    """Temporary DEV-approved test page; never changes the public Daily Story."""
+    from base64 import b64encode
+    from html import escape
+    from muba_story_github import read_test_day
+    day=request.query.get("day", "")
+    raw_expires=request.query.get("expires", "")
+    signature=request.query.get("signature", "")
+    now=int(time.time())
+    try:
+        expires=int(raw_expires)
+        if (date.fromisoformat(day).isoformat()!=day or len(signature)!=64 or
+                expires<now or expires>now+1800 or not TOKEN):
+            raise ValueError("Invalid test preview link")
+        payload=f"{day}:{expires}:{DEV_ID}".encode("utf-8")
+        expected=hmac.new(TOKEN.encode("utf-8"),payload,hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature,expected):
+            raise ValueError("Invalid test preview signature")
+        record=await asyncio.to_thread(read_test_day,day)
+        if not record or STORY_STORE.get("story_test_web",day,None)!=_story_test_fingerprint(record):
+            raise ValueError("Test web preview was not approved")
+    except (ValueError,RuntimeError):
+        return web.Response(status=403,text="Test preview unavailable")
+    episode,image=record[0]["episode"],record[1]
+    title=escape(episode.get("title", "MUBA Daily Story"))
+    story=escape(episode["story"])
+    picture=b64encode(image).decode("ascii")
+    page=("<!doctype html><html lang='en'><meta charset='utf-8'><meta name='viewport' "
+          "content='width=device-width,initial-scale=1'><meta name='robots' content='noindex,nofollow'>"
+          "<title>MUBA Daily Story — Test</title><style>body{margin:0;background:#101923;color:#fff;"
+          "font:18px/1.6 system-ui,sans-serif}main{max-width:900px;margin:32px auto;padding:20px}"
+          "img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px}"
+          "h1{font-size:1.5rem}p{font-size:1.2rem}.tag{color:#f7c878}</style><main>"
+          "<div class='tag'>🧪 MUBA DAILY STORY — TEST · NOT PUBLISHED</div><h1>"+title+"</h1>"
+          "<div>"+escape(day)+"</div><p>"+story+"</p><img alt='MUBA Daily Story test scene' "
+          "src='data:image/png;base64,"+picture+"'></main></html>")
+    return web.Response(text=page,content_type="text/html",headers={
+        "Cache-Control":"no-store", "X-Robots-Tag":"noindex, nofollow",
+        "Referrer-Policy":"no-referrer",
+        "Content-Security-Policy":"default-src 'none'; img-src data:; style-src 'unsafe-inline'"})
+
 async def gallery_list_handler(request: web.Request):
     raw_limit=request.query.get("limit","60")
     limit=int(raw_limit) if str(raw_limit).isdigit() else 60
@@ -2647,6 +2743,7 @@ async def start_webhook_server():
     app.router.add_get("/studio/output/{key}", studio_output_handler)
     app.router.add_get("/studio/render", studio_render_handler)
     app.router.add_get("/story", story_public_handler)
+    app.router.add_get("/story/test-preview", story_test_web_handler)
     app.router.add_get("/news", news_public_handler)
     app.router.add_get("/price", price_public_handler)
     app.router.add_post("/story/prepare", story_prepare_handler)
