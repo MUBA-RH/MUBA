@@ -674,21 +674,24 @@
       * { transition: none !important; }
     }
   </style>
-<style id="muba-preview-v3">
-:root{--bg:#f5f1e9!important;--bg-soft:#fffaf2!important;--card:#fff!important;--card-strong:#fff!important;--purple:#187cf4!important;--purple-2:#176bd1!important;--pink:#ed66a9!important;--gold:#dfff35!important;--text:#161616!important;--muted:#655f59!important;--line:rgba(20,20,20,.11)!important;--line-strong:rgba(20,20,20,.2)!important;--radius:28px!important;--shadow:0 18px 50px rgba(30,20,10,.08)!important}
-body{background:#f5f1e9!important;color:#161616!important}
-.header,.site-header{background:rgba(245,241,233,.9)!important;backdrop-filter:blur(16px)!important;border-color:#0001!important}
-.card,.story-book,.news-shell,.price-card,.news-item,.studio-panel,.gallery-card,.dev-card,.about-card{background:#fff!important;color:#161616!important;border-color:#00000012!important;box-shadow:0 16px 50px #3b2a1710!important}
-.section{padding:72px 0!important}.section-title{font-size:clamp(2.7rem,7vw,5.4rem)!important;letter-spacing:-.065em!important}.section-copy{color:#655f59!important}
-.eyebrow{background:#dfff35!important;color:#151515!important;border:0!important}
-.hero{background:linear-gradient(120deg,#167cf4,#54b9ff 52%,#ed66a9)!important;border-radius:0 0 38px 38px!important;overflow:hidden!important}.hero::before{opacity:.18!important}
-.hero h1,.hero-title{letter-spacing:-.075em!important}.hero-copy,.hero p{color:#fff!important}
-button,.btn,.cta,.hero-button{border-radius:999px!important}
-.news-filters button{background:#f3efe8!important;color:#161616!important;border-color:#0001!important}.news-filters button[aria-pressed="true"]{background:#dfff35!important;color:#111!important;border-color:#dfff35!important}
-.price-card{background:#f8f5ef!important}.price-card span,.news-item p,.news-note{color:#655f59!important}
-details,.accordion-item{background:#fff!important;border-color:#0001!important}
-footer,.footer{background:#171717!important;color:#fff!important}
-@media(max-width:700px){.section{padding:54px 0!important}.shell{width:min(100% - 24px,1180px)!important}.section-title{font-size:clamp(2.45rem,13vw,4.3rem)!important}}
+<style id="muba-v4">
+:root{--bg:#f2efe7!important;--bg-soft:#faf7f0!important;--card:#fff!important;--card-strong:#fff!important;--purple:#146df5!important;--purple-2:#0c4fbf!important;--pink:#ef5ca8!important;--gold:#dcff35!important;--text:#121212!important;--muted:#625f59!important;--line:rgba(18,18,18,.1)!important;--line-strong:rgba(18,18,18,.22)!important;--radius:28px!important;--shadow:0 18px 60px rgba(24,20,14,.08)!important}
+body{background:var(--bg)!important;color:var(--text)!important}.shell{width:min(1240px,calc(100% - 40px))!important}
+header{background:rgba(242,239,231,.9)!important;backdrop-filter:blur(18px)!important;border-bottom:1px solid #0001!important}
+.hero{min-height:86vh!important;background:linear-gradient(110deg,rgba(12,21,34,.82),rgba(12,21,34,.28)),url("https://raw.githubusercontent.com/MUBA-RH/MUBA/main/telegram-bot/assets/muba_daily_story_scene_reference.jpg") center/cover!important;border-radius:0 0 46px 46px!important;color:#fff!important;display:flex!important;align-items:flex-end!important;padding-bottom:8vh!important}
+.hero h1{font-size:clamp(5rem,14vw,11rem)!important;line-height:.7!important;letter-spacing:-.085em!important;max-width:900px!important}.hero p{color:#fff!important;max-width:560px!important;font-size:1.08rem!important}
+.section{padding:96px 0!important}.section-title{font-size:clamp(3.4rem,8vw,7rem)!important;line-height:.82!important;letter-spacing:-.07em!important}.section-copy{font-size:1.05rem!important;color:var(--muted)!important;max-width:680px!important}.eyebrow{background:#dcff35!important;color:#111!important;border:0!important}
+#live-price{padding:28px 0 20px!important}.price-bar{gap:14px!important}.price-card{background:#171717!important;color:#fff!important;border:0!important;border-radius:22px!important;padding:20px!important}.price-card span{color:#aaa!important}
+#news{background:#151515!important;color:#fff!important;border-radius:42px!important;margin:28px auto!important;width:min(1280px,calc(100% - 24px))!important;padding-left:clamp(12px,4vw,50px)!important;padding-right:clamp(12px,4vw,50px)!important}#news .section-copy{color:#aaa!important}.news-shell{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}.news-item{background:#222!important;color:#fff!important;border:1px solid #ffffff12!important;border-radius:18px!important}.news-item p,.news-note{color:#aaa!important}.news-filters button{background:#2a2a2a!important;color:#fff!important;border:0!important}.news-filters button[aria-pressed=true]{background:#dcff35!important;color:#111!important}
+#daily-story{position:relative!important}#daily-story:before{content:"";position:absolute;right:0;top:12%;width:42%;height:70%;background:url("https://raw.githubusercontent.com/MUBA-RH/MUBA/main/daily-story-worker/muba_daily_story_master_reference.png") center/cover;border-radius:34px 0 0 34px;opacity:.16;pointer-events:none}.story-book{position:relative!important;background:#fff!important;color:#111!important;border:0!important;border-radius:34px!important;box-shadow:var(--shadow)!important}
+#development{background:#1778f2!important;color:#fff!important;border-radius:42px!important;margin:30px auto!important;width:min(1280px,calc(100% - 24px))!important;padding-left:clamp(12px,4vw,50px)!important;padding-right:clamp(12px,4vw,50px)!important}#development .section-copy{color:#e7f1ff!important}#development .card{background:#fff!important;color:#111!important}
+#what-is-muba .section-head{max-width:900px!important}#what-is-muba .section-title{font-size:clamp(4.5rem,10vw,9rem)!important}.topic-panel,.about-card{background:#fff!important;border:0!important;border-radius:30px!important;box-shadow:var(--shadow)!important}
+#studio{background:#dcff35!important;border-radius:42px!important;margin:30px auto!important;width:min(1280px,calc(100% - 24px))!important;padding-left:clamp(12px,4vw,50px)!important;padding-right:clamp(12px,4vw,50px)!important}#studio .section-title{font-size:clamp(4rem,9vw,8rem)!important}#studio .section-copy{color:#3d431f!important}.studio-panel,.card{background:#fff!important;color:#111!important;border-color:#0001!important;box-shadow:var(--shadow)!important}
+#gallery{background:#fff!important;border-radius:28px!important}
+main>.section:last-of-type{background:#ef5ca8!important;border-radius:42px 42px 0 0!important;margin-top:60px!important;color:#111!important}main>.section:last-of-type .section-copy{color:#4c2037!important}
+footer{background:#151515!important;color:#fff!important}
+button,.btn,.cta,a[class*=button]{border-radius:999px!important}
+@media(max-width:700px){.shell{width:min(100% - 24px,1240px)!important}.hero{min-height:76vh!important;border-radius:0 0 28px 28px!important}.hero h1{font-size:24vw!important}.section{padding:62px 0!important}.section-title{font-size:14vw!important}#news,#development,#studio{width:calc(100% - 12px)!important;border-radius:28px!important}#daily-story:before{display:none!important}}
 </style></head>
 <body>
   <header>
