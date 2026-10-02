@@ -3256,6 +3256,26 @@
         "ar": "تظهر أسفل صورة الاختبار موافقة المطور، ثم زر النشر على الويب (اختبار) الذي يفتح معاينة موقعة ومؤقتة. لا يُنشر سجل الاختبار كقصة رسمية.",
         "hi": "लाइव टेस्ट चित्र के नीचे पहले DEV की टेस्ट मंज़ूरी, फिर वेब प्रकाशन (टेस्ट) है; यह सीमित समय वाली हस्ताक्षरित वेब झलक खोलता है। टेस्ट रिकॉर्ड आधिकारिक कहानी नहीं बनता।"
       }
+    },
+    {
+      "id": "20261003-web-blue-identity-discovery",
+      "date": "2026-10-03",
+      "type": "improved",
+      "areas": ["web"],
+      "title": {
+        "en": "MUBA website discovery and blue identity",
+        "tr": "MUBA web keşfi ve mavi kimlik",
+        "zh": "MUBA 网站探索与蓝色视觉形象",
+        "ar": "استكشاف موقع MUBA وهويته الزرقاء",
+        "hi": "MUBA वेबसाइट की खोज और नीली पहचान"
+      },
+      "text": {
+        "en": "The website now uses MUBA's blue character identity with simpler navigation and five discovery paths. The daily story, Studio, Gallery, news, prices and development log remain accessible.",
+        "tr": "Web sitesi MUBA'nın mavi karakter kimliğini, daha sade gezinmeyi ve beş keşif yolunu sunar. Günlük Hikâye, Studio, Galeri, haberler, fiyatlar ve gelişim günlüğü erişilebilir durumdadır.",
+        "zh": "网站采用 MUBA 蓝色角色形象、简洁导航和五条探索路径。每日故事、Studio、图库、新闻、价格和开发日志仍可访问。",
+        "ar": "يستخدم الموقع هوية شخصية MUBA الزرقاء مع تنقل أبسط وخمسة مسارات للاستكشاف. تبقى القصة اليومية وStudio والمعرض والأخبار والأسعار وسجل التطوير متاحة.",
+        "hi": "वेबसाइट अब MUBA की नीली पहचान, सरल नेविगेशन और खोज के पाँच रास्ते दिखाती है। दैनिक कहानी, Studio, Gallery, समाचार, कीमतें और विकास लॉग उपलब्ध हैं।"
+      }
     }
   ]
 }
