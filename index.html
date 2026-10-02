@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MUBA — a character, a meme, a community. Explore the living MUBA story, development log, MUBA Studio and community tools." />
-  <meta name="theme-color" content="#07040f" />
+  <meta name="theme-color" content="#07121d" />
   <meta name="muba-studio-api" content="https://muba-v1dz.onrender.com" />
   <title>MUBA — WE LIVE HERE NOW</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -674,21 +674,22 @@
       * { transition: none !important; }
     }
   </style>
+  <link rel="icon" type="image/jpeg" href="./assets/brand/muba-blue-avatar.jpg" />
+  <link rel="stylesheet" href="./assets/brand/web-refresh.css" />
 </head>
 <body>
   <header>
     <div class="shell header-inner">
-      <a class="brand" href="#top"><span>$MUBA</span> — WE LIVE HERE NOW</a>
+      <a class="brand" href="#top" aria-label="MUBA, back to top"><img src="./assets/brand/muba-blue-avatar.jpg" alt="" /><span>MUBA</span><small>WE LIVE HERE NOW</small></a>
       <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="site-nav">MENU</button>
       <nav class="nav" id="site-nav">
-        <a href="#news">News</a>
+        <a href="#what-is-muba">Discover</a>
         <a href="#daily-story">Daily Story</a>
-        <a href="#development">Development</a>
-        <a href="#what-is-muba">What is MUBA?</a>
-        <a href="#studio">MUBA Studio</a>
-        <a href="https://x.com/MUBA_RH" target="_blank" rel="noopener">X</a>
-        <a href="https://t.me/MUBA_RH" target="_blank" rel="noopener">Telegram</a>
-        <a class="nav-cta" href="#studio">Create → Share</a>
+        <a href="#studio">Create</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#news">News</a>
+        <a href="#development">Progress</a>
+        <a class="nav-cta" href="https://t.me/MUBA_RH" target="_blank" rel="noopener">Join Telegram ↗</a>
       </nav>
     </div>
   </header>
@@ -697,49 +698,47 @@
     <div class="shell">
       <section class="hero" aria-labelledby="hero-title">
         <div>
-          <div class="eyebrow">A CHARACTER · A MEME · A COMMUNITY</div>
+          <div class="eyebrow">THE WORLD OF MUBA</div>
           <h1 id="hero-title">I'M <span>MUBA.</span></h1>
           <p class="hero-sub">WE LIVE HERE NOW.</p>
-          <p class="hero-quote">“MUBA is MUBA.”</p>
+          <p class="hero-quote">An original character. A living meme. A community that makes the story together.</p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="https://x.com/MUBA_RH" target="_blank" rel="noopener">Follow @MUBA_RH</a>
-            <a class="btn btn-secondary" href="https://t.me/MUBA_RH" target="_blank" rel="noopener">Join Telegram</a>
-            <a class="btn btn-soft" href="#what-is-muba">Explore MUBA</a>
+            <a class="btn btn-primary" href="#what-is-muba">Discover MUBA <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-soft" href="#studio">Create with MUBA <span aria-hidden="true">↗</span></a>
           </div>
+          <p class="hero-footnote">MUBA is MUBA. Explore the character, the community and what exists today.</p>
         </div>
         <div class="mascot-wrap">
-          <div class="ring" aria-hidden="true">
-            <div class="ring-inner">
-              <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
-            </div>
+          <div class="mascot-stage">
+            <img src="./assets/brand/muba-blue-avatar.jpg" alt="MUBA, the wide-eyed character in a black cap and hoodie" />
+            <span class="mascot-caption">CHARACTER FIRST. COMMUNITY ALWAYS.</span>
           </div>
         </div>
       </section>
-
+      <div class="pathways" aria-label="Explore MUBA sections">
+        <a href="#what-is-muba"><span>01 / DISCOVER</span><strong>Meet MUBA</strong><small>Identity, origin and culture ↗</small></a>
+        <a href="#daily-story"><span>02 / FOLLOW</span><strong>Living Story</strong><small>One connected scene at a time ↗</small></a>
+        <a href="#studio"><span>03 / CREATE</span><strong>MUBA Studio</strong><small>Make something of your own ↗</small></a>
+      </div>
     </div>
 
 
-    <section class="section" id="live-price" aria-label="Live crypto prices">
-      <div class="shell">
-        <div class="price-bar" id="price-bar">
-          <div class="price-card" data-asset="BTC"><span>BTC · USD</span><strong>CONNECTING TO LIVE PRICE…</strong><span class="price-detail"></span></div>
-          <div class="price-card" data-asset="ETH"><span>ETH · USD</span><strong>CONNECTING TO LIVE PRICE…</strong><span class="price-detail"></span></div>
-          <div class="price-card" data-asset="MUBA"><span>MUBA · USD</span><strong>PRICE NOT AVAILABLE</strong><span class="price-detail">Official token identity not published.</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="news">
+    <section class="section" id="what-is-muba">
       <div class="shell">
         <div class="section-head">
-          <div class="eyebrow">MUBA · VERIFIED SOURCES</div>
-          <h2 class="section-title">MUBA <span>NEWS.</span></h2>
-          <p class="section-copy">Verified crypto headlines, major developments and regulation, with direct source links.</p>
+          <div class="eyebrow">START HERE</div>
+          <h2 class="section-title">WHAT IS <span>MUBA?</span></h2>
+          <p class="section-copy">Find the answer you came for. Every part of MUBA is here, from the character's origin to today's tools and community.</p>
         </div>
-        <div class="card news-shell">
-          <div class="news-filters" id="news-filters" aria-label="News categories"></div>
-          <div class="news-list" id="news-list" aria-live="polite"></div>
-          <p class="news-note" id="news-status">Connecting to verified news…</p>
+
+        <div class="knowledge-shell card">
+          <div class="knowledge-intro">
+            <div class="knowledge-note"><strong>A character. A meme. A community.</strong><br>MUBA began with an original face and grew through people sharing, creating and taking part.</div>
+            <div class="knowledge-note"><strong>Looking for something specific?</strong><br>Choose a path below, then open a topic. All the original information is still within reach.</div>
+          </div>
+          <div class="knowledge-groups" id="knowledge-groups" aria-label="MUBA discovery paths"></div>
+          <div class="topic-tabs" id="topic-tabs" aria-label="MUBA knowledge topics"></div>
+          <div class="topic-panel" id="topic-panel" aria-live="polite"></div>
         </div>
       </div>
     </section>
@@ -763,44 +762,6 @@
         </div>
       </div>
     </section>
-    <section class="section" id="development">
-      <div class="shell">
-        <div class="section-head">
-          <div class="eyebrow">MUBA · NOW</div>
-          <h2 class="section-title">MUBA <span>Development Log</span></h2>
-          <p class="section-copy">MUBA's story is not being written in advance. It is being lived. This log records what has actually been added, updated and refined as MUBA grows.</p>
-        </div>
-        <div class="devlog-panel card">
-          <div class="dev-tabs" id="dev-tabs" aria-label="Development log categories"></div>
-          <article class="dev-entry" id="dev-entry" aria-live="polite"></article>
-          <div class="pager">
-            <button class="icon-btn" id="dev-prev" type="button" aria-label="Previous development entry">←</button>
-            <span class="pager-count" id="dev-count"></span>
-            <button class="icon-btn" id="dev-next" type="button" aria-label="Next development entry">→</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="what-is-muba">
-      <div class="shell">
-        <div class="section-head">
-          <div class="eyebrow">LIVING KNOWLEDGE HUB</div>
-          <h2 class="section-title">WHAT IS <span>MUBA?</span></h2>
-          <p class="section-copy">Not a fixed twelve-question page. This is a living MUBA knowledge hub. Choose a topic, open what matters, and follow what MUBA has actually become.</p>
-        </div>
-
-        <div class="knowledge-shell card">
-          <div class="knowledge-intro">
-            <div class="knowledge-note"><strong>Simple by design.</strong><br>MUBA began as an original character inside the chaos of meme culture. The community, tools and experiences around that character have grown over time.</div>
-            <div class="knowledge-note"><strong>Expandable by design.</strong><br>New MUBA topics can be added without rebuilding the page into another fixed list. The hub grows with MUBA.</div>
-          </div>
-          <div class="topic-tabs" id="topic-tabs" aria-label="MUBA knowledge topics"></div>
-          <div class="topic-panel" id="topic-panel" aria-live="polite"></div>
-        </div>
-      </div>
-    </section>
-
     <section class="section" id="studio">
       <div class="shell">
         <div class="section-head">
@@ -811,14 +772,14 @@
 
         <div class="studio-workspace card">
           <div class="studio-identity">
-            <img src="https://pbs.twimg.com/profile_images/2096316602623156224/FZ7iqD2r.jpg" alt="MUBA" />
+            <img src="./assets/brand/muba-blue-avatar.jpg" alt="MUBA" />
             <p>Make a visual, choose an X post, then share it with the community. Telegram Studio remains available for creators who prefer it.</p>
           </div>
           <div class="studio-grid">
           <div class="prompt-box" id="web-studio">
             <h3>Create MUBA on the web</h3>
             <p>Write your idea and choose a format. MUBA's face stays recognizable while the pose, outfit and scene follow your idea. Successful creations, including those made in Telegram Studio, appear in MUBA Gallery automatically.</p>
-            <textarea id="studio-prompt" maxlength="120" placeholder="Example: MUBA walks into a neon city while the timeline melts behind him."></textarea>
+            <textarea id="studio-prompt" maxlength="120" placeholder="Example: MUBA steps into a busy city square with the community around him."></textarea>
             <div class="creator-types" id="creator-types">
               <button class="creator-type active" type="button" data-kind="meme">Meme</button>
               <button class="creator-type" type="button" data-kind="image">Image</button>
@@ -889,6 +850,50 @@
           <div class="gallery-strip" id="gallery-strip" aria-label="Community MUBA creations"></div>
         </div>
 
+      </div>
+    </section>
+
+    <section class="section" id="news">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">CRYPTO HEADLINES</div>
+          <h2 class="section-title">MUBA <span>NEWS.</span></h2>
+          <p class="section-copy">Current crypto headlines and developments with a direct link to each source.</p>
+        </div>
+        <div class="card news-shell">
+          <div class="news-filters" id="news-filters" aria-label="News categories"></div>
+          <div class="news-list" id="news-list" aria-live="polite"></div>
+          <p class="news-note" id="news-status">Connecting to verified news…</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="live-price" aria-label="Live crypto prices">
+      <div class="shell">
+        <div class="price-bar" id="price-bar">
+          <div class="price-card" data-asset="BTC"><span>BTC · USD</span><strong>CONNECTING TO LIVE PRICE…</strong><span class="price-detail"></span></div>
+          <div class="price-card" data-asset="ETH"><span>ETH · USD</span><strong>CONNECTING TO LIVE PRICE…</strong><span class="price-detail"></span></div>
+          <div class="price-card" data-asset="MUBA"><span>MUBA · USD</span><strong>PRICE NOT AVAILABLE</strong><span class="price-detail">Official token identity not published.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="development">
+      <div class="shell">
+        <div class="section-head">
+          <div class="eyebrow">THE RECORD</div>
+          <h2 class="section-title">MUBA <span>Development Log</span></h2>
+          <p class="section-copy">A public record of what has actually been added, updated and refined.</p>
+        </div>
+        <div class="devlog-panel card">
+          <div class="dev-tabs" id="dev-tabs" aria-label="Development log categories"></div>
+          <article class="dev-entry" id="dev-entry" aria-live="polite"></article>
+          <div class="pager">
+            <button class="icon-btn" id="dev-prev" type="button" aria-label="Previous development entry">←</button>
+            <span class="pager-count" id="dev-count"></span>
+            <button class="icon-btn" id="dev-next" type="button" aria-label="Next development entry">→</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1226,11 +1231,39 @@
       }
     ];
 
+    const knowledgeGroups = [
+      { key: "meet", label: "Meet MUBA", hint: "The character and its roots", topics: ["muba", "origin", "identity", "difference", "purpose", "philosophy"] },
+      { key: "culture", label: "Community", hint: "People and meme culture", topics: ["community", "culture"] },
+      { key: "story", label: "The Story", hint: "Daily life and what comes next", topics: ["story", "daily", "today", "future"] },
+      { key: "tools", label: "Explore & Create", hint: "Assistant, Studio and the web", topics: ["assistant", "studio", "share", "website"] },
+      { key: "safety", label: "Security", hint: "Guardian and official information", topics: ["guardian", "security"] }
+    ];
+    let activeGroup = "meet";
     let activeTopic = "muba";
+
+    function renderKnowledgeGroups() {
+      const root = document.getElementById("knowledge-groups");
+      root.replaceChildren(...knowledgeGroups.map(group => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "knowledge-group" + (group.key === activeGroup ? " active" : "");
+        button.setAttribute("aria-pressed", String(group.key === activeGroup));
+        button.innerHTML = '<strong>' + group.label + '</strong><small>' + group.hint + '</small>';
+        button.addEventListener("click", () => {
+          activeGroup = group.key;
+          activeTopic = group.topics[0];
+          renderKnowledgeGroups();
+          renderTopicTabs();
+          renderTopicPanel();
+        });
+        return button;
+      }));
+    }
 
     function renderTopicTabs() {
       const root = document.getElementById("topic-tabs");
-      root.innerHTML = knowledge.map(topic =>
+      const selected = knowledgeGroups.find(group => group.key === activeGroup) || knowledgeGroups[0];
+      root.innerHTML = knowledge.filter(topic => selected.topics.includes(topic.key)).map(topic =>
         '<button class="chip ' + (topic.key === activeTopic ? 'active' : '') + '" type="button" data-topic="' + topic.key + '">' + topic.label + '</button>'
       ).join("");
       root.querySelectorAll("[data-topic]").forEach(button => {
@@ -1502,10 +1535,12 @@
         const payload=await response.json();
         const items=Array.isArray(payload.items) ? payload.items : [];
         if (!items.length) {
+          if (galleryKind === "all") document.getElementById("gallery-filters").hidden = true;
           strip.innerHTML='<div class="gallery-empty">Community Gallery is ready. New user creations will appear here automatically.</div>';
           status.textContent="";
           return;
         }
+        document.getElementById("gallery-filters").hidden = false;
         strip.innerHTML=items.map(item => {
           const kind=item.kind==="emoji" ? "REACTION" : String(item.kind || "image").toUpperCase();
           const source=item.source==="telegram" ? "TELEGRAM STUDIO" : "WEB STUDIO";
@@ -1684,6 +1719,7 @@
     }));
 
     loadDevelopmentHistory();
+    renderKnowledgeGroups();
     renderTopicTabs();
     renderTopicPanel();
     renderTweetTabs();
