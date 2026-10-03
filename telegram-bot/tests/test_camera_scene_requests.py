@@ -34,14 +34,15 @@ def handler(name,scope):
     return scope[name]
 
 class SceneRequests(unittest.TestCase):
-    def test_camera_uses_9b_without_changing_studio_or_silently_falling_back(self):
+    def test_camera_uses_original_4b_and_rejects_higher_cost_override(self):
         with mock.patch.dict(os.environ,{'CLOUDFLARE_ACCOUNT_ID':'test-account'},clear=True):
             self.assertTrue(camera_ai_endpoint().endswith(CAMERA_AI_MODEL))
             self.assertTrue(ai_endpoint().endswith(AI_MODEL))
             os.environ['MUBA_CAMERA_AI_MODEL']=AI_MODEL
             self.assertTrue(camera_ai_endpoint().endswith(AI_MODEL))
-            os.environ['MUBA_CAMERA_AI_MODEL']='invalid-model'
-            with self.assertRaises(ValueError):camera_ai_endpoint()
+            for model in ('@cf/black-forest-labs/flux-2-klein-9b','invalid-model'):
+                os.environ['MUBA_CAMERA_AI_MODEL']=model
+                with self.assertRaises(ValueError):camera_ai_endpoint()
 
     def test_output_keeps_source_framing_including_exif_rotation(self):
         self.assertEqual(camera_output_size(photo('red',(864,1536))),(576,1024))
@@ -79,7 +80,7 @@ class SceneRequests(unittest.TestCase):
         status=mock.Mock(message_id=1,edit_text=mock.AsyncMock())
         message=mock.Mock(reply_text=mock.AsyncMock(return_value=status),reply_photo=mock.AsyncMock(return_value=mock.Mock(message_id=2)))
         context=SimpleNamespace(user_data={'muba_camera_source_bytes':source,'muba_camera_waiting_instruction':True},application=SimpleNamespace(bot_data={'news_session':session}))
-        scope={'get_assistant_language':lambda uid:'tr','runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':mock.Mock(exists=lambda:True,read_bytes=lambda:reference),'camera_reference_bytes':camera_reference_bytes,'camera_ai_prompt':camera_ai_prompt,'aiohttp':aiohttp,'os':os,'camera_ai_endpoint':lambda:'https://ai.example.invalid/flux-2-klein-9b','camera_output_size':camera_output_size,'is_dev':lambda uid:True,'logger':mock.Mock(),'InlineKeyboardMarkup':lambda x:x,'InlineKeyboardButton':lambda *a,**kw:kw}
+        scope={'get_assistant_language':lambda uid:'tr','runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':mock.Mock(exists=lambda:True,read_bytes=lambda:reference),'camera_reference_bytes':camera_reference_bytes,'camera_ai_prompt':camera_ai_prompt,'aiohttp':aiohttp,'os':os,'camera_ai_endpoint':lambda:'https://ai.example.invalid/flux-2-klein-4b','camera_output_size':camera_output_size,'is_dev':lambda uid:True,'logger':mock.Mock(),'InlineKeyboardMarkup':lambda x:x,'InlineKeyboardButton':lambda *a,**kw:kw}
         request=('Sahilde MUBA ile birlikte olalım. '*6)+'Yüzlerimizi ve yaşımızı koru.'
         with mock.patch.dict(os.environ,{'CLOUDFLARE_API_TOKEN':'unit-test-only'}):
             asyncio.run(handler('_run_muba_camera_transform',scope)(message,context,71,source,request))
@@ -89,7 +90,7 @@ class SceneRequests(unittest.TestCase):
         self.assertEqual(fields['input_image_1'],camera_reference_bytes(reference))
         self.assertIn(request,fields['prompt'])
         self.assertEqual((int(fields['width']),int(fields['height'])),camera_output_size(source))
-        self.assertTrue(session.post.call_args.args[0].endswith('flux-2-klein-9b'))
+        self.assertTrue(session.post.call_args.args[0].endswith('flux-2-klein-4b'))
         message.reply_photo.assert_awaited_once()
         self.assertEqual(message.reply_photo.await_args.kwargs['photo'],result)
         self.assertNotIn('muba_camera_source_bytes',context.user_data)
@@ -110,7 +111,7 @@ class SceneRequests(unittest.TestCase):
         parts[1].name='prompt';parts[1].text=mock.AsyncMock(return_value=request_text)
         reader=mock.Mock(next=mock.AsyncMock(side_effect=[*parts,None]))
         request=SimpleNamespace(multipart=mock.AsyncMock(return_value=reader),app={'http_session':session})
-        scope={'web':web,'validate_init_data':lambda *a:{'id':71},'TOKEN':'unit-test-only','is_dev':lambda uid:True,'ai_configured':lambda:True,'_studio_reference':mock.AsyncMock(return_value=reference),'camera_reference_bytes':camera_reference_bytes,'camera_ai_prompt':camera_ai_prompt,'camera_ai_endpoint':lambda:'https://ai.example.invalid/flux-2-klein-9b','camera_output_size':camera_output_size,'os':os,'consume':mock.Mock(),'logger':mock.Mock(),'remaining':lambda uid:1}
+        scope={'web':web,'validate_init_data':lambda *a:{'id':71},'TOKEN':'unit-test-only','is_dev':lambda uid:True,'ai_configured':lambda:True,'_studio_reference':mock.AsyncMock(return_value=reference),'camera_reference_bytes':camera_reference_bytes,'camera_ai_prompt':camera_ai_prompt,'camera_ai_endpoint':lambda:'https://ai.example.invalid/flux-2-klein-4b','camera_output_size':camera_output_size,'os':os,'consume':mock.Mock(),'logger':mock.Mock(),'remaining':lambda uid:1}
         with mock.patch.dict(os.environ,{'CLOUDFLARE_API_TOKEN':'unit-test-only'}):
             returned=asyncio.run(handler('camera_generate_handler',scope)(request))
         fields={field[0]['name']:field[2] for field in session.post.call_args.kwargs['data']._fields}
@@ -118,7 +119,7 @@ class SceneRequests(unittest.TestCase):
         self.assertEqual(fields['input_image_1'],camera_reference_bytes(reference))
         self.assertIn(request_text,fields['prompt'])
         self.assertEqual((int(fields['width']),int(fields['height'])),camera_output_size(source))
-        self.assertTrue(session.post.call_args.args[0].endswith('flux-2-klein-9b'))
+        self.assertTrue(session.post.call_args.args[0].endswith('flux-2-klein-4b'))
         self.assertEqual(returned.status,200)
         self.assertEqual(returned.headers['X-MUBA-Source-Persisted'],'false')
         self.assertEqual(returned.headers['X-MUBA-Gallery-Published'],'false')

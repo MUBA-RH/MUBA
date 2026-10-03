@@ -15,7 +15,7 @@ STUDIO_REFERENCE_SHA256="2f5068a3edb9b859db7b83f98cb4e712ea6044d0be59f69d1e3ccfe
 DAILY_LIMIT=1
 DEV_USER_ID=934598759
 AI_MODEL="@cf/black-forest-labs/flux-2-klein-4b"
-CAMERA_AI_MODEL="@cf/black-forest-labs/flux-2-klein-9b"
+CAMERA_AI_MODEL=AI_MODEL
 _usage=defaultdict(lambda: {"day":"","count":0})
 _cache={"image":None,"at":0.0}
 
@@ -53,9 +53,9 @@ def ai_endpoint()->str:
     return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{AI_MODEL}"
 
 def camera_ai_endpoint()->str:
-    """Keep Camera's editing model independent of Studio; no silent quality downgrade."""
+    """Use the original 4B model; reject higher-cost model overrides."""
     model=os.getenv("MUBA_CAMERA_AI_MODEL",CAMERA_AI_MODEL).strip()
-    if model not in (CAMERA_AI_MODEL,AI_MODEL):
+    if model!=CAMERA_AI_MODEL:
         raise ValueError("Unsupported Camera model")
     account=os.environ["CLOUDFLARE_ACCOUNT_ID"]
     return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{model}"
