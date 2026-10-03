@@ -1744,7 +1744,8 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message=update.effective_message; user=update.effective_user; chat=update.effective_chat
     if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not message.photo:
         return
-    if not context.user_data.get("muba_camera_waiting_photo",False):
+    if not (context.user_data.get("muba_camera_waiting_photo",False)
+            or context.user_data.get("muba_camera_waiting_instruction",False)):
         return
     uid=int(user.id)
     lang=get_assistant_language(uid) or "en"

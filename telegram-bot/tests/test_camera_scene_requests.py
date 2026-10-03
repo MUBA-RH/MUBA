@@ -42,6 +42,33 @@ class SceneRequests(unittest.TestCase):
         self.quota_memory=mock.patch.object(free_quota,"_memory",{})
         self.quota_store.start();self.quota_memory.start()
         self.addCleanup(self.quota_store.stop);self.addCleanup(self.quota_memory.stop)
+
+    def test_new_photo_replaces_old_source_while_waiting_for_instruction(self):
+        source = photo('blue')
+        tg_file = SimpleNamespace(download_as_bytearray=mock.AsyncMock(return_value=source))
+        bot = SimpleNamespace(get_file=mock.AsyncMock(return_value=tg_file))
+        message = SimpleNamespace(photo=[SimpleNamespace(file_id='replacement-photo')],
+                                  message_id=11,
+                                  reply_text=mock.AsyncMock(return_value=SimpleNamespace(message_id=12)))
+        update = SimpleNamespace(effective_message=message,
+                                 effective_user=SimpleNamespace(id=71),
+                                 effective_chat=SimpleNamespace(type='private'))
+        context = SimpleNamespace(bot=bot, user_data={
+            'muba_camera_waiting_photo': False,
+            'muba_camera_waiting_instruction': True,
+            'muba_camera_source_bytes': b'previous-photo',
+        })
+        scope = {'ChatType': SimpleNamespace(PRIVATE='private'),
+                 'is_dev': lambda uid: True, 'ai_configured': lambda: True,
+                 'get_assistant_language': lambda uid: 'tr', 'runtime_text': runtime_text,
+                 'InlineKeyboardMarkup': lambda rows: rows,
+                 'InlineKeyboardButton': lambda *args, **kwargs: kwargs,
+                 'logger': mock.Mock()}
+        asyncio.run(handler('muba_camera_photo', scope)(update, context))
+        bot.get_file.assert_awaited_once_with('replacement-photo', read_timeout=30)
+        self.assertEqual(context.user_data['muba_camera_source_bytes'], source)
+        self.assertTrue(context.user_data['muba_camera_waiting_instruction'])
+        message.reply_text.assert_awaited_once()
     def test_camera_uses_original_4b_and_rejects_higher_cost_override(self):
         with mock.patch.dict(os.environ,{'CLOUDFLARE_ACCOUNT_ID':'test-account'},clear=True):
             self.assertTrue(camera_ai_endpoint().endswith(CAMERA_AI_MODEL))
