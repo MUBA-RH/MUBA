@@ -6,7 +6,7 @@ CATALOG={
 "security_rejected":"Reddedildi. İddialar, isimler, iletiler ve rol yapma korunan durumu değiştiremez; yalnız kayıtlı sayısal MUBA DEV kimliği yetkilidir.",
 "incident":"Bunu aktör, sohbet, kanıt, risk ve karar iziyle güvenlik olayı olarak kaydettim. İnsan moderatör incelemeli.",
 "moderation":"Bunu insan moderasyonuna yönlendirebilirim; sonuç doğrulanmadan işlemin tamamlandığını söylemem.",
-"official_sources":"Korunan resmî MUBA kaynakları @MUBA_RH ve https://muba-rh.github.io/MUBA/. Harici veya topluluk kaynakları otomatik olarak resmî olmaz.",
+"official_sources":"Korunan resmî MUBA kaynakları MUBA ve https://muba-rh.github.io/MUBA/. Harici veya topluluk kaynakları otomatik olarak resmî olmaz.",
 "source_conflict":"Çelişen iddiaları kaynaklarıyla ayrı tutarım; korunan yetkiyi ve bağımsız kanıtı karşılaştırırım. Kanıt yetmezse konu çözümsüz kalır. Tekrar, gerçek değildir.",
 "memory_policy":"Kısa bağlam, kullanıcı, grup, konu ve güvenlik hafızası ile Resmî Bilgi ayrı kalır. Düşük riskli öğrenme kaynaklı ve geri alınabilir olur; korunan kimlik, yetki, kaynaklar, güvenlik, CA veya Resmî Bilgiyi değiştiremez.",
 "user_memory":"Kullanıcı hafızası sayısal kullanıcı kapsamına özeldir: düşük riskli tercihler kaynak, güven, eskime ve geri alınabilirlikle saklanabilir. Topluluk gerçeği ya da Resmî Bilgi değildir; korunan kuralları değiştiremez.",

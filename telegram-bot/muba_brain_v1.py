@@ -1090,9 +1090,9 @@ def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None, use
     # 5) Official navigation.
     if _looks_like_link(value):
         if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
-            response = {"tr":"Resmi X hesabı: @MUBA_RH 🪶", "en":"Official X: @MUBA_RH 🪶", "zh":"官方 X：@MUBA_RH 🪶", "ar":"حساب X الرسمي: @MUBA_RH 🪶", "hi":"Official X: @MUBA_RH 🪶"}[language]
+            response = {"tr":"Resmi X hesabı: MUBA 🪶", "en":"Official X: MUBA 🪶", "zh":"官方 X：MUBA 🪶", "ar":"حساب X الرسمي: MUBA 🪶", "hi":"Official X: MUBA 🪶"}[language]
         elif _has_any(value, ["telegram"]):
-            response = {"tr":"Resmi Telegram: @MUBA_RH 🪶", "en":"Official Telegram: @MUBA_RH 🪶", "zh":"官方 Telegram：@MUBA_RH 🪶", "ar":"Telegram الرسمي: @MUBA_RH 🪶", "hi":"Official Telegram: @MUBA_RH 🪶"}[language]
+            response = {"tr":"Resmi Telegram: MUBA 🪶", "en":"Official Telegram: MUBA 🪶", "zh":"官方 Telegram：MUBA 🪶", "ar":"Telegram الرسمي: MUBA 🪶", "hi":"Official Telegram: MUBA 🪶"}[language]
         else:
             response = {"tr":"Resmi site MUBA'nın ana sayfasında. 🪶", "en":"The official MUBA website is the main source for the project. 🪶", "zh":"官方 MUBA 网站是项目的主要来源。🪶", "ar":"موقع MUBA الرسمي هو المصدر الرئيسي للمشروع. 🪶", "hi":"Official MUBA website project का main source है। 🪶"}[language]
         _remember_turn(chat_id, user_id, text, response, "official_source", language, intents)
@@ -2236,19 +2236,19 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
 
         if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
             response = {
-                "tr": "Resmi X: @MUBA_RH 🪶",
-                "en": "Official X: @MUBA_RH 🪶",
-                "zh": "官方 X：@MUBA_RH 🪶",
-                "ar": "حساب X الرسمي: @MUBA_RH 🪶",
-                "hi": "Official X: @MUBA_RH 🪶",
+                "tr": "Resmi X: MUBA 🪶",
+                "en": "Official X: MUBA 🪶",
+                "zh": "官方 X：MUBA 🪶",
+                "ar": "حساب X الرسمي: MUBA 🪶",
+                "hi": "Official X: MUBA 🪶",
             }[lang]
         elif _has_any(value, ["telegram"]):
             response = {
-                "tr": "Resmi Telegram: @MUBA_RH 🪶",
-                "en": "Official Telegram: @MUBA_RH 🪶",
-                "zh": "官方 Telegram：@MUBA_RH 🪶",
-                "ar": "Telegram الرسمي: @MUBA_RH 🪶",
-                "hi": "Official Telegram: @MUBA_RH 🪶",
+                "tr": "Resmi Telegram: MUBA 🪶",
+                "en": "Official Telegram: MUBA 🪶",
+                "zh": "官方 Telegram：MUBA 🪶",
+                "ar": "Telegram الرسمي: MUBA 🪶",
+                "hi": "Official Telegram: MUBA 🪶",
             }[lang]
         else:
             response = {

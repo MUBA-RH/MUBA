@@ -784,7 +784,7 @@ class JSONStore:
                     if isinstance(loaded, dict):
                         self.data.update(loaded)
                     # Stored data may add research records, but it cannot remove
-                    # or downgrade the two protected official MUBA-RH sources.
+                    # or downgrade the two protected official MUBA sources.
                     self.data.setdefault("source_map", {}).update(PROTECTED_OFFICIAL_SOURCES)
             except Exception as exc:
                 log.exception("Memory load failed: %s", exc)
@@ -1192,14 +1192,14 @@ def build_reply(text: str, chat_id: int = 0, language: Optional[str] = None, use
     # 5) Official navigation.
     if _looks_like_link(value):
         if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
-            response = {"tr":"Resmi X hesabı: @MUBA_RH 🪶", "en":"Official X: @MUBA_RH 🪶", "zh":"官方 X：@MUBA_RH 🪶", "ar":"حساب X الرسمي: @MUBA_RH 🪶", "hi":"Official X: @MUBA_RH 🪶"}[language]
+            response = {"tr":"Resmi X hesabı: MUBA 🪶", "en":"Official X: MUBA 🪶", "zh":"官方 X：MUBA 🪶", "ar":"حساب X الرسمي: MUBA 🪶", "hi":"Official X: MUBA 🪶"}[language]
         else:
             response = {
-                "tr":"Korunan resmi kaynaklar: X @MUBA_RH ve https://muba-rh.github.io/MUBA/ 🪶",
-                "en":"Protected official sources: X @MUBA_RH and https://muba-rh.github.io/MUBA/ 🪶",
-                "zh":"受保护的官方来源：X @MUBA_RH 和 https://muba-rh.github.io/MUBA/ 🪶",
-                "ar":"المصادر الرسمية المحمية: X @MUBA_RH و https://muba-rh.github.io/MUBA/ 🪶",
-                "hi":"Protected official sources: X @MUBA_RH और https://muba-rh.github.io/MUBA/ 🪶",
+                "tr":"Korunan resmi kaynaklar: X MUBA ve https://muba-rh.github.io/MUBA/ 🪶",
+                "en":"Protected official sources: X MUBA and https://muba-rh.github.io/MUBA/ 🪶",
+                "zh":"受保护的官方来源：X MUBA 和 https://muba-rh.github.io/MUBA/ 🪶",
+                "ar":"المصادر الرسمية المحمية: X MUBA و https://muba-rh.github.io/MUBA/ 🪶",
+                "hi":"Protected official sources: X MUBA और https://muba-rh.github.io/MUBA/ 🪶",
             }[language]
         _remember_turn(chat_id, user_id, text, response, "official_source", language, intents)
         return response
@@ -2582,19 +2582,19 @@ def master_build_reply(text: str, chat_id: int = 0, language: Optional[str] = No
 
         if _has_any(value, ["x", "twitter", "x hesabı", "x account"]):
             response = {
-                "tr": "Resmi X: @MUBA_RH 🪶",
-                "en": "Official X: @MUBA_RH 🪶",
-                "zh": "官方 X：@MUBA_RH 🪶",
-                "ar": "حساب X الرسمي: @MUBA_RH 🪶",
-                "hi": "Official X: @MUBA_RH 🪶",
+                "tr": "Resmi X: MUBA 🪶",
+                "en": "Official X: MUBA 🪶",
+                "zh": "官方 X：MUBA 🪶",
+                "ar": "حساب X الرسمي: MUBA 🪶",
+                "hi": "Official X: MUBA 🪶",
             }[lang]
         else:
             response = {
-                "tr": "Korunan resmi kaynaklar: X @MUBA_RH ve https://muba-rh.github.io/MUBA/ 🪶",
-                "en": "Protected official sources: X @MUBA_RH and https://muba-rh.github.io/MUBA/ 🪶",
-                "zh": "受保护的官方来源：X @MUBA_RH 和 https://muba-rh.github.io/MUBA/ 🪶",
-                "ar": "المصادر الرسمية المحمية: X @MUBA_RH و https://muba-rh.github.io/MUBA/ 🪶",
-                "hi": "Protected official sources: X @MUBA_RH और https://muba-rh.github.io/MUBA/ 🪶",
+                "tr": "Korunan resmi kaynaklar: X MUBA ve https://muba-rh.github.io/MUBA/ 🪶",
+                "en": "Protected official sources: X MUBA and https://muba-rh.github.io/MUBA/ 🪶",
+                "zh": "受保护的官方来源：X MUBA 和 https://muba-rh.github.io/MUBA/ 🪶",
+                "ar": "المصادر الرسمية المحمية: X MUBA و https://muba-rh.github.io/MUBA/ 🪶",
+                "hi": "Protected official sources: X MUBA और https://muba-rh.github.io/MUBA/ 🪶",
             }[lang]
         _remember_turn(chat_id, user_id, text, response, "official_source", lang, intents)
         return response
