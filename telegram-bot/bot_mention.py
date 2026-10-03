@@ -59,6 +59,7 @@ from conversation_continuity import reply as continuity_reply, remember_assistan
 from muba_daily import DAILY_LABELS, daily_text, DEVLOG_LABELS, DEVLOG, devlog_page
 from assistant_extras import LABELS as EXTRA_LABELS, STORY, LAB, GUIDE, SECURITY_PROMPT, security_check, TOPIC_PROGRESS, GUIDE_SECTIONS, SHARE_LABELS, SHARE_TWEETS
 from system_transparency import TRANSPARENCY_LABELS, TRANSPARENCY_NAV, TRANSPARENCY_PAGES
+from transparency_groups import GROUP_PAGES, GROUP_LABELS, GROUP_NAV, page_group
 from system_notes import EXTRA_TRANSPARENCY_PAGES, TRANSLATOR_NOTE_LABELS, TRANSLATOR_NOTE_TEXT
 from ecosystem_expansion import COMMUNITY_RECORDS, ASK_RECORDS, TRANSPARENCY_RECORDS, ARCHIVE_POLICY
 from discover_index import SECTIONS as DISCOVER_SECTIONS, LABELS as DISCOVER_INDEX_LABELS, entries as discover_entries
@@ -878,17 +879,31 @@ def _transparency_title(page_text):
     return str(page_text or "").split("\n",1)[0].strip()
 
 def transparency_index_keyboard(lang):
-    rows=[
-        [InlineKeyboardButton(_transparency_title(page),callback_data=f"transparency:{index}")]
-        for index,page in enumerate(TRANSPARENCY_PAGES[lang])
-    ]
-    rows.append([InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"],callback_data="menu")])
+    rows = [[InlineKeyboardButton(label, callback_data=f"transparency_group:{index}")]
+            for index, label in enumerate(GROUP_LABELS[lang])]
+    rows.append([InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"], callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
-def transparency_keyboard(lang,page):
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(TRANSPARENCY_NAV[lang]["back"],callback_data="transparency_menu")]
-    ])
+def transparency_group_keyboard(lang, group):
+    rows = [[InlineKeyboardButton(_transparency_title(TRANSPARENCY_PAGES[lang][page]),
+                                  callback_data=f"transparency:{page}")]
+            for page in GROUP_PAGES[group]]
+    rows.append([InlineKeyboardButton(GROUP_NAV[lang][0], callback_data="transparency_menu")])
+    return InlineKeyboardMarkup(rows)
+
+def transparency_keyboard(lang, page):
+    group = page_group(page)
+    pages = GROUP_PAGES[group]
+    position = pages.index(page)
+    neighbors = []
+    if position:
+        neighbors.append(InlineKeyboardButton(GROUP_NAV[lang][2], callback_data=f"transparency:{pages[position-1]}"))
+    if position + 1 < len(pages):
+        neighbors.append(InlineKeyboardButton(GROUP_NAV[lang][3], callback_data=f"transparency:{pages[position+1]}"))
+    rows = [neighbors] if neighbors else []
+    rows.append([InlineKeyboardButton(GROUP_NAV[lang][1], callback_data=f"transparency_group:{group}")])
+    rows.append([InlineKeyboardButton(GROUP_NAV[lang][0], callback_data="transparency_menu")])
+    return InlineKeyboardMarkup(rows)
 
 def transparency_text(lang,page):
     pages=TRANSPARENCY_PAGES[lang]
@@ -1386,7 +1401,12 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         body,index,total=updates_area_text(lang,user_id,area,index)
         await q.edit_message_text(body,reply_markup=updates_area_keyboard(lang,user_id,area,index),disable_web_page_preview=True); return
     if data=="transparency_menu":
-        await q.edit_message_text(TRANSPARENCY_MENU_TITLE[lang],reply_markup=transparency_index_keyboard(lang),disable_web_page_preview=True); return
+        await q.edit_message_text(TRANSPARENCY_MENU_TITLE[lang].split("\n",1)[0]+"\n\n"+GROUP_NAV[lang][4],reply_markup=transparency_index_keyboard(lang),disable_web_page_preview=True); return
+    if data.startswith("transparency_group:"):
+        raw=data.split(":",1)[1]
+        group=int(raw) if raw.isdigit() else 0
+        group=max(0,min(group,len(GROUP_PAGES)-1))
+        await q.edit_message_text(GROUP_LABELS[lang][group],reply_markup=transparency_group_keyboard(lang,group),disable_web_page_preview=True); return
     if data.startswith("transparency:"):
         raw=data.split(":",1)[1]
         page=int(raw) if raw.isdigit() else 0
@@ -1724,7 +1744,8 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message=update.effective_message; user=update.effective_user; chat=update.effective_chat
     if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not message.photo:
         return
-    if not context.user_data.get("muba_camera_waiting_photo",False):
+    if not (context.user_data.get("muba_camera_waiting_photo",False)
+            or context.user_data.get("muba_camera_waiting_instruction",False)):
         return
     uid=int(user.id)
     lang=get_assistant_language(uid) or "en"
