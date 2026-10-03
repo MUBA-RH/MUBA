@@ -3059,7 +3059,9 @@
       "id": "20260928-daily-story-dev-next-day-prepare",
       "date": "2026-09-28",
       "type": "updated",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Prepare the next Daily Story from DEV Tools",
         "tr": "DEV Tools üzerinden yarının hikâyesini hazırla",
@@ -3101,7 +3103,9 @@
       "id": "20260928-daily-story-current-day-on-demand",
       "date": "2026-09-28",
       "type": "updated",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Prepare today's Daily Story when DEV requests it",
         "tr": "DEV istediğinde bugünün günlük hikâyesini hazırla",
@@ -3121,7 +3125,9 @@
       "id": "20260928-daily-story-chatgpt-on-demand",
       "date": "2026-09-28",
       "type": "fixed",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Daily Story ChatGPT request bridge",
         "tr": "Günlük Hikâye ChatGPT istek bağlantısı",
@@ -3141,7 +3147,9 @@
       "id": "20260928-daily-story-isolated-live-test",
       "date": "2026-09-28",
       "type": "updated",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Isolated Daily Story live test",
         "tr": "Ayrı Günlük Hikâye canlı testi",
@@ -3161,7 +3169,9 @@
       "id": "20260929-daily-story-test-queue-permission-fix",
       "date": "2026-09-29",
       "type": "fixed",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Daily Story test request permission fix",
         "tr": "Günlük Hikâye test isteği yetki düzeltmesi",
@@ -3181,7 +3191,9 @@
       "id": "20260929-daily-story-scheduled-reader",
       "date": "2026-09-29",
       "type": "updated",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Daily Story scheduled preparation and read-only Telegram preview",
         "tr": "Günlük Hikâye zamanlı hazırlık ve Telegram'da salt okunur önizleme",
@@ -3201,7 +3213,9 @@
       "id": "20260929-daily-story-private-web-publish-gate",
       "date": "2026-09-29",
       "type": "improved",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Daily Story web publication guard",
         "tr": "Günlük Hikâye web yayın koruması",
@@ -3221,7 +3235,9 @@
       "id": "20260929-daily-story-photo-action-placement",
       "date": "2026-09-29",
       "type": "improved",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Daily Story actions beneath the image",
         "tr": "Günlük Hikâye düğmeleri görselin altında",
@@ -3241,7 +3257,9 @@
       "id": "20260929-daily-story-isolated-web-test-preview",
       "date": "2026-09-29",
       "type": "improved",
-      "areas": ["daily_story"],
+      "areas": [
+        "daily_story"
+      ],
       "title": {
         "en": "Daily Story isolated web test preview",
         "tr": "Günlük Hikâye ayrı web test önizlemesi",
@@ -3261,7 +3279,9 @@
       "id": "20261003-web-blue-identity-discovery",
       "date": "2026-10-03",
       "type": "improved",
-      "areas": ["web"],
+      "areas": [
+        "web"
+      ],
       "title": {
         "en": "MUBA website discovery and blue identity",
         "tr": "MUBA web keşfi ve mavi kimlik",
@@ -3368,6 +3388,29 @@
         "zh": "Guardian 保护模式和重复违规计数使用文件状态。沿用已配置存储；本地后备支持进程重启，但不能保证更换主机后保留。Camera 和 Guardian 消息遵循所选语言。修复 Camera 上传后备及脚本语法；返回菜单时清除临时原照片。",
         "ar": "تستخدم حالة حماية Guardian وعدادات المخالفات المتكررة تخزيناً ملفياً. يُعاد استخدام التخزين المهيأ؛ البديل المحلي يحفظ حالة إعادة تشغيل العملية لكنه لا يضمن بقاءها عند استبدال الخادم. تتبع رسائل Camera وGuardian اللغة المختارة. أُصلح رفع الصور وبنية البرنامج، وتُزال الصورة المؤقتة عند العودة للقائمة.",
         "hi": "Guardian सुरक्षा मोड और दोहराए उल्लंघन के काउंटर अब फ़ाइल स्थिति में रखे जाते हैं। मौजूदा भंडार उपयोग होता है; स्थानीय विकल्प प्रक्रिया पुनः आरंभ में सुरक्षित है, पर होस्ट बदलने पर स्थायी नहीं। Camera और Guardian संदेश चुनी भाषा अपनाते हैं। Camera अपलोड और स्क्रिप्ट त्रुटियाँ सुधरीं; मेनू पर लौटने से अस्थायी मूल फोटो हटती है।"
+      }
+    },
+    {
+      "id": "20261003-camera-human-likeness-scene-adaptation",
+      "date": "2026-10-03",
+      "type": "improved",
+      "areas": [
+        "camera",
+        "assistant"
+      ],
+      "title": {
+        "en": "Camera likeness and complete scene guidance",
+        "tr": "Camera yüz benzerliği ve bütün sahne yönlendirmesi",
+        "zh": "Camera 人物相似度与完整场景指导",
+        "ar": "إرشادات Camera للحفاظ على الشبه وتكييف المشهد",
+        "hi": "Camera में चेहरे की समानता और पूरे दृश्य का मार्गदर्शन"
+      },
+      "text": {
+        "en": "Camera instructions now prioritize each person’s original likeness and apparent age while adapting outfits, accessories and lighting to the requested scene. Scene requests retain up to 800 characters. Reference orientation and legacy reference ordering were corrected. These changes improve model guidance; visual fidelity still requires live generation review.",
+        "tr": "Camera talimatları istenen sahneye kıyafet, aksesuar ve ışığı uyarlarken her kişinin yüz benzerliğini ve görünen yaşını korumayı önceliklendirir. Sahne istekleri 800 karaktere kadar korunur. Fotoğraf yönü ve eski Camera referans sırası düzeltildi. Model yönlendirmesi iyileştirildi; görsel doğruluk canlı üretimle değerlendirilmelidir.",
+        "zh": "Camera 指令优先保留每个人的原始相貌与年龄，同时根据请求场景调整服装、配饰和光线。场景请求最多保留 800 个字符。修复照片方向及旧 Camera 参考图顺序。改进的是模型指导，视觉保真度仍需实际生成评估。",
+        "ar": "تعطي تعليمات Camera الأولوية لشبه كل شخص وعمره الظاهر مع تكييف الملابس والإكسسوارات والإضاءة للمشهد المطلوب. تُحفظ الطلبات حتى 800 حرف. صُحّح اتجاه الصورة وترتيب المراجع في المسار القديم. تحسّن التوجيه، لكن دقة النتائج تحتاج إلى مراجعة إنتاج فعلي.",
+        "hi": "Camera निर्देश हर व्यक्ति के चेहरे की समानता और दिखने वाली उम्र बनाए रखते हुए कपड़े, सामान और रोशनी को चुने दृश्य के अनुसार बदलने को प्राथमिकता देते हैं। अनुरोध में 800 अक्षर तक सुरक्षित रहते हैं। फोटो दिशा और पुराने Camera संदर्भ क्रम सुधारे गए। दृश्य गुणवत्ता की पुष्टि वास्तविक निर्माण की समीक्षा से होगी।"
       }
     }
   ]

@@ -7,7 +7,7 @@ import hashlib, io, os, re, time
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import quote
-from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance, ImageOps
 
 REFERENCE_URL="https://raw.githubusercontent.com/MUBA-RH/MUBA/main/telegram-bot/assets/muba_studio_identity.jpg"
 STUDIO_REFERENCE_FILE=Path(__file__).resolve().parent/"assets"/"muba_studio_identity.jpg"
@@ -87,25 +87,34 @@ def _text_policy(prompt:str)->str:
 
 def camera_reference_bytes(value:bytes,max_side:int=511)->bytes:
     """Normalize Camera references to the FLUX.2 multi-reference input limit."""
-    src=Image.open(io.BytesIO(value)).convert("RGB")
+    src=ImageOps.exif_transpose(Image.open(io.BytesIO(value))).convert("RGB")
     src.thumbnail((max_side,max_side),Image.Resampling.LANCZOS)
     out=io.BytesIO()
     src.save(out,format="JPEG",quality=92,optimize=True)
     return out.getvalue()
 
+def clean_camera_prompt(value:str)->str:
+    # Camera scene requests need room for outfit, action and identity constraints.
+    # Keep Studio's separate short-prompt behavior unchanged.
+    return " ".join((value or "").strip().split())[:800]
+
 def camera_ai_prompt(user_request:str="")->str:
-    request=clean_prompt(user_request) or "Create a natural MUBA-related edit from this photo."
+    request=clean_camera_prompt(user_request) or "Create a natural MUBA-related edit from this photo."
     return (
         "USER REQUEST: "+request+". The user's request is the highest-priority editing intent. "
         "input_image_0 is the user's source photograph. input_image_1 is the MUBA identity reference. "
         "First infer what the user is asking for; do not assume every request means transforming the photographed person into MUBA. "
-        "If the request says MUBA should be with, beside, next to, behind, in front of, or otherwise together with the person, KEEP THE PERSON HUMAN and recognizable from the source photo, including their natural face, hair, body and clothing, and add MUBA as a separate character. Never replace the person's head or face in this case. "
+        "HUMAN IDENTITY: For EVERY photographed person who remains human, preserve their apparent age, facial proportions, eye shape, nose, mouth, jaw, skin tone, hairline, hair color, facial hair and recognizable likeness. Do not age or de-age them, add wrinkles, grey hair, deeper eye bags, sagging skin or an older face. Do not beautify them into a different person, blend their faces with each other or with MUBA, duplicate people, or invent additional human companions. Preserve the original expression unless the requested action reasonably requires a change. Human faces remain photographic unless the user requests a different style; MUBA's illustration style must not alter human faces. "
+        "If the request says MUBA should be with, beside, next to, behind, in front of, or otherwise together with the person, KEEP THE PERSON HUMAN and recognizable from the source photo and add MUBA as a separate character. Never replace the person's head or face in this case. "
         "If the request explicitly asks to transform the person into MUBA or apply MUBA traits to them, perform only that requested transformation and preserve as much of the person's original facial structure, expression, pose, body, clothing and recognizability as the request allows; avoid a pasted-on mascot head. "
         "If the request names or implies a destination, setting, environment or scene (for example beach, seaside, forest, city, space, home, party), that requested setting MUST be visibly realized in the output. Replace or adapt the source background/environment as needed; do not preserve the old background when it conflicts with the requested setting. Keep the photographed person recognizable unless the user explicitly asks to transform them. "
         "When the request combines MUBA companionship with a requested setting, satisfy BOTH requirements at the same time: keep the photographed person human and recognizable, add MUBA as a separate character, and visibly place them together in the requested environment. Do not satisfy only the MUBA part while ignoring the requested location. "
+        "COMPLETE SCENE ADAPTATION: A new setting is a coherent scene, not just a background swap. Adapt clothing, accessories, pose, activity, props, weather, light direction, shadows, scale and perspective to that setting while preserving each person's identity and apparent age. Source clothing and pose are defaults only when they fit the requested scene. Explicit user instructions to keep a particular outfit, accessory, pose or background take priority over automatic adaptation. "
+        "Remove source-context-only work items such as hairnets, disposable caps, lowered face masks, lab coats and uniforms when they do not belong in the new setting and the user did not ask to retain them. Do not infer grey hair from a translucent hairnet; if hair is obscured, avoid inventing a grey hairstyle or age change. Keep or supply appropriate protective equipment when the requested scene actually requires it. For a beach/seaside outing, use natural casual beach-appropriate clothes rather than kitchen or laboratory workwear; keep the people recognizable and place MUBA with them in the same beach scene. Apply the same scene-aware principle to every requested setting, not only beaches. "
         "For all other requests, make only the edits reasonably required by the user's words. Do not introduce an unsolicited MUBA face replacement. "
         "Use input_image_1 to preserve MUBA's character identity when MUBA appears: tan-brown short dense fur, large expressive glossy brown eyes, small rounded brown nose, compact furry muzzle, playful mouth and pink tongue. "
         "Match the approved reference's hand-drawn 2D character style, clean dark outlines and warm tan-orange shading unless the user explicitly requests another visual style. Use the reference for MUBA identity and drawing style only; do not copy its blue circular background, avatar border or black outer background into the requested scene. "
+        "Adapt MUBA's outfit, pose and expression to the scene too; the reference's black cap and hoodie are not mandatory outfits. Keep readable MUBA on at least one suitable worn item, without invented brands, random lettering, extra captions or watermarks. "
         "Preserve source-photo composition, camera perspective and the person's identity wherever compatible with the requested edit. Integrate additions naturally with coherent scale, lighting, shadows and perspective. "
         "No arbitrary portrait reframing, no pasted head, no automatic mascot-body replacement, and no unrelated redesign. "
         "The source camera image is ephemeral input and must never be treated as gallery content."
