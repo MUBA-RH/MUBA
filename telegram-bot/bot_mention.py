@@ -89,7 +89,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 for _lang, _records in TRANSPARENCY_RECORDS.items():
     TRANSPARENCY_PAGES[_lang].extend(f"{title}\n\n{body}" for _,title,body in _records)
-from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, camera_ai_prompt, camera_reference_bytes, is_dev, studio_token, validate_studio_token
+from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, clean_camera_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, camera_ai_prompt, camera_reference_bytes, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
 from muba_price import prices as live_prices
@@ -1685,7 +1685,7 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
         session=context.application.bot_data.get("news_session")
         if session is None:
             raise RuntimeError("MUBA image session hazır değil.")
-        await status.edit_text("MUBA DÖNÜŞ %70\nİŞLE → Görsel üretiliyor...")
+        await status.edit_text("MUBA CAMERA %70\n"+runtime_text(lang,"processing"))
         async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
             if response.status!=200:
@@ -1740,11 +1740,11 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data.setdefault("muba_camera_message_ids",[]).append(message.message_id)
         lang=get_assistant_language(uid) or "en"
         asks={
-            "en":"📸 Photo received.\n\nWhat would you like MUBA to do with this photo? Write it briefly in one message.\n\nExample: Keep the environment, pose and body exactly the same; adapt my face naturally into MUBA.",
-            "tr":"📸 Fotoğraf alındı.\n\nBu fotoğrafta MUBA'nın ne yapmasını istiyorsun? Tek mesajla kısaca yaz.\n\nÖrnek: Ortamı, pozumu ve vücudumu aynen koru; yüzümü doğal şekilde MUBA'ya uyarla.",
-            "zh":"📸 已收到照片。\n\n你希望 MUBA 对这张照片做什么？请用一条简短消息说明。\n\n示例：保持环境、姿势和身体不变，只把我的脸自然地调整为 MUBA 风格。",
-            "ar":"📸 تم استلام الصورة.\n\nماذا تريد من MUBA أن يفعل بهذه الصورة؟ اكتب طلبك باختصار في رسالة واحدة.\n\nمثال: حافظ على المكان والوضعية والجسم كما هي، وحوّل وجهي إلى MUBA بشكل طبيعي.",
-            "hi":"📸 फोटो मिल गई।\n\nआप चाहते हैं कि MUBA इस फोटो में क्या करे? एक छोटे संदेश में लिखें।\n\nउदाहरण: माहौल, pose और body बिल्कुल वैसे ही रखें; केवल मेरे चेहरे को स्वाभाविक रूप से MUBA में adapt करें।",
+            "en":"📸 Photo received.\n\nDescribe the scene you want in one message. Say whether MUBA should join you or you want to become MUBA.\n\nExample: Let us be at the beach with MUBA. Keep our faces and ages; adapt our clothes, poses and lighting to the beach.\n\nIf something must stay exactly the same, include it in your request.",
+            "tr":"📸 Fotoğraf alındı.\n\nİstediğin sahneyi tek mesajda anlat. MUBA yanında mı olsun, yoksa sen mi MUBA'ya dönüşmek istiyorsun?\n\nÖrnek: MUBA ile sahilde olalım. Yüzlerimizi ve yaşımızı koru; kıyafetleri, pozları ve ışığı sahile uyarla.\n\nAynen kalmasını istediğin bir şey varsa isteğine ekle.",
+            "zh":"📸 已收到照片。\n\n请用一条消息描述你想要的场景。说明是让 MUBA 加入你们，还是把你变成 MUBA。\n\n示例：让我们和 MUBA 一起在海滩。保留我们的脸和年龄，让服装、姿势和光线适合海滩。\n\n如有必须保持不变的内容，请在请求中注明。",
+            "ar":"📸 تم استلام الصورة.\n\nصف المشهد الذي تريده في رسالة واحدة. هل تريد MUBA معك أم تريد أن تتحول إلى MUBA؟\n\nمثال: لنكن مع MUBA على الشاطئ. حافظ على وجوهنا وأعمارنا، وكيّف الملابس والوضعيات والإضاءة للشاطئ.\n\nاذكر أي شيء تريد إبقاءه كما هو تماماً.",
+            "hi":"📸 फोटो मिल गई।\n\nएक संदेश में अपना मनचाहा दृश्य बताएँ। MUBA आपके साथ हो या आप MUBA बनना चाहते हैं, यह भी बताएँ।\n\nउदाहरण: हम MUBA के साथ समुद्र तट पर हों। हमारे चेहरे और उम्र बनाए रखें; कपड़े, मुद्रा और रोशनी समुद्र तट के अनुसार बदलें।\n\nजो चीज़ बिल्कुल वैसी ही रखनी हो, उसे अनुरोध में लिखें।",
         }
         ask=await message.reply_text(asks.get(lang,asks["en"]),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(runtime_text(lang,"back"),callback_data="camera_back")]]))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(ask.message_id)
@@ -1813,7 +1813,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not source_bytes:
                 context.user_data.pop("muba_camera_waiting_instruction",None)
                 await message.reply_text("⚠️ "+runtime_text(lang,"photo_missing")); return
-            request=clean_prompt(text)
+            request=clean_camera_prompt(text)
             if not request:
                 await message.reply_text(runtime_text(lang,"request")); return
             await _run_muba_camera_transform(message,context,int(user_id),source_bytes,request)
@@ -2058,11 +2058,13 @@ async def camera_generate_handler(request: web.Request):
             return web.json_response({"error":"MUBA AI engine is not configured."},status=503,headers={"Cache-Control":"no-store"})
         import base64, aiohttp
         muba_ref=await _studio_reference(request)
+        source_ai=camera_reference_bytes(source_bytes)
+        muba_ref=camera_reference_bytes(muba_ref)
         form=aiohttp.FormData()
-        form.add_field("prompt",camera_ai_prompt())
+        form.add_field("prompt",camera_ai_prompt(fields.get("prompt","")))
         form.add_field("width","1024"); form.add_field("height","1024")
-        form.add_field("input_image_0",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
-        form.add_field("input_image_1",source_bytes,filename="camera-input",content_type=source_type)
+        form.add_field("input_image_0",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
+        form.add_field("input_image_1",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
