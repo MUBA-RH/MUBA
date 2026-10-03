@@ -4,6 +4,7 @@ The main MUBA repository is public. A draft image must never be committed there.
 The story and image are written together logically: scene first, manifest last.
 """
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 
 import base64
 import hashlib
@@ -33,6 +34,7 @@ def _settings():
 
 
 def _api(path, method="GET", body=None):
+    ensure_available("github")
     repo, token, _ = _settings()
     url = "https://api.github.com/repos/" + quote(repo, safe="/") + path
     headers = {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
@@ -46,6 +48,11 @@ def _api(path, method="GET", body=None):
     except HTTPError as exc:
         if exc.code == 404 and method == "GET":
             return None
+        try:
+            detail=exc.read(2000).decode("utf-8","replace")
+        except (AttributeError,OSError):
+            detail=""
+        guard_response("github",exc.code,detail,exc.headers)
         # Keep the failing route visible without ever logging the token or URL query.
         raise RuntimeError(f"Daily Story GitHub {method} {path.split('?', 1)[0]} failed ({exc.code})") from exc
 

@@ -1,6 +1,7 @@
 """Five-language Camera and Guardian runtime messages."""
 LANGS=('en','tr','zh','ar','hi')
 ROWS={
+'provider_quota':('The provider quota is unavailable. Image generation is temporarily paused; your daily allowance was not used. Other MUBA areas remain available.','Sağlayıcı kotası kullanılamıyor. Görsel üretim geçici olarak duraklatıldı; günlük hakkın kullanılmadı. MUBA’nın diğer alanları çalışmaya devam ediyor.','服务商配额暂不可用。图片生成已暂停，未扣除你的每日次数。MUBA 其他功能仍可使用。','حصة المزوّد غير متاحة. أُوقف إنتاج الصور مؤقتاً دون استخدام فرصتك اليومية. تبقى بقية خدمات MUBA متاحة.','प्रदाता का कोटा उपलब्ध नहीं है। चित्र निर्माण अस्थायी रूप से रुका है; आपका दैनिक मौका नहीं कटा। MUBA के बाकी हिस्से उपलब्ध हैं।'),
 'back':('⬅ MAIN MENU','⬅ ANA MENÜ','⬅ 主菜单','⬅ القائمة الرئيسية','⬅ मुख्य मेनू'),
 'received':('Photo and request received ✓','Fotoğraf ve isteğin alındı ✓','已收到照片和请求 ✓','تم استلام الصورة والطلب ✓','फोटो और अनुरोध मिला ✓'),
 'processing':('Preparing MUBA…','MUBA hazırlanıyor…','正在准备 MUBA…','جارٍ إعداد MUBA…','MUBA तैयार हो रहा है…'),

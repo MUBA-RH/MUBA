@@ -15,6 +15,7 @@ from unittest import mock
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
+from muba_free_quota import ProviderQuotaPaused, ensure_available, guard_response
 import guardian
 import muba_brain
 from muba_camera import camera_html
@@ -52,7 +53,7 @@ class LocalizedRuntime(unittest.TestCase):
    message=mock.Mock(photo=[mock.Mock(file_id='photo')],reply_text=mock.AsyncMock())
    update=mock.Mock(effective_message=message,effective_user=mock.Mock(id=71),effective_chat=mock.Mock(type='private'))
    context=mock.Mock(user_data={'muba_camera_waiting_photo':True},bot=mock.Mock(get_file=mock.AsyncMock(side_effect=RuntimeError('download failed'))))
-   scope={'ChatType':mock.Mock(PRIVATE='private'),'get_assistant_language':lambda uid:lang,'is_dev':lambda uid:False,'remaining':lambda uid:1,'ai_configured':lambda:True,'runtime_text':runtime_text,'logger':mock.Mock()}
+   scope={'ChatType':mock.Mock(PRIVATE='private'),'get_assistant_language':lambda uid:lang,'is_dev':lambda uid:False,'remaining':lambda uid:1,'ai_configured':lambda:True,'runtime_text':runtime_text,'ProviderQuotaPaused':ProviderQuotaPaused,'ensure_available':ensure_available,'guard_response':guard_response,'logger':mock.Mock()}
    exec(compile(ast.Module(body=[node],type_ignores=[]),'<camera>', 'exec'),scope)
    asyncio.run(scope['muba_camera_photo'](update,context))
    self.assertEqual(message.reply_text.await_args.args[0],'⚠️ '+runtime_text(lang,'photo_failed'))
@@ -70,7 +71,7 @@ class LocalizedRuntime(unittest.TestCase):
    message=mock.Mock(reply_text=mock.AsyncMock(return_value=mock.Mock(edit_text=mock.AsyncMock())))
    context=mock.Mock(user_data={})
    missing=mock.Mock(exists=lambda:False)
-   scope={'get_assistant_language':lambda uid:lang,'runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':missing,'logger':mock.Mock()}
+   scope={'get_assistant_language':lambda uid:lang,'runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':missing,'ProviderQuotaPaused':ProviderQuotaPaused,'ensure_available':ensure_available,'guard_response':guard_response,'logger':mock.Mock()}
    exec(compile(ast.Module(body=[node],type_ignores=[]),'<camera>', 'exec'),scope)
    asyncio.run(scope['_run_muba_camera_transform'](message,context,1,b'photo','request'))
    status=message.reply_text.return_value

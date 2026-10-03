@@ -13,6 +13,7 @@ local storage. R2 failures are surfaced to the caller so a generation can remain
 successful without falsely claiming durable archival.
 """
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 
 import hashlib
 import hmac
@@ -174,10 +175,12 @@ def _r2_request(method,key="",body=b"",content_type=None,query=None,allow_missin
     if content_type:
         headers["Content-Type"]=content_type
     url="https://"+host+canonical_uri+(("?"+canonical_query) if canonical_query else "")
+    ensure_available("r2")
     try:
         response=httpx.request(method,url,content=body,headers=headers,timeout=20.0)
     except httpx.HTTPError as exc:
         raise GalleryStorageError("R2 request failed.") from exc
+    guard_response("r2",response.status_code,response.content[:2000].decode("utf-8","replace") if response.status_code>=400 else "",response.headers)
     if allow_missing and response.status_code==404:
         return None
     if response.status_code<200 or response.status_code>=300:
