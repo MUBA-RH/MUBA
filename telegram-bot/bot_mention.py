@@ -31,6 +31,8 @@ from telegram.ext import (
     filters,
 )
 
+from muba_runtime_text import runtime_text, guardian_event_text, guardian_detail
+
 from muba_brain import (
     build_reply,
     contains_muba,
@@ -1090,6 +1092,8 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data=="create_hub":
         await q.edit_message_text(ASSISTANT_UI[lang]["create"],reply_markup=create_hub_keyboard(lang,user_id)); return
     if data=="camera_back":
+        context.user_data.pop("muba_camera_source_bytes",None)
+        context.user_data.pop("muba_camera_waiting_instruction",None)
         context.user_data.pop("muba_camera_waiting_photo",None)
         ids=list(dict.fromkeys(context.user_data.pop("muba_camera_message_ids",[])+[q.message.message_id]))
         for message_id in ids:
@@ -1652,7 +1656,7 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         strike=event.get("strike")
         if strike is not None: lines.append(f'{ui["strike"]}: {strike}')
         detail=event.get("detail")
-        if detail: lines.append(f'{ui["detail"]}: {detail}')
+        if detail: lines.append(f'{ui["detail"]}: {guardian_detail(detail,lang)}')
         markup=None
         if _guardian_is_violation(event):
             markup=InlineKeyboardMarkup([[InlineKeyboardButton(history_ui["history"],callback_data="guardian_history")]])
@@ -1661,9 +1665,10 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         logger.exception("Guardian DEV private report failed")
 
 async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,user_request:str):
-    status=await message.reply_text("MUBA DÖNÜŞ %10\nAL → Fotoğraf + isteğin alındı ✓")
+    lang=get_assistant_language(uid) or "en"
+    status=await message.reply_text("MUBA CAMERA %10\n"+runtime_text(lang,"received"))
     try:
-        await status.edit_text("MUBA DÖNÜŞ %35\nİŞLE → MUBA hazırlanıyor...")
+        await status.edit_text("MUBA CAMERA %35\n"+runtime_text(lang,"processing"))
         if len(source_bytes)>8*1024*1024:
             raise RuntimeError("Fotoğraf çok büyük.")
         ref_path=STUDIO_REFERENCE_FILE
@@ -1700,13 +1705,13 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
             raise RuntimeError("Günlük hak doğrulanamadı.")
         context.user_data.pop("muba_camera_waiting_instruction",None)
         context.user_data.pop("muba_camera_source_bytes",None)
-        await status.edit_text("MUBA DÖNÜŞ %100 ✓\nVER → MUBA'N HAZIR ✓")
+        await status.edit_text("MUBA CAMERA %100 ✓\n"+runtime_text(lang,"ready"))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(status.message_id)
-        result_message=await message.reply_photo(photo=body,caption="📸 MUBA'N HAZIR ✓\nKaynak fotoğraf MUBA tarafından kalıcı kaydedilmedi. Gallery'ye yayınlanmadı.",reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅ ANA MENÜ",callback_data="camera_back")]]))
+        result_message=await message.reply_photo(photo=body,caption="📸 "+runtime_text(lang,"ready")+"\n"+runtime_text(lang,"privacy"),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(runtime_text(lang,"back"),callback_data="camera_back")]]))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(result_message.message_id)
     except Exception:
         logger.exception("Native MUBA Camera transformation failed without source payload logging")
-        await status.edit_text("⚠️ MUBA DÖNÜŞ başarısız. Günlük hakkın kullanılmadı. İsteğini tekrar yazabilirsin.")
+        await status.edit_text("⚠️ "+runtime_text(lang,"failed"))
 
 async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Capture Camera photo first; generation starts only after the user's instruction."""
@@ -1716,12 +1721,13 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.user_data.get("muba_camera_waiting_photo",False):
         return
     uid=int(user.id)
+    lang=get_assistant_language(uid) or "en"
     if not is_dev(uid) and remaining(uid)<=0:
         context.user_data.pop("muba_camera_waiting_photo",None)
-        await message.reply_text("📸 Günlük MUBA CAMERA hakkın kullanıldı — 1/1.")
+        await message.reply_text("📸 "+runtime_text(lang,"quota_used"))
         return
     if not ai_configured():
-        await message.reply_text("⚠️ MUBA AI şu anda hazır değil. Günlük hakkın kullanılmadı.")
+        await message.reply_text("⚠️ "+runtime_text(lang,"ai_unavailable"))
         return
     try:
         tg_file=await context.bot.get_file(message.photo[-1].file_id,read_timeout=30)
@@ -1740,13 +1746,13 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "ar":"📸 تم استلام الصورة.\n\nماذا تريد من MUBA أن يفعل بهذه الصورة؟ اكتب طلبك باختصار في رسالة واحدة.\n\nمثال: حافظ على المكان والوضعية والجسم كما هي، وحوّل وجهي إلى MUBA بشكل طبيعي.",
             "hi":"📸 फोटो मिल गई।\n\nआप चाहते हैं कि MUBA इस फोटो में क्या करे? एक छोटे संदेश में लिखें।\n\nउदाहरण: माहौल, pose और body बिल्कुल वैसे ही रखें; केवल मेरे चेहरे को स्वाभाविक रूप से MUBA में adapt करें।",
         }
-        ask=await message.reply_text(asks.get(lang,asks["en"]),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⬅ ANA MENÜ" if lang=="tr" else "⬅ BACK",callback_data="camera_back")]]))
+        ask=await message.reply_text(asks.get(lang,asks["en"]),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(runtime_text(lang,"back"),callback_data="camera_back")]]))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(ask.message_id)
     except Exception:
         logger.exception("MUBA Camera photo capture failed without source payload logging")
         context.user_data.pop("muba_camera_source_bytes",None)
         context.user_data.pop("muba_camera_waiting_instruction",None)
-        await message.reply_text("⚠️ Fotoğraf alınamadı. Günlük hakkın kullanılmadı; tekrar deneyebilirsin.")
+        await message.reply_text("⚠️ "+runtime_text(lang,"photo_failed"))
 
 async def daily_story_reference_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """DEV-only: capture a fresh Telegram photo as today's one-batch Story reference."""
@@ -1806,10 +1812,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             source_bytes=context.user_data.get("muba_camera_source_bytes")
             if not source_bytes:
                 context.user_data.pop("muba_camera_waiting_instruction",None)
-                await message.reply_text("⚠️ Camera fotoğrafı bulunamadı. MUBA CAMERA'yı yeniden aç."); return
+                await message.reply_text("⚠️ "+runtime_text(lang,"photo_missing")); return
             request=clean_prompt(text)
             if not request:
-                await message.reply_text("Ne olmasını istediğini tek mesajla kısaca yaz."); return
+                await message.reply_text(runtime_text(lang,"request")); return
             await _run_muba_camera_transform(message,context,int(user_id),source_bytes,request)
             return
         if not lang:
@@ -1848,6 +1854,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await message.reply_text(response,disable_web_page_preview=True)
         return
     if not is_guardian_group(chat.id): return
+    guardian_lang=get_guardian_report_language() or get_assistant_language(DEV_ID) or "en"
     cmd=authorized_command(chat.id,user_id,text)
     if cmd:
         if cmd in ("#START","#STOP"):
@@ -1856,73 +1863,73 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 if cmd=="#STOP":
                     await context.bot.set_chat_permissions(chat.id,ChatPermissions.no_permissions())
-                    response="MUBA DEV IS HERE 🎙️"
+                    response="🎙️ "+runtime_text(guardian_lang,"dev_here")
                 else:
                     await context.bot.set_chat_permissions(chat.id,ChatPermissions(can_send_messages=True, can_send_other_messages=False, can_send_photos=False, can_send_videos=False, can_send_video_notes=False, can_send_voice_notes=False, can_send_audios=False, can_send_documents=False, can_send_polls=False, can_add_web_page_previews=False, can_invite_users=True, can_pin_messages=False, can_change_info=False, can_manage_topics=False), use_independent_chat_permissions=True)
-                    response="MUBA COMMUNITY 🔥"
+                    response="🔥 "+runtime_text(guardian_lang,"community")
                 await message.reply_text(response,disable_web_page_preview=True)
             except Exception:
                 logger.exception("Guardian could not change group posting permissions")
-                await message.reply_text("🛡️ Guardian could not change group permissions. Check bot admin permissions.")
+                await message.reply_text(runtime_text(guardian_lang,"permissions_failed"))
                 await _guardian_dev_report(context,{"kind":"runtime","subkind":cmd.lstrip("#").casefold(),"action":"failed","detail":"Grup izinleri değiştirilemedi."},user_id)
             return
         if cmd in ("#GUARDIAN","#STATUS"):
-            await message.reply_text(status_text(group_conversation_paused(chat.id)))
+            await message.reply_text(status_text(group_conversation_paused(chat.id),guardian_lang))
             return
         if cmd=="#HELP":
-            await message.reply_text(help_text())
+            await message.reply_text(help_text(guardian_lang))
             return
         if cmd=="#SECURITY":
-            await message.reply_text(security_text(group_conversation_paused(chat.id)))
+            await message.reply_text(security_text(group_conversation_paused(chat.id),guardian_lang))
             return
         if cmd=="#LOCKDOWN":
             set_lockdown(True)
-            await message.reply_text("🛡️ GUARDIAN — LOCKDOWN")
+            await message.reply_text("🛡️ GUARDIAN — "+runtime_text(guardian_lang,"lockdown"))
             return
         if cmd=="#NORMAL":
             set_lockdown(False)
-            await message.reply_text("🛡️ GUARDIAN — NORMAL")
+            await message.reply_text("🛡️ GUARDIAN — "+runtime_text(guardian_lang,"normal"))
             return
         target=message.reply_to_message
         try:
             if cmd=="#DELETE":
                 if target:
                     await target.delete()
-                    await message.reply_text("🛡️ Deleted.")
+                    await message.reply_text(runtime_text(guardian_lang,"deleted"))
                 return
             if cmd=="#WARN":
                 if target and target.from_user:
-                    await message.reply_text("⚠️ GUARDIAN warning for "+target.from_user.mention_html(),parse_mode="HTML")
+                    await message.reply_text("⚠️ "+runtime_text(guardian_lang,"warning")+" "+target.from_user.mention_html(),parse_mode="HTML")
                 return
             if cmd in ("#MUTE","#UNMUTE","#BAN"):
                 if not target or not target.from_user:
-                    await message.reply_text("Reply to a user's message with "+cmd+".")
+                    await message.reply_text(runtime_text(guardian_lang,"reply_user",command=cmd))
                     return
                 tid=target.from_user.id
                 if is_dev(tid):
-                    await message.reply_text("🛡️ DEV is protected.")
+                    await message.reply_text(runtime_text(guardian_lang,"dev_protected"))
                     return
                 if cmd=="#BAN":
                     await context.bot.ban_chat_member(chat.id,tid)
-                    await message.reply_text("🛡️ User banned.")
+                    await message.reply_text(runtime_text(guardian_lang,"ban"))
                     return
                 from telegram import ChatPermissions
                 perms=ChatPermissions.no_permissions() if cmd=="#MUTE" else ChatPermissions.all_permissions()
                 await context.bot.restrict_chat_member(chat.id,tid,permissions=perms)
-                await message.reply_text("🛡️ User "+("muted." if cmd=="#MUTE" else "unmuted."))
+                await message.reply_text(runtime_text(guardian_lang,"mute" if cmd=="#MUTE" else "unmute"))
                 return
             if cmd=="#UNBAN":
                 arg=command_arg(text)
                 if arg.lstrip("-").isdigit():
                     tid=int(arg)
                     await context.bot.unban_chat_member(chat.id,tid)
-                    await message.reply_text("🛡️ User unbanned.")
+                    await message.reply_text(runtime_text(guardian_lang,"unban"))
                 else:
-                    await message.reply_text("Use: #UNBAN <user_id>")
+                    await message.reply_text(runtime_text(guardian_lang,"unban_usage"))
                 return
         except Exception:
             logger.exception("Guardian moderation action failed")
-            await message.reply_text("🛡️ Guardian action could not be completed. Check bot admin permissions.")
+            await message.reply_text(runtime_text(guardian_lang,"action_failed"))
             await _guardian_dev_report(context,{"kind":"runtime","subkind":"moderation","action":"failed","detail":"Manuel Guardian işlemi tamamlanamadı."},user_id)
             return
     # #STOP pauses the full Guardian runtime after DEV command handling.
@@ -1941,12 +1948,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if guardian_event:
         action=guardian_event.get("action")
         if action=="warn":
-            await message.reply_text(guardian_event["text"])
+            await message.reply_text(guardian_event_text(guardian_event,guardian_lang))
             await _guardian_dev_report(context,guardian_event,user_id)
         elif action=="delete":
             try:
                 await message.delete()
-                await context.bot.send_message(chat.id,guardian_event["text"])
+                await context.bot.send_message(chat.id,guardian_event_text(guardian_event,guardian_lang))
                 await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian link deletion failed")
@@ -1971,7 +1978,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     )
                 else:
                     await context.bot.ban_chat_member(chat.id,user_id,revoke_messages=True)
-                await context.bot.send_message(chat.id,guardian_event["text"])
+                await context.bot.send_message(chat.id,guardian_event_text(guardian_event,guardian_lang))
                 await _guardian_dev_report(context,guardian_event,user_id)
             except Exception:
                 logger.exception("Guardian automatic moderation failed")
@@ -1982,11 +1989,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if event=="assistant_redirect":
         return
     if event=="fake_ca":
-        await message.reply_text("🚨 Fake CA warning. Do not trust unofficial contract addresses.")
+        await message.reply_text(runtime_text(guardian_lang,"ca_warning"))
         await _guardian_dev_report(context,{"kind":"security","subkind":"fake_ca","action":"warn"},user_id)
         return
     if event=="ca":
-        await message.reply_text("Soon."); return
+        await message.reply_text(runtime_text(guardian_lang,"soon")); return
     response=build_reply(text,chat_id=chat.id,language=detect_language(text),user_id=user_id)
     if response: await message.reply_text(response,disable_web_page_preview=True)
 
@@ -2017,7 +2024,7 @@ async def _studio_reference(request: web.Request):
 
 async def camera_page_handler(request: web.Request):
     from muba_camera import camera_html
-    return web.Response(text=camera_html(EXTERNAL_URL),content_type="text/html",headers={"Cache-Control":"no-store"})
+    return web.Response(text=camera_html(EXTERNAL_URL,request.query.get("lang","en")),content_type="text/html",headers={"Cache-Control":"no-store"})
 
 async def camera_generate_handler(request: web.Request):
     """AL -> ISLE -> VER: source selfie is request-memory only and is never persisted."""
@@ -2561,10 +2568,13 @@ async def health_handler(request: web.Request):
     )
 
 async def state_health_handler(request: web.Request):
+    from guardian import security_storage_status
     state=state_storage_status()
+    guardian_state=security_storage_status()
     gallery=storage_status()
     return web.json_response({
         "state":{"persistent":state["persistent"],"backend":state["backend"]},
+        "guardian":guardian_state,
         "gallery":{"persistent":gallery["persistent"],"writable":gallery["writable"],"backend":gallery.get("backend","unknown")},
     })
 
