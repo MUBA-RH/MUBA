@@ -1,5 +1,6 @@
 """Validated, shared, near-real-time USD prices; MUBA requires official identity."""
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 
 import asyncio
 import math
@@ -48,8 +49,11 @@ def parse_ticker(symbol,data,opening,now):
 
 
 async def _get(session,product,kind):
+    ensure_available("prices")
     async with session.get(API.format(product=product,kind=kind),timeout=8,allow_redirects=True) as response:
-        if response.status!=200: raise ValueError("Price API unavailable")
+        if response.status!=200:
+            guard_response("prices",response.status,await response.text(),response.headers)
+            raise ValueError("Price API unavailable")
         return await response.json()
 
 

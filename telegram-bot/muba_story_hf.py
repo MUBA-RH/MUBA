@@ -6,6 +6,7 @@ process_image(image, prompt, scale, seed, randomize_seed, width, height)
 generation function. No Studio or Cloudflare fallback is permitted.
 """
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 
 import os
 from pathlib import Path
@@ -73,7 +74,12 @@ async def generate(session,prompt:str,reference_url:str,*,weight:float|None=None
     if not configured():
         raise RuntimeError("HF_TOKEN is not configured for Living Story")
     import asyncio
-    result=await asyncio.to_thread(_run_gradio,prompt,reference_url,PANEL_IP_WEIGHT if weight is None else weight,seed)
+    ensure_available("huggingface")
+    try:
+        result=await asyncio.to_thread(_run_gradio,prompt,reference_url,PANEL_IP_WEIGHT if weight is None else weight,seed)
+    except Exception as exc:
+        guard_exception("huggingface",exc)
+        raise
     path=_result_path(result)
     body=await asyncio.to_thread(Path(path).read_bytes)
     if not body:

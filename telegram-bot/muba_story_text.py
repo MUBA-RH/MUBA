@@ -1,6 +1,8 @@
 """Prepare a new Daily Story episode from the previous saved story text."""
 from __future__ import annotations
 
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
+
 import json
 import logging
 import os
@@ -22,12 +24,14 @@ def _clean_text(value):
 
 
 async def _ask(session, url, headers, prompt, *, max_tokens):
+    ensure_available("cloudflare_ai")
     async with session.post(url, json={"messages": [
         {"role": "system", "content": "Write original connected stories. Follow the requested format and character limit precisely."},
         {"role": "user", "content": prompt},
     ], "max_tokens": max_tokens}, headers=headers,
         timeout=aiohttp.ClientTimeout(total=70)) as response:
         if response.status != 200:
+            guard_response("cloudflare_ai",response.status,await response.text(),response.headers)
             raise RuntimeError(f"Daily Story text provider unavailable ({response.status})")
         payload = await response.json()
     result = payload.get("result", {})

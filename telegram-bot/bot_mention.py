@@ -89,6 +89,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 for _lang, _records in TRANSPARENCY_RECORDS.items():
     TRANSPARENCY_PAGES[_lang].extend(f"{title}\n\n{body}" for _,title,body in _records)
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused, quota_status
 from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, clean_camera_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, camera_ai_prompt, camera_ai_endpoint, camera_output_size, camera_reference_bytes, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
@@ -1687,8 +1688,10 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
         if session is None:
             raise RuntimeError("MUBA image session hazır değil.")
         await status.edit_text("MUBA CAMERA %70\n"+runtime_text(lang,"processing"))
+        ensure_available("cloudflare_ai")
         async with session.post(camera_ai_endpoint(),data=form,headers=headers,timeout=120) as response:
             raw=await response.read()
+            guard_response("cloudflare_ai",response.status,raw[:2000].decode("utf-8","replace") if response.status!=200 else "",response.headers)
             if response.status!=200:
                 raise RuntimeError("AI üretimi başarısız.")
             if response.headers.get("Content-Type","").startswith("image/"):
@@ -1710,6 +1713,8 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
         context.user_data.setdefault("muba_camera_message_ids",[]).append(status.message_id)
         result_message=await message.reply_photo(photo=body,caption="📸 "+runtime_text(lang,"ready")+"\n"+runtime_text(lang,"privacy"),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(runtime_text(lang,"back"),callback_data="camera_back")]]))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(result_message.message_id)
+    except ProviderQuotaPaused:
+        await status.edit_text("⏸ "+runtime_text(lang,"provider_quota"))
     except Exception:
         logger.exception("Native MUBA Camera transformation failed without source payload logging")
         await status.edit_text("⚠️ "+runtime_text(lang,"failed"))
@@ -2068,8 +2073,10 @@ async def camera_generate_handler(request: web.Request):
         form.add_field("input_image_0",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
         form.add_field("input_image_1",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        ensure_available("cloudflare_ai")
         async with request.app["http_session"].post(camera_ai_endpoint(),data=form,headers=headers,timeout=120) as response:
             raw=await response.read()
+            guard_response("cloudflare_ai",response.status,raw[:2000].decode("utf-8","replace") if response.status!=200 else "",response.headers)
             if response.status!=200:
                 # Privacy path deliberately avoids logging request/source details.
                 raise RuntimeError("AI request failed")
@@ -2091,6 +2098,8 @@ async def camera_generate_handler(request: web.Request):
             "X-MUBA-Remaining":"DEV" if is_dev(uid) else str(remaining(uid)),
             "Content-Disposition":'inline; filename="my-muba.png"',
         })
+    except ProviderQuotaPaused as exc:
+        return web.json_response({"error":runtime_text("en","provider_quota"),"code":"provider_quota","retry_after":exc.retry_after},status=503,headers={"Cache-Control":"no-store","Retry-After":str(exc.retry_after)})
     except Exception:
         logger.exception("MUBA Camera transformation failed without source payload logging")
         return web.json_response({"error":"MUBA Camera could not create the image. The source photo was not saved."},status=503,headers={"Cache-Control":"no-store"})
@@ -2120,8 +2129,10 @@ async def studio_generate_handler(request: web.Request):
         form.add_field("height",str(payload["height"]))
         form.add_field("input_image_0",ref,filename="muba-studio-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        ensure_available("cloudflare_ai")
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
+            guard_response("cloudflare_ai",response.status,raw[:2000].decode("utf-8","replace") if response.status!=200 else "",response.headers)
             if response.status != 200:
                 logger.error("Workers AI request failed status=%s body=%s",response.status,raw[:1000].decode("utf-8","replace"))
                 raise RuntimeError("AI request failed")
@@ -2131,6 +2142,8 @@ async def studio_generate_handler(request: web.Request):
                 encoded=result.get("image") if isinstance(result,dict) else None
                 if not encoded: raise RuntimeError("AI response contained no image")
                 body=base64.b64decode(encoded); out_type="image/png"
+    except ProviderQuotaPaused as exc:
+        return web.json_response({"error":runtime_text("en","provider_quota"),"code":"provider_quota","retry_after":exc.retry_after},status=503,headers={"Retry-After":str(exc.retry_after)})
     except Exception:
         logger.exception("MUBA AI generation failed")
         return web.json_response({"error":"MUBA AI could not create this image. Failed attempts do not count."},status=503)
@@ -2219,8 +2232,10 @@ async def studio_web_generate_handler(request: web.Request):
         form.add_field("height",str(payload["height"]))
         form.add_field("input_image_0",ref,filename="muba-studio-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+        ensure_available("cloudflare_ai")
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
+            guard_response("cloudflare_ai",response.status,raw[:2000].decode("utf-8","replace") if response.status!=200 else "",response.headers)
             if response.status!=200:
                 logger.error("Public Studio AI request failed status=%s body=%s",response.status,raw[:1000].decode("utf-8","replace"))
                 raise RuntimeError("AI request failed")
@@ -2232,6 +2247,8 @@ async def studio_web_generate_handler(request: web.Request):
                 encoded=result.get("image") if isinstance(result,dict) else None
                 if not encoded: raise RuntimeError("AI response contained no image")
                 body=base64.b64decode(encoded); out_type="image/png"
+    except ProviderQuotaPaused as exc:
+        return _web_studio_json(origin,{"error":runtime_text("en","provider_quota"),"code":"provider_quota","retry_after":exc.retry_after},503)
     except Exception:
         logger.exception("Public MUBA Studio generation failed")
         return _web_studio_json(origin,{"error":"MUBA Studio could not create this image. Failed attempts do not count."},503)
@@ -2318,12 +2335,9 @@ async def _story_generate_images_unlocked(item):
         async with aiohttp.ClientSession() as session:
             try:
                 body,out_type=await generate(session,prompt,reference,reference_type=reference_type)
-            except GenerationCapacityError as primary_error:
-                from muba_story_fallback import configured as fallback_configured, generate as fallback_generate
-                if not fallback_configured():
-                    raise RuntimeError("Visual generation capacity is currently unavailable") from primary_error
-                logger.warning("Primary story generation capacity unavailable; using secondary reservoir")
-                body,out_type=await fallback_generate(session,prompt,reference,reference_type=reference_type,width=1024,height=576)
+            except (GenerationCapacityError,ProviderQuotaPaused) as primary_error:
+                # Free capacity exhaustion pauses this area; never switch providers.
+                raise RuntimeError("Daily Story generation is paused until provider capacity returns. Other MUBA areas remain available.") from primary_error
     import io
     from PIL import Image
     with Image.open(io.BytesIO(body)) as generated:
@@ -2565,6 +2579,16 @@ async def error_handler(
     )
 
 
+@web.middleware
+async def quota_pause_middleware(request,handler):
+    try:
+        return await handler(request)
+    except ProviderQuotaPaused as exc:
+        headers={"Cache-Control":"no-store","Retry-After":str(exc.retry_after)}
+        if request.path.startswith(("/gallery","/news","/price","/story")):
+            headers.update(_gallery_cors_headers())
+        return web.json_response({"error":"This connection is temporarily paused because its provider quota is unavailable. Other MUBA areas remain available.","code":"provider_quota","retry_after":exc.retry_after},status=503,headers=headers)
+
 async def health_handler(request: web.Request):
     return web.Response(
         text="MUBA is alive.",
@@ -2579,6 +2603,7 @@ async def state_health_handler(request: web.Request):
     return web.json_response({
         "state":{"persistent":state["persistent"],"backend":state["backend"]},
         "guardian":guardian_state,
+        "provider_quota":quota_status(),
         "gallery":{"persistent":gallery["persistent"],"writable":gallery["writable"],"backend":gallery.get("backend","unknown")},
     })
 
@@ -2718,7 +2743,7 @@ async def start_webhook_server():
         "External AI services are disabled."
     )
 
-    app = web.Application()
+    app = web.Application(middlewares=[quota_pause_middleware])
 
     import aiohttp
     app["http_session"] = aiohttp.ClientSession()

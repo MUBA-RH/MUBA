@@ -1,5 +1,6 @@
 """Isolated, fail-closed official-source news pool for Web and Telegram."""
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 
 import hashlib
 import html
@@ -257,8 +258,12 @@ async def collect(session,fetch=None):
     if not storage_status()["persistent"]: return []
     if fetch is None:
         async def fetch(url):
+            provider="news:"+(urlparse(url).hostname or "unknown")
+            ensure_available(provider)
             async with session.get(url,allow_redirects=False,timeout=9) as response:
-                if response.status!=200: raise ValueError(f"Source HTTP {response.status}")
+                if response.status!=200:
+                    guard_response(provider,response.status,await response.text(),response.headers)
+                    raise ValueError(f"Source HTTP {response.status}")
                 is_feed=url in {source[1] for source in SOURCES}
                 data=await response.content.read(2_000_001 if is_feed else 800_000)
                 if is_feed and len(data)>2_000_000: raise ValueError("Oversized feed")
@@ -357,14 +362,19 @@ async def translate(text,lang,session):
     if not account or not token: return None
     url=f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/@cf/meta/m2m100-1.2b"
     try:
+        ensure_available("cloudflare_ai")
         async with session.post(url,json={"text":text,"source_lang":"en","target_lang":lang},
                                 headers={"Authorization":f"Bearer {token}"},timeout=20) as response:
-            if response.status!=200: return None
+            if response.status!=200:
+                guard_response("cloudflare_ai",response.status,await response.text(),response.headers)
+                return None
             result=(await response.json()).get("result")
         if isinstance(result,list): result=result[0] if result else None
         if isinstance(result,dict):
             value=result.get("translated_text") or result.get("translation")
             return str(value).strip() if value else None
+    except ProviderQuotaPaused:
+        return None
     except Exception:
         LOG.warning("News translation unavailable for %s",lang,exc_info=True)
     return None

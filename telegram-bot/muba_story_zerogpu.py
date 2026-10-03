@@ -1,5 +1,6 @@
 """Hugging Face ZeroGPU client for MUBA Daily Story."""
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 import asyncio, os, tempfile
 from pathlib import Path
 SPACE=os.getenv("MUBA_STORY_HF_SPACE","").strip()
@@ -20,4 +21,9 @@ def _predict(prompt,reference_bytes,continuity_bytes):
         return Path(path).read_bytes(),"image/png"
 async def generate(session,prompt,reference_bytes,reference_type="image/png",continuity_bytes=None,continuity_type="image/png"):
     del session,reference_type,continuity_type
-    return await asyncio.to_thread(_predict,prompt,reference_bytes,continuity_bytes)
+    ensure_available("huggingface")
+    try:
+        return await asyncio.to_thread(_predict,prompt,reference_bytes,continuity_bytes)
+    except Exception as exc:
+        guard_exception("huggingface",exc)
+        raise

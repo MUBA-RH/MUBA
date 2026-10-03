@@ -118,3 +118,11 @@ See:
 - `LICENSE.md` — MUBA Source-Available License v1.0;
 - `docs/MUBA_PERMISSION_MODEL.md` — authorization model and supported Vault gate;
 - `MUBA_PERMISSION_TEMPLATE.json` — permission grant template.
+
+### Provider quota pauses
+
+Provider-reported quota, credit exhaustion and rate-limit responses pause only that connection. Cloudflare AI generation, story text and news translation share a pause because they use the same account allocation. HF, Kaggle, GitHub, R2, prices and each news host are isolated. Daily Story does not switch to a secondary provider after quota exhaustion. Failed Camera/Studio quota attempts do not consume user allowance; menus, Guardian and the health route remain independent.
+
+`Retry-After` and GitHub reset headers are respected. Cloudflare daily-allocation errors pause until the next UTC day. Unknown reset times use a conservative cooldown and are checked only on a new request; there is no automatic job-resubmission loop. State uses `MUBA_QUOTA_STATE_FILE`, a file beside `MUBA_MEMORY_FILE`, or a temporary local file. Local state survives process restart on the same host; host replacement needs persistent storage. `/health/state` reports pauses without credentials or error payloads.
+
+This is a response-driven circuit breaker, **not a billing meter or a guaranteed free-tier cap**. Workers Paid can charge overages without a quota error, and R2 has usage-based storage/operation billing. Provider account plans, existing usage and hard billing controls must be verified separately; no plan upgrade or credit purchase is performed by this code.

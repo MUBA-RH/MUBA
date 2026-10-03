@@ -17,6 +17,7 @@ class _FakeResponse:
     def __init__(self,status_code=200,content=b""):
         self.status_code=status_code
         self.content=content
+        self.headers={}
 
 
 class GalleryR2Tests(unittest.TestCase):
