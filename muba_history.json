@@ -3527,6 +3527,28 @@
         "ar": "تحل الصورة الجديدة المرسلة أثناء انتظار تعليمات المشهد محل المصدر السابق في الذاكرة المؤقتة، وتُطلب التعليمات مجدداً. يبدأ التوليد بعد التعليمات النصية فقط، ولا يتغير سلوك التخزين والمعرض.",
         "hi": "दृश्य निर्देश की प्रतीक्षा में भेजी गई नई फोटो अस्थायी मेमोरी में पुरानी फोटो बदल देती है और निर्देश फिर पूछा जाता है। निर्माण पाठ निर्देश के बाद शुरू होता है; संग्रहण और गैलरी व्यवहार समान है।"
       }
+    },
+    {
+      "id": "20261003-camera-delivery-status",
+      "date": "2026-10-03",
+      "type": "fixed",
+      "areas": [
+        "camera"
+      ],
+      "title": {
+        "en": "Camera separates creation from Telegram delivery",
+        "tr": "Camera üretim ile Telegram teslimatını ayırır",
+        "zh": "Camera 区分生成与 Telegram 送达",
+        "ar": "تفصل Camera الإنشاء عن التسليم إلى Telegram",
+        "hi": "Camera निर्माण और Telegram वितरण अलग बताता है"
+      },
+      "text": {
+        "en": "Camera allows longer Telegram photo transfers, shows 95% while sending and confirms 100% after delivery. If delivery is uncertain after successful generation, it asks users to check the chat instead of claiming generation failed or the daily allowance was unused.",
+        "tr": "Camera Telegram fotoğraf aktarımı için daha uzun süre tanır, gönderirken %95 ve teslimat doğrulanınca %100 gösterir. Üretim başarılı fakat teslimat belirsizse başarısız üretim veya kullanılmamış günlük hak iddiası yerine sohbeti kontrol etmeyi ister.",
+        "zh": "Camera 延长 Telegram 图片传输等待时间，发送时显示 95%，确认送达后显示 100%。生成成功但送达未确认时，提示检查聊天，而不会称生成失败或未使用每日次数。",
+        "ar": "تتيح Camera وقتاً أطول لنقل الصور، وتعرض 95٪ أثناء الإرسال و100٪ بعد تأكيد التسليم. عند نجاح الإنشاء وعدم تأكيد التسليم، تطلب التحقق من المحادثة بدلاً من ادعاء فشل الإنشاء أو عدم استخدام الحصة اليومية.",
+        "hi": "Camera फोटो भेजने के लिए अधिक समय देता है: भेजते समय 95% और पुष्टि पर 100%। निर्माण सफल पर वितरण अनिश्चित हो तो असफल निर्माण या बचा दैनिक मौका कहने के बजाय चैट जाँचने को कहता है।"
+      }
     }
   ]
 }
