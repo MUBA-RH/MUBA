@@ -72,8 +72,9 @@ class CameraPrivacyTests(unittest.TestCase):
   start=BOT.index("async def camera_generate_handler")
   end=BOT.index("async def studio_generate_handler",start)
   handler=BOT[start:end]
-  self.assertIn('form.add_field("input_image_1",source_bytes',handler)
-  self.assertIn("camera_ai_prompt()",handler)
+  self.assertIn('form.add_field("input_image_0",source_ai',handler)
+  self.assertIn('form.add_field("input_image_1",muba_ref',handler)
+  self.assertIn('camera_ai_prompt(fields.get("prompt",""))',handler)
   self.assertNotIn("logger.",handler.split("except Exception:",1)[0])
  def test_camera_shows_selected_photo_and_result(self):
   self.assertIn('id="openCamera">📷 KAMERAYI AÇ',CAMERA)
