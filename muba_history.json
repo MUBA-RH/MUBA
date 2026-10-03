@@ -3298,6 +3298,29 @@
         "ar": "أصبح القسم الرئيسي على الهاتف بعمود واحد وبطاقات الاستكشاف ملائمة للشاشة. أصبحت الألوان الزرقاء أكثر حيوية مع لمسات كهرمانية ونص منحني تحت شعار MUBA.",
         "hi": "मोबाइल का मुख्य भाग अब एक कॉलम में है और खोज कार्ड स्क्रीन में समाते हैं। नीले रंग अधिक चमकदार हैं, साथ में गर्म अंबर रंग और MUBA लोगो के नीचे घुमावदार लेख है।"
       }
+    },
+    {
+      "id": "20261003-studio-camera-approved-blue-reference",
+      "date": "2026-10-03",
+      "type": "updated",
+      "areas": [
+        "studio",
+        "camera"
+      ],
+      "title": {
+        "en": "Approved MUBA reference for Studio and Camera",
+        "tr": "Studio ve Camera için onaylı MUBA referansı",
+        "zh": "Studio 和 Camera 的批准 MUBA 参考图",
+        "ar": "مرجع MUBA المعتمد لـ Studio وCamera",
+        "hi": "Studio और Camera के लिए स्वीकृत MUBA संदर्भ"
+      },
+      "text": {
+        "en": "Studio and Camera now share the newly approved MUBA portrait. Character rendering follows its hand-drawn 2D style; the avatar circle and background are not carried into scenes.",
+        "tr": "Studio ve Camera yeni onaylı MUBA portresini ortak kullanır. Karakter çizimi referansın iki boyutlu çizim tarzını izler; avatar dairesi ve arka planı sahnelere taşınmaz.",
+        "zh": "Studio 和 Camera 共同使用新批准的 MUBA 肖像。角色遵循其手绘二维风格；头像圆框和背景不会带入场景。",
+        "ar": "يستخدم Studio وCamera صورة MUBA الجديدة المعتمدة. يتبع رسم الشخصية أسلوبها اليدوي ثنائي الأبعاد دون نقل دائرة الصورة أو خلفيتها إلى المشاهد.",
+        "hi": "Studio और Camera अब नया स्वीकृत MUBA चित्र साझा करते हैं। पात्र उसकी हाथ से बनी 2D शैली अपनाता है; अवतार का घेरा और पृष्ठभूमि दृश्य में नहीं आते।"
+      }
     }
   ]
 }
