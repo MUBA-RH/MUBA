@@ -3434,6 +3434,28 @@
         "ar": "بعد فشل الناتج الفعلي في الحفاظ على الشبه والتشريح، فُصل Camera عن نموذج Studio ذي 4B واستُخدم FLUX.2 Klein 9B. يحافظ المساران على نسبة الصورة ضمن حدود الإخراج. وُضّح عدد الأشخاص وتشريح كفوف MUBA. تُستخدم بيانات الوصول الحالية دون رجوع آلي. تختلف تكلفة النموذج، وتحتاج الجودة إلى مراجعة فعلية.",
         "hi": "वास्तविक Camera चित्र चेहरे की समानता और शारीरिक संरचना की जाँच में विफल रहा, इसलिए Camera को Studio के 4B मॉडल से अलग कर FLUX.2 Klein 9B पर भेजा गया। दोनों मार्ग मूल अनुपात को आउटपुट सीमा में रखते हैं। व्यक्ति संख्या और MUBA के पंजों के निर्देश स्पष्ट हुए। मौजूदा क्रेडेंशियल उपयोग होते हैं; स्वतः पुराने मॉडल पर वापसी नहीं होती। लागत अलग है और गुणवत्ता की वास्तविक समीक्षा आवश्यक है।"
       }
+    },
+    {
+      "id": "20261003-camera-original-model-cost-correction",
+      "date": "2026-10-03",
+      "type": "fixed",
+      "areas": [
+        "camera"
+      ],
+      "title": {
+        "en": "Camera model cost correction",
+        "tr": "Camera model maliyeti düzeltmesi",
+        "zh": "Camera 模型费用修正",
+        "ar": "تصحيح تكلفة نموذج Camera",
+        "hi": "Camera मॉडल की लागत का सुधार"
+      },
+      "text": {
+        "en": "Camera returned to the original FLUX.2 Klein 4B model to respect the no-additional-cost requirement. Higher-priced Camera model overrides are rejected. Source framing and anatomy guidance remain. Provider billing depends on the actual account plan and free allocation; code tests do not certify zero charges.",
+        "tr": "Ek maliyet istememe şartı için Camera önceki FLUX.2 Klein 4B modeline döndürüldü. Daha yüksek fiyatlı Camera model ayarları reddedilir. Kaynak kadrajı ve anatomi talimatları korunur. Sağlayıcı ücretlendirmesi gerçek hesap planı ve ücretsiz kotaya bağlıdır; kod testleri sıfır ücreti doğrulamaz.",
+        "zh": "为遵守不增加费用的要求，Camera 恢复使用原有 FLUX.2 Klein 4B 模型，拒绝更高费用的模型覆盖设置。保留原图构图及解剖指导。实际费用取决于账户方案和免费额度；代码测试不能证明零费用。",
+        "ar": "أُعيد Camera إلى نموذج FLUX.2 Klein 4B الأصلي احتراماً لشرط عدم زيادة التكلفة. تُرفض إعدادات النماذج الأعلى سعراً مع الحفاظ على التأطير وإرشادات التشريح. تعتمد الفواتير على خطة الحساب والحصة المجانية؛ اختبارات الكود لا تثبت انعدام الرسوم.",
+        "hi": "अतिरिक्त लागत न बढ़ाने के लिए Camera को पुराने FLUX.2 Klein 4B मॉडल पर लौटाया गया। अधिक लागत वाले मॉडल सेटिंग अस्वीकार होते हैं। मूल फ्रेम और संरचना के निर्देश बने रहते हैं। वास्तविक बिलिंग खाते की योजना और मुफ्त कोटे पर निर्भर है; कोड परीक्षण शून्य शुल्क साबित नहीं करते।"
+      }
     }
   ]
 }
