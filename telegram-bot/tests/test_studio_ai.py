@@ -28,6 +28,7 @@ class StudioAI(unittest.TestCase):
   src=(ROOT/"bot_mention.py").read_text()
   self.assertEqual(src.count('"input_image_0",ref,filename="muba-studio-identity.jpg",content_type="image/jpeg"'),2)
   self.assertIn('ref=await _studio_reference(request)',src)
+  self.assertIn('muba_ref,filename="muba-identity.jpg",content_type="image/jpeg"',src)
  def test_camera_and_studio_follow_approved_drawing_style_without_avatar_background(self):
   prompts=[muba_studio.camera_ai_prompt("MUBA beside me"),muba_studio.ai_payload("MUBA in a city","image","data:image/jpeg;base64,abc")["prompt"]]
   for prompt in prompts:
