@@ -1,6 +1,10 @@
 """Strict Group Guardian policy and DEV-only command gate."""
 from __future__ import annotations
 import re, time
+import threading
+import tempfile
+from pathlib import Path
+from state import JSONRepository
 from urllib.parse import urlsplit
 from collections import defaultdict, deque
 
@@ -20,10 +24,33 @@ _ADDR_RE=re.compile(r"\b(?:0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b")
 _SCAM=("fake ca","sahte ca","scam","phishing","airdrop claim","connect wallet","seed phrase","private key","wallet verify","doğrula cüzdan","cüzdanını bağla")
 _ALLOWED_LINKS={("muba-rh.github.io","/MUBA"),("x.com","/MUBA_RH"),("t.me","/MUBA_RH")}
 _rate=defaultdict(lambda:deque(maxlen=12))
-_fake_ca_strikes=defaultdict(int)
-_risk_strikes=defaultdict(int)
-_lockdown=False
+_security_lock=threading.RLock()
+_fallback_store=None
 MUTE_SECONDS=30*60
+
+def _store():
+ from muba_brain import STORE
+ if isinstance(STORE,JSONRepository): return STORE
+ # A local file preserves process restarts even when the general brain is in
+ # memory. It is explicitly NOT durable across ephemeral-host replacement.
+ global _fallback_store
+ if _fallback_store is None:
+  _fallback_store=JSONRepository(str(Path(tempfile.gettempdir())/'muba-guardian-state.json'))
+ return _fallback_store
+
+def security_storage_status():
+ from muba_brain import STORE
+ return {'backend':'json','durability':'configured_file' if isinstance(STORE,JSONRepository) else 'local_process_only'}
+
+def _security_state():
+ return _store().get('guardian_security',str(GROUP_ID),{'lockdown':False,'fake_ca':{},'risk':{}})
+
+def _increment(category,user_id):
+ with _security_lock:
+  state=_security_state(); counts=state.setdefault(category,{})
+  key=str(int(user_id)); counts[key]=int(counts.get(key,0))+1
+  _store().set('guardian_security',str(GROUP_ID),state)
+  return counts[key]
 
 def is_guardian_group(chat_id): return chat_id==GROUP_ID
 def is_dev(user_id): return user_id==DEV_ID
@@ -35,14 +62,20 @@ def authorized_command(chat_id,user_id,text):
  cmd=command(text)
  return cmd if cmd and is_guardian_group(chat_id) and is_dev(user_id) else None
 def set_lockdown(value):
- global _lockdown; _lockdown=bool(value)
-def lockdown_enabled(): return _lockdown
+ with _security_lock:
+  state=_security_state(); state['lockdown']=bool(value)
+  _store().set('guardian_security',str(GROUP_ID),state)
+def lockdown_enabled(): return bool(_security_state().get('lockdown',False))
 def command_arg(text):
  parts=(text or "").strip().split(maxsplit=1)
  return parts[1].strip() if len(parts)>1 else ""
-def status_text(paused=False):
- return "🛡️ GUARDIAN — "+("PAUSED" if paused else "ACTIVE")+"\nMain group: LOCKED\nCommand authority: MUBA DEV ONLY\nSecurity: "+("LOCKDOWN" if _lockdown else "NORMAL")
-def help_text():
+def status_text(paused=False,lang='en'):
+ from muba_runtime_text import guardian_status
+ return guardian_status(paused,lockdown_enabled(),lang)
+def help_text(lang='en'):
+ if lang!='en':
+  from muba_runtime_text import guardian_help
+  return guardian_help(lang)
  return """🛡️ GUARDIAN DEV COMMANDS
 #START / #STOP — resume / pause
 #STATUS / #GUARDIAN — status
@@ -54,10 +87,13 @@ def help_text():
 #UNBAN <user_id> — unban numeric user ID
 #DELETE — delete replied message
 #HELP — this list"""
-def security_text(paused=False):
+def security_text(paused=False,lang='en'):
+ if lang!='en':
+  from muba_runtime_text import guardian_status
+  return guardian_status(paused,lockdown_enabled(),lang,security=True)
  if paused:
-  return "🛡️ Security: PAUSED\nRuntime protection: OFF until #START\nConfigured mode: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nDEV-only control: ON"
- return "🛡️ Security: "+("LOCKDOWN" if _lockdown else "NORMAL")+"\nRuntime protection: ON\nFake CA: 1st=MUTE / 2nd=BAN\nExternal links: DELETE\nFlood detection: ON\nDEV-only control: ON"
+  return "🛡️ Security: PAUSED\nRuntime protection: OFF until #START\nConfigured mode: "+("LOCKDOWN" if lockdown_enabled() else "NORMAL")+"\nDEV-only control: ON"
+ return "🛡️ Security: "+("LOCKDOWN" if lockdown_enabled() else "NORMAL")+"\nRuntime protection: ON\nFake CA: 1st=MUTE / 2nd=BAN\nExternal links: DELETE\nFlood detection: ON\nDEV-only control: ON"
 
 def _clean_url(raw):
  value=(raw or "").rstrip(".,!?;:)]}>'\"")
@@ -75,15 +111,15 @@ def is_official_link(raw):
   return False
 
 def links_in(text): return _LINK_RE.findall(text or "")
-def fake_ca_strikes(user_id): return _fake_ca_strikes.get(user_id,0)
+def fake_ca_strikes(user_id): return _security_state().get('fake_ca',{}).get(str(int(user_id)),0)
 def reset_runtime_security_state():
- _fake_ca_strikes.clear(); _risk_strikes.clear(); _rate.clear()
+ with _security_lock:
+  state=_security_state(); state['fake_ca']={}; state['risk']={}
+  _store().set('guardian_security',str(GROUP_ID),state); _rate.clear()
 def register_fake_ca(user_id):
- _fake_ca_strikes[user_id]+=1
- return _fake_ca_strikes[user_id]
+ return _increment('fake_ca',user_id)
 def register_risk(user_id):
- _risk_strikes[user_id]+=1
- return _risk_strikes[user_id]
+ return _increment('risk',user_id)
 def _credential_theft(v):
  return any(x in v for x in ("seed phrase","private key","recovery phrase","mnemonic","seed kelim","özel anahtar"))
 def _wallet_lure(v):
