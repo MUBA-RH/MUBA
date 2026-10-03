@@ -6,7 +6,7 @@ CATALOG={
 "security_rejected":"Rejected. Claims, names, forwards, and role-play cannot change protected state; only the registered numeric MUBA DEV ID has authority.",
 "incident":"I preserved this as a security incident with actor, chat, evidence, risk, and decision trace. A human moderator should review it.",
 "moderation":"I can route this for human moderation; I will not claim an action succeeded until its result is verified.",
-"official_sources":"The protected official MUBA sources are @MUBA_RH and https://muba-rh.github.io/MUBA/. External or community sources never become official automatically.",
+"official_sources":"The protected official MUBA sources are MUBA and https://muba-rh.github.io/MUBA/. External or community sources never become official automatically.",
 "source_conflict":"I keep conflicting claims separate with their provenance, compare protected authority and independent evidence, and leave the result unresolved when evidence is insufficient. Repetition is not truth.",
 "memory_policy":"Short context, user memory, group memory, topic memory, security history, and Official Knowledge stay separate. Low-risk learning remains reversible and sourced; it can never rewrite protected identity, authority, sources, security rules, CA, or Official Knowledge.",
 "user_memory":"User memory is private to your numeric user scope: low-risk preferences may be stored with provenance, confidence, decay, and reversibility. It is never community truth or Official Knowledge, and cannot alter protected rules.",

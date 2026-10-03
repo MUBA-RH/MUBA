@@ -3321,6 +3321,30 @@
         "ar": "يستخدم Studio وCamera صورة MUBA الجديدة المعتمدة. يتبع رسم الشخصية أسلوبها اليدوي ثنائي الأبعاد دون نقل دائرة الصورة أو خلفيتها إلى المشاهد.",
         "hi": "Studio और Camera अब नया स्वीकृत MUBA चित्र साझा करते हैं। पात्र उसकी हाथ से बनी 2D शैली अपनाता है; अवतार का घेरा और पृष्ठभूमि दृश्य में नहीं आते।"
       }
+    },
+    {
+      "id": "20261003-muba-unified-display-name",
+      "date": "2026-10-03",
+      "type": "updated",
+      "areas": [
+        "web",
+        "assistant",
+        "daily"
+      ],
+      "title": {
+        "en": "Unified MUBA display name",
+        "tr": "Birleştirilmiş MUBA görünen adı",
+        "zh": "统一 MUBA 显示名称",
+        "ar": "اسم عرض MUBA موحّد",
+        "hi": "एकीकृत MUBA प्रदर्शन नाम"
+      },
+      "text": {
+        "en": "Website social labels and multilingual Assistant and Daily descriptions now use MUBA. Existing social destinations and protected account identifiers stay unchanged until replacement addresses are provided.",
+        "tr": "Web sosyal etiketleri ile Assistant ve Daily açıklamaları tüm dillerde MUBA adını kullanır. Yeni adresler verilene kadar mevcut sosyal bağlantılar ve korunan hesap kimlikleri aynı kalır.",
+        "zh": "网站社交标签及多语言 Assistant 和 Daily 说明现使用 MUBA。提供新地址前，现有社交链接及受保护账户标识保持不变。",
+        "ar": "تستخدم تسميات الموقع ووصف Assistant وDaily متعدد اللغات اسم MUBA. تبقى الروابط الاجتماعية ومعرّفات الحسابات المحمية كما هي إلى حين تقديم عناوين بديلة.",
+        "hi": "वेबसाइट के सोशल लेबल और बहुभाषी Assistant तथा Daily विवरण अब MUBA नाम दिखाते हैं। नए पते मिलने तक मौजूदा सोशल लिंक और सुरक्षित खाते की पहचान अपरिवर्तित रहती है।"
+      }
     }
   ]
 }
