@@ -3549,6 +3549,28 @@
         "ar": "تتيح Camera وقتاً أطول لنقل الصور، وتعرض 95٪ أثناء الإرسال و100٪ بعد تأكيد التسليم. عند نجاح الإنشاء وعدم تأكيد التسليم، تطلب التحقق من المحادثة بدلاً من ادعاء فشل الإنشاء أو عدم استخدام الحصة اليومية.",
         "hi": "Camera फोटो भेजने के लिए अधिक समय देता है: भेजते समय 95% और पुष्टि पर 100%। निर्माण सफल पर वितरण अनिश्चित हो तो असफल निर्माण या बचा दैनिक मौका कहने के बजाय चैट जाँचने को कहता है।"
       }
+    },
+    {
+      "id": "20261003-camera-caption-safe-diagnostics",
+      "date": "2026-10-03",
+      "type": "improved",
+      "areas": [
+        "camera"
+      ],
+      "title": {
+        "en": "Camera captions and safe failure codes",
+        "tr": "Camera fotoğraf açıklaması ve güvenli hata kodları",
+        "zh": "Camera 照片说明与安全错误代码",
+        "ar": "تعليقات صور Camera ورموز الخطأ الآمنة",
+        "hi": "Camera फोटो कैप्शन और सुरक्षित त्रुटि कोड"
+      },
+      "text": {
+        "en": "Camera accepts a scene instruction in the photo caption. Failed provider calls expose only HTTP status and numeric provider codes to DEV for diagnosis; prompts, photos and raw response text are not logged. This enables diagnosis and does not claim to resolve an unknown provider failure.",
+        "tr": "Camera fotoğraf açıklamasındaki sahne talimatını doğrudan kabul eder. Sağlayıcı hatalarında teşhis için DEV hesabına yalnızca HTTP durumu ve sayısal sağlayıcı kodları gösterilir; fotoğraf, talimat ve ham yanıt kaydedilmez. Bu değişiklik teşhis sağlar; nedeni henüz bilinmeyen sağlayıcı hatasının çözüldüğü iddia edilmez.",
+        "zh": "Camera 直接接受照片说明中的场景指令。服务商失败时，仅向 DEV 显示 HTTP 状态和数字错误代码，不记录照片、指令或原始响应。此更新用于诊断，不代表未知故障已修复。",
+        "ar": "تقبل Camera تعليمات المشهد في تعليق الصورة. عند فشل المزوّد، تعرض لـ DEV حالة HTTP والرموز الرقمية فقط دون تسجيل الصور أو التعليمات أو الرد الخام. هذا تحسين للتشخيص وليس ادعاءً بإصلاح عطل مجهول.",
+        "hi": "Camera फोटो कैप्शन से दृश्य निर्देश लेता है। प्रदाता विफल होने पर DEV को केवल HTTP स्थिति और संख्यात्मक कोड दिखते हैं; फोटो, निर्देश या मूल उत्तर लॉग नहीं होते। यह निदान सुधार है, अज्ञात त्रुटि ठीक होने का दावा नहीं।"
+      }
     }
   ]
 }

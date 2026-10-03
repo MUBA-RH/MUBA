@@ -71,7 +71,7 @@ class LocalizedRuntime(unittest.TestCase):
    message=mock.Mock(reply_text=mock.AsyncMock(return_value=mock.Mock(edit_text=mock.AsyncMock())))
    context=mock.Mock(user_data={})
    missing=mock.Mock(exists=lambda:False)
-   scope={'get_assistant_language':lambda uid:lang,'runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':missing,'ProviderQuotaPaused':ProviderQuotaPaused,'ensure_available':ensure_available,'guard_response':guard_response,'logger':mock.Mock()}
+   scope={'is_dev':lambda uid:False,'get_assistant_language':lambda uid:lang,'runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':missing,'ProviderQuotaPaused':ProviderQuotaPaused,'ensure_available':ensure_available,'guard_response':guard_response,'logger':mock.Mock()}
    exec(compile(ast.Module(body=[node],type_ignores=[]),'<camera>', 'exec'),scope)
    asyncio.run(scope['_run_muba_camera_transform'](message,context,1,b'photo','request'))
    status=message.reply_text.return_value
