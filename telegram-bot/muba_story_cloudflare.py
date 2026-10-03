@@ -6,6 +6,8 @@ sanitized visual prompt; other HTTP failures still fail closed immediately.
 """
 from __future__ import annotations
 
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
+
 import base64
 import json
 import os
@@ -84,8 +86,11 @@ async def _request(session,prompt:str,reference_bytes:bytes|None=None,reference_
         form.add_field("input_image_1",continuity_bytes,filename="previous-frame.jpg",content_type=continuity_type)
     form.add_field("guidance","5.0")
     headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
+    ensure_available("cloudflare_ai")
     async with session.post(endpoint(),data=form,headers=headers,timeout=90) as response:
-        return response.status,response.headers.get("Content-Type",""),await response.read()
+        raw=await response.read()
+        guard_response("cloudflare_ai",response.status,raw[:2000].decode("utf-8","replace") if response.status!=200 else "",response.headers)
+        return response.status,response.headers.get("Content-Type",""),raw
 
 async def generate(session,prompt:str,reference_bytes:bytes,*,reference_type:str="image/jpeg",continuity_bytes:bytes|None=None,continuity_type:str="image/jpeg")->tuple[bytes,str]:
     if not configured():

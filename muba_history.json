@@ -3456,6 +3456,33 @@
         "ar": "أُعيد Camera إلى نموذج FLUX.2 Klein 4B الأصلي احتراماً لشرط عدم زيادة التكلفة. تُرفض إعدادات النماذج الأعلى سعراً مع الحفاظ على التأطير وإرشادات التشريح. تعتمد الفواتير على خطة الحساب والحصة المجانية؛ اختبارات الكود لا تثبت انعدام الرسوم.",
         "hi": "अतिरिक्त लागत न बढ़ाने के लिए Camera को पुराने FLUX.2 Klein 4B मॉडल पर लौटाया गया। अधिक लागत वाले मॉडल सेटिंग अस्वीकार होते हैं। मूल फ्रेम और संरचना के निर्देश बने रहते हैं। वास्तविक बिलिंग खाते की योजना और मुफ्त कोटे पर निर्भर है; कोड परीक्षण शून्य शुल्क साबित नहीं करते।"
       }
+    },
+    {
+      "id": "20261003-provider-quota-isolated-pause",
+      "date": "2026-10-03",
+      "type": "improved",
+      "areas": [
+        "assistant",
+        "camera",
+        "studio",
+        "daily",
+        "news",
+        "web"
+      ],
+      "title": {
+        "en": "Isolated provider quota pauses",
+        "tr": "Bağlantıya özel kota duraklatması",
+        "zh": "按服务商独立暂停配额请求",
+        "ar": "إيقاف مستقل عند نفاد حصة المزوّد",
+        "hi": "प्रदाता कोटे पर स्वतंत्र विराम"
+      },
+      "text": {
+        "en": "Reported provider quota and rate limits pause only the affected connection. Cloudflare AI calls share one pause; HF, Kaggle, GitHub, R2 and data-source limits are isolated. Daily Story no longer switches providers after capacity exhaustion. Camera and Studio report the pause without consuming a failed attempt. Reset hints are respected; the next request rechecks after expiry. This response-driven protection does not certify billing caps for accounts that silently charge overages.",
+        "tr": "Sağlayıcının bildirdiği kota ve hız sınırı yalnızca ilgili bağlantıyı duraklatır. Cloudflare AI çağrıları ortak duraklatılır; HF, Kaggle, GitHub, R2 ve veri kaynakları ayrı tutulur. Daily Story kota dolunca başka sağlayıcıya geçmez. Camera ve Studio başarısız işlem hakkını tüketmeden duraklamayı bildirir. Yenilenme bilgisi izlenir; süre dolunca sonraki istekte kontrol edilir. Bu koruma, aşımı hata vermeden ücretlendiren hesapların fatura sınırını doğrulamaz.",
+        "zh": "服务商报告配额或速率限制时，仅暂停受影响连接。Cloudflare AI 共用暂停状态；HF、Kaggle、GitHub、R2 和数据来源独立处理。Daily Story 不再因容量不足切换服务商。Camera 和 Studio 提示暂停且不扣除失败次数。遵循重置时间，到期后的下一次请求重新检查。这不能保证会自动收取超额费用的账户具有账单上限。",
+        "ar": "توقف حدود الحصة والسرعة المُبلّغ عنها الاتصال المتأثر فقط. تشترك طلبات Cloudflare AI في حالة توقف، وتُعزل HF وKaggle وGitHub وR2 ومصادر البيانات. لا ينتقل Daily Story إلى مزوّد آخر عند نفاد الحصة. تظهر Camera وStudio التوقف دون احتساب المحاولة الفاشلة. تُحترم أوقات التجديد ويُعاد الفحص عند الطلب التالي. لا تضمن هذه الحماية سقف فواتير للحسابات التي تحاسب التجاوز دون خطأ.",
+        "hi": "प्रदाता द्वारा बताए कोटा या दर सीमा पर केवल संबंधित कनेक्शन रुकता है। Cloudflare AI साझा विराम रखता है; HF, Kaggle, GitHub, R2 और डेटा स्रोत अलग हैं। क्षमता खत्म होने पर Daily Story प्रदाता नहीं बदलता। Camera और Studio विफल प्रयास का मौका नहीं काटते। रीसेट समय के बाद अगला अनुरोध पुनः जाँचता है। बिना त्रुटि अतिरिक्त शुल्क लेने वाले खातों की बिलिंग सीमा इससे प्रमाणित नहीं होती।"
+      }
     }
   ]
 }

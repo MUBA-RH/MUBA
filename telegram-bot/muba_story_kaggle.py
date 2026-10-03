@@ -1,5 +1,6 @@
 """On-demand Kaggle T4 x2 batch bridge for MUBA Daily Story."""
 from __future__ import annotations
+from muba_free_quota import ensure_available, guard_response, guard_exception, ProviderQuotaPaused
 import asyncio, base64, hashlib, hmac, io, json, os, subprocess, sys, tempfile, time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,7 @@ def _api_token():
 def configured():
     return bool(OWNER and KERNEL and _api_token())
 def _run(args,timeout=120):
+    ensure_available("kaggle")
     token=_api_token()
     if not token:
         raise RuntimeError("KAGGLE_API_TOKEN is missing from the Render service environment")
@@ -31,7 +33,10 @@ def _run(args,timeout=120):
         env["HOME"]=str(home)
         env["KAGGLE_API_TOKEN"]=token
         p=subprocess.run([sys.executable,"-m","kaggle",*args],env=env,capture_output=True,text=True,timeout=timeout)
-    if p.returncode: raise RuntimeError("Kaggle command failed: "+(p.stderr or p.stdout)[-1200:])
+    if p.returncode:
+        detail=(p.stderr or p.stdout)[-1200:]
+        guard_exception("kaggle",detail)
+        raise RuntimeError("Kaggle command failed: "+detail)
     return (p.stdout or "")+(p.stderr or "")
 def _download_output(kernel_id,out):
     args=["kernels","output",kernel_id,"-p",str(out),"-o","-q","--file-pattern",".*\\.png$"]
