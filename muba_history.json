@@ -3483,6 +3483,50 @@
         "ar": "توقف حدود الحصة والسرعة المُبلّغ عنها الاتصال المتأثر فقط. تشترك طلبات Cloudflare AI في حالة توقف، وتُعزل HF وKaggle وGitHub وR2 ومصادر البيانات. لا ينتقل Daily Story إلى مزوّد آخر عند نفاد الحصة. تظهر Camera وStudio التوقف دون احتساب المحاولة الفاشلة. تُحترم أوقات التجديد ويُعاد الفحص عند الطلب التالي. لا تضمن هذه الحماية سقف فواتير للحسابات التي تحاسب التجاوز دون خطأ.",
         "hi": "प्रदाता द्वारा बताए कोटा या दर सीमा पर केवल संबंधित कनेक्शन रुकता है। Cloudflare AI साझा विराम रखता है; HF, Kaggle, GitHub, R2 और डेटा स्रोत अलग हैं। क्षमता खत्म होने पर Daily Story प्रदाता नहीं बदलता। Camera और Studio विफल प्रयास का मौका नहीं काटते। रीसेट समय के बाद अगला अनुरोध पुनः जाँचता है। बिना त्रुटि अतिरिक्त शुल्क लेने वाले खातों की बिलिंग सीमा इससे प्रमाणित नहीं होती।"
       }
+    },
+    {
+      "id": "20261003-transparency-five-topic-groups",
+      "date": "2026-10-03",
+      "type": "improved",
+      "areas": [
+        "assistant"
+      ],
+      "title": {
+        "en": "System Transparency in five topic groups",
+        "tr": "Sistem Şeffaflığı beş konu grubunda",
+        "zh": "系统透明度分为五个主题组",
+        "ar": "شفافية النظام في خمس مجموعات",
+        "hi": "सिस्टम पारदर्शिता के पाँच विषय समूह"
+      },
+      "text": {
+        "en": "All 22 existing transparency pages remain available within five related groups: ecosystem and structure, Assistant and languages, creation and publishing, security and authority, information and continuity. Detail pages return to their own group; previous and next stay within that group. Navigation is localized in all five languages.",
+        "tr": "Mevcut 22 şeffaflık içeriği korunarak beş ilgili gruba ayrıldı: ekosistem ve yapı, asistan ve diller, üretim ve yayın, güvenlik ve yetki, bilgi ve süreklilik. Detay sayfaları kendi grubuna döner; önceki ve sonraki aynı grubun içinde ilerler. Beş dilin tamamında navigasyon yerelleştirildi.",
+        "zh": "保留全部22页透明度内容，分为生态系统与结构、助手与语言、创作与发布、安全与权限、信息与连续性五组。详情页返回所属组，上一页和下一页仅在组内移动。所有导航均支持五种语言。",
+        "ar": "حُفظت صفحات الشفافية الـ22 في خمس مجموعات: النظام البيئي والبنية، المساعد واللغات، الإبداع والنشر، الأمان والصلاحيات، المعلومات والاستمرارية. تعود التفاصيل إلى مجموعتها ويظل السابق والتالي ضمنها. التنقل مترجم إلى اللغات الخمس.",
+        "hi": "सभी 22 मौजूदा पारदर्शिता पृष्ठ पाँच समूहों में सुरक्षित हैं: संरचना, सहायक और भाषाएँ, निर्माण और प्रकाशन, सुरक्षा और अधिकार, जानकारी और निरंतरता। विवरण अपने समूह में लौटते हैं और पिछला/अगला उसी समूह में रहते हैं। पाँचों भाषाओं में नेविगेशन उपलब्ध है।"
+      }
+    },
+    {
+      "id": "20261003-camera-replace-pending-photo",
+      "date": "2026-10-03",
+      "type": "fixed",
+      "areas": [
+        "camera"
+      ],
+      "title": {
+        "en": "Camera uses the latest pending photo",
+        "tr": "Camera bekleyen son fotoğrafı kullanır",
+        "zh": "Camera 使用最新待处理照片",
+        "ar": "تستخدم Camera آخر صورة معلقة",
+        "hi": "Camera नवीनतम लंबित फोटो उपयोग करता है"
+      },
+      "text": {
+        "en": "A new photo sent while Camera waits for a scene instruction now replaces the previous source in temporary memory and asks for the instruction again. Generation starts only after text instructions. Gallery and storage behavior are unchanged.",
+        "tr": "Camera sahne talimatı beklerken gönderilen yeni fotoğraf artık geçici bellekte önceki kaynağın yerini alır ve talimat yeniden sorulur. Üretim yalnızca metin talimatından sonra başlar. Gallery ve kayıt davranışı korunur.",
+        "zh": "等待场景说明时发送的新照片会替换临时内存中的旧照片，并重新询问说明。仅收到文字说明后才开始生成，相册与存储行为保持不变。",
+        "ar": "تحل الصورة الجديدة المرسلة أثناء انتظار تعليمات المشهد محل المصدر السابق في الذاكرة المؤقتة، وتُطلب التعليمات مجدداً. يبدأ التوليد بعد التعليمات النصية فقط، ولا يتغير سلوك التخزين والمعرض.",
+        "hi": "दृश्य निर्देश की प्रतीक्षा में भेजी गई नई फोटो अस्थायी मेमोरी में पुरानी फोटो बदल देती है और निर्देश फिर पूछा जाता है। निर्माण पाठ निर्देश के बाद शुरू होता है; संग्रहण और गैलरी व्यवहार समान है।"
+      }
     }
   ]
 }
