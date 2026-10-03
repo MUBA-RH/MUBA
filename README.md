@@ -24,6 +24,8 @@ Private Telegram Assistant with five supported languages: English, Turkish, Chin
 ### Guardian
 The protected security and management layer for the designated MUBA main group. Guardian is separate from ordinary Assistant conversation and follows DEV-only authority rules.
 
+Protection mode and repeat-offence counters are saved to the configured JSON state repository. If the general brain has no file backend, Guardian uses a local file that survives process restart on the same host. That fallback does not survive ephemeral-host replacement or redeployment. The state health response reports this distinction; deployment-wide durability requires configured persistent storage. Camera and Guardian runtime outcomes follow the selected language.
+
 ### MUBA Studio
 Creates MUBA Meme, Image, Sticker and Reaction visuals. Web Studio and Telegram Studio use the same protected generation backend. Visible text is off by default unless the user explicitly requests writing.
 

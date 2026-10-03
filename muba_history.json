@@ -3345,6 +3345,30 @@
         "ar": "تستخدم تسميات الموقع ووصف Assistant وDaily متعدد اللغات اسم MUBA. تبقى الروابط الاجتماعية ومعرّفات الحسابات المحمية كما هي إلى حين تقديم عناوين بديلة.",
         "hi": "वेबसाइट के सोशल लेबल और बहुभाषी Assistant तथा Daily विवरण अब MUBA नाम दिखाते हैं। नए पते मिलने तक मौजूदा सोशल लिंक और सुरक्षित खाते की पहचान अपरिवर्तित रहती है।"
       }
+    },
+    {
+      "id": "20261003-guardian-restart-camera-runtime-locales",
+      "date": "2026-10-03",
+      "type": "fixed",
+      "areas": [
+        "guardian",
+        "assistant",
+        "camera"
+      ],
+      "title": {
+        "en": "Guardian restart recovery and localized Camera runtime",
+        "tr": "Guardian yeniden başlatma koruması ve Camera dil tutarlılığı",
+        "zh": "Guardian 重启恢复与 Camera 多语言运行消息",
+        "ar": "استعادة Guardian بعد إعادة التشغيل ورسائل Camera متعددة اللغات",
+        "hi": "Guardian पुनः आरंभ बहाली और Camera के स्थानीयकृत संदेश"
+      },
+      "text": {
+        "en": "Guardian protection mode and repeat-offence counters now use file-backed state. Configured storage is reused; the local fallback survives process restart but is not durable across host replacement. Camera and Guardian runtime messages follow the selected language. Camera upload fallback and script syntax were repaired; returning to the menu releases the temporary source photo.",
+        "tr": "Guardian koruma modu ve tekrar ihlal sayaçları dosya tabanlı duruma bağlandı. Yapılandırılmış depo kullanılır; yerel yedek süreç yeniden başlatmasını korur ancak sunucu yenilenmesinde kalıcı değildir. Camera ve Guardian çalışma mesajları seçilen dili izler. Camera fotoğraf yükleme ve betik hataları düzeltildi; menüye dönüş geçici kaynak fotoğrafı temizler.",
+        "zh": "Guardian 保护模式和重复违规计数使用文件状态。沿用已配置存储；本地后备支持进程重启，但不能保证更换主机后保留。Camera 和 Guardian 消息遵循所选语言。修复 Camera 上传后备及脚本语法；返回菜单时清除临时原照片。",
+        "ar": "تستخدم حالة حماية Guardian وعدادات المخالفات المتكررة تخزيناً ملفياً. يُعاد استخدام التخزين المهيأ؛ البديل المحلي يحفظ حالة إعادة تشغيل العملية لكنه لا يضمن بقاءها عند استبدال الخادم. تتبع رسائل Camera وGuardian اللغة المختارة. أُصلح رفع الصور وبنية البرنامج، وتُزال الصورة المؤقتة عند العودة للقائمة.",
+        "hi": "Guardian सुरक्षा मोड और दोहराए उल्लंघन के काउंटर अब फ़ाइल स्थिति में रखे जाते हैं। मौजूदा भंडार उपयोग होता है; स्थानीय विकल्प प्रक्रिया पुनः आरंभ में सुरक्षित है, पर होस्ट बदलने पर स्थायी नहीं। Camera और Guardian संदेश चुनी भाषा अपनाते हैं। Camera अपलोड और स्क्रिप्ट त्रुटियाँ सुधरीं; मेनू पर लौटने से अस्थायी मूल फोटो हटती है।"
+      }
     }
   ]
 }
