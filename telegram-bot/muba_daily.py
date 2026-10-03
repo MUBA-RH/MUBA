@@ -14,29 +14,29 @@ DAILY_LABELS={
 
 DAILY={
 "en":{
-"x":"Official X: @MUBA_RH. MUBA shares its story, community updates and confirmed developments there.",
+"x":"Official X: MUBA. MUBA shares its story, community updates and confirmed developments there.",
 "web":"Official website: muba-rh.github.io/MUBA/ — MUBA's public project home and story.",
-"telegram":"Official Telegram: @MUBA_RH. Check the pinned official messages there for current community announcements.",
+"telegram":"Official Telegram: MUBA. Check the pinned official messages there for current community announcements.",
 "updates":"Latest verified build summary: MUBA Assistant supports private guided and natural conversation in 5 languages. MUBA Guardian protects the main group with link, fake-CA, phishing and scam controls. Internal GitHub details are intentionally not exposed here."},
 "tr":{
-"x":"Resmi X: @MUBA_RH. MUBA'nın hikâyesi, topluluk gelişmeleri ve doğrulanmış yenilikler burada paylaşılır.",
+"x":"Resmi X: MUBA. MUBA'nın hikâyesi, topluluk gelişmeleri ve doğrulanmış yenilikler burada paylaşılır.",
 "web":"Resmi web sitesi: muba-rh.github.io/MUBA/ — MUBA'nın herkese açık proje evi ve hikâye alanı.",
-"telegram":"Resmi Telegram: @MUBA_RH. Güncel topluluk duyuruları için sabitlenmiş resmi mesajları kontrol edebilirsin.",
+"telegram":"Resmi Telegram: MUBA. Güncel topluluk duyuruları için sabitlenmiş resmi mesajları kontrol edebilirsin.",
 "updates":"Son doğrulanmış geliştirme özeti: MUBA Assistant özel sohbette 5 dilde butonlu ve doğal konuşmayı destekliyor. MUBA Guardian ana grubu link, sahte CA, phishing ve scam kontrolleriyle koruyor. Dahili GitHub ayrıntıları burada gösterilmez."},
 "zh":{
-"x":"官方 X：@MUBA_RH。MUBA 的故事、社区动态和已确认进展会在这里发布。",
+"x":"官方 X：MUBA。MUBA 的故事、社区动态和已确认进展会在这里发布。",
 "web":"官方网站：muba-rh.github.io/MUBA/ — MUBA 的公开项目主页与故事空间。",
-"telegram":"官方 Telegram：@MUBA_RH。当前社区公告请查看其中置顶的官方消息。",
+"telegram":"官方 Telegram：MUBA。当前社区公告请查看其中置顶的官方消息。",
 "updates":"最新已确认构建摘要：MUBA Assistant 在私聊中支持 5 种语言的引导式与自然对话。MUBA Guardian 通过链接、假 CA、钓鱼和诈骗控制保护主群。这里不会公开内部 GitHub 细节。"},
 "ar":{
-"x":"حساب X الرسمي: @MUBA_RH. تُنشر هناك قصة MUBA وتحديثات المجتمع والتطورات المؤكدة.",
+"x":"حساب X الرسمي: MUBA. تُنشر هناك قصة MUBA وتحديثات المجتمع والتطورات المؤكدة.",
 "web":"الموقع الرسمي: muba-rh.github.io/MUBA/ — الصفحة العامة للمشروع وقصة MUBA.",
-"telegram":"Telegram الرسمي: @MUBA_RH. راجع الرسائل الرسمية المثبتة للحصول على إعلانات المجتمع الحالية.",
+"telegram":"Telegram الرسمي: MUBA. راجع الرسائل الرسمية المثبتة للحصول على إعلانات المجتمع الحالية.",
 "updates":"آخر ملخص مؤكد: يدعم MUBA Assistant المحادثة الخاصة الموجهة والطبيعية بخمس لغات. ويحمي MUBA Guardian المجموعة الرئيسية من الروابط غير المصرح بها وCA المزيف والتصيد والاحتيال. لا تُعرض تفاصيل GitHub الداخلية هنا."},
 "hi":{
-"x":"आधिकारिक X: @MUBA_RH. MUBA की कहानी, सामुदायिक अपडेट और पुष्टि किए गए विकास यहाँ साझा होते हैं।",
+"x":"आधिकारिक X: MUBA. MUBA की कहानी, सामुदायिक अपडेट और पुष्टि किए गए विकास यहाँ साझा होते हैं।",
 "web":"आधिकारिक वेबसाइट: muba-rh.github.io/MUBA/ — MUBA का सार्वजनिक परियोजना घर और कहानी का स्थान।",
-"telegram":"आधिकारिक Telegram: @MUBA_RH. वर्तमान सामुदायिक घोषणाओं के लिए पिन किए गए आधिकारिक संदेश देखें।",
+"telegram":"आधिकारिक Telegram: MUBA. वर्तमान सामुदायिक घोषणाओं के लिए पिन किए गए आधिकारिक संदेश देखें।",
 "updates":"नवीनतम सत्यापित निर्माण सारांश: MUBA Assistant निजी चैट में 5 भाषाओं में निर्देशित और स्वाभाविक बातचीत का समर्थन करता है। MUBA Guardian मुख्य समूह को अनधिकृत लिंक, नकली CA, फ़िशिंग और धोखाधड़ी नियंत्रण से सुरक्षित रखता है। आंतरिक GitHub विवरण यहाँ प्रदर्शित नहीं किए जाते।"}
 }
 
