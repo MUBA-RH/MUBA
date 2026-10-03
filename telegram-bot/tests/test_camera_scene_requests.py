@@ -43,12 +43,12 @@ class SceneRequests(unittest.TestCase):
         self.quota_store.start();self.quota_memory.start()
         self.addCleanup(self.quota_store.stop);self.addCleanup(self.quota_memory.stop)
 
-    def test_new_photo_replaces_old_source_while_waiting_for_instruction(self):
+    def test_new_photo_replaces_old_source_while_waiting_for_instruction(self,caption=None):
         source = photo('blue')
         tg_file = SimpleNamespace(download_as_bytearray=mock.AsyncMock(return_value=source))
         bot = SimpleNamespace(get_file=mock.AsyncMock(return_value=tg_file))
         message = SimpleNamespace(photo=[SimpleNamespace(file_id='replacement-photo')],
-                                  message_id=11,
+                                  message_id=11, caption=caption,
                                   reply_text=mock.AsyncMock(return_value=SimpleNamespace(message_id=12)))
         update = SimpleNamespace(effective_message=message,
                                  effective_user=SimpleNamespace(id=71),
@@ -63,12 +63,20 @@ class SceneRequests(unittest.TestCase):
                  'get_assistant_language': lambda uid: 'tr', 'runtime_text': runtime_text,
                  'InlineKeyboardMarkup': lambda rows: rows,
                  'InlineKeyboardButton': lambda *args, **kwargs: kwargs,
-                 'logger': mock.Mock()}
+                 'logger': mock.Mock(), 'clean_camera_prompt': clean_camera_prompt,
+                 '_run_muba_camera_transform': mock.AsyncMock()}
         asyncio.run(handler('muba_camera_photo', scope)(update, context))
         bot.get_file.assert_awaited_once_with('replacement-photo', read_timeout=30)
         self.assertEqual(context.user_data['muba_camera_source_bytes'], source)
         self.assertTrue(context.user_data['muba_camera_waiting_instruction'])
-        message.reply_text.assert_awaited_once()
+        if caption:
+            scope['_run_muba_camera_transform'].assert_awaited_once_with(message,context,71,source,clean_camera_prompt(caption))
+            message.reply_text.assert_not_awaited()
+        else:
+            message.reply_text.assert_awaited_once()
+
+    def test_photo_caption_starts_generation_without_asking_twice(self):
+        self.test_new_photo_replaces_old_source_while_waiting_for_instruction(' MUBA ile akşam yemeğinde olalım.\nYüz hattımı koru. ')
     def test_camera_uses_original_4b_and_rejects_higher_cost_override(self):
         with mock.patch.dict(os.environ,{'CLOUDFLARE_ACCOUNT_ID':'test-account'},clear=True):
             self.assertTrue(camera_ai_endpoint().endswith(CAMERA_AI_MODEL))
@@ -104,11 +112,11 @@ class SceneRequests(unittest.TestCase):
         with Image.open(io.BytesIO(result)) as image:
             self.assertEqual(image.size,(511,256))
 
-    def test_native_request_sends_person_first_and_muba_second_and_clears_source(self,delivery_error=None):
+    def test_native_request_sends_person_first_and_muba_second_and_clears_source(self,delivery_error=None,provider_status=200):
         source=photo('red');reference=photo('blue')
         result=b'generated-image'
-        response=mock.MagicMock(status=200,headers={'Content-Type':'image/png'})
-        response.read=mock.AsyncMock(return_value=result)
+        response=mock.MagicMock(status=provider_status,headers={'Content-Type':'image/png'})
+        response.read=mock.AsyncMock(return_value=result if provider_status==200 else b'{"errors":[{"code":3030,"message":"private source secret"}]}')
         post_context=mock.MagicMock()
         post_context.__aenter__=mock.AsyncMock(return_value=response)
         session=mock.Mock(post=mock.Mock(return_value=post_context))
@@ -120,6 +128,14 @@ class SceneRequests(unittest.TestCase):
         request=('Sahilde MUBA ile birlikte olalım. '*6)+'Yüzlerimizi ve yaşımızı koru.'
         with mock.patch.dict(os.environ,{'CLOUDFLARE_API_TOKEN':'unit-test-only'}):
             asyncio.run(handler('_run_muba_camera_transform',scope)(message,context,71,source,request))
+        if provider_status!=200:
+            message.reply_photo.assert_not_awaited()
+            self.assertEqual(context.user_data['muba_camera_source_bytes'],source)
+            final=status.edit_text.await_args_list[-1].args[0]
+            self.assertIn('DEV: CAMERA_HTTP_503_CF_3030',final)
+            self.assertNotIn('private source secret',final)
+            self.assertIn(runtime_text('tr','failed'),final)
+            return
         form=session.post.call_args.kwargs['data']
         fields={field[0]['name']:field[2] for field in form._fields}
         self.assertEqual(fields['input_image_0'],camera_reference_bytes(source))
@@ -144,6 +160,9 @@ class SceneRequests(unittest.TestCase):
 
     def test_delivery_timeout_does_not_claim_generation_failed_or_allowance_unused(self):
         self.test_native_request_sends_person_first_and_muba_second_and_clears_source(TimeoutError('delivery timed out'))
+
+    def test_provider_error_is_reported_safely_without_sending_image(self):
+        self.test_native_request_sends_person_first_and_muba_second_and_clears_source(provider_status=503)
 
     def test_legacy_request_matches_native_reference_order_and_forwards_scene(self):
         from aiohttp import web

@@ -1686,9 +1686,11 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
         logger.exception("Guardian DEV private report failed")
 
 async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,user_request:str):
+    from muba_camera_errors import CameraProviderError, camera_failure_code
     lang=get_assistant_language(uid) or "en"
     status=await message.reply_text("MUBA CAMERA %10\n"+runtime_text(lang,"received"))
     generation_complete=False
+    stage="prepare"
     try:
         await status.edit_text("MUBA CAMERA %35\n"+runtime_text(lang,"processing"))
         if len(source_bytes)>8*1024*1024:
@@ -1710,11 +1712,13 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
             raise RuntimeError("MUBA image session hazır değil.")
         await status.edit_text("MUBA CAMERA %70\n"+runtime_text(lang,"processing"))
         ensure_available("cloudflare_ai")
+        stage="provider"
         async with session.post(camera_ai_endpoint(),data=form,headers=headers,timeout=120) as response:
             raw=await response.read()
             guard_response("cloudflare_ai",response.status,raw[:2000].decode("utf-8","replace") if response.status!=200 else "",response.headers)
             if response.status!=200:
-                raise RuntimeError("AI üretimi başarısız.")
+                raise CameraProviderError(response.status,raw)
+            stage="decode"
             if response.headers.get("Content-Type","").startswith("image/"):
                 body=raw
             else:
@@ -1729,6 +1733,7 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
         if not is_dev(uid) and not consume(uid):
             raise RuntimeError("Günlük hak doğrulanamadı.")
         generation_complete=True
+        stage="delivery"
         context.user_data.pop("muba_camera_waiting_instruction",None)
         context.user_data.pop("muba_camera_source_bytes",None)
         await status.edit_text("MUBA CAMERA %95\n"+runtime_text(lang,"sending"))
@@ -1738,12 +1743,16 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
         await status.edit_text("MUBA CAMERA %100 ✓\n"+runtime_text(lang,"ready"))
     except ProviderQuotaPaused:
         await status.edit_text("⏸ "+runtime_text(lang,"provider_quota"))
-    except Exception:
-        logger.exception("Native MUBA Camera transformation failed without source payload logging")
-        await status.edit_text("⚠️ "+runtime_text(lang,"delivery_unconfirmed" if generation_complete else "failed"))
+    except Exception as exc:
+        code=camera_failure_code(exc,stage)
+        logger.error("Native MUBA Camera failure code=%s",code)
+        text="⚠️ "+runtime_text(lang,"delivery_unconfirmed" if generation_complete else "failed")
+        if is_dev(uid):
+            text+="\n\nDEV: "+code
+        await status.edit_text(text)
 
 async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Capture Camera photo first; generation starts only after the user's instruction."""
+    """Accept an instruction in the photo caption or a subsequent text message."""
     message=update.effective_message; user=update.effective_user; chat=update.effective_chat
     if not message or not user or not chat or chat.type!=ChatType.PRIVATE or not message.photo:
         return
@@ -1768,6 +1777,10 @@ async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["muba_camera_waiting_photo"]=False
         context.user_data["muba_camera_waiting_instruction"]=True
         context.user_data.setdefault("muba_camera_message_ids",[]).append(message.message_id)
+        caption=getattr(message,"caption",None)
+        if isinstance(caption,str) and caption.strip():
+            await _run_muba_camera_transform(message,context,uid,source_bytes,clean_camera_prompt(caption))
+            return
         lang=get_assistant_language(uid) or "en"
         asks={
             "en":"📸 Photo received.\n\nDescribe the scene you want in one message. Say whether MUBA should join you or you want to become MUBA.\n\nExample: Let us be at the beach with MUBA. Keep our faces and ages; adapt our clothes, poses and lighting to the beach.\n\nIf something must stay exactly the same, include it in your request.",
