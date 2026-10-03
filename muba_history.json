@@ -3276,6 +3276,28 @@
         "ar": "يستخدم الموقع هوية شخصية MUBA الزرقاء مع تنقل أبسط وخمسة مسارات للاستكشاف. تبقى القصة اليومية وStudio والمعرض والأخبار والأسعار وسجل التطوير متاحة.",
         "hi": "वेबसाइट अब MUBA की नीली पहचान, सरल नेविगेशन और खोज के पाँच रास्ते दिखाती है। दैनिक कहानी, Studio, Gallery, समाचार, कीमतें और विकास लॉग उपलब्ध हैं।"
       }
+    },
+    {
+      "id": "20261003-web-mobile-fit-vivid-palette",
+      "date": "2026-10-03",
+      "type": "fixed",
+      "areas": [
+        "web"
+      ],
+      "title": {
+        "en": "Mobile layout and brighter blue palette",
+        "tr": "Mobil yerleşim ve canlı mavi palet",
+        "zh": "移动布局和明亮蓝色配色",
+        "ar": "تخطيط الهاتف ولوحة زرقاء أكثر حيوية",
+        "hi": "मोबाइल लेआउट और चमकदार नीला रंग"
+      },
+      "text": {
+        "en": "The mobile hero now stacks into one column and discovery cards fit the screen. The blue palette is brighter, with warm amber accents and a curved caption below the MUBA logo.",
+        "tr": "Mobil giriş alanı artık tek sütunda sıralanır ve keşif kartları ekrana sığar. Mavi palet canlandırıldı; sıcak kehribar detaylar ve MUBA logosunun altında kavisli yazı eklendi.",
+        "zh": "移动端首屏现为单列，探索卡片适应屏幕。蓝色配色更加明亮，加入暖琥珀色细节和 MUBA 标志下的弧形文字。",
+        "ar": "أصبح القسم الرئيسي على الهاتف بعمود واحد وبطاقات الاستكشاف ملائمة للشاشة. أصبحت الألوان الزرقاء أكثر حيوية مع لمسات كهرمانية ونص منحني تحت شعار MUBA.",
+        "hi": "मोबाइल का मुख्य भाग अब एक कॉलम में है और खोज कार्ड स्क्रीन में समाते हैं। नीले रंग अधिक चमकदार हैं, साथ में गर्म अंबर रंग और MUBA लोगो के नीचे घुमावदार लेख है।"
+      }
     }
   ]
 }
