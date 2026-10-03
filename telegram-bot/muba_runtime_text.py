@@ -5,6 +5,8 @@ ROWS={
 'back':('⬅ MAIN MENU','⬅ ANA MENÜ','⬅ 主菜单','⬅ القائمة الرئيسية','⬅ मुख्य मेनू'),
 'received':('Photo and request received ✓','Fotoğraf ve isteğin alındı ✓','已收到照片和请求 ✓','تم استلام الصورة والطلب ✓','फोटो और अनुरोध मिला ✓'),
 'processing':('Preparing MUBA…','MUBA hazırlanıyor…','正在准备 MUBA…','جارٍ إعداد MUBA…','MUBA तैयार हो रहा है…'),
+'sending':('Image created; sending to Telegram…','Görsel üretildi; Telegram’a gönderiliyor…','图片已生成，正在发送到 Telegram…','تم إنشاء الصورة؛ جارٍ إرسالها إلى Telegram…','चित्र बन गया; Telegram पर भेज रहे हैं…'),
+'delivery_unconfirmed':('Image created, but Telegram delivery could not be confirmed. Check the chat before starting another generation.','Görsel üretildi, ancak Telegram teslimatı doğrulanamadı. Yeni üretim başlatmadan sohbeti kontrol et.','图片已生成，但无法确认 Telegram 是否已送达。再次生成前请检查聊天。','تم إنشاء الصورة، لكن تعذّر تأكيد تسليمها إلى Telegram. تحقق من المحادثة قبل إنشاء صورة أخرى.','चित्र बन गया, लेकिन Telegram पर पहुँचने की पुष्टि नहीं हुई। नया चित्र बनाने से पहले चैट देखें।'),
 'ready':('Your MUBA is ready ✓',"MUBA’n hazır ✓",'你的 MUBA 已准备好 ✓','MUBA الخاص بك جاهز ✓','आपका MUBA तैयार है ✓'),
 'privacy':('The source photo was not permanently saved by MUBA or published to Gallery.','Kaynak fotoğraf MUBA tarafından kalıcı kaydedilmedi; Gallery’ye yayınlanmadı.','MUBA 未永久保存原照片，也未将其发布到 Gallery。','لم يحفظ MUBA الصورة الأصلية بشكل دائم ولم ينشرها في Gallery.','MUBA ने मूल फोटो स्थायी रूप से नहीं सहेजी और Gallery में प्रकाशित नहीं की।'),
 'failed':('Transformation failed. Your daily allowance was not used. Try again.','Dönüşüm başarısız. Günlük hakkın kullanılmadı; tekrar deneyebilirsin.','转换失败，未消耗每日次数。请重试。','فشل التحويل. لم تُستهلك فرصتك اليومية. حاول مجدداً.','रूपांतरण विफल हुआ। दैनिक मौका नहीं कटा। फिर कोशिश करें।'),

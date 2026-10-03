@@ -1688,6 +1688,7 @@ async def _guardian_dev_report(context: ContextTypes.DEFAULT_TYPE, event: dict, 
 async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,user_request:str):
     lang=get_assistant_language(uid) or "en"
     status=await message.reply_text("MUBA CAMERA %10\n"+runtime_text(lang,"received"))
+    generation_complete=False
     try:
         await status.edit_text("MUBA CAMERA %35\n"+runtime_text(lang,"processing"))
         if len(source_bytes)>8*1024*1024:
@@ -1727,17 +1728,19 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
             raise RuntimeError("Üretim sonucu boş.")
         if not is_dev(uid) and not consume(uid):
             raise RuntimeError("Günlük hak doğrulanamadı.")
+        generation_complete=True
         context.user_data.pop("muba_camera_waiting_instruction",None)
         context.user_data.pop("muba_camera_source_bytes",None)
-        await status.edit_text("MUBA CAMERA %100 ✓\n"+runtime_text(lang,"ready"))
+        await status.edit_text("MUBA CAMERA %95\n"+runtime_text(lang,"sending"))
         context.user_data.setdefault("muba_camera_message_ids",[]).append(status.message_id)
-        result_message=await message.reply_photo(photo=body,caption="📸 "+runtime_text(lang,"ready")+"\n"+runtime_text(lang,"privacy"),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(runtime_text(lang,"back"),callback_data="camera_back")]]))
+        result_message=await message.reply_photo(photo=body,caption="📸 "+runtime_text(lang,"ready")+"\n"+runtime_text(lang,"privacy"),reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(runtime_text(lang,"back"),callback_data="camera_back")]]),connect_timeout=30,write_timeout=120,read_timeout=120,pool_timeout=30)
         context.user_data.setdefault("muba_camera_message_ids",[]).append(result_message.message_id)
+        await status.edit_text("MUBA CAMERA %100 ✓\n"+runtime_text(lang,"ready"))
     except ProviderQuotaPaused:
         await status.edit_text("⏸ "+runtime_text(lang,"provider_quota"))
     except Exception:
         logger.exception("Native MUBA Camera transformation failed without source payload logging")
-        await status.edit_text("⚠️ "+runtime_text(lang,"failed"))
+        await status.edit_text("⚠️ "+runtime_text(lang,"delivery_unconfirmed" if generation_complete else "failed"))
 
 async def muba_camera_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Capture Camera photo first; generation starts only after the user's instruction."""

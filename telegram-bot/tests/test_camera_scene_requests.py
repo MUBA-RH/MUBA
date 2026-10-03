@@ -104,7 +104,7 @@ class SceneRequests(unittest.TestCase):
         with Image.open(io.BytesIO(result)) as image:
             self.assertEqual(image.size,(511,256))
 
-    def test_native_request_sends_person_first_and_muba_second_and_clears_source(self):
+    def test_native_request_sends_person_first_and_muba_second_and_clears_source(self,delivery_error=None):
         source=photo('red');reference=photo('blue')
         result=b'generated-image'
         response=mock.MagicMock(status=200,headers={'Content-Type':'image/png'})
@@ -114,6 +114,7 @@ class SceneRequests(unittest.TestCase):
         session=mock.Mock(post=mock.Mock(return_value=post_context))
         status=mock.Mock(message_id=1,edit_text=mock.AsyncMock())
         message=mock.Mock(reply_text=mock.AsyncMock(return_value=status),reply_photo=mock.AsyncMock(return_value=mock.Mock(message_id=2)))
+        message.reply_photo.side_effect=delivery_error
         context=SimpleNamespace(user_data={'muba_camera_source_bytes':source,'muba_camera_waiting_instruction':True},application=SimpleNamespace(bot_data={'news_session':session}))
         scope={'get_assistant_language':lambda uid:'tr','runtime_text':runtime_text,'STUDIO_REFERENCE_FILE':mock.Mock(exists=lambda:True,read_bytes=lambda:reference),'camera_reference_bytes':camera_reference_bytes,'camera_ai_prompt':camera_ai_prompt,'aiohttp':aiohttp,'os':os,'camera_ai_endpoint':lambda:'https://ai.example.invalid/flux-2-klein-4b','camera_output_size':camera_output_size,'is_dev':lambda uid:True,'ProviderQuotaPaused':ProviderQuotaPaused,'ensure_available':ensure_available,'guard_response':guard_response,'logger':mock.Mock(),'InlineKeyboardMarkup':lambda x:x,'InlineKeyboardButton':lambda *a,**kw:kw}
         request=('Sahilde MUBA ile birlikte olalım. '*6)+'Yüzlerimizi ve yaşımızı koru.'
@@ -128,9 +129,21 @@ class SceneRequests(unittest.TestCase):
         self.assertTrue(session.post.call_args.args[0].endswith('flux-2-klein-4b'))
         message.reply_photo.assert_awaited_once()
         self.assertEqual(message.reply_photo.await_args.kwargs['photo'],result)
+        self.assertEqual(message.reply_photo.await_args.kwargs['write_timeout'],120)
+        self.assertEqual(message.reply_photo.await_args.kwargs['read_timeout'],120)
         self.assertNotIn('muba_camera_source_bytes',context.user_data)
         self.assertNotIn('muba_camera_waiting_instruction',context.user_data)
         self.assertIn(runtime_text('tr','processing'),status.edit_text.await_args_list[1].args[0])
+        final=status.edit_text.await_args_list[-1].args[0]
+        if delivery_error:
+            self.assertIn(runtime_text('tr','delivery_unconfirmed'),final)
+            self.assertNotIn(runtime_text('tr','failed'),final)
+        else:
+            self.assertIn('%100',final)
+            self.assertIn(runtime_text('tr','ready'),final)
+
+    def test_delivery_timeout_does_not_claim_generation_failed_or_allowance_unused(self):
+        self.test_native_request_sends_person_first_and_muba_second_and_clears_source(TimeoutError('delivery timed out'))
 
     def test_legacy_request_matches_native_reference_order_and_forwards_scene(self):
         from aiohttp import web
