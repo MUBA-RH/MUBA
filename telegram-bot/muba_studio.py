@@ -15,6 +15,7 @@ STUDIO_REFERENCE_SHA256="2f5068a3edb9b859db7b83f98cb4e712ea6044d0be59f69d1e3ccfe
 DAILY_LIMIT=1
 DEV_USER_ID=934598759
 AI_MODEL="@cf/black-forest-labs/flux-2-klein-4b"
+CAMERA_AI_MODEL="@cf/black-forest-labs/flux-2-klein-9b"
 _usage=defaultdict(lambda: {"day":"","count":0})
 _cache={"image":None,"at":0.0}
 
@@ -50,6 +51,22 @@ def ai_configured()->bool:
 def ai_endpoint()->str:
     account=os.environ["CLOUDFLARE_ACCOUNT_ID"]
     return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{AI_MODEL}"
+
+def camera_ai_endpoint()->str:
+    """Keep Camera's editing model independent of Studio; no silent quality downgrade."""
+    model=os.getenv("MUBA_CAMERA_AI_MODEL",CAMERA_AI_MODEL).strip()
+    if model not in (CAMERA_AI_MODEL,AI_MODEL):
+        raise ValueError("Unsupported Camera model")
+    account=os.environ["CLOUDFLARE_ACCOUNT_ID"]
+    return f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{model}"
+
+def camera_output_size(value:bytes)->tuple[int,int]:
+    """Respect source framing, within the provider's output size limits."""
+    with Image.open(io.BytesIO(value)) as image:
+        source=ImageOps.exif_transpose(image)
+        width,height=source.size
+    scale=1024/max(width,height)
+    return tuple(max(256,min(1024,round(side*scale/64)*64)) for side in (width,height))
 
 _TEXT_REQUEST_MARKERS=(
     "write ","write:","written text","visible text","add text","text:","caption","headline","title:",
@@ -105,6 +122,7 @@ def camera_ai_prompt(user_request:str="")->str:
         "input_image_0 is the user's source photograph. input_image_1 is the MUBA identity reference. "
         "First infer what the user is asking for; do not assume every request means transforming the photographed person into MUBA. "
         "HUMAN IDENTITY: For EVERY photographed person who remains human, preserve their apparent age, facial proportions, eye shape, nose, mouth, jaw, skin tone, hairline, hair color, facial hair and recognizable likeness. Do not age or de-age them, add wrinkles, grey hair, deeper eye bags, sagging skin or an older face. Do not beautify them into a different person, blend their faces with each other or with MUBA, duplicate people, or invent additional human companions. Preserve the original expression unless the requested action reasonably requires a change. Human faces remain photographic unless the user requests a different style; MUBA's illustration style must not alter human faces. "
+        "SUBJECT INVENTORY: image 0 is the only source of human identities. Keep exactly the same photographed people, each appearing once with one head attached to their own complete body, unless the user explicitly requests a change in people. Image 1 supplies only MUBA, not an extra human. Never merge adjacent bodies or create a second head from a person's original pose. "
         "If the request says MUBA should be with, beside, next to, behind, in front of, or otherwise together with the person, KEEP THE PERSON HUMAN and recognizable from the source photo and add MUBA as a separate character. Never replace the person's head or face in this case. "
         "If the request explicitly asks to transform the person into MUBA or apply MUBA traits to them, perform only that requested transformation and preserve as much of the person's original facial structure, expression, pose, body, clothing and recognizability as the request allows; avoid a pasted-on mascot head. "
         "If the request names or implies a destination, setting, environment or scene (for example beach, seaside, forest, city, space, home, party), that requested setting MUST be visibly realized in the output. Replace or adapt the source background/environment as needed; do not preserve the old background when it conflicts with the requested setting. Keep the photographed person recognizable unless the user explicitly asks to transform them. "
@@ -115,6 +133,7 @@ def camera_ai_prompt(user_request:str="")->str:
         "Use input_image_1 to preserve MUBA's character identity when MUBA appears: tan-brown short dense fur, large expressive glossy brown eyes, small rounded brown nose, compact furry muzzle, playful mouth and pink tongue. "
         "Match the approved reference's hand-drawn 2D character style, clean dark outlines and warm tan-orange shading unless the user explicitly requests another visual style. Use the reference for MUBA identity and drawing style only; do not copy its blue circular background, avatar border or black outer background into the requested scene. "
         "Adapt MUBA's outfit, pose and expression to the scene too; the reference's black cap and hoodie are not mandatory outfits. Keep readable MUBA on at least one suitable worn item, without invented brands, random lettering, extra captions or watermarks. "
+        "MUBA ANATOMY: MUBA has its own compact furry body, furry arms, rounded furry paws and feet. Its paws remain animal-character paws, not bare human hands. Every visible limb belongs to exactly one subject. "
         "Preserve source-photo composition, camera perspective and the person's identity wherever compatible with the requested edit. Integrate additions naturally with coherent scale, lighting, shadows and perspective. "
         "No arbitrary portrait reframing, no pasted head, no automatic mascot-body replacement, and no unrelated redesign. "
         "The source camera image is ephemeral input and must never be treated as gallery content."
