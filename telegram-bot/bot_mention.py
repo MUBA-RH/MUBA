@@ -2107,7 +2107,7 @@ async def studio_generate_handler(request: web.Request):
         form.add_field("prompt",payload["prompt"])
         form.add_field("width",str(payload["width"]))
         form.add_field("height",str(payload["height"]))
-        form.add_field("input_image_0",ref,filename="muba-studio-identity.png",content_type="image/png")
+        form.add_field("input_image_0",ref,filename="muba-studio-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()
@@ -2206,7 +2206,7 @@ async def studio_web_generate_handler(request: web.Request):
         form.add_field("prompt",payload["prompt"])
         form.add_field("width",str(payload["width"]))
         form.add_field("height",str(payload["height"]))
-        form.add_field("input_image_0",ref,filename="muba-studio-identity.png",content_type="image/png")
+        form.add_field("input_image_0",ref,filename="muba-studio-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
         async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
             raw=await response.read()

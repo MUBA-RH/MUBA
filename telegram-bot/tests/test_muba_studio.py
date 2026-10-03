@@ -29,6 +29,6 @@ class StudioExam(unittest.TestCase):
   src=(ROOT/"muba_studio.py").read_text(encoding="utf-8")
   self.assertNotIn("from guardian",src); self.assertNotIn("inspect_message",src)
  def test_reference_is_canonical_public_muba_asset(self):
-  self.assertIn("pbs.twimg.com/profile_images/",muba_studio.REFERENCE_URL)
+  self.assertIn("MUBA-RH/MUBA/main/telegram-bot/assets/muba_studio_identity.jpg",muba_studio.REFERENCE_URL)
 
 if __name__=="__main__": unittest.main(verbosity=2)
