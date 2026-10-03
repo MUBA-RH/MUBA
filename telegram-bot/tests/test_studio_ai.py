@@ -24,10 +24,19 @@ class StudioAI(unittest.TestCase):
  def test_clean_studio_reference_is_present_and_used_in_both_paths(self):
   reference=muba_studio.STUDIO_REFERENCE_FILE
   self.assertEqual(hashlib.sha256(reference.read_bytes()).hexdigest(),muba_studio.STUDIO_REFERENCE_SHA256)
-  with Image.open(reference) as picture:self.assertEqual((picture.format,picture.size),("PNG",(1448,1086)))
+  with Image.open(reference) as picture:self.assertEqual((picture.format,picture.size),("JPEG",(1536,1536)))
   src=(ROOT/"bot_mention.py").read_text()
-  self.assertEqual(src.count('"input_image_0",ref,filename="muba-studio-identity.png",content_type="image/png"'),2)
+  self.assertEqual(src.count('"input_image_0",ref,filename="muba-studio-identity.jpg",content_type="image/jpeg"'),2)
   self.assertIn('ref=await _studio_reference(request)',src)
+  self.assertIn('muba_ref,filename="muba-identity.jpg",content_type="image/jpeg"',src)
+ def test_camera_and_studio_follow_approved_drawing_style_without_avatar_background(self):
+  prompts=[muba_studio.camera_ai_prompt("MUBA beside me"),muba_studio.ai_payload("MUBA in a city","image","data:image/jpeg;base64,abc")["prompt"]]
+  for prompt in prompts:
+   self.assertIn("hand-drawn 2D character style",prompt)
+   self.assertIn("do not copy its blue circular background",prompt)
+  with Image.open(__import__('io').BytesIO(muba_studio.camera_reference_bytes(muba_studio.STUDIO_REFERENCE_FILE.read_bytes()))) as picture:
+   self.assertEqual(picture.format,"JPEG")
+   self.assertEqual(picture.size,(511,511))
  def test_all_four_formats_are_textless_by_default(self):
   self.assertFalse(muba_studio.wants_visible_text("MUBA denizde olsun"))
   for kind in ("meme","image","sticker","emoji"):
