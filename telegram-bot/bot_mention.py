@@ -89,7 +89,7 @@ for _lang, _pages in EXTRA_TRANSPARENCY_PAGES.items():
     TRANSPARENCY_PAGES[_lang].extend(_pages)
 for _lang, _records in TRANSPARENCY_RECORDS.items():
     TRANSPARENCY_PAGES[_lang].extend(f"{title}\n\n{body}" for _,title,body in _records)
-from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, clean_camera_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, camera_ai_prompt, camera_reference_bytes, is_dev, studio_token, validate_studio_token
+from muba_studio import REFERENCE_URL, STUDIO_REFERENCE_FILE, STUDIO_REFERENCE_SHA256, clean_prompt, clean_camera_prompt, consume, remaining, render_meme, studio_html, validate_init_data, ai_configured, ai_endpoint, ai_payload, camera_ai_prompt, camera_ai_endpoint, camera_output_size, camera_reference_bytes, is_dev, studio_token, validate_studio_token
 from muba_gallery import archive_creation, list_gallery, read_gallery_image, storage_status, get_gallery_item, set_gallery_visibility, share_gallery_item
 from muba_news import LABELS as NEWS_LABELS, collect as collect_news, public_news, subscribe as subscribe_news, telegram_news, notify_subscribers
 from muba_price import prices as live_prices
@@ -1676,9 +1676,10 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
             raise RuntimeError("MUBA kimlik referansı bulunamadı.")
         muba_ref=camera_reference_bytes(ref_path.read_bytes())
         source_ai=camera_reference_bytes(source_bytes)
+        width,height=camera_output_size(source_bytes)
         form=aiohttp.FormData()
         form.add_field("prompt",camera_ai_prompt(user_request))
-        form.add_field("width","1024"); form.add_field("height","1024")
+        form.add_field("width",str(width)); form.add_field("height",str(height))
         form.add_field("input_image_0",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
         form.add_field("input_image_1",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
@@ -1686,7 +1687,7 @@ async def _run_muba_camera_transform(message,context,uid:int,source_bytes:bytes,
         if session is None:
             raise RuntimeError("MUBA image session hazır değil.")
         await status.edit_text("MUBA CAMERA %70\n"+runtime_text(lang,"processing"))
-        async with session.post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+        async with session.post(camera_ai_endpoint(),data=form,headers=headers,timeout=120) as response:
             raw=await response.read()
             if response.status!=200:
                 raise RuntimeError("AI üretimi başarısız.")
@@ -2060,13 +2061,14 @@ async def camera_generate_handler(request: web.Request):
         muba_ref=await _studio_reference(request)
         source_ai=camera_reference_bytes(source_bytes)
         muba_ref=camera_reference_bytes(muba_ref)
+        width,height=camera_output_size(source_bytes)
         form=aiohttp.FormData()
         form.add_field("prompt",camera_ai_prompt(fields.get("prompt","")))
-        form.add_field("width","1024"); form.add_field("height","1024")
+        form.add_field("width",str(width)); form.add_field("height",str(height))
         form.add_field("input_image_0",source_ai,filename="camera-input.jpg",content_type="image/jpeg")
         form.add_field("input_image_1",muba_ref,filename="muba-identity.jpg",content_type="image/jpeg")
         headers={"Authorization":"Bearer "+os.environ["CLOUDFLARE_API_TOKEN"]}
-        async with request.app["http_session"].post(ai_endpoint(),data=form,headers=headers,timeout=90) as response:
+        async with request.app["http_session"].post(camera_ai_endpoint(),data=form,headers=headers,timeout=120) as response:
             raw=await response.read()
             if response.status!=200:
                 # Privacy path deliberately avoids logging request/source details.

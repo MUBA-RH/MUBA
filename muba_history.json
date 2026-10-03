@@ -3412,6 +3412,28 @@
         "ar": "تعطي تعليمات Camera الأولوية لشبه كل شخص وعمره الظاهر مع تكييف الملابس والإكسسوارات والإضاءة للمشهد المطلوب. تُحفظ الطلبات حتى 800 حرف. صُحّح اتجاه الصورة وترتيب المراجع في المسار القديم. تحسّن التوجيه، لكن دقة النتائج تحتاج إلى مراجعة إنتاج فعلي.",
         "hi": "Camera निर्देश हर व्यक्ति के चेहरे की समानता और दिखने वाली उम्र बनाए रखते हुए कपड़े, सामान और रोशनी को चुने दृश्य के अनुसार बदलने को प्राथमिकता देते हैं। अनुरोध में 800 अक्षर तक सुरक्षित रहते हैं। फोटो दिशा और पुराने Camera संदर्भ क्रम सुधारे गए। दृश्य गुणवत्ता की पुष्टि वास्तविक निर्माण की समीक्षा से होगी।"
       }
+    },
+    {
+      "id": "20261003-camera-dedicated-editing-model-framing",
+      "date": "2026-10-03",
+      "type": "improved",
+      "areas": [
+        "camera"
+      ],
+      "title": {
+        "en": "Dedicated Camera editing model and source framing",
+        "tr": "Camera için ayrı düzenleme modeli ve kaynak kadrajı",
+        "zh": "Camera 专用编辑模型与原图构图",
+        "ar": "نموذج تحرير مخصص لـ Camera وتأطير الصورة الأصلية",
+        "hi": "Camera का अलग संपादन मॉडल और मूल फ्रेम"
+      },
+      "text": {
+        "en": "After live Camera output failed likeness and anatomy review, Camera was separated from Studio’s 4B model and routed to FLUX.2 Klein 9B. Native and legacy Camera preserve source aspect ratio within output limits. Human count and MUBA paw anatomy guidance were clarified. Existing credentials are reused and no lower-quality automatic fallback is made. Model usage costs differ; generated fidelity still requires live review.",
+        "tr": "Canlı Camera çıktısı yüz benzerliği ve anatomi değerlendirmesini geçemediği için Camera, Studio’nun 4B modelinden ayrılarak FLUX.2 Klein 9B modeline yönlendirildi. İki Camera yolu çıktı sınırları içinde kaynak fotoğraf oranını korur. Kişi sayısı ve MUBA pati anatomisi talimatı netleştirildi. Mevcut erişim bilgileri kullanılır; otomatik olarak eski modele dönülmez. Model kullanım maliyeti farklıdır; görsel doğruluk canlı değerlendirme gerektirir.",
+        "zh": "实际 Camera 输出未通过人物相似度及解剖评估，因此 Camera 与 Studio 的 4B 模型分离，改用 FLUX.2 Klein 9B。两条 Camera 路径在输出限制内保留原图比例，明确人物数量及 MUBA 爪部结构。复用现有凭据，不自动回退。模型使用费用不同，视觉保真度仍需实际评估。",
+        "ar": "بعد فشل الناتج الفعلي في الحفاظ على الشبه والتشريح، فُصل Camera عن نموذج Studio ذي 4B واستُخدم FLUX.2 Klein 9B. يحافظ المساران على نسبة الصورة ضمن حدود الإخراج. وُضّح عدد الأشخاص وتشريح كفوف MUBA. تُستخدم بيانات الوصول الحالية دون رجوع آلي. تختلف تكلفة النموذج، وتحتاج الجودة إلى مراجعة فعلية.",
+        "hi": "वास्तविक Camera चित्र चेहरे की समानता और शारीरिक संरचना की जाँच में विफल रहा, इसलिए Camera को Studio के 4B मॉडल से अलग कर FLUX.2 Klein 9B पर भेजा गया। दोनों मार्ग मूल अनुपात को आउटपुट सीमा में रखते हैं। व्यक्ति संख्या और MUBA के पंजों के निर्देश स्पष्ट हुए। मौजूदा क्रेडेंशियल उपयोग होते हैं; स्वतः पुराने मॉडल पर वापसी नहीं होती। लागत अलग है और गुणवत्ता की वास्तविक समीक्षा आवश्यक है।"
+      }
     }
   ]
 }
